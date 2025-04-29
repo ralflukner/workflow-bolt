@@ -8,6 +8,7 @@ This directory contains comprehensive documentation for the Patient Flow Managem
 - [Architecture](architecture.md) - System architecture and technology choices
 - [Data Model](data-model.md) - Data structures and state management
 - [Component Design](component-design.md) - UI component overview and interaction patterns
+- [Authentication](auth.md) - Auth0 authentication implementation
 - [Recent Changes](recent-changes.md) - Documentation of recent significant changes
 - [Setup Guide](setup-guide.md) - Instructions for setting up the development environment
 
