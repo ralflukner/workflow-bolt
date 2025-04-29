@@ -4,6 +4,7 @@ import TimeControl from './TimeControl';
 import PatientList from './PatientList';
 import NewPatientForm from './NewPatientForm';
 import ImportSchedule from './ImportSchedule';
+import AuthNav from './AuthNav';
 import { PlusCircle, RefreshCw, Printer, ChevronDown, Upload } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
@@ -29,29 +30,32 @@ const Dashboard: React.FC = () => {
             Patient Flow Management
           </h1>
           
-          <div className="flex space-x-2">
-            <button 
-              onClick={() => setShowImportSchedule(true)}
-              className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition-colors"
-            >
-              <Upload size={18} className="mr-1" />
-              Import Schedule
-            </button>
-            <button 
-              onClick={() => setShowNewPatientForm(true)}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors"
-            >
-              <PlusCircle size={18} className="mr-1" />
-              New Patient
-            </button>
-            <button className="flex items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors">
-              <RefreshCw size={18} className="mr-1" />
-              Refresh
-            </button>
-            <button className="flex items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors">
-              <Printer size={18} className="mr-1" />
-              Print Report
-            </button>
+          <div className="flex items-center space-x-4">
+            <AuthNav />
+            <div className="flex space-x-2">
+              <button 
+                onClick={() => setShowImportSchedule(true)}
+                className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition-colors"
+              >
+                <Upload size={18} className="mr-1" />
+                Import Schedule
+              </button>
+              <button 
+                onClick={() => setShowNewPatientForm(true)}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors"
+              >
+                <PlusCircle size={18} className="mr-1" />
+                New Patient
+              </button>
+              <button className="flex items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors">
+                <RefreshCw size={18} className="mr-1" />
+                Refresh
+              </button>
+              <button className="flex items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors">
+                <Printer size={18} className="mr-1" />
+                Print Report
+              </button>
+            </div>
           </div>
         </div>
         

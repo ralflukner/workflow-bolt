@@ -8,17 +8,19 @@ The application uses Auth0 for authentication, providing a secure, standards-bas
 
 ## Configuration
 
-Authentication is configured in `src/auth/auth0-config.ts`. You'll need to replace the placeholder values with your actual Auth0 application settings:
+Authentication settings are configured using environment variables, typically stored in a `.env-local` file in the project root (this file should **not** be committed to version control).
 
-```typescript
-export const AUTH0_CONFIG = {
-  domain: 'YOUR_AUTH0_DOMAIN', // e.g., 'dev-abc123.us.auth0.com'
-  clientId: 'YOUR_AUTH0_CLIENT_ID',
-  redirectUri: window.location.origin,
-  audience: 'https://api.patientflow.com', // Optional: API identifier (if you have a backend)
-  scope: 'openid profile email'
-};
+The following variables are required:
+
+```plaintext
+# .env-local
+VITE_AUTH0_DOMAIN=YOUR_AUTH0_DOMAIN
+VITE_AUTH0_CLIENT_ID=YOUR_AUTH0_CLIENT_ID
+VITE_AUTH0_REDIRECT_URI=YOUR_APP_REDIRECT_URI # e.g., http://localhost:5173 for development
+VITE_AUTH0_AUDIENCE=YOUR_API_IDENTIFIER # Optional: e.g., https://api.patientflow.com
 ```
+
+Replace the placeholder values (`YOUR_...`) with your actual Auth0 application settings. These variables are then imported and used by the Auth0Provider configuration, likely within `src/main.tsx` or `src/App.tsx` where the provider is initialized.
 
 ## Setting Up Auth0
 

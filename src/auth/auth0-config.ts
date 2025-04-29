@@ -1,7 +1,7 @@
 export const AUTH0_CONFIG = {
-  domain: 'YOUR_AUTH0_DOMAIN', // e.g., 'dev-abc123.us.auth0.com'
-  clientId: 'YOUR_AUTH0_CLIENT_ID',
-  redirectUri: window.location.origin,
-  audience: 'https://api.patientflow.com', // Optional: API identifier (if you have a backend)
+  domain: import.meta.env.VITE_AUTH0_DOMAIN || 'YOUR_AUTH0_DOMAIN',
+  clientId: import.meta.env.VITE_AUTH0_CLIENT_ID || 'YOUR_AUTH0_CLIENT_ID',
+  redirectUri: import.meta.env.VITE_AUTH0_REDIRECT_URI || window.location.origin,
+  audience: import.meta.env.VITE_AUTH0_AUDIENCE || 'https://api.patientflow.com',
   scope: 'openid profile email'
 }; 

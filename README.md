@@ -85,4 +85,32 @@ Specify your license here (e.g., MIT, Apache-2.0, etc.).
 
 ---
 
-*This project was bootstrapped with [Vite](https://vitejs.dev/).* 
+*This project was bootstrapped with [Vite](https://vitejs.dev/).*
+
+---
+
+*(Content below was moved from `docs/README.md`)*
+
+# Patient Flow Management Documentation
+
+This directory contains comprehensive documentation for the Patient Flow Management application.
+
+## Documentation Index
+
+- [Project Overview](docs/overview.md) - Introduction to the project and its goals
+- [Architecture](docs/architecture.md) - System architecture and technology choices
+- [Data Model](docs/data-model.md) - Data structures and state management
+- [Component Design](docs/component-design.md) - UI component overview and interaction patterns
+- [Authentication](docs/auth.md) - Auth0 authentication implementation
+- [Recent Changes](docs/recent-changes.md) - Documentation of recent significant changes
+- [Setup Guide](docs/setup-guide.md) - Instructions for setting up the development environment
+
+*Note: Links above have been updated to point to the `docs/` directory.*
+
+## Quick Start
+
+For quick setup instructions, refer to the main content in the project root. *(Note: This is now part of the main README).*
+
+## Contributing
+
+When making changes to the codebase, please update the relevant documentation in the `docs/` directory to keep it current. 
