@@ -1,5 +1,5 @@
 import React from 'react';
-import { Patient } from '../types';
+import { Patient, PatientStatus } from '../types';
 import { usePatientContext } from '../context/PatientContext';
 import { useTimeContext } from '../context/TimeContext';
 
@@ -14,7 +14,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
   const appointmentDate = new Date(patient.appointmentTime);
   const waitTime = getWaitTime(patient);
   
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case 'scheduled': return 'bg-gray-500';
       case 'arrived': return 'bg-amber-500';
@@ -27,7 +27,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
     }
   };
   
-  const getBorderColor = (status: string) => {
+  const getBorderColor = (status: string): string => {
     switch (status) {
       case 'scheduled': return 'border-gray-500';
       case 'arrived': return 'border-amber-500';
@@ -40,11 +40,11 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
     }
   };
   
-  const handleRoomChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleRoomChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     assignRoom(patient.id, e.target.value);
   };
 
-  const getWaitTimeDisplay = () => {
+  const getWaitTimeDisplay = (): string => {
     const time = waitTime;
     if (patient.completedTime) {
       return `Total: ${time} min`;
@@ -52,7 +52,13 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
     return `Wait: ${time} min`;
   };
 
-  const getActionButton = () => {
+  interface ActionButton {
+    nextStatus: PatientStatus;
+    label: string;
+    color: string;
+  }
+
+  const getActionButton = (): ActionButton | null => {
     switch (patient.status) {
       case 'scheduled':
         return {
@@ -95,10 +101,19 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
     }
   };
   
-  const handleStatusChange = (e: React.MouseEvent<HTMLButtonElement>, nextStatus: PatientStatus) => {
+  const handleStatusChange = (e: React.MouseEvent<HTMLButtonElement>, nextStatus: PatientStatus): void => {
     e.preventDefault();
     e.stopPropagation();
     updatePatientStatus(patient.id, nextStatus);
+  };
+
+  const buttonColors: Record<string, string> = {
+    amber: 'bg-amber-500 hover:bg-amber-600',
+    purple: 'bg-purple-500 hover:bg-purple-600',
+    cyan: 'bg-cyan-500 hover:bg-cyan-600',
+    blue: 'bg-blue-500 hover:bg-blue-600',
+    teal: 'bg-teal-500 hover:bg-teal-600',
+    green: 'bg-green-500 hover:bg-green-600'
   };
 
   return (
@@ -119,7 +134,11 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
           </div>
           {patient.appointmentStatus && patient.appointmentStatus !== 'Scheduled' && (
             <div className={`text-xs px-2 py-1 rounded-full uppercase font-semibold ${
-              patient.appointmentStatus === 'Confirmed' ? 'bg-blue-600 text-white' : 'bg-red-600 text-white'
+              patient.appointmentStatus === 'Confirmed' ? 'bg-blue-600 text-white' : 
+              patient.appointmentStatus === 'Reminder Sent' ? 'bg-indigo-600 text-white' : 
+              patient.appointmentStatus === 'Arrived' || patient.appointmentStatus === 'Checked In' || patient.appointmentStatus === 'Roomed' ? 'bg-green-600 text-white' : 
+              patient.appointmentStatus === 'Appt Prep Started' || patient.appointmentStatus === 'Ready for MD' || patient.appointmentStatus === 'Seen by MD' || patient.appointmentStatus === 'Checked Out' ? 'bg-teal-600 text-white' : 
+              'bg-red-600 text-white'
             }`}>
               {patient.appointmentStatus}
             </div>
@@ -180,8 +199,8 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
           if (!button) return null;
           return (
             <button
-              onClick={(e) => handleStatusChange(e, button.nextStatus)}
-              className={`mt-2 px-3 py-1 bg-${button.color}-500 text-white rounded hover:bg-${button.color}-600 transition-colors`}
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleStatusChange(e, button.nextStatus)}
+              className={`mt-2 px-3 py-1 ${buttonColors[button.color]} text-white rounded transition-colors`}
             >
               {button.label}
             </button>

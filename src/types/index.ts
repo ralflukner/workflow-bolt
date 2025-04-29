@@ -1,5 +1,5 @@
 export type PatientStatus = 'scheduled' | 'arrived' | 'appt-prep' | 'ready-for-md' | 'with-doctor' | 'seen-by-md' | 'completed';
-export type AppointmentStatus = 'Scheduled' | 'Confirmed' | 'Cancelled';
+export type AppointmentStatus = 'Scheduled' | 'Reminder Sent' | 'Confirmed' | 'Arrived' | 'Checked In' | 'Roomed' | 'Appt Prep Started' | 'Ready for MD' | 'Seen by MD' | 'Checked Out' | 'No Show' | 'Rescheduled' | 'Cancelled';
 export type AppointmentType = 'Office Visit' | 'LABS';
 
 export interface Patient {
