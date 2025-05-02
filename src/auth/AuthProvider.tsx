@@ -6,7 +6,19 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+interface AppState {
+  returnTo?: string;
+}
+
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const onRedirectCallback = (appState: AppState | undefined) => {
+    window.history.replaceState(
+      {},
+      document.title,
+      appState?.returnTo || window.location.pathname
+    );
+  };
+
   return (
     <Auth0Provider
       domain={AUTH0_CONFIG.domain}
@@ -16,6 +28,9 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         audience: AUTH0_CONFIG.audience,
         scope: AUTH0_CONFIG.scope
       }}
+      onRedirectCallback={onRedirectCallback}
+      cacheLocation="localstorage"
+      useRefreshTokens={true}
     >
       {children}
     </Auth0Provider>
