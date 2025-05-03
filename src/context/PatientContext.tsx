@@ -1,14 +1,14 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { Patient, PatientStatus, Metrics } from '../types';
+import { Patient, PatientApptStatus, Metrics } from '../types';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { mockPatients } from '../data/mockData';
 
 interface PatientContextType {
   patients: Patient[];
   addPatient: (patient: Omit<Patient, 'id'>) => void;
-  updatePatientStatus: (id: string, status: PatientStatus) => void;
+  updatePatientStatus: (id: string, status: PatientApptStatus) => void;
   assignRoom: (id: string, room: string) => void;
-  getPatientsByStatus: (status: PatientStatus) => Patient[];
+  getPatientsByStatus: (status: PatientApptStatus) => Patient[];
   getMetrics: () => Metrics;
   getWaitTime: (patient: Patient) => number;
   clearPatients: () => void;
@@ -63,7 +63,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     setPatients(prev => [...prev, newPatient]);
   };
 
-  const updatePatientStatus = (id: string, status: PatientStatus) => {
+  const updatePatientStatus = (id: string, status: PatientApptStatus) => {
     const now = getCurrentTime().toISOString();
 
     setPatients(prev => 
@@ -101,7 +101,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     );
   };
 
-  const getPatientsByStatus = (status: PatientStatus): Patient[] => {
+  const getPatientsByStatus = (status: PatientApptStatus): Patient[] => {
     return patients.filter(patient => patient.status === status);
   };
 
@@ -125,7 +125,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     // Include only patients who have been checked in, preparation started, or completed (MD Ready)
     // Exclude scheduled, confirmed, MD Seen, and Checked out statuses
     const waitingPatients = patients.filter(p => 
-      ['arrived', 'appt-prep', 'ready-for-md'].includes(p.status)
+      ['arrived', 'appt-prep', 'ready-for-md'].includes(p.status as string)
     );
     const waitTimes = waitingPatients.map(getWaitTime);
 

@@ -1,10 +1,10 @@
 import React from 'react';
-import { PatientStatus } from '../types';
+import { PatientApptStatus } from '../types';
 import { usePatientContext } from '../hooks/usePatientContext';
 import PatientCard from './PatientCard';
 
 interface PatientListProps {
-  status: PatientStatus;
+  status: PatientApptStatus;
   title: string;
 }
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Patient, PatientStatus } from '../types';
+import { Patient, PatientApptStatus } from '../types';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
 
@@ -52,7 +52,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
   };
 
   interface ActionButton {
-    nextStatus: PatientStatus;
+    nextStatus: PatientApptStatus;
     label: string;
     color: string;
   }
@@ -100,7 +100,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
     }
   };
 
-  const handleStatusChange = (e: React.MouseEvent<HTMLButtonElement>, nextStatus: PatientStatus): void => {
+  const handleStatusChange = (e: React.MouseEvent<HTMLButtonElement>, nextStatus: PatientApptStatus): void => {
     e.preventDefault();
     e.stopPropagation();
     updatePatientStatus(patient.id, nextStatus);

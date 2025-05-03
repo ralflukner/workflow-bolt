@@ -15,11 +15,10 @@ export interface Patient {
   dob: string;
   appointmentTime: string;
   appointmentType?: AppointmentType;
-  appointmentStatus?: AppointmentStatus;
   visitType?: string;
   provider: string;
   room?: string;
-  status: PatientStatus;
+  status: PatientApptStatus;
   checkInTime?: string;
   withDoctorTime?: string;
   completedTime?: string;
@@ -31,10 +30,25 @@ Key fields:
 - `name`: Patient's full name
 - `dob`: Date of birth in ISO format (YYYY-MM-DD)
 - `appointmentTime`: Scheduled appointment time as ISO string
-- `status`: Current status in the patient flow
+- `status`: Current status in the patient flow (using the combined PatientApptStatus type)
 - Timestamps for different stages of the patient visit
 
-### Patient Flow Status
+### Combined Patient Appointment Status
+
+The `PatientApptStatus` type combines both internal workflow statuses and external scheduling statuses:
+
+```typescript
+export type PatientApptStatus = 
+  // Internal workflow statuses (lowercase kebab-case)
+  | 'scheduled' | 'arrived' | 'appt-prep' | 'ready-for-md' | 'with-doctor' | 'seen-by-md' | 'completed'
+  // External scheduling statuses (Title Case with spaces)
+  | 'Scheduled' | 'Reminder Sent' | 'Confirmed' | 'Arrived' | 'Checked In' | 'Roomed' | 'Appt Prep Started' 
+  | 'Ready for MD' | 'Seen by MD' | 'Checked Out' | 'No Show' | 'Rescheduled' | 'Cancelled';
+```
+
+This combined type allows the application to use a single status field that can represent both internal workflow states and external scheduling states.
+
+### Patient Flow Status (Legacy)
 
 The `PatientStatus` type defines the possible states in the patient workflow:
 
@@ -49,9 +63,9 @@ export type PatientStatus =
   | 'completed';    // Patient has completed their visit
 ```
 
-This represents the internal workflow statuses used by the application.
+This represents the internal workflow statuses that are now included in the combined `PatientApptStatus` type. This type is maintained for backward compatibility.
 
-### Appointment Status
+### Appointment Status (Legacy)
 
 The `AppointmentStatus` type defines the scheduling status of the appointment:
 
@@ -72,7 +86,7 @@ export type AppointmentStatus =
   | 'Cancelled';
 ```
 
-This represents the external scheduling statuses, separate from the internal workflow.
+This represents the external scheduling statuses that are now included in the combined `PatientApptStatus` type. This type is maintained for backward compatibility.
 
 ### Appointment Type
 

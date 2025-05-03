@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { usePatientContext } from '../hooks/usePatientContext';
-import { Patient, AppointmentStatus, AppointmentType } from '../types';
+import { Patient, PatientApptStatus, AppointmentType } from '../types';
 import { X, Check, AlertCircle } from 'lucide-react';
 
 interface ImportScheduleProps {
@@ -56,24 +56,24 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
         0
       );
 
-      // Convert status to proper AppointmentStatus type
-      const appointmentStatus = status.trim() as AppointmentStatus;
+      // Convert status to proper PatientApptStatus type
+      const externalStatus = status.trim() as PatientApptStatus;
 
-      // Map AppointmentStatus to PatientStatus
-      let patientStatus = 'scheduled' as const;
-      if (appointmentStatus === 'Confirmed' || appointmentStatus === 'Scheduled' || appointmentStatus === 'Reminder Sent') {
+      // Map external status to internal workflow status
+      let patientStatus: PatientApptStatus = 'scheduled';
+      if (externalStatus === 'Confirmed' || externalStatus === 'Scheduled' || externalStatus === 'Reminder Sent') {
         patientStatus = 'scheduled';
-      } else if (appointmentStatus === 'Arrived' || appointmentStatus === 'Checked In') {
+      } else if (externalStatus === 'Arrived' || externalStatus === 'Checked In') {
         patientStatus = 'arrived';
-      } else if (appointmentStatus === 'Roomed' || appointmentStatus === 'Appt Prep Started') {
+      } else if (externalStatus === 'Roomed' || externalStatus === 'Appt Prep Started') {
         patientStatus = 'appt-prep';
-      } else if (appointmentStatus === 'Ready for MD') {
+      } else if (externalStatus === 'Ready for MD') {
         patientStatus = 'ready-for-md';
-      } else if (appointmentStatus === 'Seen by MD') {
+      } else if (externalStatus === 'Seen by MD') {
         patientStatus = 'seen-by-md';
-      } else if (appointmentStatus === 'Checked Out') {
+      } else if (externalStatus === 'Checked Out') {
         patientStatus = 'completed';
-      } else if (appointmentStatus === 'No Show' || appointmentStatus === 'Rescheduled' || appointmentStatus === 'Cancelled') {
+      } else if (externalStatus === 'No Show' || externalStatus === 'Rescheduled' || externalStatus === 'Cancelled') {
         patientStatus = 'completed'; // Marking these as completed since they're no longer active
       }
 
