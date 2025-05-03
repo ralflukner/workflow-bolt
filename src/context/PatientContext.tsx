@@ -48,7 +48,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         clearInterval(intervalId);
       }
     };
-  }, [timeMode.simulated]); // <<<< DEPEND ONLY ON SIMULATION MODE
+  }, [timeMode.simulated, timeMode.currentTime]); // Depend on both simulation mode and current time
 
   const clearPatients = () => {
     setPatients([]);
@@ -122,7 +122,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   };
 
   const getMetrics = (): Metrics => {
-    // Include patients in 'arrived', 'appt-prep', and 'ready-for-md' states as 'waiting'
+    // Include patients who have arrived but are not with the doctor yet (up to and including MD Ready)
     const waitingPatients = patients.filter(p => 
       ['arrived', 'appt-prep', 'ready-for-md'].includes(p.status)
     );
