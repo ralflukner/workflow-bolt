@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { TimeMode } from '../types';
 
 const getCurrentTime = (): Date => new Date();
@@ -11,15 +11,7 @@ interface TimeContextType {
   formatTime: (date: Date) => string;
 }
 
-const TimeContext = createContext<TimeContextType | undefined>(undefined);
-
-export const useTimeContext = () => {
-  const context = useContext(TimeContext);
-  if (!context) {
-    throw new Error('useTimeContext must be used within a TimeProvider');
-  }
-  return context;
-};
+export const TimeContext = createContext<TimeContextType | undefined>(undefined);
 
 interface TimeProviderProps {
   children: ReactNode;
@@ -31,7 +23,7 @@ export const TimeProvider: React.FC<TimeProviderProps> = ({ children }) => {
     currentTime: getCurrentTime().toISOString(),
   });
 
-  // Update real time every minute
+  // Update real time every second
   useEffect(() => {
     if (!timeMode.simulated) {
       const interval = setInterval(() => {
@@ -39,8 +31,8 @@ export const TimeProvider: React.FC<TimeProviderProps> = ({ children }) => {
           ...prev,
           currentTime: getCurrentTime().toISOString(),
         }));
-      }, 60000); // Update every minute
-      
+      }, 1000); // Update every second
+
       return () => clearInterval(interval);
     }
   }, [timeMode.simulated]);
@@ -71,7 +63,8 @@ export const TimeProvider: React.FC<TimeProviderProps> = ({ children }) => {
   };
 
   const getCurrentDisplayTime = (): Date => {
-    return timeMode.simulated ? new Date(timeMode.currentTime) : getCurrentTime();
+    // Always use the stored time from state to ensure consistency
+    return new Date(timeMode.currentTime);
   };
 
   const formatTime = (date: Date): string => {

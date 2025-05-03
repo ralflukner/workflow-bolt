@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { Patient, PatientStatus, Metrics } from '../types';
-import { useTimeContext } from './TimeContext';
+import { useTimeContext } from '../hooks/useTimeContext';
 import { mockPatients } from '../data/mockData';
 
 interface PatientContextType {
@@ -11,17 +11,10 @@ interface PatientContextType {
   getPatientsByStatus: (status: PatientStatus) => Patient[];
   getMetrics: () => Metrics;
   getWaitTime: (patient: Patient) => number;
+  clearPatients: () => void;
 }
 
-const PatientContext = createContext<PatientContextType | undefined>(undefined);
-
-export const usePatientContext = () => {
-  const context = useContext(PatientContext);
-  if (!context) {
-    throw new Error('usePatientContext must be used within a PatientProvider');
-  }
-  return context;
-};
+export const PatientContext = createContext<PatientContextType | undefined>(undefined);
 
 interface PatientProviderProps {
   children: ReactNode;
@@ -31,13 +24,31 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   const [patients, setPatients] = useState<Patient[]>(mockPatients);
   const { getCurrentTime, timeMode } = useTimeContext();
 
-  // Force re-render when simulated time changes
+  // Set up an interval to force re-renders based on the time mode.
+  // This ensures consumers get updated context values periodically.
   useEffect(() => {
-    if (timeMode.simulated) {
-      const currentTime = getCurrentTime().toISOString();
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+
+    const tick = () => {
+      // Force re-render of the context provider
       setPatients(prev => [...prev]);
+    };
+
+    if (timeMode.simulated) {
+      // For simulated time, update very frequently
+      intervalId = setInterval(tick, 1000); // Update every second
+    } else {
+      // For real time, update less frequently
+      intervalId = setInterval(tick, 6000); // Update every 6 seconds
     }
-  }, [timeMode.currentTime, timeMode.simulated]);
+
+    // Cleanup interval on mode change or unmount
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [timeMode.simulated]); // <<<< DEPEND ONLY ON SIMULATION MODE
 
   const clearPatients = () => {
     setPatients([]);
@@ -48,18 +59,18 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
       ...patientData,
       id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Ensure uniqueness
     };
-    
+
     setPatients(prev => [...prev, newPatient]);
   };
 
   const updatePatientStatus = (id: string, status: PatientStatus) => {
     const now = getCurrentTime().toISOString();
-    
+
     setPatients(prev => 
       prev.map(patient => {
         if (patient.id === id) {
           const updatedPatient = { ...patient, status };
-          
+
           // Add timestamps based on status
           switch (status) {
             case 'arrived':
@@ -74,7 +85,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
             default:
               break;
           }
-          
+
           return updatedPatient;
         }
         return patient;
@@ -98,10 +109,9 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   const getWaitTime = (patient: Patient): number => {
     if (!patient.checkInTime) return 0;
 
-    const currentTime = new Date();
     const checkInTime = new Date(patient.checkInTime);
     const endTime = patient.withDoctorTime 
-      ? new Date(patient.withDoctorTime) 
+      ? new Date(patient.withDoctorTime)
       : getCurrentTime();
 
     // Calculate wait time in milliseconds
@@ -112,17 +122,20 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   };
 
   const getMetrics = (): Metrics => {
-    const waitingPatients = patients.filter(p => p.status === 'arrived');
-    const waitTimes = waitingPatients.map(getWaitTime);
-    
+    // Include patients in 'arrived', 'appt-prep', and 'ready-for-md' states as 'waiting'
+    const waitingPatients = patients.filter(p => 
+      ['arrived', 'appt-prep', 'ready-for-md'].includes(p.status)
+    );
+    const waitTimes = waitingPatients.map(getWaitTime); // Calculate wait time based on this broader group
+
     const averageWaitTime = waitTimes.length > 0
       ? waitTimes.reduce((acc, time) => acc + time, 0) / waitTimes.length
       : 0;
-    
+
     const maxWaitTime = waitTimes.length > 0
       ? Math.max(...waitTimes)
       : 0;
-    
+
     return {
       totalAppointments: patients.length,
       waitingCount: waitingPatients.length,

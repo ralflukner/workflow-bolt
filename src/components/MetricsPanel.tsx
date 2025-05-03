@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePatientContext } from '../context/PatientContext';
+import { usePatientContext } from '../hooks/usePatientContext';
 import { Users, Clock, AlertTriangle } from 'lucide-react';
 
 const MetricsPanel: React.FC = () => {
@@ -17,7 +17,7 @@ const MetricsPanel: React.FC = () => {
           <p className="text-2xl font-bold text-white">{metrics.totalAppointments}</p>
         </div>
       </div>
-      
+
       <div className="bg-gray-800 rounded-lg p-4 shadow-md flex items-center overflow-hidden relative">
         <div className="absolute right-0 top-0 h-full w-20 flex items-center justify-center opacity-10">
           <Users size={52} className="text-amber-500" />
@@ -27,7 +27,7 @@ const MetricsPanel: React.FC = () => {
           <p className="text-2xl font-bold text-white">{metrics.waitingCount}</p>
         </div>
       </div>
-      
+
       <div className="bg-gray-800 rounded-lg p-4 shadow-md flex items-center overflow-hidden relative">
         <div className="absolute right-0 top-0 h-full w-20 flex items-center justify-center opacity-10">
           <Clock size={52} className="text-teal-500" />
@@ -39,7 +39,7 @@ const MetricsPanel: React.FC = () => {
           </p>
         </div>
       </div>
-      
+
       <div className="bg-gray-800 rounded-lg p-4 shadow-md flex items-center overflow-hidden relative">
         <div className="absolute right-0 top-0 h-full w-20 flex items-center justify-center opacity-10">
           <AlertTriangle size={52} className="text-red-500" />

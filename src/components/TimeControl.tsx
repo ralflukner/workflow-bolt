@@ -1,10 +1,10 @@
-import React from 'react';
-import { useTimeContext } from '../context/TimeContext';
+import React, { useEffect } from 'react';
+import { useTimeContext } from '../hooks/useTimeContext';
 import { Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const TimeControl: React.FC = () => {
   const { timeMode, toggleSimulation, adjustTime, getCurrentTime, formatTime } = useTimeContext();
-  const currentTime = getCurrentTime();
+  const [currentTime, setCurrentTime] = React.useState(getCurrentTime());
   const [timeInput, setTimeInput] = React.useState(() => {
     const hours = currentTime.getHours();
     const minutes = currentTime.getMinutes();
@@ -15,6 +15,22 @@ const TimeControl: React.FC = () => {
     currentTime.toISOString().split('T')[0]
   );
   const [isPM, setIsPM] = React.useState(currentTime.getHours() >= 12);
+
+  // Update states when time changes
+  useEffect(() => {
+    const newCurrentTime = getCurrentTime();
+    setCurrentTime(newCurrentTime);
+
+    if (!timeMode.simulated) {
+      // Only update inputs in real-time mode
+      const hours = newCurrentTime.getHours();
+      const minutes = newCurrentTime.getMinutes();
+      const h = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+      setTimeInput(`${h.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
+      setDateInput(newCurrentTime.toISOString().split('T')[0]);
+      setIsPM(hours >= 12);
+    }
+  }, [timeMode.currentTime, timeMode.simulated, getCurrentTime]);
 
   const updateTimeInputFromDate = (date: Date) => {
     const hours = date.getHours();
@@ -27,7 +43,7 @@ const TimeControl: React.FC = () => {
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setTimeInput(value);
-    
+
     if (timeMode.simulated) {
       if (/^\d{1,2}:\d{2}$/.test(value)) {
         const [hours, minutes] = value.split(':');
@@ -45,7 +61,7 @@ const TimeControl: React.FC = () => {
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setDateInput(value);
-    
+
     if (timeMode.simulated) {
       const [hours, minutes] = timeInput.split(':');
       const newTime = new Date(value);
@@ -83,7 +99,7 @@ const TimeControl: React.FC = () => {
     updateTimeInputFromDate(newTime);
     adjustTime(minutesToAdd, undefined);
   };
-  
+
   return (
     <div className="bg-gray-800 rounded-lg p-4 shadow-md">
       <div className="flex items-center justify-between mb-3">
@@ -142,7 +158,7 @@ const TimeControl: React.FC = () => {
           )}
         </div>
       </div>
-      
+
       <div className="mb-4">
         <label className="inline-flex items-center cursor-pointer">
           <input 
@@ -157,7 +173,7 @@ const TimeControl: React.FC = () => {
           </span>
         </label>
       </div>
-      
+
       {timeMode.simulated && (
         <div className="flex space-x-2 mt-2">
           <button 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Patient, PatientStatus } from '../types';
-import { usePatientContext } from '../context/PatientContext';
-import { useTimeContext } from '../context/TimeContext';
+import { usePatientContext } from '../hooks/usePatientContext';
+import { useTimeContext } from '../hooks/useTimeContext';
 
 interface PatientCardProps {
   patient: Patient;
@@ -10,10 +10,9 @@ interface PatientCardProps {
 const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
   const { updatePatientStatus, assignRoom, getWaitTime } = usePatientContext();
   const { formatTime } = useTimeContext();
-  
+
   const appointmentDate = new Date(patient.appointmentTime);
-  const waitTime = getWaitTime(patient);
-  
+
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'scheduled': return 'bg-gray-500';
@@ -26,7 +25,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
       default: return 'bg-gray-500';
     }
   };
-  
+
   const getBorderColor = (status: string): string => {
     switch (status) {
       case 'scheduled': return 'border-gray-500';
@@ -39,13 +38,13 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
       default: return 'border-gray-500';
     }
   };
-  
+
   const handleRoomChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     assignRoom(patient.id, e.target.value);
   };
 
-  const getWaitTimeDisplay = (): string => {
-    const time = waitTime;
+  const getWaitTimeDisplay = (currentWaitTime: number): string => {
+    const time = currentWaitTime;
     if (patient.completedTime) {
       return `Total: ${time} min`;
     }
@@ -100,7 +99,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
         return null;
     }
   };
-  
+
   const handleStatusChange = (e: React.MouseEvent<HTMLButtonElement>, nextStatus: PatientStatus): void => {
     e.preventDefault();
     e.stopPropagation();
@@ -145,7 +144,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
           )}
         </div>
       </div>
-      
+
       <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
         <div>
           <p className="text-gray-400">Appointment</p>
@@ -163,8 +162,8 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
         </div>
         <div>
           <p className="text-gray-400">{patient.completedTime ? 'Total Time' : 'Wait Time'}</p>
-          <p className={`${waitTime > 15 ? 'text-red-400' : 'text-white'}`}>
-            {getWaitTimeDisplay()}
+          <p className={`${getWaitTime(patient) > 15 ? 'text-red-400' : 'text-white'}`}>
+            {getWaitTimeDisplay(getWaitTime(patient))}
           </p>
         </div>
         <div>
@@ -192,7 +191,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
           )}
         </div>
       </div>
-      
+
       <div className="mt-2 flex justify-end">
         {(() => {
           const button = getActionButton();

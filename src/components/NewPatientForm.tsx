@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { usePatientContext } from '../context/PatientContext';
-import { useTimeContext } from '../context/TimeContext';
+import { usePatientContext } from '../hooks/usePatientContext';
+import { useTimeContext } from '../hooks/useTimeContext';
 import { Patient } from '../types';
 
 interface NewPatientFormProps {
@@ -10,33 +10,33 @@ interface NewPatientFormProps {
 const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
   const { addPatient } = usePatientContext();
   const { getCurrentTime } = useTimeContext();
-  
+
   const [formData, setFormData] = useState({
     name: '',
     dob: '',
     provider: '',
     appointmentTime: '',
   });
-  
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Parse time with AM/PM
     const currentDate = getCurrentTime();
-    let [hours, minutes] = formData.appointmentTime.split(':');
+    const [hours, minutes] = formData.appointmentTime.split(':');
     let hour = parseInt(hours);
     const isPM = hour >= 12;
     if (!isPM && hour === 12) hour = 0;
     if (isPM && hour !== 12) hour += 12;
-    
+
     const appointmentDate = new Date(currentDate);
     appointmentDate.setHours(hour, parseInt(minutes, 10), 0, 0);
-    
+
     const newPatient: Omit<Patient, 'id'> = {
       name: formData.name,
       dob: formData.dob,
@@ -44,16 +44,16 @@ const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
       appointmentTime: appointmentDate.toISOString(),
       status: 'scheduled',
     };
-    
+
     addPatient(newPatient);
     onClose();
   };
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
       <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
         <h2 className="text-xl font-semibold text-white mb-4">Add New Patient</h2>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-300 mb-1" htmlFor="name">
@@ -69,7 +69,7 @@ const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
               required
             />
           </div>
-          
+
           <div className="mb-4">
             <label className="block text-gray-300 mb-1" htmlFor="dob">
               Date of Birth
@@ -84,7 +84,7 @@ const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
               required
             />
           </div>
-          
+
           <div className="mb-4">
             <label className="block text-gray-300 mb-1" htmlFor="provider">
               Provider
@@ -100,7 +100,7 @@ const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
               <option value="Dr. Lukner">Dr. Lukner</option>
             </select>
           </div>
-          
+
           <div className="mb-4">
             <label className="block text-gray-300 mb-1" htmlFor="appointmentTime">
               Appointment Time
@@ -115,7 +115,7 @@ const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
               required
             />
           </div>
-          
+
           <div className="flex justify-end space-x-3 mt-6">
             <button
               type="button"
