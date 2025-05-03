@@ -9,7 +9,7 @@ interface PatientCardProps {
 
 const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
   const { updatePatientStatus, assignRoom, getWaitTime } = usePatientContext();
-  const { formatTime, formatDateTime } = useTimeContext();
+  const { formatDateTime } = useTimeContext();
 
   const appointmentDate = new Date(patient.appointmentTime);
 
@@ -146,7 +146,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
         <div>
           <p className="text-gray-400">Check-in Time</p>
           <p className="text-white">
-            {patient.checkInTime ? formatTime(new Date(patient.checkInTime)) : 'Not checked in'}
+            {patient.checkInTime ? formatDateTime(new Date(patient.checkInTime)) : 'Not checked in'}
           </p>
         </div>
         <div>
