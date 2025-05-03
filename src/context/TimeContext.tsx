@@ -9,6 +9,7 @@ interface TimeContextType {
   adjustTime: (minutesToAdd: number, newTime?: Date) => void;
   getCurrentTime: () => Date;
   formatTime: (date: Date) => string;
+  formatDateTime: (date: Date) => string;
 }
 
 export const TimeContext = createContext<TimeContextType | undefined>(undefined);
@@ -76,12 +77,22 @@ export const TimeProvider: React.FC<TimeProviderProps> = ({ children }) => {
     });
   };
 
+  const formatDateTime = (date: Date): string => {
+    return date.toLocaleDateString([], {
+      month: 'numeric',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone: 'America/Chicago'
+    }) + ' ' + formatTime(date);
+  };
+
   const value = {
     timeMode,
     toggleSimulation,
     adjustTime,
     getCurrentTime: getCurrentDisplayTime,
     formatTime,
+    formatDateTime,
   };
 
   return <TimeContext.Provider value={value}>{children}</TimeContext.Provider>;

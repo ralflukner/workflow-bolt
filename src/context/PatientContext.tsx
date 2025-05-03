@@ -122,11 +122,12 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   };
 
   const getMetrics = (): Metrics => {
-    // Include patients who have arrived but are not with the doctor yet (up to and including MD Ready)
+    // Include only patients who have been checked in, preparation started, or completed (MD Ready)
+    // Exclude scheduled, confirmed, MD Seen, and Checked out statuses
     const waitingPatients = patients.filter(p => 
       ['arrived', 'appt-prep', 'ready-for-md'].includes(p.status)
     );
-    const waitTimes = waitingPatients.map(getWaitTime); // Calculate wait time based on this broader group
+    const waitTimes = waitingPatients.map(getWaitTime);
 
     const averageWaitTime = waitTimes.length > 0
       ? waitTimes.reduce((acc, time) => acc + time, 0) / waitTimes.length

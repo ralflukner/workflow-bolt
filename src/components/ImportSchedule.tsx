@@ -20,9 +20,9 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
 
     for (const line of lines) {
       const parts = line.trim().split('\t');
-      if (parts.length < 6) continue;
+      if (parts.length < 7) continue;
 
-      const [time, status, name, dob, type, visitType] = parts;
+      const [date, time, status, name, dob, type, visitType] = parts;
 
       // Parse time
       const timeMatch = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
@@ -42,22 +42,49 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
       const [month, day, year] = dob.split('/');
       const formattedDOB = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
+      // Parse appointment date (MM/DD/YYYY)
+      const [appointmentMonth, appointmentDay, appointmentYear] = date.split('/');
+
       // Create appointment time
-      const appointmentDate = new Date();
-      appointmentDate.setHours(hour, parseInt(minutes), 0, 0);
+      const appointmentDate = new Date(
+        parseInt(appointmentYear), 
+        parseInt(appointmentMonth) - 1, // Month is 0-indexed in JavaScript
+        parseInt(appointmentDay),
+        hour, 
+        parseInt(minutes), 
+        0, 
+        0
+      );
 
       // Convert status to proper AppointmentStatus type
       const appointmentStatus = status.trim() as AppointmentStatus;
+
+      // Map AppointmentStatus to PatientStatus
+      let patientStatus = 'scheduled' as const;
+      if (appointmentStatus === 'Confirmed' || appointmentStatus === 'Scheduled' || appointmentStatus === 'Reminder Sent') {
+        patientStatus = 'scheduled';
+      } else if (appointmentStatus === 'Arrived' || appointmentStatus === 'Checked In') {
+        patientStatus = 'arrived';
+      } else if (appointmentStatus === 'Roomed' || appointmentStatus === 'Appt Prep Started') {
+        patientStatus = 'appt-prep';
+      } else if (appointmentStatus === 'Ready for MD') {
+        patientStatus = 'ready-for-md';
+      } else if (appointmentStatus === 'Seen by MD') {
+        patientStatus = 'seen-by-md';
+      } else if (appointmentStatus === 'Checked Out') {
+        patientStatus = 'completed';
+      } else if (appointmentStatus === 'No Show' || appointmentStatus === 'Rescheduled' || appointmentStatus === 'Cancelled') {
+        patientStatus = 'completed'; // Marking these as completed since they're no longer active
+      }
 
       patients.push({
         name: name.trim(),
         dob: formattedDOB,
         appointmentTime: appointmentDate.toISOString(),
         appointmentType: type as AppointmentType,
-        appointmentStatus,
         visitType: visitType.trim(),
         provider: 'Dr. Lukner',
-        status: 'scheduled',
+        status: patientStatus,
       });
     }
 
@@ -121,7 +148,7 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
             className={`w-full h-64 bg-gray-700 text-white border rounded p-2 font-mono ${
               error ? 'border-red-500' : success ? 'border-green-500' : 'border-gray-600'
             }`}
-            placeholder="9:00AM&#9;Confirmed&#9;PATIENT NAME&#9;MM/DD/YYYY&#9;Office Visit&#9;Follow-Up"
+            placeholder="MM/DD/YYYY&#9;9:00AM&#9;Confirmed&#9;PATIENT NAME&#9;MM/DD/YYYY&#9;Office Visit&#9;Follow-Up"
             disabled={processing}
           />
         </div>

@@ -9,7 +9,7 @@ interface PatientCardProps {
 
 const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
   const { updatePatientStatus, assignRoom, getWaitTime } = usePatientContext();
-  const { formatTime } = useTimeContext();
+  const { formatTime, formatDateTime } = useTimeContext();
 
   const appointmentDate = new Date(patient.appointmentTime);
 
@@ -131,24 +131,13 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
           <div className={`${getStatusColor(patient.status)} text-white text-xs px-2 py-1 rounded-full uppercase font-semibold`}>
             {patient.status}
           </div>
-          {patient.appointmentStatus && patient.appointmentStatus !== 'Scheduled' && (
-            <div className={`text-xs px-2 py-1 rounded-full uppercase font-semibold ${
-              patient.appointmentStatus === 'Confirmed' ? 'bg-blue-600 text-white' : 
-              patient.appointmentStatus === 'Reminder Sent' ? 'bg-indigo-600 text-white' : 
-              patient.appointmentStatus === 'Arrived' || patient.appointmentStatus === 'Checked In' || patient.appointmentStatus === 'Roomed' ? 'bg-green-600 text-white' : 
-              patient.appointmentStatus === 'Appt Prep Started' || patient.appointmentStatus === 'Ready for MD' || patient.appointmentStatus === 'Seen by MD' || patient.appointmentStatus === 'Checked Out' ? 'bg-teal-600 text-white' : 
-              'bg-red-600 text-white'
-            }`}>
-              {patient.appointmentStatus}
-            </div>
-          )}
         </div>
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
         <div>
           <p className="text-gray-400">Appointment</p>
-          <p className="text-white">{formatTime(appointmentDate)}</p>
+          <p className="text-white">{formatDateTime(appointmentDate)}</p>
         </div>
         <div>
           <p className="text-gray-400">Provider</p>
