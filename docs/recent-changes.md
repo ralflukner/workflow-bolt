@@ -2,9 +2,9 @@
 
 This document tracks significant recent changes to the Patient Flow Management application.
 
-## Version 0.1.0 Release (May 2025)
+## Version 0.1.0-alpha.1 Release (May 2025)
 
-The first minor version release includes significant improvements to time handling, component architecture, and code organization:
+The first alpha release includes significant improvements to time handling, component architecture, and code organization. This version represents a development milestone with core functionality implemented but still undergoing testing and refinement.
 
 ### 1. Real-Time Updates and Time Synchronization
 
