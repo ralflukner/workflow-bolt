@@ -2,6 +2,29 @@
 
 This document tracks significant recent changes to the Patient Flow Management application.
 
+## Version 0.1.0 Release (May 2025)
+
+The first minor version release includes significant improvements to time handling, component architecture, and code organization:
+
+### 1. Real-Time Updates and Time Synchronization
+
+- Updated TimeContext to refresh time every second instead of every minute
+- Made getCurrentDisplayTime use stored time consistently for better reliability
+- Enhanced TimeControl component with useEffect and state to react to time changes
+- Modified PatientCard to calculate wait times dynamically instead of once per render
+- Revised PatientContext to use separate update intervals for real-time (6s) and simulation (1s) modes
+- Expanded waitingPatients definition in metrics to include additional patient statuses
+- Ensured consistent time handling and formatting across components
+- Added proper cleanup for interval timers to prevent memory leaks
+- Moved context hooks to separate files to fix ESLint warnings and improve Fast Refresh compatibility
+
+### 2. Auth0 Authentication Integration
+
+- Implemented secure authentication using Auth0
+- Added protected routes to secure application content
+- Configured proper session persistence and redirect handling
+- Enhanced error handling for authentication flows
+
 ## TypeScript Improvements (April 2025)
 
 A series of improvements were made to enhance type safety and resolve TypeScript errors:
@@ -51,7 +74,7 @@ Updated `tsconfig.app.json` with improved React support:
 {
   "compilerOptions": {
     // existing options...
-    
+
     /* Additional settings */
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true

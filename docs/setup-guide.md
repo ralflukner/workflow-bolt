@@ -120,6 +120,44 @@ The application uses mock data located in `src/data/mockData.ts`. You can:
 2. Use the ImportSchedule component to import custom schedules
 3. Add patients manually using the NewPatientForm component
 
+## Versioning and Tagging
+
+The project follows [Semantic Versioning](https://semver.org/) (SemVer) principles:
+- MAJOR version (1.0.0) for incompatible API changes
+- MINOR version (0.1.0) for backward-compatible functionality additions
+- PATCH version (0.0.1) for backward-compatible bug fixes
+
+### Creating Version Tags in GitHub
+
+To tag a version in GitHub:
+
+1. **Create a local tag** using Git:
+   ```bash
+   # Format: git tag -a v<version> -m "<message>"
+   git tag -a v0.1.0 -m "Version 0.1.0 - Time handling improvements and Auth0 integration"
+   ```
+
+2. **Push the tag** to the remote repository:
+   ```bash
+   git push origin v0.1.0
+   ```
+
+3. **Create a release on GitHub** (optional but recommended):
+   - Go to the repository on GitHub
+   - Navigate to "Releases" or "Tags"
+   - Click "Create a new release"
+   - Select the tag you just pushed
+   - Add release notes (can be copied from docs/recent-changes.md)
+   - Publish the release
+
+### Checking Out a Tagged Version
+
+To check out a specific tagged version:
+
+```bash
+git checkout v0.1.0
+```
+
 ## Troubleshooting
 
 ### Common Issues
