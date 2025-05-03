@@ -49,6 +49,38 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose, reportContent }) => 
             Download
           </button>
           <button
+            onClick={() => {
+              // Create a printable version of the report
+              const printWindow = window.open('', '_blank');
+              if (printWindow) {
+                printWindow.document.write(`
+                  <html lang="en">
+                    <head>
+                      <title>Patient Flow Report</title>
+                      <style>
+                        body {
+                          font-family: monospace;
+                          white-space: pre-wrap;
+                          padding: 20px;
+                        }
+                      </style>
+                    </head>
+                    <body>
+                      ${reportContent.replace(/\n/g, '<br>')}
+                    </body>
+                  </html>
+                `);
+                printWindow.document.close();
+                printWindow.focus();
+                printWindow.print();
+                printWindow.onafterprint = () => printWindow.close();
+              }
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition-colors mr-2"
+          >
+            Print
+          </button>
+          <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors"
           >
