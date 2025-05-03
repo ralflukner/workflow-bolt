@@ -55,6 +55,35 @@ To preview the production build locally:
 npm run preview
 ```
 
+### Deploying to Netlify
+This project is configured for easy deployment to [Netlify](https://www.netlify.com/):
+
+1. **Create a Netlify account** if you don't have one already.
+
+2. **Deploy to Netlify** using one of these methods:
+   - **Git Integration (Recommended)**: Connect your GitHub/GitLab/Bitbucket repository to Netlify for continuous deployment.
+   - **Manual Deploy**: Run `npm run build` locally and drag-and-drop the `dist` folder to Netlify's manual deploy area.
+   - **Netlify CLI**: Install the Netlify CLI (`npm install -g netlify-cli`) and run `netlify deploy`.
+
+3. **Configure environment variables** in the Netlify UI:
+   - Go to Site settings > Build & deploy > Environment
+   - Add the following variables:
+     ```
+     VITE_AUTH0_DOMAIN=dev-uex7qzqmd8c4qnde.us.auth0.com
+     VITE_AUTH0_CLIENT_ID=I8ZHr1uCjPkO4ePgY6S421N9HQ0nnN7A
+     VITE_AUTH0_REDIRECT_URI=https://your-netlify-site-name.netlify.app
+     VITE_AUTH0_AUDIENCE=https://api.patientflow.com
+     VITE_APP_NAME=Patient Flow Management
+     ```
+   - Replace `your-netlify-site-name.netlify.app` with your actual Netlify domain.
+
+4. **Update Auth0 configuration**:
+   - Log in to your [Auth0 Dashboard](https://manage.auth0.com/)
+   - Go to Applications > Your Application > Settings
+   - Add your Netlify domain to "Allowed Callback URLs", "Allowed Logout URLs", and "Allowed Web Origins"
+
+The project already includes a `netlify.toml` file with the necessary build settings and redirect rules for the SPA.
+
 ### Linting
 To run ESLint:
 ```bash
