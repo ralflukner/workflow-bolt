@@ -173,19 +173,15 @@ const Dashboard: React.FC = () => {
   const generateReport = (format: 'text' | 'csv' = 'text') => {
     const metrics = getMetrics();
     const currentDate = getCurrentTime();
+    // Ensure we're using the correct date for the report header
     const formattedDate = currentDate.toLocaleDateString('en-US', {
       month: 'numeric',
       day: 'numeric',
-      year: 'numeric',
-      timeZone: 'America/Chicago'
+      year: 'numeric'
     });
 
-    // Filter patients for the current date
-    const currentDateStr = currentDate.toISOString().split('T')[0];
-    const patientsForDate = patients.filter(patient => {
-      const appointmentDate = new Date(patient.appointmentTime);
-      return appointmentDate.toISOString().split('T')[0] === currentDateStr;
-    });
+    // No filtering - include all appointments in memory
+    const patientsForDate = [...patients];
 
     // Sort patients by appointment time
     patientsForDate.sort((a, b) => {
