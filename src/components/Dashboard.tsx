@@ -18,7 +18,7 @@ interface ReportModalProps {
 const ReportModal: React.FC<ReportModalProps> = ({ onClose, reportContent }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-      <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-auto">
+      <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-6xl max-h-[90vh] overflow-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-white">Patient Flow Report</h2>
           <button
@@ -272,14 +272,44 @@ const Dashboard: React.FC = () => {
       // Add the appointment table
       report += `APPOINTMENTS:\n`;
       report += `------------\n`;
-      report += `Date\tTime\tStatus\tPatient Name\tDOB\tType\tVisit Type\tRoom\n`;
 
-      // Add each patient to the report
+      // Define column headers and their widths
+      const columns = [
+        { header: 'Date', width: 12 },
+        { header: 'Time', width: 10 },
+        { header: 'Status', width: 20 },
+        { header: 'Patient Name', width: 25 },
+        { header: 'DOB', width: 12 },
+        { header: 'Type', width: 15 },
+        { header: 'Visit Type', width: 15 },
+        { header: 'Room', width: 10 }
+      ];
+
+      // Create the column headers row
+      const headerRow = columns.map(col => col.header.padEnd(col.width)).join('');
+      report += headerRow + '\n';
+
+      // Create a separator line under the headers for better readability
+      report += columns.map(col => '-'.repeat(col.width)).join('') + '\n';
+
+      // Add each patient to the report with aligned columns
       patientsForDate.forEach(patient => {
         const formattedData = formatPatientData(patient);
 
-        // Add the patient to the report
-        report += `${formattedData.formattedAppointmentDate}\t${formattedData.formattedAppointmentTime}\t${formattedData.displayStatus}\t${patient.name}\t${formattedData.formattedDOB}\t${formattedData.appointmentType}\t${formattedData.visitType}\t${formattedData.room}\n`;
+        // Create an array of fields to display
+        const fields = [
+          formattedData.formattedAppointmentDate.padEnd(columns[0].width),
+          formattedData.formattedAppointmentTime.padEnd(columns[1].width),
+          formattedData.displayStatus.padEnd(columns[2].width),
+          patient.name.padEnd(columns[3].width),
+          formattedData.formattedDOB.padEnd(columns[4].width),
+          formattedData.appointmentType.padEnd(columns[5].width),
+          formattedData.visitType.padEnd(columns[6].width),
+          formattedData.room.padEnd(columns[7].width)
+        ];
+
+        // Join fields into a row and add to report
+        report += fields.join('') + '\n';
       });
 
       // Add wait time information for patients who have checked in
