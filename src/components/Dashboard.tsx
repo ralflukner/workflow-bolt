@@ -8,6 +8,7 @@ import AuthNav from './AuthNav';
 import { PlusCircle, RefreshCw, FileDown, ChevronDown, Upload, X } from 'lucide-react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
+import { Patient } from '../types';
 
 interface ReportModalProps {
   onClose: () => void;
@@ -101,8 +102,74 @@ const Dashboard: React.FC = () => {
   const [reportContent, setReportContent] = useState('');
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
-  // Function to generate the report
-  const generateReport = () => {
+  // Helper function to format patient data
+  const formatPatientData = (patient: Patient) => {
+    const appointmentDate = new Date(patient.appointmentTime);
+    const formattedAppointmentDate = appointmentDate.toLocaleDateString('en-US', {
+      month: 'numeric',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone: 'America/Chicago'
+    });
+
+    const formattedAppointmentTime = appointmentDate.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'America/Chicago'
+    });
+
+    // Map internal status to display status
+    let displayStatus = 'Scheduled';
+    const status = patient.status as string;
+    if (status === 'arrived') {
+      displayStatus = 'Checked In';
+    } else if (status === 'appt-prep') {
+      displayStatus = 'Appt Prep Started';
+    } else if (status === 'ready-for-md') {
+      displayStatus = 'Ready for MD';
+    } else if (status === 'with-doctor') {
+      displayStatus = 'Seen by MD';
+    } else if (status === 'seen-by-md') {
+      displayStatus = 'Seen by MD';
+    } else if (status === 'completed') {
+      displayStatus = 'Checked Out';
+    }
+
+    // Format DOB
+    const dobDate = new Date(patient.dob);
+    const formattedDOB = dobDate.toLocaleDateString('en-US', {
+      month: 'numeric',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone: 'America/Chicago'
+    });
+
+    // Format Check-In Time if it exists
+    let formattedCheckInTime = '';
+    if (patient.checkInTime) {
+      const checkInTime = new Date(patient.checkInTime);
+      formattedCheckInTime = checkInTime.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'America/Chicago'
+      });
+    }
+
+    return {
+      formattedAppointmentDate,
+      formattedAppointmentTime,
+      displayStatus,
+      formattedDOB,
+      formattedCheckInTime,
+      appointmentType: patient.appointmentType || 'Office Visit',
+      visitType: patient.visitType || 'Follow-Up'
+    };
+  };
+
+  // Modify the existing generateReport function in Dashboard.tsx
+  const generateReport = (format: 'text' | 'csv' = 'text') => {
     const metrics = getMetrics();
     const currentDate = getCurrentTime();
     const formattedDate = currentDate.toLocaleDateString('en-US', {
@@ -111,21 +178,6 @@ const Dashboard: React.FC = () => {
       year: 'numeric',
       timeZone: 'America/Chicago'
     });
-
-    // Start with the header and overall metrics
-    let report = `PATIENT FLOW REPORT - ${formattedDate} (${timeMode.simulated ? 'SIMULATED' : 'REAL-TIME'} MODE)\n`;
-    report += `==========================================================================\n\n`;
-    report += `OVERALL METRICS:\n`;
-    report += `----------------\n`;
-    report += `Total Appointments: ${metrics.totalAppointments}\n`;
-    report += `Patients Waiting: ${metrics.waitingCount}\n`;
-    report += `Average Wait Time: ${Math.round(metrics.averageWaitTime)} minutes\n`;
-    report += `Maximum Wait Time: ${metrics.maxWaitTime} minutes\n\n`;
-
-    // Add the appointment table
-    report += `APPOINTMENTS:\n`;
-    report += `------------\n`;
-    report += `Date\tTime\tStatus\tPatient Name\tDOB\tType\tVisit Type\n`;
 
     // Filter patients for the current date
     const currentDateStr = currentDate.toISOString().split('T')[0];
@@ -139,79 +191,117 @@ const Dashboard: React.FC = () => {
       return new Date(a.appointmentTime).getTime() - new Date(b.appointmentTime).getTime();
     });
 
-    // Add each patient to the report
-    patientsForDate.forEach(patient => {
-      const appointmentDate = new Date(patient.appointmentTime);
-      const formattedAppointmentDate = appointmentDate.toLocaleDateString('en-US', {
-        month: 'numeric',
-        day: 'numeric',
-        year: 'numeric',
-        timeZone: 'America/Chicago'
-      });
+    if (format === 'csv') {
+      // Generate CSV
+      const headers = [
+        'Date',
+        'Time',
+        'Status',
+        'Patient Name',
+        'DOB',
+        'Type',
+        'Visit Type',
+        'Check-In Time' // Added Check-In Time column
+      ];
 
-      const formattedAppointmentTime = appointmentDate.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-        timeZone: 'America/Chicago'
-      });
+      // Create CSV content
+      let csvContent = headers.join(',') + '\n';
 
-      // Map internal status to display status
-      let displayStatus = 'Scheduled';
-      const status = patient.status as string;
-      if (status === 'arrived') {
-        displayStatus = 'Checked In';
-      } else if (status === 'appt-prep') {
-        displayStatus = 'Appt Prep Started';
-      } else if (status === 'ready-for-md') {
-        displayStatus = 'Ready for MD';
-      } else if (status === 'with-doctor') {
-        displayStatus = 'Seen by MD';
-      } else if (status === 'seen-by-md') {
-        displayStatus = 'Seen by MD';
-      } else if (status === 'completed') {
-        displayStatus = 'Checked Out';
-      }
+      // Add patient data rows
+      patientsForDate.forEach(patient => {
+        const formattedData = formatPatientData(patient);
 
-      // Format DOB
-      const dobDate = new Date(patient.dob);
-      const formattedDOB = dobDate.toLocaleDateString('en-US', {
-        month: 'numeric',
-        day: 'numeric',
-        year: 'numeric',
-        timeZone: 'America/Chicago'
-      });
+        // Add the patient row to CSV content
+        const row = [
+          formattedData.formattedAppointmentDate,
+          formattedData.formattedAppointmentTime,
+          formattedData.displayStatus,
+          patient.name,
+          formattedData.formattedDOB,
+          formattedData.appointmentType,
+          formattedData.visitType,
+          formattedData.formattedCheckInTime // Added Check-In Time
+        ];
 
-      // Add the patient to the report
-      report += `${formattedAppointmentDate}\t${formattedAppointmentTime}\t${displayStatus}\t${patient.name}\t${formattedDOB}\t${patient.appointmentType || 'Office Visit'}\t${patient.visitType || 'Follow-Up'}\n`;
-    });
-
-    // Add wait time information for patients who have checked in
-    report += `\nWAIT TIME DETAILS:\n`;
-    report += `----------------\n`;
-
-    const checkedInPatients = patientsForDate.filter(patient => 
-      patient.checkInTime && ['arrived', 'appt-prep', 'ready-for-md', 'with-doctor', 'seen-by-md', 'completed'].includes(patient.status as string)
-    );
-
-    if (checkedInPatients.length === 0) {
-      report += `No patients have checked in yet.\n`;
-    } else {
-      checkedInPatients.forEach(patient => {
-        const waitTime = getWaitTime(patient);
-        const checkInTime = new Date(patient.checkInTime!);
-        const formattedCheckInTime = checkInTime.toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true,
-          timeZone: 'America/Chicago'
+        // Escape any commas in text fields
+        const escapedRow = row.map(field => {
+          if (field && field.includes(',')) {
+            return `"${field}"`;
+          }
+          return field;
         });
 
-        report += `${patient.name} - Checked in at ${formattedCheckInTime} - Wait time: ${waitTime} minutes\n`;
+        csvContent += escapedRow.join(',') + '\n';
       });
-    }
 
-    return report;
+      // Create and trigger download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      // Format the filename with the current date
+      const dateStr = currentDate.toLocaleDateString('en-US', {
+        month: 'numeric',
+        day: 'numeric',
+        year: 'numeric'
+      }).replace(/\//g, '-');
+
+      a.download = `patient-schedule-${dateStr}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      return ''; // Return empty string as we don't need to display anything
+    } else {
+      // Generate a text report
+      // Start with the header and overall metrics
+      let report = `PATIENT FLOW REPORT - ${formattedDate} (${timeMode.simulated ? 'SIMULATED' : 'REAL-TIME'} MODE)\n`;
+      report += `==========================================================================\n\n`;
+      report += `OVERALL METRICS:\n`;
+      report += `----------------\n`;
+      report += `Total Appointments: ${metrics.totalAppointments}\n`;
+      report += `Patients Waiting: ${metrics.waitingCount}\n`;
+      report += `Average Wait Time: ${Math.round(metrics.averageWaitTime)} minutes\n`;
+      report += `Maximum Wait Time: ${metrics.maxWaitTime} minutes\n\n`;
+
+      // Add the appointment table
+      report += `APPOINTMENTS:\n`;
+      report += `------------\n`;
+      report += `Date\tTime\tStatus\tPatient Name\tDOB\tType\tVisit Type\n`;
+
+      // Add each patient to the report
+      patientsForDate.forEach(patient => {
+        const formattedData = formatPatientData(patient);
+
+        // Add the patient to the report
+        report += `${formattedData.formattedAppointmentDate}\t${formattedData.formattedAppointmentTime}\t${formattedData.displayStatus}\t${patient.name}\t${formattedData.formattedDOB}\t${formattedData.appointmentType}\t${formattedData.visitType}\n`;
+      });
+
+      // Add wait time information for patients who have checked in
+      report += `\nWAIT TIME DETAILS:\n`;
+      report += `----------------\n`;
+
+      const checkedInPatients = patientsForDate.filter(patient => 
+        patient.checkInTime && ['arrived', 'appt-prep', 'ready-for-md', 'with-doctor', 'seen-by-md', 'completed'].includes(patient.status as string)
+      );
+
+      if (checkedInPatients.length === 0) {
+        report += `No patients have checked in yet.\n`;
+      } else {
+        checkedInPatients.forEach(patient => {
+          const waitTime = getWaitTime(patient);
+          // Use the formatPatientData helper to get consistent formatting
+          const formattedData = formatPatientData(patient);
+          const formattedCheckInTime = formattedData.formattedCheckInTime;
+
+          report += `${patient.name} - Checked in at ${formattedCheckInTime} - Wait time: ${waitTime} minutes\n`;
+        });
+      }
+
+      return report;
+    }
   };
 
   const toggleSection = (section: string) => {
@@ -223,6 +313,7 @@ const Dashboard: React.FC = () => {
   };
 
   const isExpanded = (section: string) => expandedSection === section;
+
 
   return (
     <div className="min-h-screen bg-gray-900 p-4 md:p-8">
@@ -260,6 +351,14 @@ const Dashboard: React.FC = () => {
                   setShowReportModal(true);
                 }}
                 className="flex items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
+              >
+                <FileDown size={18} className="mr-1" />
+                Export Schedule
+              </button>
+              {/* Add this button to the button group where the other action buttons are located */}
+              <button 
+                onClick={() => generateReport('csv')}
+                className="flex items-center px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors"
               >
                 <FileDown size={18} className="mr-1" />
                 Export Schedule

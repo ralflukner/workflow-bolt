@@ -85,6 +85,7 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
         visitType: visitType.trim(),
         provider: 'Dr. Lukner',
         status: patientStatus,
+        checkInTime: undefined, // No check-in time available for imported patients
       });
     }
 
@@ -113,7 +114,7 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
 
       setSuccess(`Successfully imported ${patients.length} appointments`);
 
-      // Show success message briefly then close
+      // Show a success message briefly then close
       setTimeout(() => {
         onClose();
       }, 1500);
