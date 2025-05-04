@@ -272,14 +272,14 @@ const Dashboard: React.FC = () => {
       // Add the appointment table
       report += `APPOINTMENTS:\n`;
       report += `------------\n`;
-      report += `Date\tTime\tStatus\tPatient Name\tDOB\tType\tVisit Type\n`;
+      report += `Date\tTime\tStatus\tPatient Name\tDOB\tType\tVisit Type\tRoom\n`;
 
       // Add each patient to the report
       patientsForDate.forEach(patient => {
         const formattedData = formatPatientData(patient);
 
         // Add the patient to the report
-        report += `${formattedData.formattedAppointmentDate}\t${formattedData.formattedAppointmentTime}\t${formattedData.displayStatus}\t${patient.name}\t${formattedData.formattedDOB}\t${formattedData.appointmentType}\t${formattedData.visitType}\n`;
+        report += `${formattedData.formattedAppointmentDate}\t${formattedData.formattedAppointmentTime}\t${formattedData.displayStatus}\t${patient.name}\t${formattedData.formattedDOB}\t${formattedData.appointmentType}\t${formattedData.visitType}\t${formattedData.room}\n`;
       });
 
       // Add wait time information for patients who have checked in
