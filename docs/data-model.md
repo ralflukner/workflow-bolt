@@ -15,7 +15,7 @@ export interface Patient {
   dob: string;
   appointmentTime: string;
   appointmentType?: AppointmentType;
-  visitType?: string;
+  chiefComplaint?: string;
   provider: string;
   room?: string;
   status: PatientApptStatus;

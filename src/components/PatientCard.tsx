@@ -154,7 +154,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
           <div className="text-sm text-gray-300">
             <p>DOB: {patient.dob}</p>
             {patient.appointmentType && (
-              <p>{patient.appointmentType} - {patient.visitType}</p>
+              <p>{patient.appointmentType} - {patient.chiefComplaint}</p>
             )}
           </div>
         </div>

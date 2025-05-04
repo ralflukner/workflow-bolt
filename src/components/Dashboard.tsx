@@ -164,7 +164,7 @@ const Dashboard: React.FC = () => {
       formattedDOB,
       formattedCheckInTime,
       appointmentType: patient.appointmentType || 'Office Visit',
-      visitType: patient.visitType || 'Follow-Up',
+      chiefComplaint: patient.chiefComplaint || 'Follow-Up',
       room: patient.room || ''
     };
   };
@@ -201,7 +201,7 @@ const Dashboard: React.FC = () => {
         'Patient Name',
         'DOB',
         'Type',
-        'Visit Type',
+        'Chief Complaint',
         'Check-In Time', // Added Check-In Time column
         'Room' // Added Room column
       ];
@@ -221,7 +221,7 @@ const Dashboard: React.FC = () => {
           patient.name,
           formattedData.formattedDOB,
           formattedData.appointmentType,
-          formattedData.visitType,
+          formattedData.chiefComplaint,
           formattedData.formattedCheckInTime, // Added Check-In Time
           formattedData.room // Added Room
         ];
@@ -281,7 +281,7 @@ const Dashboard: React.FC = () => {
         { header: 'Patient Name', width: 25 },
         { header: 'DOB', width: 12 },
         { header: 'Type', width: 15 },
-        { header: 'Visit Type', width: 15 },
+        { header: 'Chief Complaint', width: 15 },
         { header: 'Room', width: 10 }
       ];
 
@@ -304,7 +304,7 @@ const Dashboard: React.FC = () => {
           patient.name.padEnd(columns[3].width),
           formattedData.formattedDOB.padEnd(columns[4].width),
           formattedData.appointmentType.padEnd(columns[5].width),
-          formattedData.visitType.padEnd(columns[6].width),
+          formattedData.chiefComplaint.padEnd(columns[6].width),
           formattedData.room.padEnd(columns[7].width)
         ];
 

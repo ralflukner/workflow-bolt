@@ -29,7 +29,7 @@ export interface Patient {
    * or an external scheduling status (Title Case with spaces)
    */
   status: PatientApptStatus;
-  visitType?: string;
+  chiefComplaint?: string;
   provider: string;
   room?: string;
   checkInTime?: string;

@@ -23,7 +23,7 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
       if (parts.length < 7) continue;
 
       // Extract all parts, with check-in time and room being optional (last columns)
-      const [date, time, status, name, dob, type, visitType, checkInTimeStr, roomStr] = parts;
+      const [date, time, status, name, dob, type, chiefComplaint, checkInTimeStr, roomStr] = parts;
 
       // Parse time
       const timeMatch = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
@@ -126,7 +126,7 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
         dob: formattedDOB,
         appointmentTime: appointmentDate.toISOString(),
         appointmentType: type as AppointmentType,
-        visitType: visitType.trim(),
+        chiefComplaint: chiefComplaint.trim(),
         provider: 'Dr. Lukner',
         status: patientStatus,
         checkInTime,
