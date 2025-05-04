@@ -13,10 +13,4 @@
   to = "/index.html"
   status = 200
 
-# Environment variables - these should be set in Netlify UI for security
 [context.production.environment]
-  # VITE_AUTH0_DOMAIN = "dev-uex7qzqmd8c4qnde.us.auth0.com"
-  # VITE_AUTH0_CLIENT_ID = "I8ZHr1uCjPkO4ePgY6S421N9HQ0nnN7A"
-  # VITE_AUTH0_REDIRECT_URI = "https://your-netlify-site-name.netlify.app"
-  # VITE_AUTH0_AUDIENCE = "https://api.patientflow.com"
-  # VITE_APP_NAME = "Patient Flow Management"

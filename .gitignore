@@ -41,12 +41,14 @@ coverage
 .cache
 
 # misc
-.env.local
 .env.*.local
 
 # local IDE settings
 .idea/
 .vscode/
 
-# Optional: OS generated files
+# OS generated files
 Thumbs.db
+
+# Commit Message drafts
+commit-message.txt
