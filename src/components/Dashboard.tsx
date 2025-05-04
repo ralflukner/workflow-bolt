@@ -5,7 +5,7 @@ import PatientList from './PatientList';
 import NewPatientForm from './NewPatientForm';
 import ImportSchedule from './ImportSchedule';
 import AuthNav from './AuthNav';
-import { PlusCircle, RefreshCw, FileDown, ChevronDown, Upload, X } from 'lucide-react';
+import { PlusCircle, FileDown, ChevronDown, Upload, X } from 'lucide-react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { Patient } from '../types';
@@ -128,8 +128,8 @@ const Dashboard: React.FC = () => {
       displayStatus = 'Appt Prep Started';
     } else if (status === 'ready-for-md') {
       displayStatus = 'Ready for MD';
-    } else if (status === 'with-doctor') {
-      displayStatus = 'Seen by MD';
+    } else if (status === 'With Doctor') {
+      displayStatus = 'With Doctor';
     } else if (status === 'seen-by-md') {
       displayStatus = 'Seen by MD';
     } else if (status === 'completed') {
@@ -164,7 +164,8 @@ const Dashboard: React.FC = () => {
       formattedDOB,
       formattedCheckInTime,
       appointmentType: patient.appointmentType || 'Office Visit',
-      visitType: patient.visitType || 'Follow-Up'
+      visitType: patient.visitType || 'Follow-Up',
+      room: patient.room || ''
     };
   };
 
@@ -201,7 +202,8 @@ const Dashboard: React.FC = () => {
         'DOB',
         'Type',
         'Visit Type',
-        'Check-In Time' // Added Check-In Time column
+        'Check-In Time', // Added Check-In Time column
+        'Room' // Added Room column
       ];
 
       // Create CSV content
@@ -220,7 +222,8 @@ const Dashboard: React.FC = () => {
           formattedData.formattedDOB,
           formattedData.appointmentType,
           formattedData.visitType,
-          formattedData.formattedCheckInTime // Added Check-In Time
+          formattedData.formattedCheckInTime, // Added Check-In Time
+          formattedData.room // Added Room
         ];
 
         // Escape any commas in text fields
@@ -284,7 +287,7 @@ const Dashboard: React.FC = () => {
       report += `----------------\n`;
 
       const checkedInPatients = patientsForDate.filter(patient => 
-        patient.checkInTime && ['arrived', 'appt-prep', 'ready-for-md', 'with-doctor', 'seen-by-md', 'completed'].includes(patient.status as string)
+        patient.checkInTime && ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'].includes(patient.status as string)
       );
 
       if (checkedInPatients.length === 0) {
@@ -340,24 +343,16 @@ const Dashboard: React.FC = () => {
                 <PlusCircle size={18} className="mr-1" />
                 New Patient
               </button>
-              <button className="flex items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors">
-                <RefreshCw size={18} className="mr-1" />
-                Refresh
-              </button>
               <button 
                 onClick={() => {
+                  // Generate and download CSV
+                  generateReport('csv');
+
+                  // Also show the text report in modal
                   const report = generateReport();
                   setReportContent(report);
                   setShowReportModal(true);
                 }}
-                className="flex items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
-              >
-                <FileDown size={18} className="mr-1" />
-                Export Schedule
-              </button>
-              {/* Add this button to the button group where the other action buttons are located */}
-              <button 
-                onClick={() => generateReport('csv')}
                 className="flex items-center px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors"
               >
                 <FileDown size={18} className="mr-1" />
@@ -443,17 +438,17 @@ const Dashboard: React.FC = () => {
 
           <div>
             <button 
-              onClick={() => toggleSection('with-doctor')}
+              onClick={() => toggleSection('With Doctor')}
               className="w-full text-left mb-2 md:hidden flex items-center justify-between bg-gray-800 p-3 rounded"
             >
               <span className="text-white font-semibold">With Doctor</span>
               <ChevronDown 
                 size={20} 
-                className={`text-white transition-transform ${isExpanded('with-doctor') ? 'rotate-180' : ''}`} 
+                className={`text-white transition-transform ${isExpanded('With Doctor') ? 'rotate-180' : ''}`} 
               />
             </button>
-            <div className={`${isExpanded('with-doctor') || window.innerWidth >= 768 ? 'block' : 'hidden'} md:block`}>
-              <PatientList status={"with-doctor" as const} title="With Doctor" />
+            <div className={`${isExpanded('With Doctor') || window.innerWidth >= 768 ? 'block' : 'hidden'} md:block`}>
+              <PatientList status={"With Doctor" as const} title="With Doctor" />
             </div>
           </div>
 

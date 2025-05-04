@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Patient, PatientApptStatus } from '../types';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
@@ -8,8 +8,11 @@ interface PatientCardProps {
 }
 
 const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
-  const { updatePatientStatus, assignRoom, getWaitTime } = usePatientContext();
-  const { formatDateTime, formatTime } = useTimeContext();
+  const { updatePatientStatus, assignRoom, updateCheckInTime, getWaitTime } = usePatientContext();
+  const { formatDateTime, formatTime, getCurrentTime } = useTimeContext();
+  const [isEditingCheckIn, setIsEditingCheckIn] = useState(false);
+  const [checkInDateInput, setCheckInDateInput] = useState('');
+  const [checkInTimeInput, setCheckInTimeInput] = useState('');
 
   const appointmentDate = new Date(patient.appointmentTime);
 
@@ -19,7 +22,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
       case 'arrived': return 'bg-amber-500';
       case 'appt-prep': return 'bg-purple-500';
       case 'ready-for-md': return 'bg-cyan-500';
-      case 'with-doctor': return 'bg-blue-500';
+      case 'With Doctor': return 'bg-blue-500';
       case 'seen-by-md': return 'bg-teal-500';
       case 'completed': return 'bg-green-500';
       default: return 'bg-gray-500';
@@ -32,7 +35,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
       case 'arrived': return 'border-amber-500';
       case 'appt-prep': return 'border-purple-500';
       case 'ready-for-md': return 'border-cyan-500';
-      case 'with-doctor': return 'border-blue-500';
+      case 'With Doctor': return 'border-blue-500';
       case 'seen-by-md': return 'border-teal-500';
       case 'completed': return 'border-green-500';
       default: return 'border-gray-500';
@@ -41,6 +44,34 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
 
   const handleRoomChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     assignRoom(patient.id, e.target.value);
+  };
+
+  const handleEditCheckIn = (): void => {
+    if (patient.checkInTime) {
+      const checkInDate = new Date(patient.checkInTime);
+      // Format date as YYYY-MM-DD for input
+      setCheckInDateInput(checkInDate.toISOString().split('T')[0]);
+      // Format time as HH:MM for input
+      setCheckInTimeInput(checkInDate.toTimeString().substring(0, 5));
+    } else {
+      const now = getCurrentTime();
+      setCheckInDateInput(now.toISOString().split('T')[0]);
+      setCheckInTimeInput(now.toTimeString().substring(0, 5));
+    }
+    setIsEditingCheckIn(true);
+  };
+
+  const handleSaveCheckIn = (): void => {
+    if (checkInDateInput && checkInTimeInput) {
+      // Combine date and time into ISO string
+      const newCheckInTime = new Date(`${checkInDateInput}T${checkInTimeInput}:00`);
+      updateCheckInTime(patient.id, newCheckInTime.toISOString());
+      setIsEditingCheckIn(false);
+    }
+  };
+
+  const handleCancelCheckIn = (): void => {
+    setIsEditingCheckIn(false);
   };
 
   const getWaitTimeDisplay = (currentWaitTime: number): string => {
@@ -79,11 +110,11 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
         };
       case 'ready-for-md':
         return {
-          nextStatus: 'with-doctor',
+          nextStatus: 'With Doctor',
           label: 'MD Ready',
           color: 'blue'
         };
-      case 'with-doctor':
+      case 'With Doctor':
         return {
           nextStatus: 'seen-by-md',
           label: 'MD Complete',
@@ -152,9 +183,50 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
         </div>
         <div>
           <p className="text-gray-400">Check-in Time</p>
-          <p className="text-white">
-            {patient.checkInTime ? formatDateTime(new Date(patient.checkInTime)) : 'Not checked in'}
-          </p>
+          {isEditingCheckIn && ['appt-prep', 'ready-for-md'].includes(patient.status) ? (
+            <div className="flex flex-col space-y-1">
+              <input
+                type="date"
+                value={checkInDateInput}
+                onChange={(e) => setCheckInDateInput(e.target.value)}
+                className="bg-gray-700 text-white rounded p-1 text-sm w-full"
+              />
+              <input
+                type="time"
+                value={checkInTimeInput}
+                onChange={(e) => setCheckInTimeInput(e.target.value)}
+                className="bg-gray-700 text-white rounded p-1 text-sm w-full"
+              />
+              <div className="flex space-x-1 mt-1">
+                <button
+                  onClick={handleSaveCheckIn}
+                  className="bg-green-600 text-white text-xs px-2 py-1 rounded hover:bg-green-500 transition-colors"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={handleCancelCheckIn}
+                  className="bg-gray-600 text-white text-xs px-2 py-1 rounded hover:bg-gray-500 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-1">
+              <p className="text-white">
+                {patient.checkInTime ? formatDateTime(new Date(patient.checkInTime)) : 'Not checked in'}
+              </p>
+              {['appt-prep', 'ready-for-md'].includes(patient.status) && patient.checkInTime && (
+                <button
+                  onClick={handleEditCheckIn}
+                  className="bg-blue-600 text-white text-xs px-2 py-1 rounded hover:bg-blue-500 transition-colors ml-2"
+                >
+                  Edit
+                </button>
+              )}
+            </div>
+          )}
         </div>
         <div>
           <p className="text-gray-400">{patient.completedTime ? 'Total Time' : 'Wait Time'}</p>
@@ -164,7 +236,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
         </div>
         <div>
           <p className="text-gray-400">Room</p>
-          {['arrived', 'with-doctor'].includes(patient.status) ? (
+          {['arrived', 'appt-prep', 'ready-for-md', 'With Doctor'].includes(patient.status) ? (
             <select 
               value={patient.room || ''}
               onChange={handleRoomChange}

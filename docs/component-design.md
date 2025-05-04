@@ -28,7 +28,7 @@ The Dashboard is the main container component that orchestrates the entire user 
 const Dashboard: React.FC = () => {
   const [showNewPatientForm, setShowNewPatientForm] = useState(false);
   const [showImportSchedule, setShowImportSchedule] = useState(false);
-  
+
   // Component rendering logic
 }
 ```
@@ -52,7 +52,7 @@ interface PatientListProps {
 const PatientList: React.FC<PatientListProps> = ({ status, title }) => {
   const { getPatientsByStatus } = usePatientContext();
   const patients = getPatientsByStatus(status);
-  
+
   // Rendering logic for the list of patients
 }
 ```
@@ -74,9 +74,9 @@ interface PatientCardProps {
 
 const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
   const { updatePatientStatus, assignRoom, getWaitTime } = usePatientContext();
-  
+
   // Functions for status colors, actions, etc.
-  
+
   // Rendering logic for patient information and actions
 }
 ```
@@ -95,7 +95,7 @@ The TimeControl component allows users to manipulate time for testing.
 // TimeControl.tsx
 const TimeControl: React.FC = () => {
   const { timeMode, toggleSimulation, adjustTime, getCurrentTime, formatTime } = useTimeContext();
-  
+
   // Time management logic and UI
 }
 ```
@@ -114,7 +114,7 @@ The MetricsPanel component displays key performance metrics.
 const MetricsPanel: React.FC = () => {
   const { getMetrics } = usePatientContext();
   const metrics = getMetrics();
-  
+
   // Rendering logic for metrics
 }
 ```
@@ -165,7 +165,7 @@ const getStatusColor = (status: string): string => {
     case 'arrived': return 'bg-amber-500';
     case 'appt-prep': return 'bg-purple-500';
     case 'ready-for-md': return 'bg-cyan-500';
-    case 'with-doctor': return 'bg-blue-500';
+    case 'With Doctor': return 'bg-blue-500';
     case 'seen-by-md': return 'bg-teal-500';
     case 'completed': return 'bg-green-500';
     default: return 'bg-gray-500';

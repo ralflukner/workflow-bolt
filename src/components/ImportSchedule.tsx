@@ -22,7 +22,8 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
       const parts = line.trim().split('\t');
       if (parts.length < 7) continue;
 
-      const [date, time, status, name, dob, type, visitType] = parts;
+      // Extract all parts, with check-in time and room being optional (last columns)
+      const [date, time, status, name, dob, type, visitType, checkInTimeStr, roomStr] = parts;
 
       // Parse time
       const timeMatch = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
@@ -69,12 +70,55 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
         patientStatus = 'appt-prep';
       } else if (externalStatus === 'Ready for MD') {
         patientStatus = 'ready-for-md';
+      } else if (externalStatus === 'With Doctor') {
+        patientStatus = 'With Doctor';
       } else if (externalStatus === 'Seen by MD') {
         patientStatus = 'seen-by-md';
       } else if (externalStatus === 'Checked Out') {
         patientStatus = 'completed';
       } else if (externalStatus === 'No Show' || externalStatus === 'Rescheduled' || externalStatus === 'Cancelled') {
         patientStatus = 'completed'; // Marking these as completed since they're no longer active
+      }
+
+      // Set check-in time for patients who have already checked in
+      let checkInTime = undefined;
+      let room = undefined;
+
+      // Parse check-in time from import data if available
+      if (checkInTimeStr && ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'].includes(patientStatus)) {
+        // Parse the check-in time (format: "12:31 PM")
+        const checkInMatch = checkInTimeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        if (checkInMatch) {
+          const [, checkInHours, checkInMinutes, checkInPeriod] = checkInMatch;
+          let checkInHour = parseInt(checkInHours);
+          const isCheckInPM = checkInPeriod.toUpperCase() === 'PM';
+
+          if (isCheckInPM && checkInHour !== 12) {
+            checkInHour += 12;
+          } else if (!isCheckInPM && checkInHour === 12) {
+            checkInHour = 0;
+          }
+
+          // Create check-in time using the appointment date but with check-in time
+          const checkInDate = new Date(
+            parseInt(appointmentYear), 
+            parseInt(appointmentMonth) - 1,
+            parseInt(appointmentDay),
+            checkInHour,
+            parseInt(checkInMinutes),
+            0,
+            0
+          );
+
+          checkInTime = checkInDate.toISOString();
+        }
+      }
+
+      // Use room from import data if available, otherwise assign a default room for patients who are in a room
+      if (roomStr) {
+        room = roomStr.trim();
+      } else if (['appt-prep', 'ready-for-md', 'With Doctor'].includes(patientStatus)) {
+        room = 'Waiting'; // Default room assignment
       }
 
       patients.push({
@@ -85,7 +129,8 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
         visitType: visitType.trim(),
         provider: 'Dr. Lukner',
         status: patientStatus,
-        checkInTime: undefined, // No check-in time available for imported patients
+        checkInTime,
+        room,
       });
     }
 
@@ -149,7 +194,7 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
             className={`w-full h-64 bg-gray-700 text-white border rounded p-2 font-mono ${
               error ? 'border-red-500' : success ? 'border-green-500' : 'border-gray-600'
             }`}
-            placeholder="MM/DD/YYYY&#9;9:00AM&#9;Confirmed&#9;PATIENT NAME&#9;MM/DD/YYYY&#9;Office Visit&#9;Follow-Up"
+            placeholder="MM/DD/YYYY&#9;9:00AM&#9;Confirmed&#9;PATIENT NAME&#9;MM/DD/YYYY&#9;Office Visit&#9;Follow-Up&#9;12:31 PM&#9;Room 1"
             disabled={processing}
           />
         </div>

@@ -40,7 +40,7 @@ The `PatientApptStatus` type combines both internal workflow statuses and extern
 ```typescript
 export type PatientApptStatus = 
   // Internal workflow statuses (lowercase kebab-case)
-  | 'scheduled' | 'arrived' | 'appt-prep' | 'ready-for-md' | 'with-doctor' | 'seen-by-md' | 'completed'
+  | 'scheduled' | 'arrived' | 'appt-prep' | 'ready-for-md' | 'With Doctor' | 'seen-by-md' | 'completed'
   // External scheduling statuses (Title Case with spaces)
   | 'Scheduled' | 'Reminder Sent' | 'Confirmed' | 'Arrived' | 'Checked In' | 'Roomed' | 'Appt Prep Started' 
   | 'Ready for MD' | 'Seen by MD' | 'Checked Out' | 'No Show' | 'Rescheduled' | 'Cancelled';
@@ -58,7 +58,7 @@ export type PatientStatus =
   | 'arrived'       // Patient has arrived at the clinic
   | 'appt-prep'     // Patient is being prepared for appointment
   | 'ready-for-md'  // Patient is ready to see the doctor
-  | 'with-doctor'   // Patient is currently with the doctor
+  | 'With Doctor'   // Patient is currently with the doctor
   | 'seen-by-md'    // Patient has been seen by the doctor
   | 'completed';    // Patient has completed their visit
 ```

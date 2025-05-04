@@ -16,7 +16,7 @@ const PatientList: React.FC<PatientListProps> = ({ status, title }) => {
     switch (status) {
       case 'scheduled': return 'bg-gray-700';
       case 'arrived': return 'bg-amber-700';
-      case 'with-doctor': return 'bg-blue-700';
+      case 'With Doctor': return 'bg-blue-700';
       case 'completed': return 'bg-green-700';
       default: return 'bg-gray-700';
     }

@@ -8,6 +8,7 @@ interface PatientContextType {
   addPatient: (patient: Omit<Patient, 'id'>) => void;
   updatePatientStatus: (id: string, status: PatientApptStatus) => void;
   assignRoom: (id: string, room: string) => void;
+  updateCheckInTime: (id: string, checkInTime: string) => void;
   getPatientsByStatus: (status: PatientApptStatus) => Patient[];
   getMetrics: () => Metrics;
   getWaitTime: (patient: Patient) => number;
@@ -76,7 +77,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
             case 'arrived':
               updatedPatient.checkInTime = now;
               break;
-            case 'with-doctor':
+            case 'With Doctor':
               updatedPatient.withDoctorTime = now;
               break;
             case 'completed':
@@ -97,6 +98,14 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     setPatients(prev => 
       prev.map(patient => 
         patient.id === id ? { ...patient, room } : patient
+      )
+    );
+  };
+
+  const updateCheckInTime = (id: string, checkInTime: string) => {
+    setPatients(prev => 
+      prev.map(patient => 
+        patient.id === id ? { ...patient, checkInTime } : patient
       )
     );
   };
@@ -150,6 +159,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     addPatient,
     updatePatientStatus,
     assignRoom,
+    updateCheckInTime,
     getPatientsByStatus,
     getMetrics,
     getWaitTime,

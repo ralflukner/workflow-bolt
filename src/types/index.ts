@@ -5,14 +5,14 @@
  */
 export type PatientApptStatus = 
   // Internal workflow statuses (lowercase kebab-case)
-  | 'scheduled' | 'arrived' | 'appt-prep' | 'ready-for-md' | 'with-doctor' | 'seen-by-md' | 'completed'
+  | 'scheduled' | 'arrived' | 'appt-prep' | 'ready-for-md' | 'seen-by-md' | 'completed'
   // External scheduling statuses (Title Case with spaces)
   | 'Scheduled' | 'Reminder Sent' | 'Confirmed' | 'Arrived' | 'Checked In' | 'Roomed' | 'Appt Prep Started' 
-  | 'Ready for MD' | 'Seen by MD' | 'Checked Out' | 'No Show' | 'Rescheduled' | 'Cancelled';
+  | 'Ready for MD' | 'With Doctor' | 'Seen by MD' | 'Checked Out' | 'No Show' | 'Rescheduled' | 'Cancelled';
 
 // For backward compatibility and type safety during transition
-export type PatientStatus = 'scheduled' | 'arrived' | 'appt-prep' | 'ready-for-md' | 'with-doctor' | 'seen-by-md' | 'completed';
-export type AppointmentStatus = 'Scheduled' | 'Reminder Sent' | 'Confirmed' | 'Arrived' | 'Checked In' | 'Roomed' | 'Appt Prep Started' | 'Ready for MD' | 'Seen by MD' | 'Checked Out' | 'No Show' | 'Rescheduled' | 'Cancelled';
+export type PatientStatus = 'scheduled' | 'arrived' | 'appt-prep' | 'ready-for-md' | 'With Doctor' | 'seen-by-md' | 'completed';
+export type AppointmentStatus = 'Scheduled' | 'Reminder Sent' | 'Confirmed' | 'Arrived' | 'Checked In' | 'Roomed' | 'Appt Prep Started' | 'Ready for MD' | 'With Doctor' | 'Seen by MD' | 'Checked Out' | 'No Show' | 'Rescheduled' | 'Cancelled';
 
 export type AppointmentType = 'Office Visit' | 'LABS';
 
