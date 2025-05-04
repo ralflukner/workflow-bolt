@@ -262,7 +262,7 @@ const Dashboard: React.FC = () => {
                 className="flex items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
               >
                 <FileDown size={18} className="mr-1" />
-                Print Report
+                Export Schedule
               </button>
             </div>
           </div>
