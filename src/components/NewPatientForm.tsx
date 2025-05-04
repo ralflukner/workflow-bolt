@@ -15,6 +15,7 @@ const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
     name: '',
     dob: '',
     provider: '',
+    appointmentDate: '',
     appointmentTime: '',
   });
 
@@ -27,14 +28,21 @@ const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
     e.preventDefault();
 
     // Parse time with AM/PM
-    const currentDate = getCurrentTime();
     const [hours, minutes] = formData.appointmentTime.split(':');
     let hour = parseInt(hours);
     const isPM = hour >= 12;
     if (!isPM && hour === 12) hour = 0;
     if (isPM && hour !== 12) hour += 12;
 
-    const appointmentDate = new Date(currentDate);
+    // Use the selected appointment date if provided, otherwise use current date
+    let appointmentDate;
+    if (formData.appointmentDate) {
+      appointmentDate = new Date(formData.appointmentDate);
+    } else {
+      appointmentDate = new Date(getCurrentTime());
+    }
+    
+    // Set the time portion of the appointment date
     appointmentDate.setHours(hour, parseInt(minutes, 10), 0, 0);
 
     const newPatient: Omit<Patient, 'id'> = {
@@ -99,6 +107,21 @@ const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
             >
               <option value="Dr. Lukner">Dr. Lukner</option>
             </select>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-gray-300 mb-1" htmlFor="appointmentDate">
+              Appointment Date
+            </label>
+            <input
+              type="date"
+              id="appointmentDate"
+              name="appointmentDate"
+              value={formData.appointmentDate}
+              onChange={handleChange}
+              className="w-full bg-gray-700 text-white border border-gray-600 rounded p-2"
+              required
+            />
           </div>
 
           <div className="mb-4">
