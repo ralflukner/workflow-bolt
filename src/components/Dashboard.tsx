@@ -5,7 +5,7 @@ import PatientList from './PatientList';
 import NewPatientForm from './NewPatientForm';
 import ImportSchedule from './ImportSchedule';
 import AuthNav from './AuthNav';
-import { PlusCircle, RefreshCw, Printer, ChevronDown, Upload, X } from 'lucide-react';
+import { PlusCircle, RefreshCw, FileDown, ChevronDown, Upload, X } from 'lucide-react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
 
@@ -261,7 +261,7 @@ const Dashboard: React.FC = () => {
                 }}
                 className="flex items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
               >
-                <Printer size={18} className="mr-1" />
+                <FileDown size={18} className="mr-1" />
                 Print Report
               </button>
             </div>
