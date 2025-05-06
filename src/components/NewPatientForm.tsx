@@ -14,7 +14,7 @@ const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
     dob: '',
-    provider: '',
+    provider: 'Dr. Lukner',
     appointmentDate: '',
     appointmentTime: '',
   });
@@ -41,7 +41,7 @@ const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
     } else {
       appointmentDate = new Date(getCurrentTime());
     }
-    
+
     // Set the time portion of the appointment date
     appointmentDate.setHours(hour, parseInt(minutes, 10), 0, 0);
 
