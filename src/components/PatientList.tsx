@@ -15,8 +15,14 @@ const PatientList: React.FC<PatientListProps> = ({ status, title }) => {
   const getHeaderColor = () => {
     switch (status) {
       case 'scheduled': return 'bg-gray-700';
+      case 'Confirmed': return 'bg-green-800';
+      case 'Rescheduled': return 'bg-orange-700';
+      case 'Cancelled': return 'bg-red-700';
       case 'arrived': return 'bg-amber-700';
+      case 'appt-prep': return 'bg-purple-700';
+      case 'ready-for-md': return 'bg-cyan-700';
       case 'With Doctor': return 'bg-blue-700';
+      case 'seen-by-md': return 'bg-teal-700';
       case 'completed': return 'bg-green-700';
       default: return 'bg-gray-700';
     }

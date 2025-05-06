@@ -94,7 +94,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose, reportContent }) => 
 };
 
 const Dashboard: React.FC = () => {
-  const { patients, getMetrics, getWaitTime } = usePatientContext();
+  const { patients, getWaitTime } = usePatientContext();
   const { timeMode, getCurrentTime } = useTimeContext();
   const [showNewPatientForm, setShowNewPatientForm] = useState(false);
   const [showImportSchedule, setShowImportSchedule] = useState(false);
@@ -134,6 +134,12 @@ const Dashboard: React.FC = () => {
       displayStatus = 'Seen by MD';
     } else if (status === 'completed') {
       displayStatus = 'Checked Out';
+    } else if (status === 'Confirmed') {
+      displayStatus = 'Confirmed';
+    } else if (status === 'Rescheduled') {
+      displayStatus = 'Rescheduled';
+    } else if (status === 'Cancelled') {
+      displayStatus = 'Cancelled';
     }
 
     // Format DOB
@@ -171,8 +177,8 @@ const Dashboard: React.FC = () => {
 
   // Modify the existing generateReport function in Dashboard.tsx
   const generateReport = (format: 'text' | 'csv' = 'text') => {
-    const metrics = getMetrics();
     const currentDate = getCurrentTime();
+
     // Ensure we're using the correct date for the report header
     const formattedDate = currentDate.toLocaleDateString('en-US', {
       month: 'numeric',
@@ -187,6 +193,19 @@ const Dashboard: React.FC = () => {
     patientsForDate.sort((a, b) => {
       return new Date(a.appointmentTime).getTime() - new Date(b.appointmentTime).getTime();
     });
+
+    // Calculate custom metrics for all in-house and checked-out patients
+    const checkedInPatients = patientsForDate.filter(patient => 
+      patient.checkInTime && ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'].includes(patient.status as string)
+    );
+
+    const allWaitTimes = checkedInPatients.map(getWaitTime);
+    const meanWaitTime = allWaitTimes.length > 0
+      ? Math.round(allWaitTimes.reduce((acc, time) => acc + time, 0) / allWaitTimes.length)
+      : 0;
+    const maxWaitTime = allWaitTimes.length > 0
+      ? Math.max(...allWaitTimes)
+      : 0;
 
     if (format === 'csv') {
       // Generate CSV
@@ -260,10 +279,12 @@ const Dashboard: React.FC = () => {
       report += `==========================================================================\n\n`;
       report += `OVERALL METRICS:\n`;
       report += `----------------\n`;
-      report += `Total Appointments: ${metrics.totalAppointments}\n`;
-      report += `Patients Waiting: ${metrics.waitingCount}\n`;
-      report += `Average Wait Time: ${Math.round(metrics.averageWaitTime)} minutes\n`;
-      report += `Maximum Wait Time: ${metrics.maxWaitTime} minutes\n\n`;
+      report += `Total Appointments: ${patientsForDate.length}\n`;
+
+      // Use the custom calculated metrics instead of the dashboard metrics
+      report += `Patients Waiting: ${checkedInPatients.length}\n`;
+      report += `Average Wait Time: ${meanWaitTime} minutes\n`;
+      report += `Maximum Wait Time: ${maxWaitTime} minutes\n\n`;
 
       // Add the appointment table
       report += `APPOINTMENTS:\n`;
@@ -308,17 +329,18 @@ const Dashboard: React.FC = () => {
         report += fields.join('') + '\n';
       });
 
-      // Add wait time information for patients who have checked in
+      // Update the wait time details section
       report += `\nWAIT TIME DETAILS:\n`;
       report += `----------------\n`;
-
-      const checkedInPatients = patientsForDate.filter(patient => 
-        patient.checkInTime && ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'].includes(patient.status as string)
-      );
 
       if (checkedInPatients.length === 0) {
         report += `No patients have checked in yet.\n`;
       } else {
+        // Add mean and maximum wait times to the report
+        report += `Mean Wait Time (all in-house and checked-out patients): ${meanWaitTime} minutes\n`;
+        report += `Maximum Wait Time (all in-house and checked-out patients): ${maxWaitTime} minutes\n\n`;
+
+        // List individual patient wait times
         checkedInPatients.forEach(patient => {
           const waitTime = getWaitTime(patient);
           // Use the formatPatientData helper to get consistent formatting
@@ -416,6 +438,23 @@ const Dashboard: React.FC = () => {
 
           <div>
             <button 
+              onClick={() => toggleSection('Confirmed')}
+              className="w-full text-left mb-2 md:hidden flex items-center justify-between bg-gray-800 p-3 rounded"
+            >
+              <span className="text-white font-semibold">Confirmed Patients</span>
+              <ChevronDown 
+                size={20} 
+                className={`text-white transition-transform ${isExpanded('Confirmed') ? 'rotate-180' : ''}`} 
+              />
+            </button>
+            <div className={`${isExpanded('Confirmed') || window.innerWidth >= 768 ? 'block' : 'hidden'} md:block`}>
+              <PatientList status={"Confirmed" as const} title="Confirmed Patients" />
+            </div>
+          </div>
+
+
+          <div>
+            <button 
               onClick={() => toggleSection('arrived')}
               className="w-full text-left mb-2 md:hidden flex items-center justify-between bg-gray-800 p-3 rounded"
             >
@@ -506,6 +545,38 @@ const Dashboard: React.FC = () => {
             </button>
             <div className={`${isExpanded('completed') || window.innerWidth >= 768 ? 'block' : 'hidden'} md:block`}>
               <PatientList status={"completed" as const} title="Completed" />
+            </div>
+          </div>
+
+          <div>
+            <button 
+              onClick={() => toggleSection('Rescheduled')}
+              className="w-full text-left mb-2 md:hidden flex items-center justify-between bg-gray-800 p-3 rounded"
+            >
+              <span className="text-white font-semibold">Rescheduled Patients</span>
+              <ChevronDown 
+                size={20} 
+                className={`text-white transition-transform ${isExpanded('Rescheduled') ? 'rotate-180' : ''}`} 
+              />
+            </button>
+            <div className={`${isExpanded('Rescheduled') || window.innerWidth >= 768 ? 'block' : 'hidden'} md:block`}>
+              <PatientList status={"Rescheduled" as const} title="Rescheduled Patients" />
+            </div>
+          </div>
+
+          <div>
+            <button 
+              onClick={() => toggleSection('Cancelled')}
+              className="w-full text-left mb-2 md:hidden flex items-center justify-between bg-gray-800 p-3 rounded"
+            >
+              <span className="text-white font-semibold">Cancelled Patients</span>
+              <ChevronDown 
+                size={20} 
+                className={`text-white transition-transform ${isExpanded('Cancelled') ? 'rotate-180' : ''}`} 
+              />
+            </button>
+            <div className={`${isExpanded('Cancelled') || window.innerWidth >= 768 ? 'block' : 'hidden'} md:block`}>
+              <PatientList status={"Cancelled" as const} title="Cancelled Patients" />
             </div>
           </div>
         </div>
