@@ -1,0 +1,6 @@
+fix: correct patient count in export report metrics
+
+- Updated the "Patients Waiting" metric in the export report to use the same patient filter as the wait time calculations
+- Ensured consistent metrics calculation throughout the export report
+- Fixed issue where metrics were showing 0 except for the number of patients
+- Removed unused variables to improve code quality
