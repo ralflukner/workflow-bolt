@@ -1,7 +1,6 @@
-fix: replace hardcoded Auth0 credentials with placeholders
+refactor: remove explicit localStorage caching from Auth0Provider
 
-- Replaced hardcoded Auth0 domain and client ID with placeholders in README.md
-- Replaced hardcoded Auth0 domain and client ID with placeholders in netlify-deployment-summary.md
-- Added clear instructions for users to obtain their own Auth0 credentials
-- Added warning about not using shared credentials in production environments
-- Improved security by removing potentially sensitive information from documentation
+- Removed cacheLocation="localstorage" property from Auth0Provider component
+- Allows Auth0 to use its default caching mechanism
+- Improves security by not explicitly storing tokens in localStorage
+- Follows Auth0 best practices for token storage
