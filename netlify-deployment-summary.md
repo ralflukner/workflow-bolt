@@ -31,13 +31,18 @@ To deploy this project to Netlify:
    - Go to Site settings > Build & deploy > Environment
    - Add the following variables:
      ```
-     VITE_AUTH0_DOMAIN=dev-uex7qzqmd8c4qnde.us.auth0.com
-     VITE_AUTH0_CLIENT_ID=I8ZHr1uCjPkO4ePgY6S421N9HQ0nnN7A
+     VITE_AUTH0_DOMAIN=your-auth0-domain.region.auth0.com
+     VITE_AUTH0_CLIENT_ID=your-auth0-client-id
      VITE_AUTH0_REDIRECT_URI=https://your-netlify-site-name.netlify.app
      VITE_AUTH0_AUDIENCE=https://api.patientflow.com
      VITE_APP_NAME=Patient Flow Management
      ```
-   - Replace `your-netlify-site-name.netlify.app` with your actual Netlify domain.
+   - Replace the placeholders with your actual values:
+     - `your-auth0-domain.region.auth0.com`: Your Auth0 domain from your Auth0 account
+     - `your-auth0-client-id`: Your Auth0 client ID from your Auth0 account
+     - `your-netlify-site-name.netlify.app`: Your actual Netlify domain
+
+   > **Important**: You must create your own Auth0 account and application to obtain the necessary credentials. Never use shared or example credentials in a production environment.
 
 4. **Update Auth0 configuration**:
    - Log in to your Auth0 Dashboard

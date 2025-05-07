@@ -1,6 +1,7 @@
-fix: correct patient count in export report metrics
+fix: replace hardcoded Auth0 credentials with placeholders
 
-- Updated the "Patients Waiting" metric in the export report to use the same patient filter as the wait time calculations
-- Ensured consistent metrics calculation throughout the export report
-- Fixed issue where metrics were showing 0 except for the number of patients
-- Removed unused variables to improve code quality
+- Replaced hardcoded Auth0 domain and client ID with placeholders in README.md
+- Replaced hardcoded Auth0 domain and client ID with placeholders in netlify-deployment-summary.md
+- Added clear instructions for users to obtain their own Auth0 credentials
+- Added warning about not using shared credentials in production environments
+- Improved security by removing potentially sensitive information from documentation
