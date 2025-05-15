@@ -1,7 +1,10 @@
-fix: replace any type with generic in useSecureStorage hook
+fix: update @vitejs/plugin-react to v4.4.1 for Vite 6.x compatibility
 
-- Added generic type parameter to SecureStorageOptions interface
-- Replaced 'any' type with generic type parameter for defaultValue
-- Updated return type to use proper React typing with the generic parameter
-- Improves type safety while maintaining flexibility
-- Resolves ESLint error: @typescript-eslint/no-explicit-any
+The build was failing due to a dependency conflict between Vite v6.3.5 and 
+@vitejs/plugin-react v4.3.2, which only supported Vite up to v5.x. This update
+resolves the conflict by upgrading @vitejs/plugin-react to v4.4.1, which is
+compatible with Vite v6.x.
+
+Additionally, this fixes the warning:
+"The installed version '@vitejs/plugin-react@4.3.2' doesn't match the version range '^5.0.0'"
+by updating the package.json to specify a version that actually exists (v5.0.0 is not yet available).
