@@ -1,6 +1,7 @@
-refactor: remove explicit localStorage caching from Auth0Provider
+fix: replace any type with generic in useSecureStorage hook
 
-- Removed cacheLocation="localstorage" property from Auth0Provider component
-- Allows Auth0 to use its default caching mechanism
-- Improves security by not explicitly storing tokens in localStorage
-- Follows Auth0 best practices for token storage
+- Added generic type parameter to SecureStorageOptions interface
+- Replaced 'any' type with generic type parameter for defaultValue
+- Updated return type to use proper React typing with the generic parameter
+- Improves type safety while maintaining flexibility
+- Resolves ESLint error: @typescript-eslint/no-explicit-any
