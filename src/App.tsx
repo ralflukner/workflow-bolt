@@ -1,4 +1,4 @@
-import { TimeProvider } from './context/TimeContext';
+import { TimeProvider } from './context/TimeProvider';
 import { PatientProvider } from './context/PatientContext';
 import Dashboard from './components/Dashboard';
 import AuthProvider from './auth/AuthProvider';
