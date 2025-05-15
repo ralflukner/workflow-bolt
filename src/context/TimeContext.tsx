@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { TimeMode } from '../types';
+// Remove Timer import since we're using native setInterval
 
 const getCurrentTime = (): Date => new Date();
 
@@ -18,6 +19,8 @@ interface TimeProviderProps {
   children: ReactNode;
 }
 
+// Remove this interface since it's imported from types
+
 export const TimeProvider: React.FC<TimeProviderProps> = ({ children }) => {
   const [timeMode, setTimeMode] = useState<TimeMode>({
     simulated: false,
@@ -26,23 +29,32 @@ export const TimeProvider: React.FC<TimeProviderProps> = ({ children }) => {
 
   // Update real time every second
   useEffect(() => {
-    if (!timeMode.simulated) {
-      const interval = setInterval(() => {
-        setTimeMode(prev => ({
-          ...prev,
-          currentTime: getCurrentTime().toISOString(),
-        }));
-      }, 1000); // Update every second
+    let intervalId: number | undefined;
 
-      return () => clearInterval(interval);
+    const updateTime = () => {
+      setTimeMode(prev => ({
+        ...prev,
+        currentTime: new Date().toISOString(),
+      }));
+    };
+
+    if (!timeMode.simulated) {
+      updateTime();
+      intervalId = window.setInterval(updateTime, 1000);
     }
+
+    return () => {
+      if (intervalId !== undefined) {
+        clearInterval(intervalId);
+      }
+    };
   }, [timeMode.simulated]);
 
   const toggleSimulation = () => {
     setTimeMode(prev => ({
       ...prev,
       simulated: !prev.simulated,
-      currentTime: getCurrentTime().toISOString()
+      currentTime: new Date().toISOString()
     }));
   };
 
@@ -50,7 +62,7 @@ export const TimeProvider: React.FC<TimeProviderProps> = ({ children }) => {
     if (timeMode.simulated) {
       let adjustedTime: Date;
       if (newTime) {
-        adjustedTime = newTime;
+        adjustedTime = new Date(newTime);
       } else {
         adjustedTime = new Date(timeMode.currentTime);
         adjustedTime.setMinutes(adjustedTime.getMinutes() + minutesToAdd);
@@ -64,7 +76,6 @@ export const TimeProvider: React.FC<TimeProviderProps> = ({ children }) => {
   };
 
   const getCurrentDisplayTime = (): Date => {
-    // Always use the stored time from state to ensure consistency
     return new Date(timeMode.currentTime);
   };
 

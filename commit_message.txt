@@ -1,6 +1,10 @@
-fix: correct patient count in export report metrics
+fix: update @vitejs/plugin-react to v4.4.1 for Vite 6.x compatibility
 
-- Updated the "Patients Waiting" metric in the export report to use the same patient filter as the wait time calculations
-- Ensured consistent metrics calculation throughout the export report
-- Fixed issue where metrics were showing 0 except for the number of patients
-- Removed unused variables to improve code quality
+The build was failing due to a dependency conflict between Vite v6.3.5 and 
+@vitejs/plugin-react v4.3.2, which only supported Vite up to v5.x. This update
+resolves the conflict by upgrading @vitejs/plugin-react to v4.4.1, which is
+compatible with Vite v6.x.
+
+Additionally, this fixes the warning:
+"The installed version '@vitejs/plugin-react@4.3.2' doesn't match the version range '^5.0.0'"
+by updating the package.json to specify a version that actually exists (v5.0.0 is not yet available).

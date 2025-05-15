@@ -29,7 +29,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         scope: AUTH0_CONFIG.scope
       }}
       onRedirectCallback={onRedirectCallback}
-      cacheLocation="localstorage"
       useRefreshTokens={true}
     >
       {children}
