@@ -3,19 +3,21 @@
 This project is a **Patient Flow Management** dashboard built with [Vite](https://vitejs.dev/), [React](https://react.dev/), [TypeScript](https://www.typescriptlang.org/), and [Tailwind CSS](https://tailwindcss.com/). It provides a modern, interactive interface for managing patient appointments and flow in a clinical setting.
 
 ## Features
-- **Dashboard**: Visualize and manage patients through various stages (Scheduled, Arrived, Appointment Prep, Ready for MD, With Doctor, Seen by MD, Completed).
-- **Metrics Panel**: View key metrics about patient flow.
-- **Time Control**: Adjust and simulate time for workflow testing.
-- **Patient List**: View and manage patients by status.
-- **New Patient Form**: Add new patients to the system.
-- **Import Schedule**: Import patient schedules in bulk.
-- **Responsive UI**: Works well on desktop and mobile.
+- **Secure Authentication**: Auth0-powered login with protected routes
+- **Dashboard**: Visualize and manage patients through various stages (Scheduled, Arrived, Appointment Prep, Ready for MD, With Doctor, Seen by MD, Completed)
+- **Real-time Updates**: Live patient status tracking with configurable time simulation
+- **Metrics Panel**: View key metrics about patient flow and clinic efficiency
+- **Time Control**: Adjust and simulate time for workflow testing and training
+- **Patient Management**: Add new patients and import schedules in bulk
+- **Export Capabilities**: Generate reports in text and CSV formats
+- **Responsive Design**: Optimized for desktop and mobile devices
 
 ## Tech Stack
-- [Vite](https://vitejs.dev/) (build tool)
-- [React](https://react.dev/) (UI library)
-- [TypeScript](https://www.typescriptlang.org/) (type safety)
-- [Tailwind CSS](https://tailwindcss.com/) (utility-first CSS)
+- [Vite 5.0.0](https://vitejs.dev/) (build tool optimized for React compatibility)
+- [React 18.3.1](https://react.dev/) (UI library)
+- [TypeScript 5.5.3](https://www.typescriptlang.org/) (type safety)
+- [Tailwind CSS 3.4.1](https://tailwindcss.com/) (utility-first CSS)
+- [Auth0 2.3.0](https://auth0.com/) (authentication)
 - [Lucide React](https://lucide.dev/) (icons)
 
 ## Getting Started
@@ -98,13 +100,16 @@ npm run lint
 ## Project Structure
 ```
 ├── src/
+│   ├── auth/              # Auth0 authentication configuration
 │   ├── components/        # React components (Dashboard, PatientList, etc.)
-│   ├── context/           # React context providers
+│   ├── context/           # React context providers (Time, Patient)
 │   ├── data/              # Static or mock data
+│   ├── hooks/             # Custom React hooks
 │   ├── types/             # TypeScript type definitions
 │   ├── App.tsx            # Main app component
 │   ├── main.tsx           # Entry point
 │   └── index.css          # Tailwind CSS imports
+├── docs/                  # Comprehensive documentation
 ├── public/                # Static assets (if any)
 ├── index.html             # HTML template
 ├── package.json           # Project metadata and scripts
