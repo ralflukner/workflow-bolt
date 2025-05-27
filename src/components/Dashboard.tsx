@@ -4,8 +4,9 @@ import TimeControl from './TimeControl';
 import PatientList from './PatientList';
 import NewPatientForm from './NewPatientForm';
 import ImportSchedule from './ImportSchedule';
+import ImportJSON from './ImportJSON';
 import AuthNav from './AuthNav';
-import { PlusCircle, FileDown, ChevronDown, Upload, X } from 'lucide-react';
+import { PlusCircle, FileDown, ChevronDown, Upload, X, Download } from 'lucide-react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { Patient } from '../types';
@@ -94,10 +95,11 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose, reportContent }) => 
 };
 
 const Dashboard: React.FC = () => {
-  const { patients, getWaitTime } = usePatientContext();
+  const { patients, getWaitTime, exportPatientsToJSON } = usePatientContext();
   const { timeMode, getCurrentTime } = useTimeContext();
   const [showNewPatientForm, setShowNewPatientForm] = useState(false);
   const [showImportSchedule, setShowImportSchedule] = useState(false);
+  const [showImportJSON, setShowImportJSON] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportContent, setReportContent] = useState('');
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
@@ -385,11 +387,25 @@ const Dashboard: React.FC = () => {
                 Import Schedule
               </button>
               <button 
+                onClick={() => setShowImportJSON(true)}
+                className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500 transition-colors"
+              >
+                <Upload size={18} className="mr-1" />
+                Import JSON
+              </button>
+              <button 
                 onClick={() => setShowNewPatientForm(true)}
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors"
               >
                 <PlusCircle size={18} className="mr-1" />
                 New Patient
+              </button>
+              <button 
+                onClick={exportPatientsToJSON}
+                className="flex items-center px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-500 transition-colors"
+              >
+                <Download size={18} className="mr-1" />
+                Export JSON
               </button>
               <button 
                 onClick={() => {
@@ -587,6 +603,9 @@ const Dashboard: React.FC = () => {
       )}
       {showImportSchedule && (
         <ImportSchedule onClose={() => setShowImportSchedule(false)} />
+      )}
+      {showImportJSON && (
+        <ImportJSON onClose={() => setShowImportJSON(false)} />
       )}
       {showReportModal && (
         <ReportModal 

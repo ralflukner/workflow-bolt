@@ -13,6 +13,8 @@ interface PatientContextType {
   getMetrics: () => Metrics;
   getWaitTime: (patient: Patient) => number;
   clearPatients: () => void;
+  exportPatientsToJSON: () => void;
+  importPatientsFromJSON: (patients: Patient[]) => void;
 }
 
 export const PatientContext = createContext<PatientContextType | undefined>(undefined);
@@ -154,6 +156,23 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     };
   };
 
+  const exportPatientsToJSON = () => {
+    const jsonData = JSON.stringify(patients, null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `patient-data-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const importPatientsFromJSON = (importedPatients: Patient[]) => {
+    setPatients(importedPatients);
+  };
+
   const value = {
     patients,
     addPatient,
@@ -164,6 +183,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     getMetrics,
     getWaitTime,
     clearPatients,
+    exportPatientsToJSON,
+    importPatientsFromJSON,
   };
 
   return (
