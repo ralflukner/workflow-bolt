@@ -14,24 +14,31 @@ const ImportJSON: React.FC<ImportJSONProps> = ({ onClose }) => {
   const [processing, setProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validatePatientData = (data: any): data is Patient[] => {
-    if (!Array.isArray(data)) {
-      throw new Error('JSON data must be an array of patients');
-    }
+const validatePatientData = (data: unknown): data is Patient[] => {
+   if (!Array.isArray(data)) {
+     throw new Error('JSON data must be an array of patients');
+   }
 
-    const requiredFields = ['id', 'name', 'dob', 'appointmentTime', 'provider', 'status'];
+   const requiredFields = ['id', 'name', 'dob', 'appointmentTime', 'provider', 'status'];
+   
+   for (let i = 0; i < data.length; i++) {
+     const patient = data[i];
+    if (typeof patient !== 'object' || patient === null) {
+      throw new Error(`Patient at index ${i} is not a valid object`);
+    }
     
-    for (let i = 0; i < data.length; i++) {
-      const patient = data[i];
-      for (const field of requiredFields) {
-        if (!(field in patient)) {
-          throw new Error(`Patient at index ${i} is missing required field: ${field}`);
-        }
+     for (const field of requiredFields) {
+       if (!(field in patient)) {
+         throw new Error(`Patient at index ${i} is missing required field: ${field}`);
+       }
+      if (typeof patient[field] !== 'string') {
+        throw new Error(`Patient at index ${i} field '${field}' must be a string`);
       }
-    }
+     }
+   }
 
-    return true;
-  };
+   return true;
+ };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -42,17 +49,24 @@ const ImportJSON: React.FC<ImportJSONProps> = ({ onClose }) => {
     setSuccess(null);
 
     const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const jsonData = JSON.parse(e.target?.result as string);
-        
-        if (validatePatientData(jsonData)) {
-          importPatientsFromJSON(jsonData);
-          setSuccess(`Successfully imported ${jsonData.length} patients`);
-          
-          setTimeout(() => {
-            onClose();
-          }, 1500);
+reader.onload = (e) => {
+   try {
+    const fileContent = e.target?.result as string;
+    
+    // Check file size (limit to ~10MB of text)
+    if (fileContent.length > 10 * 1024 * 1024) {
+      throw new Error('File is too large. Maximum size is 10MB.');
+    }
+    
+    const jsonData = JSON.parse(fileContent);
+     
+     if (validatePatientData(jsonData)) {
+       importPatientsFromJSON(jsonData);
+setSuccess(`Successfully imported ${jsonData.length} patients`);
+ 
+ setTimeout(() => {
+   onClose();
+}, 2000); // Slightly longer delay
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to parse JSON file');

@@ -170,9 +170,24 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     URL.revokeObjectURL(url);
   };
 
-  const importPatientsFromJSON = (importedPatients: Patient[]) => {
-    setPatients(importedPatients);
-  };
+const importPatientsFromJSON = (importedPatients: Patient[]) => {
+   // Basic validation
+   if (!Array.isArray(importedPatients)) {
+     throw new Error('Invalid data format: expected array of patients');
+   }
+   
+   // Validate each patient has required fields
+   const requiredFields = ['id', 'name', 'dob', 'appointmentTime', 'provider', 'status'];
+   importedPatients.forEach((patient, index) => {
+     requiredFields.forEach(field => {
+       if (!(field in patient)) {
+         throw new Error(`Patient at index ${index} missing required field: ${field}`);
+       }
+     });
+   });
+   
+   setPatients(importedPatients);
+ };
 
   const value = {
     patients,
