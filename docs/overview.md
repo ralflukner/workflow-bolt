@@ -39,7 +39,7 @@ Patient Flow Management is a web application designed to help medical practices 
 
 ## Current Status
 
-The application is currently at version 0.1.0-alpha.1 and includes:
+The application is currently at version 0.1.0-alpha.5 and includes:
 - Full frontend interface with React components
 - Auth0 authentication integration
 - Real-time and simulated time handling

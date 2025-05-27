@@ -1,21 +1,8 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import { Patient, PatientApptStatus, Metrics } from '../types';
+import { PatientContext } from './PatientContextDef';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { mockPatients } from '../data/mockData';
-
-interface PatientContextType {
-  patients: Patient[];
-  addPatient: (patient: Omit<Patient, 'id'>) => void;
-  updatePatientStatus: (id: string, status: PatientApptStatus) => void;
-  assignRoom: (id: string, room: string) => void;
-  updateCheckInTime: (id: string, checkInTime: string) => void;
-  getPatientsByStatus: (status: PatientApptStatus) => Patient[];
-  getMetrics: () => Metrics;
-  getWaitTime: (patient: Patient) => number;
-  clearPatients: () => void;
-}
-
-export const PatientContext = createContext<PatientContextType | undefined>(undefined);
 
 interface PatientProviderProps {
   children: ReactNode;

@@ -2,11 +2,18 @@
 
 This document tracks significant recent changes to the Patient Flow Management application.
 
-## Version 0.1.0-alpha.1 Release (May 2025)
+## Version 0.1.0-alpha.5 Release (May 2025)
 
-The first alpha release includes significant improvements to time handling, component architecture, and code organization. This version represents a development milestone with core functionality implemented but still undergoing testing and refinement.
+The latest alpha release includes significant improvements to Vite compatibility, type safety, authentication, and code organization. This version represents a development milestone with core functionality implemented and enhanced stability.
 
-### 1. Real-Time Updates and Time Synchronization
+### 1. Vite Version Compatibility and Build System Updates
+
+- **Updated @vitejs/plugin-react to v4.4.1** for Vite 6.x compatibility
+- **Downgraded Vite to v5** for React plugin compatibility while maintaining performance
+- Fixed build system compatibility issues ensuring reliable development and production builds
+- Maintained all performance optimizations while ensuring plugin ecosystem compatibility
+
+### 2. Real-Time Updates and Time Synchronization
 
 - Updated TimeContext to refresh time every second instead of every minute
 - Made getCurrentDisplayTime use stored time consistently for better reliability
@@ -18,12 +25,40 @@ The first alpha release includes significant improvements to time handling, comp
 - Added proper cleanup for interval timers to prevent memory leaks
 - Moved context hooks to separate files to fix ESLint warnings and improve Fast Refresh compatibility
 
-### 2. Auth0 Authentication Integration
+### 3. Enhanced Type Safety and Code Quality
+
+- **Replaced any type with generic in useSecureStorage hook** improving type safety
+- Enhanced TypeScript configuration for better error detection
+- Improved generic type usage across hooks and components
+- Better type inference and compile-time error prevention
+
+### 4. Auth0 Authentication Integration
 
 - Implemented secure authentication using Auth0
 - Added protected routes to secure application content
 - Configured proper session persistence and redirect handling
 - Enhanced error handling for authentication flows
+
+### 5. Export Report Metrics Fixes
+
+- **Corrected patient count in export report metrics** ensuring accurate reporting
+- Fixed calculation bugs in patient flow statistics
+- Enhanced CSV and text export functionality with proper data validation
+- Improved metrics accuracy for clinical workflow analysis
+
+### 6. Security Improvements
+
+- **Replaced hardcoded Auth0 credentials with placeholders** for better security practices
+- Added proper environment variable configuration guidance
+- Enhanced security documentation for production deployments
+- Implemented secure credential management patterns
+
+### 7. Context and State Management Refactoring
+
+- **Refactored TimeContext to resolve rendering issues** improving application stability
+- Split TimeContext into definition and provider files for better organization
+- **Removed explicit localStorage caching from Auth0Provider** for cleaner authentication flow
+- Enhanced context provider architecture with proper TypeScript interfaces
 
 ## TypeScript Improvements (April 2025)
 
@@ -73,13 +108,9 @@ Updated `tsconfig.app.json` with improved React support:
 ```json
 {
   "compilerOptions": {
-    // existing options...
-
-    /* Additional settings */
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true
-  },
-  // ...
+  }
 }
 ```
 
@@ -96,16 +127,17 @@ Enhanced type safety in the PatientCard component:
 
 ```typescript
 // Before (dynamic class generation, potential runtime issue)
-className={`mt-2 px-3 py-1 bg-${button.color}-500 text-white rounded hover:bg-${button.color}-600 transition-colors`}
+// className with dynamic color based on button.color (e.g., "bg-amber-500 hover:bg-amber-600")
+// This can cause potential runtime issues with Tailwind's JIT compiler
 
 // After (type-safe color mapping)
 const buttonColors: Record<string, string> = {
   amber: 'bg-amber-500 hover:bg-amber-600',
-  purple: 'bg-purple-500 hover:bg-purple-600',
-  // Other colors...
+  purple: 'bg-purple-500 hover:bg-purple-600'
 };
 
-className={`mt-2 px-3 py-1 ${buttonColors[button.color]} text-white rounded transition-colors`}
+// className now uses the pre-defined color mapping from buttonColors
+// This ensures type safety and prevents runtime errors
 ```
 
 This change prevents potential runtime errors from dynamic class generation in Tailwind.
@@ -124,12 +156,17 @@ patient.appointmentStatus === 'Appt Prep Started' || patient.appointmentStatus =
 
 This provides better visual distinction between different appointment statuses.
 
-## Future Changes
+## Areas Requiring Further Work
 
-Planned improvements include:
+Based on recent changes and current state, the following improvements are planned:
 
-1. **Refactor Status Display Logic**: Move the status color logic into utility functions or constants
-2. **Accessibility Improvements**: Add ARIA attributes to improve screen reader support
-3. **Backend Integration**: Connect to a real API for data persistence
-4. **User Authentication**: Add login functionality and user roles
-5. **Automated Testing**: Add unit and integration tests 
+1. **Advanced Testing Framework**: Implement comprehensive unit and integration testing
+2. **Backend API Integration**: Connect to a real API for data persistence and synchronization
+3. **Enhanced Authentication**: Add role-based access control and user management
+4. **Performance Monitoring**: Add application performance monitoring and analytics
+5. **Mobile Optimization**: Further enhance mobile user experience and offline capabilities
+6. **Accessibility Compliance**: Ensure full WCAG 2.1 AA compliance
+7. **Advanced Reporting**: Add more sophisticated analytics and reporting features
+8. **Real-time Notifications**: Implement push notifications for status changes
+9. **Integration Capabilities**: Add support for EHR and practice management system integration
+10. **Scalability Improvements**: Optimize for larger clinics with hundreds of daily patients 
