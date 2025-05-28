@@ -30,6 +30,16 @@ const normalizeStatus = (status: string): string => {
     case 'withdoctor':
     case 'with doctor':
       return 'With Doctor';
+    case 'scheduled':
+      return 'scheduled';
+    case 'arrived':
+      return 'arrived';
+    case 'appt prep started':
+      return 'appt-prep';
+    case 'ready for md':
+      return 'ready-for-md';
+    case 'seen by md':
+      return 'seen-by-md';
     default:
       return status;
   }
@@ -203,15 +213,24 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
      // Normalize statuses and ensure timestamps
      const normalized = importedPatients.map(p => {
        const updated = { ...p };
-       updated.status = normalizeStatus(updated.status as string) as PatientApptStatus;
-       // If patient is already checked in status but missing checkInTime, set it to appointmentTime or now
-       if (!updated.checkInTime && ['Arrived', 'Checked In', 'arrived'].includes(updated.status as string)) {
-         updated.checkInTime = new Date().toISOString();
+       const normalizedStatus = normalizeStatus(updated.status as string);
+       updated.status = normalizedStatus as PatientApptStatus;
+       
+       const now = new Date().toISOString();
+       
+       // Set timestamps based on normalized status
+       if (['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'].includes(normalizedStatus)) {
+         updated.checkInTime = updated.checkInTime || now;
        }
-       // If patient is completed but missing completedTime
-       if (!updated.completedTime && (updated.status === 'completed' || updated.status === 'Checked Out')) {
-         updated.completedTime = new Date().toISOString();
+       
+       if (['With Doctor', 'seen-by-md', 'completed'].includes(normalizedStatus)) {
+         updated.withDoctorTime = updated.withDoctorTime || now;
        }
+       
+       if (normalizedStatus === 'completed') {
+         updated.completedTime = updated.completedTime || now;
+       }
+       
        return updated;
      });
      
