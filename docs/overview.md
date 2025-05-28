@@ -2,7 +2,10 @@
 
 ## Introduction
 
-Patient Flow Management is a web application designed to help medical practices efficiently track and manage patient appointments and flow throughout the clinic. It provides a real-time dashboard for staff to monitor patient status, manage room assignments, and track waiting times.
+Patient Flow Management is a web application designed to help medical
+practices efficiently track and manage patient appointments and flow
+throughout the clinic. It provides a real-time dashboard for staff to
+monitor patient status, manage room assignments, and track waiting times.
 
 ## Project Goals
 
@@ -23,7 +26,8 @@ Patient Flow Management is a web application designed to help medical practices 
 
 ## Key Features
 
-- **Interactive Dashboard**: Real-time visualization of all patients and their current status
+- **Interactive Dashboard**: Real-time visualization of all patients
+  and their current status
 - **Status Management**: Track patients through various stages of their visit
 - **Time Simulation**: Test workflows by simulating different times
 - **Room Assignment**: Manage room allocations efficiently
@@ -40,6 +44,7 @@ Patient Flow Management is a web application designed to help medical practices 
 ## Current Status
 
 The application is currently at version 0.1.0-alpha.5 and includes:
+
 - Full frontend interface with React components
 - Auth0 authentication integration
 - Real-time and simulated time handling
@@ -48,4 +53,5 @@ The application is currently at version 0.1.0-alpha.5 and includes:
 - Time simulation capabilities
 - Responsive design for desktop and mobile use
 
-Further development will focus on backend integration, data persistence, and reporting capabilities.
+Further development will focus on backend integration, data persistence,
+and reporting capabilities.

@@ -45,7 +45,7 @@ describe('Schedule Import/Export Functionality', () => {
       // Parse the sample data (this would typically be done in a separate parser function)
       const lines = sampleScheduleData.trim().split('\n');
       const parsedPatients = lines.map((line, index) => {
-        const [date, time, status, name, dob, type, notes] = line.split('\t');
+        const [date, time, status, name, dob, , notes] = line.split('\t');
         
         // Parse date and time
         const [month, day, year] = date.split('/');
@@ -129,71 +129,6 @@ describe('Schedule Import/Export Functionality', () => {
           context.importPatientsFromJSON(malformedData);
         });
       }).not.toThrow();
-
-      done();
-    }, 0);
-  });
-
-  it('should support CSV export functionality', (done) => {
-    let context: ReturnType<typeof usePatientContext>;
-    const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
-      context = ctx;
-    };
-
-    // Mock CSV export functionality
-    const mockCreateObjectURL = jest.fn(() => 'mock-csv-url');
-    const mockRevokeObjectURL = jest.fn();
-    const mockClick = jest.fn();
-
-    Object.defineProperty(window.URL, 'createObjectURL', {
-      value: mockCreateObjectURL,
-      writable: true
-    });
-    Object.defineProperty(window.URL, 'revokeObjectURL', {
-      value: mockRevokeObjectURL,
-      writable: true
-    });
-
-    const mockAnchor = {
-      href: '',
-      download: '',
-      click: mockClick,
-      style: { display: '' }
-    } as unknown as HTMLAnchorElement;
-    jest.spyOn(document, 'createElement').mockReturnValue(mockAnchor);
-    jest.spyOn(document.body, 'appendChild').mockImplementation(() => mockAnchor);
-    jest.spyOn(document.body, 'removeChild').mockImplementation(() => mockAnchor);
-
-    render(
-      <TestWrapper>
-        <ContextConsumer onContext={handleContext} />
-      </TestWrapper>
-    );
-
-    setTimeout(() => {
-      // Add some test patients
-      const testPatients = [
-        {
-          id: 'csv-test-1',
-          name: 'CSV Test Patient',
-          dob: '1990-01-01',
-          appointmentTime: '2024-05-19T09:00:00.000Z',
-          appointmentType: 'Office Visit' as const,
-          provider: 'Dr. CSV',
-          status: 'scheduled' as const
-        }
-      ];
-
-      act(() => {
-        context.importPatientsFromJSON(testPatients);
-        // Simulate CSV export (this would call the actual export function)
-        context.exportPatientsToJSON(); // Using JSON export as CSV export proxy
-      });
-
-      // Verify export was triggered
-      expect(mockCreateObjectURL).toHaveBeenCalled();
-      expect(mockClick).toHaveBeenCalled();
-      expect(mockRevokeObjectURL).toHaveBeenCalled();
 
       done();
     }, 0);

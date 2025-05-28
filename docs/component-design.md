@@ -1,10 +1,11 @@
 # Component Design
 
-This document provides an overview of the UI components and their interactions within the Patient Flow Management application.
+This document provides an overview of the UI components and their
+interactions within the Patient Flow Management application.
 
 ## Component Hierarchy
 
-```
+```text
 App
 ├── TimeProvider
 │   └── PatientProvider
@@ -34,6 +35,7 @@ const Dashboard: React.FC = () => {
 ```
 
 **Responsibilities:**
+
 - Layout management for the entire application
 - Triggering modal forms (NewPatientForm, ImportSchedule)
 - Organizing PatientList components by status
@@ -58,6 +60,7 @@ const PatientList: React.FC<PatientListProps> = ({ status, title }) => {
 ```
 
 **Responsibilities:**
+
 - Filtering patients by status
 - Rendering the appropriate list title
 - Containing PatientCard components
@@ -82,6 +85,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
 ```
 
 **Responsibilities:**
+
 - Displaying patient information
 - Managing room assignments
 - Providing status transitions (action buttons)
@@ -94,13 +98,20 @@ The TimeControl component allows users to manipulate time for testing.
 ```typescript
 // TimeControl.tsx
 const TimeControl: React.FC = () => {
-  const { timeMode, toggleSimulation, adjustTime, getCurrentTime, formatTime } = useTimeContext();
+  const {
+    timeMode,
+    toggleSimulation,
+    adjustTime,
+    getCurrentTime,
+    formatTime
+  } = useTimeContext();
 
   // Time management logic and UI
 }
 ```
 
 **Responsibilities:**
+
 - Toggling between real and simulated time
 - Adjusting the simulated time
 - Displaying current time
@@ -120,6 +131,7 @@ const MetricsPanel: React.FC = () => {
 ```
 
 **Responsibilities:**
+
 - Calculating and displaying clinic metrics
 - Visualizing patient flow efficiency
 
@@ -180,7 +192,8 @@ Appointment statuses use a different color scheme:
 ```typescript
 // Example from PatientCard.tsx
 patient.appointmentStatus === 'Confirmed' ? 'bg-blue-600 text-white' : 
-patient.appointmentStatus === 'Reminder Sent' ? 'bg-indigo-600 text-white' : 
+patient.appointmentStatus === 'Reminder Sent' ?
+  'bg-indigo-600 text-white' : 
 patient.appointmentStatus === 'Arrived' || patient.appointmentStatus === 'Checked In' ? 'bg-green-600 text-white' : 
 'bg-red-600 text-white'
 ```
@@ -188,6 +201,7 @@ patient.appointmentStatus === 'Arrived' || patient.appointmentStatus === 'Checke
 ### Responsive Design
 
 The application is fully responsive with:
+
 - Column layout on desktop
 - Single column layout on mobile
 - Expandable sections on mobile
@@ -196,6 +210,7 @@ The application is fully responsive with:
 ### Action Flow
 
 User actions follow a consistent pattern:
+
 1. User triggers action (button click)
 2. React handler executes
 3. Context method is called to update state
@@ -205,9 +220,10 @@ User actions follow a consistent pattern:
 ## Component Interactions
 
 Example: Patient Status Update Flow:
+
 1. User clicks "Check In" on a PatientCard
 2. handleStatusChange() is called in PatientCard
 3. updatePatientStatus() from PatientContext is called
 4. PatientContext updates the patient's status and adds a timestamp
 5. State changes propagate to all components using the context
-6. PatientCard moves to a different PatientList based on the new status 
+6. PatientCard moves to a different PatientList based on the new status

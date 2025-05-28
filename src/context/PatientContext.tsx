@@ -1,12 +1,10 @@
-import React, { useState, useEffect, ReactNode, createContext } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import { Patient, PatientApptStatus, Metrics } from '../types';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { mockPatients } from '../data/mockData';
-import { PatientContextType } from './PatientContextType';
+import { PatientContext } from './PatientContextDef';
 // TODO: Uncomment when implementing Firebase persistence
 // import { patientService } from '../services/firebase/patientService';
-
-export const PatientContext = createContext<PatientContextType | undefined>(undefined);
 
 interface PatientProviderProps {
   children: ReactNode;
@@ -14,6 +12,10 @@ interface PatientProviderProps {
 
 // Helper to normalize various status spellings/capitalizations
 const normalizeStatus = (status: string): string => {
+  if (!status) {
+    return 'scheduled'; // Default status for invalid input
+  }
+
   const s = status.trim().toLowerCase();
   switch (s) {
     case 'checkedout':
@@ -47,6 +49,7 @@ const normalizeStatus = (status: string): string => {
 
 export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) => {
   const [patients, setPatients] = useState<Patient[]>(mockPatients);
+  const [tickCounter, setTickCounter] = useState(0); // Add a tick counter state
   const { getCurrentTime, timeMode } = useTimeContext();
 
   // Set up an interval to force re-renders based on the time mode.
@@ -55,8 +58,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     let intervalId: ReturnType<typeof setInterval> | undefined;
 
     const tick = () => {
-      // Force re-render of the context provider
-      setPatients(prev => [...prev]);
+      // Force re-render by incrementing the tick counter
+      setTickCounter(prev => prev + 1);
     };
 
     if (timeMode.simulated) {
@@ -97,9 +100,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
           const updatedPatient = { ...patient, status };
 
           // Normalize status variations to handle timestamps consistently
-          const normalizedStatus = normalizeStatus(status) as PatientApptStatus;
-
-          updatedPatient.status = normalizedStatus;
+          updatedPatient.status = normalizeStatus(status) as PatientApptStatus;
 
           // Arrival/check-in timestamps
           if (
@@ -209,31 +210,31 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
      if (!Array.isArray(importedPatients)) {
        throw new Error('Invalid data format: expected array of patients');
      }
-     
+
      // Normalize statuses and ensure timestamps
      const normalized = importedPatients.map(p => {
        const updated = { ...p };
        const normalizedStatus = normalizeStatus(updated.status as string);
        updated.status = normalizedStatus as PatientApptStatus;
-       
+
        const now = new Date().toISOString();
-       
+
        // Set timestamps based on normalized status
        if (['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'].includes(normalizedStatus)) {
          updated.checkInTime = updated.checkInTime || now;
        }
-       
+
        if (['With Doctor', 'seen-by-md', 'completed'].includes(normalizedStatus)) {
          updated.withDoctorTime = updated.withDoctorTime || now;
        }
-       
+
        if (normalizedStatus === 'completed') {
          updated.completedTime = updated.completedTime || now;
        }
-       
+
        return updated;
      });
-     
+
      // Validate each patient has required fields
      const requiredFields = ['id', 'name', 'dob', 'appointmentTime', 'provider', 'status'];
      normalized.forEach((patient, index) => {
@@ -243,7 +244,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
          }
        });
      });
-     
+
      setPatients(normalized);
    };
 
@@ -259,6 +260,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     clearPatients,
     exportPatientsToJSON,
     importPatientsFromJSON,
+    tickCounter, // Include the tick counter in the context value
   };
 
   return (

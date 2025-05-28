@@ -31,6 +31,7 @@ In your new application's settings, configure the following:
 #### Application URIs
 
 For local development:
+
 - **Allowed Callback URLs**: `http://localhost:5173`
 - **Allowed Logout URLs**: `http://localhost:5173`
 - **Allowed Web Origins**: `http://localhost:5173`
@@ -100,16 +101,16 @@ mentioned in step 3.
 1. Create a `.env.local` file in the root of your project with the
    following:
 
-```
+```env
 VITE_AUTH0_DOMAIN=your-auth0-domain.auth0.com
 VITE_AUTH0_CLIENT_ID=your-auth0-client-id
 VITE_AUTH0_REDIRECT_URI=http://localhost:5173
 VITE_AUTH0_AUDIENCE=https://api.patientflow.com
 ```
 
-2. Replace the values with your actual Auth0 application settings.
+1. Replace the values with your actual Auth0 application settings.
 
-3. Run your application in development mode:
+2. Run your application in development mode:
 
 ```bash
 npm run dev
@@ -137,4 +138,5 @@ npm run dev
 4. **CORS Errors**:
 
    - Make sure your Auth0 application has the correct Allowed Web
-     Origins 
+     Origins
+

@@ -27,6 +27,7 @@ export interface Patient {
 ```
 
 Key fields:
+
 - `id`: Unique identifier for the patient
 - `name`: Patient's full name
 - `dob`: Date of birth in ISO format (YYYY-MM-DD)
@@ -160,10 +161,11 @@ The application uses React Context API for state management:
 ### Timestamps and Time Calculations
 
 The application tracks several key timestamps:
+
 - `appointmentTime`: When the patient is scheduled
 - `checkInTime`: When the patient arrives/checks in
 - `withDoctorTime`: When the patient goes in with the doctor
 - `completedTime`: When the patient checks out
 
 These timestamps are used to calculate waiting times and efficiency
-metrics. 
+metrics.

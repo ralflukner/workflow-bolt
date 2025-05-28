@@ -1,6 +1,7 @@
 # Authentication
 
-This document explains the Auth0 authentication implementation in the Patient Flow Management application.
+This document explains the Auth0 authentication implementation in the
+Patient Flow Management application.
 
 ## Overview
 
@@ -128,4 +129,5 @@ claims and roles in the user token.
 2. **Invalid Client ID or Domain**: Double-check your Auth0 application
    settings
 3. **CORS Errors**: Verify your Auth0 application's Allowed Web Origins
-   includes your development URL 
+   includes your development URL
+

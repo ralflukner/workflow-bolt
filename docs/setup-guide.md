@@ -1,6 +1,7 @@
 # Setup Guide
 
-This guide provides instructions for setting up the Patient Flow Management application for development and testing.
+This guide provides instructions for setting up the Patient Flow
+Management application for development and testing.
 
 ## Prerequisites
 
@@ -20,12 +21,14 @@ Before you begin, ensure you have the following installed:
 ## Getting the Code
 
 1. Clone the repository:
+
    ```bash
    git clone <your-repository-url>
    cd patient-flow-management
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -40,7 +43,9 @@ Run the following command to start the development server:
 npm run dev
 ```
 
-The application will be available at [http://localhost:5173](http://localhost:5173) (or the port indicated in your terminal).
+The application will be available at
+[http://localhost:5173](http://localhost:5173) (or the port indicated in
+your terminal).
 
 ### Code Structure
 
@@ -72,7 +77,8 @@ The project uses TypeScript with the following configuration files:
 - `tsconfig.app.json`: Application-specific settings
 - `tsconfig.node.json`: Node.js-specific settings
 
-If you encounter TypeScript-related issues, ensure you have the required type definitions:
+If you encounter TypeScript-related issues, ensure you have the required
+type definitions:
 
 ```bash
 npm install @types/react @types/react-dom
@@ -125,7 +131,8 @@ The application uses mock data located in `src/data/mockData.ts`. You can:
 
 ## Versioning and Tagging
 
-The project follows [Semantic Versioning](https://semver.org/) (SemVer) principles:
+The project follows [Semantic Versioning](https://semver.org/) (SemVer)
+principles:
 
 - MAJOR version (1.0.0) for incompatible API changes
 - MINOR version (0.1.0) for backward-compatible functionality additions
@@ -139,7 +146,8 @@ To tag a version in GitHub:
 
    ```bash
    # Format: git tag -a v<version> -m "<message>"
-   git tag -a v0.1.0 -m "Version 0.1.0 - Time handling improvements and Auth0 integration"
+   git tag -a v0.1.0 -m "Version 0.1.0 - Time handling improvements and
+   Auth0 integration"
    ```
 
 2. **Push the tag** to the remote repository:

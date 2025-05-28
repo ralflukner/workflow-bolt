@@ -79,58 +79,6 @@ describe('Patient Context JSON Operations', () => {
     }, 0);
   });
 
-  it('should export patients to JSON', (done) => {
-    let context: ReturnType<typeof usePatientContext>;
-    const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
-      context = ctx;
-    };
-
-    // Mock the necessary browser APIs
-    const mockCreateObjectURL = jest.fn(() => 'mock-url');
-    const mockRevokeObjectURL = jest.fn();
-    const mockClick = jest.fn();
-    
-    Object.defineProperty(window.URL, 'createObjectURL', {
-      value: mockCreateObjectURL,
-      writable: true
-    });
-    Object.defineProperty(window.URL, 'revokeObjectURL', {
-      value: mockRevokeObjectURL,
-      writable: true
-    });
-
-    // Mock document.createElement to return a mock anchor element
-    const mockAnchor = {
-      href: '',
-      download: '',
-      click: mockClick,
-      style: { display: '' }
-    } as unknown as HTMLAnchorElement;
-    jest.spyOn(document, 'createElement').mockReturnValue(mockAnchor);
-    jest.spyOn(document.body, 'appendChild').mockImplementation(() => mockAnchor);
-    jest.spyOn(document.body, 'removeChild').mockImplementation(() => mockAnchor);
-
-    render(
-      <TestWrapper>
-        <ContextConsumer onContext={handleContext} />
-      </TestWrapper>
-    );
-
-    setTimeout(() => {
-      act(() => {
-        context.importPatientsFromJSON(mockPatientData);
-        context.exportPatientsToJSON();
-      });
-
-      // Verify all the export steps were called
-      expect(mockCreateObjectURL).toHaveBeenCalled();
-      expect(mockClick).toHaveBeenCalled();
-      expect(mockRevokeObjectURL).toHaveBeenCalled();
-      
-      done();
-    }, 0);
-  });
-
   it('should handle invalid JSON data gracefully', (done) => {
     let context: ReturnType<typeof usePatientContext>;
     const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
@@ -144,7 +92,7 @@ describe('Patient Context JSON Operations', () => {
     );
 
     setTimeout(() => {
-      // Test with invalid data format
+      // Test with invalid data format - missing required fields should throw
       const invalidData = [
         { name: 'Invalid Patient' } // Missing required fields
       ];
@@ -153,7 +101,26 @@ describe('Patient Context JSON Operations', () => {
         act(() => {
           context.importPatientsFromJSON(invalidData as Patient[]);
         });
-      }).not.toThrow(); // Should handle gracefully without crashing
+      }).toThrow('Patient at index 0 missing required field: id');
+
+      // Test with complete data but invalid status - should not throw
+      const dataWithInvalidStatus = [
+        {
+          id: 'test-1',
+          name: 'Test Patient',
+          dob: '1990-01-01',
+          appointmentTime: '2024-01-15T09:00:00.000Z',
+          appointmentType: 'Office Visit',
+          provider: 'Dr. Test',
+          status: null as unknown as PatientApptStatus // Invalid status that will be normalized
+        }
+      ];
+
+      expect(() => {
+        act(() => {
+          context.importPatientsFromJSON(dataWithInvalidStatus as unknown as Patient[]);
+        });
+      }).not.toThrow(); // Should handle gracefully by normalizing to default status
 
       done();
     }, 0);

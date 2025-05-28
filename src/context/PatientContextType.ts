@@ -12,4 +12,5 @@ export interface PatientContextType {
   clearPatients: () => void;
   exportPatientsToJSON: () => void;
   importPatientsFromJSON: (patients: Patient[]) => void;
-} 
+  tickCounter: number; // Add the tickCounter property to trigger re-renders
+}
