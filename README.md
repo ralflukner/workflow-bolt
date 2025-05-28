@@ -20,6 +20,8 @@ This project is a **Patient Flow Management** dashboard built with [Vite](https:
 - [Auth0 2.3.0](https://auth0.com/) (authentication)
 - [Lucide React](https://lucide.dev/) (icons)
 
+> **Note**: You may see a moderate severity npm audit warning about esbuild. This is a false positive as we're using Vite 5.0.0 which includes a newer, secure version of esbuild. The warning can be safely ignored.
+
 ## Getting Started
 
 ### Prerequisites
