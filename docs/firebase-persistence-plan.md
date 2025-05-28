@@ -23,16 +23,16 @@ management with cloud-based storage.
   - id: string
   - firstName: string
   - lastName: string
-  - dateOfBirth: Date
+  - dateOfBirth: Timestamp
   - email?: string
   - phone?: string
-  - appointmentTime: string
+  - appointmentTime: Timestamp
   - provider: string
   - status: PatientApptStatus
   - room?: string
-  - checkInTime?: string
-  - withDoctorTime?: string
-  - completedTime?: string
+  - checkInTime?: Timestamp
+  - withDoctorTime?: Timestamp
+  - completedTime?: Timestamp
   - createdAt: Timestamp
   - updatedAt: Timestamp
 
@@ -41,7 +41,7 @@ management with cloud-based storage.
   - patientId: string
   - providerId: string
   - scheduledTime: Timestamp
-  - duration: number (minutes)
+  - duration: number
   - type: string
   - status: string
   - notes?: string
@@ -53,23 +53,110 @@ management with cloud-based storage.
   - name: string
   - specialty: string
   - isActive: boolean
-  - schedule: object
+  - schedule?: object
   - createdAt: Timestamp
+  - updatedAt: Timestamp
 
 /rooms/{roomId}
   - id: string
   - name: string
-  - type: string (exam, procedure, etc.)
+  - type: string
   - isAvailable: boolean
-  - equipment: string[]
+  - equipment?: string[]
   - createdAt: Timestamp
+  - updatedAt: Timestamp
 ```
 
 ### 2.2 Security Rules Design
 
-- Implement role-based access control
-- Ensure data privacy compliance (HIPAA considerations)
-- Set up read/write permissions based on user roles
+#### Role-Based Access Control
+
+The system implements three primary user roles:
+
+- **Admin**: Full access to all collections and operations
+- **Provider**: Access to patients and appointments assigned to them
+- **Staff**: Read access to patients, limited write access for status updates
+
+#### Sample Firestore Security Rules
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+    
+    function isProvider() {
+      return isAuthenticated() && getUserRole() == 'provider';
+    }
+    
+    function isStaff() {
+      return isAuthenticated() && getUserRole() == 'staff';
+    }
+    
+    // Patients collection
+    match /patients/{patientId} {
+      // Admins have full access
+      allow read, write: if isAdmin();
+      
+      // Providers can read/write patients assigned to them
+      allow read, write: if isProvider() && 
+        resource.data.provider == request.auth.uid;
+      
+      // Staff can read all patients, update status only
+      allow read: if isStaff();
+      allow update: if isStaff() && 
+        request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['status', 'checkInTime', 'withDoctorTime', 'completedTime', 'updatedAt']);
+    }
+    
+    // Appointments collection
+    match /appointments/{appointmentId} {
+      allow read, write: if isAdmin();
+      allow read, write: if isProvider() && 
+        resource.data.providerId == request.auth.uid;
+      allow read: if isStaff();
+    }
+    
+    // Providers collection
+    match /providers/{providerId} {
+      allow read, write: if isAdmin();
+      allow read: if isProvider() || isStaff();
+      allow update: if isProvider() && providerId == request.auth.uid;
+    }
+    
+    // Rooms collection
+    match /rooms/{roomId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isStaff();
+    }
+    
+    // User profiles
+    match /users/{userId} {
+      allow read, write: if isAdmin();
+      allow read, update: if request.auth.uid == userId;
+    }
+  }
+}
+```
+
+#### HIPAA Compliance Considerations
+
+- All data access is logged and auditable
+- Minimum necessary access principle enforced
+- Data encryption in transit and at rest
+- User authentication required for all operations
+- Role-based permissions prevent unauthorized access
 
 ## Phase 3: Service Layer Implementation
 
@@ -94,7 +181,56 @@ management with cloud-based storage.
 
 - [ ] Enable Firestore offline persistence
 - [ ] Handle offline/online state transitions
-- [ ] Conflict resolution strategies
+- [ ] Implement conflict resolution strategies
+
+#### Conflict Resolution Strategy
+
+##### Primary Model: Last-Write-Wins with Timestamp Validation
+
+The system uses a hybrid approach combining last-write-wins with intelligent
+conflict detection:
+
+1. **Timestamp-Based Resolution**
+   - All documents include `updatedAt` timestamp
+   - Server timestamp takes precedence over client timestamp
+   - Conflicts resolved by comparing server-side timestamps
+
+2. **Field-Level Conflict Detection**
+
+   ```typescript
+   interface ConflictResolution {
+     strategy: 'last-write-wins' | 'merge' | 'manual';
+     conflictFields: string[];
+     resolution: 'server' | 'client' | 'merge';
+     timestamp: Timestamp;
+   }
+   ```
+
+3. **Critical Field Protection**
+   - Patient status changes require server validation
+   - Appointment times cannot be modified offline
+   - Provider assignments need admin approval
+
+4. **Edge Case Handling**
+   - **Simultaneous Status Updates**: Server timestamp wins, client notified
+   - **Offline Patient Creation**: Temporary ID until server sync
+   - **Network Partition**: Queue operations, sync on reconnection
+   - **Data Corruption**: Fallback to last known good state
+
+5. **Conflict Resolution Workflow**
+
+   ```text
+   1. Detect conflict during sync
+   2. Compare timestamps and field changes
+   3. Apply resolution strategy
+   4. Notify user if manual intervention needed
+   5. Log conflict for audit trail
+   ```
+
+6. **User Notification System**
+   - Real-time alerts for critical conflicts
+   - Batch notifications for minor conflicts
+   - Detailed conflict logs for administrators
 
 ## Phase 4: Context Integration
 
@@ -214,12 +350,111 @@ management with cloud-based storage.
 - [ ] Database schema documentation
 - [ ] Security guidelines
 - [ ] Deployment procedures
+- [ ] Architectural diagrams and workflow visuals
+
+#### Architectural Diagrams
+
+##### Data Flow Diagram
+
+```mermaid
+graph TD
+    A[React Components] --> B[Context Providers]
+    B --> C[Firebase Services]
+    C --> D[Firestore Database]
+    C --> E[Firebase Auth]
+    
+    F[Real-time Listeners] --> B
+    D --> F
+    
+    G[Offline Cache] --> C
+    C --> G
+    
+    H[Security Rules] --> D
+    E --> H
+```
+
+##### Authentication Flow Chart
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant A as Auth0/Firebase Auth
+    participant F as Firestore
+    participant R as Security Rules
+    
+    U->>A: Login Request
+    A->>U: JWT Token
+    U->>F: Request with Token
+    F->>R: Validate Token & Role
+    R->>F: Permission Check
+    F->>U: Data Response
+```
+
+##### Context Provider Relationships
+
+```mermaid
+graph LR
+    A[App] --> B[AuthProvider]
+    B --> C[PatientProvider]
+    B --> D[AppointmentProvider]
+    B --> E[ProviderProvider]
+    B --> F[RoomProvider]
+    
+    C --> G[PatientService]
+    D --> H[AppointmentService]
+    E --> I[ProviderService]
+    F --> J[RoomService]
+    
+    G --> K[Firestore]
+    H --> K
+    I --> K
+    J --> K
+```
+
+##### Offline Sync Workflow
+
+```mermaid
+stateDiagram-v2
+    [*] --> Online
+    Online --> Offline: Network Lost
+    Offline --> QueueOperations: User Actions
+    QueueOperations --> Offline: Continue Offline
+    Offline --> Online: Network Restored
+    Online --> SyncPending: Check Queue
+    SyncPending --> ResolveConflicts: Conflicts Found
+    ResolveConflicts --> Online: Conflicts Resolved
+    SyncPending --> Online: No Conflicts
+```
 
 ### 11.2 User Documentation
 
 - [ ] User guides for new features
 - [ ] Admin documentation
 - [ ] Troubleshooting guides
+- [ ] Role-based access guides
+- [ ] Offline mode instructions
+
+#### Visual Documentation Requirements
+
+1. **Component Hierarchy Diagrams**
+   - Show React component tree structure
+   - Highlight data flow between components
+   - Document prop passing patterns
+
+2. **Database Schema Visuals**
+   - Entity relationship diagrams
+   - Collection structure charts
+   - Index optimization guides
+
+3. **Security Model Diagrams**
+   - Role permission matrices
+   - Data access flow charts
+   - Audit trail visualizations
+
+4. **Deployment Architecture**
+   - Infrastructure diagrams
+   - CI/CD pipeline visuals
+   - Environment configuration charts
 
 ## Implementation Priority
 
