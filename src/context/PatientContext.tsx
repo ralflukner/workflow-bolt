@@ -42,6 +42,14 @@ const normalizeStatus = (status: string): string => {
       return 'ready-for-md';
     case 'seen by md':
       return 'seen-by-md';
+    case 'rescheduled':
+      return 'rescheduled';
+    case 'cancelled':
+    case 'canceled':
+      return 'cancelled';
+    case 'no show':
+    case 'noshow':
+      return 'no-show';
     default:
       return status;
   }

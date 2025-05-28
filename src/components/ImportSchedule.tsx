@@ -62,22 +62,28 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
 
       // Map external status to internal workflow status
       let patientStatus: PatientApptStatus = 'scheduled';
-      if (externalStatus === 'Confirmed' || externalStatus === 'Scheduled' || externalStatus === 'Reminder Sent') {
+      const statusLower = externalStatus.toLowerCase();
+      
+      if (['confirmed', 'scheduled', 'reminder sent'].includes(statusLower)) {
         patientStatus = 'scheduled';
-      } else if (externalStatus === 'Arrived' || externalStatus === 'Checked In') {
+      } else if (['arrived', 'checked in'].includes(statusLower)) {
         patientStatus = 'arrived';
-      } else if (externalStatus === 'Roomed' || externalStatus === 'Appt Prep Started') {
+      } else if (['roomed', 'appt prep started'].includes(statusLower)) {
         patientStatus = 'appt-prep';
-      } else if (externalStatus === 'Ready for MD') {
+      } else if (statusLower === 'ready for md') {
         patientStatus = 'ready-for-md';
-      } else if (externalStatus === 'With Doctor') {
+      } else if (statusLower === 'with doctor') {
         patientStatus = 'With Doctor';
-      } else if (externalStatus === 'Seen by MD') {
+      } else if (statusLower === 'seen by md') {
         patientStatus = 'seen-by-md';
-      } else if (externalStatus === 'Checked Out') {
+      } else if (['checked out', 'checkedout'].includes(statusLower)) {
         patientStatus = 'completed';
-      } else if (externalStatus === 'No Show' || externalStatus === 'Rescheduled' || externalStatus === 'Cancelled') {
-        patientStatus = 'completed'; // Marking these as completed since they're no longer active
+      } else if (statusLower === 'rescheduled') {
+        patientStatus = 'rescheduled';
+      } else if (['cancelled', 'canceled'].includes(statusLower)) {
+        patientStatus = 'cancelled';
+      } else if (statusLower === 'no show') {
+        patientStatus = 'no-show';
       }
 
       // Set check-in time for patients who have already checked in
