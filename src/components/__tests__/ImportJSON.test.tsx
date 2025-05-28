@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, jest } from '@jest/globals';
 import { Patient } from '../../types';
 
 const validPatientData: Patient[] = [
@@ -65,15 +65,15 @@ describe('ImportJSON Component Validation', () => {
 
   describe('File reading and JSON parsing', () => {
     it('should handle JSON parsing errors', () => {
-      vi.useFakeTimers();
+      jest.useFakeTimers();
       
-      const mockSetError = vi.fn();
-      const mockSetProcessing = vi.fn();
+      const mockSetError = jest.fn();
+      const mockSetProcessing = jest.fn();
       
       const mockFileReader = {
         onload: null as any,
         onerror: null as any,
-        readAsText: vi.fn((_file) => {
+        readAsText: jest.fn((_file) => {
           setTimeout(() => {
             if (mockFileReader.onload) {
               mockFileReader.onload({ target: { result: 'not valid json' } });
@@ -83,7 +83,7 @@ describe('ImportJSON Component Validation', () => {
       };
       
       const originalFileReader = globalThis.FileReader;
-      globalThis.FileReader = vi.fn(() => mockFileReader) as any;
+      globalThis.FileReader = jest.fn(() => mockFileReader) as any;
       
       const mockFile = new File([''], 'test.json', { type: 'application/json' });
       
@@ -112,13 +112,13 @@ describe('ImportJSON Component Validation', () => {
       
       handleFileSelect(mockFile);
       
-      vi.runAllTimers();
+      jest.runAllTimers();
       
       expect(mockSetError).toHaveBeenCalledWith(expect.stringContaining('JSON'));
       expect(mockSetProcessing).toHaveBeenCalledWith(false);
       
       globalThis.FileReader = originalFileReader;
-      vi.useRealTimers();
+      jest.useRealTimers();
     });
   });
 });

@@ -1,14 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { mockPatients } from '../data/mockData';
 import { Patient } from '../types';
 
 describe('JSON Import/Export Integration', () => {
-  const mockCreateElement = vi.fn();
-  const mockAppendChild = vi.fn();
-  const mockRemoveChild = vi.fn();
-  const mockClick = vi.fn();
-  const mockCreateObjectURL = vi.fn(() => 'mock-url');
-  const mockRevokeObjectURL = vi.fn();
+  const mockCreateElement = jest.fn();
+  const mockAppendChild = jest.fn();
+  const mockRemoveChild = jest.fn();
+  const mockClick = jest.fn();
+  const mockCreateObjectURL = jest.fn(() => 'mock-url');
+  const mockRevokeObjectURL = jest.fn();
   
   const mockAnchor = {
     href: '',
@@ -35,13 +35,13 @@ describe('JSON Import/Export Integration', () => {
   });
   
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
   
   it('should maintain data integrity through export and import cycle', () => {
     const patients: Patient[] = [...mockPatients];
     
-    const setPatients = vi.fn();
+    const setPatients = jest.fn();
     
     const exportPatientsToJSON = () => {
       const jsonData = JSON.stringify(patients, null, 2);
@@ -81,7 +81,7 @@ describe('JSON Import/Export Integration', () => {
   });
   
   it('should handle validation during import cycle', () => {
-    const validatePatientData = vi.fn((data: any): data is Patient[] => {
+    const validatePatientData = jest.fn((data: any): data is Patient[] => {
       if (!Array.isArray(data)) {
         throw new Error('JSON data must be an array of patients');
       }

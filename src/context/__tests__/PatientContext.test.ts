@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { mockPatients } from '../../data/mockData';
 
-const mockCreateElement = vi.fn();
-const mockAppendChild = vi.fn();
-const mockRemoveChild = vi.fn();
-const mockClick = vi.fn();
+const mockCreateElement = jest.fn();
+const mockAppendChild = jest.fn();
+const mockRemoveChild = jest.fn();
+const mockClick = jest.fn();
 
-const mockCreateObjectURL = vi.fn(() => 'mock-url');
-const mockRevokeObjectURL = vi.fn();
+const mockCreateObjectURL = jest.fn(() => 'mock-url');
+const mockRevokeObjectURL = jest.fn();
 
 describe('PatientContext JSON functionality', () => {
   beforeEach(() => {
@@ -35,7 +35,7 @@ describe('PatientContext JSON functionality', () => {
   });
   
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
   
   describe('exportPatientsToJSON', () => {
@@ -71,7 +71,7 @@ describe('PatientContext JSON functionality', () => {
     
     it('should generate a filename with the current date', () => {
       const mockDate = new Date('2025-05-28');
-      const spy = vi.spyOn(globalThis, 'Date');
+      const spy = jest.spyOn(globalThis, 'Date');
       spy.mockImplementation(() => mockDate);
       
       const patients = [...mockPatients];
@@ -98,7 +98,7 @@ describe('PatientContext JSON functionality', () => {
   
   describe('importPatientsFromJSON', () => {
     it('should set patients state with imported data', () => {
-      const setPatients = vi.fn();
+      const setPatients = jest.fn();
       
       const importPatientsFromJSON = (importedPatients: any[]) => {
         setPatients(importedPatients);
@@ -113,7 +113,7 @@ describe('PatientContext JSON functionality', () => {
     });
     
     it('should handle empty patient array', () => {
-      const setPatients = vi.fn();
+      const setPatients = jest.fn();
       
       const importPatientsFromJSON = (importedPatients: any[]) => {
         setPatients(importedPatients);
