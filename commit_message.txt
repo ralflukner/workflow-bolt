@@ -1,5 +1,13 @@
-fix: Real-time wait time updates by storing Date objects directly
+feat(testing): migrate test suite from Vitest to Jest
 
-- Store Date objects directly in timeMode state instead of ISO strings
-- Improve interval cleanup when switching time modes
-- Ensure consistent time updates in real-time mode
+This commit migrates the project's test suite from Vitest to Jest:
+
+- Replace Vitest imports with Jest equivalents in all test files
+- Update mocking syntax from vi.* to jest.* throughout test files
+- Add happy-dom for DOM testing environment
+- Configure Jest setup in src/test/setup.ts with DOM matchers and cleanup
+- Update package-lock.json with new dependencies
+
+The migration maintains all existing test functionality while standardizing
+on Jest as the primary testing framework. Both frameworks are temporarily
+maintained to ensure a smooth transition.
