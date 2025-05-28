@@ -12,6 +12,29 @@ interface PatientProviderProps {
   children: ReactNode;
 }
 
+// Helper to normalize various status spellings/capitalizations
+const normalizeStatus = (status: string): string => {
+  const s = status.trim().toLowerCase();
+  switch (s) {
+    case 'checkedout':
+    case 'checked-out':
+    case 'checked out':
+    case 'checked_out':
+      return 'completed';
+    case 'checked in':
+    case 'check-in':
+    case 'checkedin':
+      return 'arrived';
+    case 'roomed':
+      return 'appt-prep';
+    case 'withdoctor':
+    case 'with doctor':
+      return 'With Doctor';
+    default:
+      return status;
+  }
+};
+
 export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) => {
   const [patients, setPatients] = useState<Patient[]>(mockPatients);
   const { getCurrentTime, timeMode } = useTimeContext();
@@ -30,7 +53,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
       // For simulated time, update very frequently
       intervalId = setInterval(tick, 1000); // Update every second
     } else {
-      // For real time, update less frequently
+      // For real time, update less frequently (every 6 seconds)
       intervalId = setInterval(tick, 6000); // Update every 6 seconds
     }
 
@@ -63,19 +86,32 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         if (patient.id === id) {
           const updatedPatient = { ...patient, status };
 
-          // Add timestamps based on status
-          switch (status) {
-            case 'arrived':
-              updatedPatient.checkInTime = now;
-              break;
-            case 'With Doctor':
-              updatedPatient.withDoctorTime = now;
-              break;
-            case 'completed':
-              updatedPatient.completedTime = now;
-              break;
-            default:
-              break;
+          // Normalize status variations to handle timestamps consistently
+          const normalizedStatus = normalizeStatus(status) as PatientApptStatus;
+
+          updatedPatient.status = normalizedStatus;
+
+          // Arrival/check-in timestamps
+          if (
+            updatedPatient.status === 'arrived' ||
+            updatedPatient.status === 'Arrived' ||
+            updatedPatient.status === 'Checked In'
+          ) {
+            updatedPatient.checkInTime = updatedPatient.checkInTime || now;
+          }
+
+          // With-doctor timestamps
+          if (
+            updatedPatient.status === 'With Doctor' ||
+            updatedPatient.status === 'seen-by-md' ||
+            updatedPatient.status === 'Seen by MD'
+          ) {
+            updatedPatient.withDoctorTime = updatedPatient.withDoctorTime || now;
+          }
+
+          // Completion timestamps
+          if (updatedPatient.status === 'completed' || updatedPatient.status === 'Checked Out') {
+            updatedPatient.completedTime = updatedPatient.completedTime || now;
           }
 
           return updatedPatient;
@@ -158,24 +194,39 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     URL.revokeObjectURL(url);
   };
 
-const importPatientsFromJSON = (importedPatients: Patient[]) => {
-   // Basic validation
-   if (!Array.isArray(importedPatients)) {
-     throw new Error('Invalid data format: expected array of patients');
-   }
-   
-   // Validate each patient has required fields
-   const requiredFields = ['id', 'name', 'dob', 'appointmentTime', 'provider', 'status'];
-   importedPatients.forEach((patient, index) => {
-     requiredFields.forEach(field => {
-       if (!(field in patient)) {
-         throw new Error(`Patient at index ${index} missing required field: ${field}`);
+  const importPatientsFromJSON = (importedPatients: Patient[]) => {
+     // Basic validation
+     if (!Array.isArray(importedPatients)) {
+       throw new Error('Invalid data format: expected array of patients');
+     }
+     
+     // Normalize statuses and ensure timestamps
+     const normalized = importedPatients.map(p => {
+       const updated = { ...p };
+       updated.status = normalizeStatus(updated.status as string) as PatientApptStatus;
+       // If patient is already checked in status but missing checkInTime, set it to appointmentTime or now
+       if (!updated.checkInTime && ['Arrived', 'Checked In', 'arrived'].includes(updated.status as string)) {
+         updated.checkInTime = new Date().toISOString();
        }
+       // If patient is completed but missing completedTime
+       if (!updated.completedTime && (updated.status === 'completed' || updated.status === 'Checked Out')) {
+         updated.completedTime = new Date().toISOString();
+       }
+       return updated;
      });
-   });
-   
-   setPatients(importedPatients);
- };
+     
+     // Validate each patient has required fields
+     const requiredFields = ['id', 'name', 'dob', 'appointmentTime', 'provider', 'status'];
+     normalized.forEach((patient, index) => {
+       requiredFields.forEach(field => {
+         if (!(field in patient)) {
+           throw new Error(`Patient at index ${index} missing required field: ${field}`);
+         }
+       });
+     });
+     
+     setPatients(normalized);
+   };
 
   const value = {
     patients,
