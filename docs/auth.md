@@ -4,11 +4,14 @@ This document explains the Auth0 authentication implementation in the Patient Fl
 
 ## Overview
 
-The application uses Auth0 for authentication, providing a secure, standards-based, and feature-rich authentication solution.
+The application uses Auth0 for authentication, providing a secure,
+standards-based, and feature-rich authentication solution.
 
 ## Configuration
 
-Authentication settings are configured using environment variables, typically stored in a `.env-local` file in the project root (this file should **not** be committed to version control).
+Authentication settings are configured using environment variables,
+typically stored in a `.env-local` file in the project root (this file
+should **not** be committed to version control).
 
 The following variables are required:
 
@@ -16,18 +19,24 @@ The following variables are required:
 # .env-local
 VITE_AUTH0_DOMAIN=YOUR_AUTH0_DOMAIN
 VITE_AUTH0_CLIENT_ID=YOUR_AUTH0_CLIENT_ID
-VITE_AUTH0_REDIRECT_URI=YOUR_APP_REDIRECT_URI # e.g., http://localhost:5173 for development
-VITE_AUTH0_AUDIENCE=YOUR_API_IDENTIFIER # Optional: e.g., https://api.patientflow.com
+# e.g., http://localhost:5173 for development
+VITE_AUTH0_REDIRECT_URI=YOUR_APP_REDIRECT_URI
+# Optional: e.g., https://api.patientflow.com
+VITE_AUTH0_AUDIENCE=YOUR_API_IDENTIFIER
 ```
 
-Replace the placeholder values (`YOUR_...`) with your actual Auth0 application settings. These variables are then imported and used by the Auth0Provider configuration, likely within `src/main.tsx` or `src/App.tsx` where the provider is initialized.
+Replace the placeholder values (`YOUR_...`) with your actual Auth0
+application settings. These variables are then imported and used by the
+Auth0Provider configuration, likely within `src/main.tsx` or `src/App.tsx`
+where the provider is initialized.
 
 ## Setting Up Auth0
 
 1. **Create an Auth0 Account and Application**:
    - Sign up at [Auth0.com](https://auth0.com/)
    - Create a new Application (choose Single Page Application)
-   - Configure the Allowed Callback URLs, Logout URLs, and Web Origins to match your application URL
+   - Configure the Allowed Callback URLs, Logout URLs, and Web Origins to
+     match your application URL
 
 2. **Update Configuration**:
    - Copy your Auth0 Domain and Client ID from the Auth0 Dashboard
@@ -37,7 +46,8 @@ Replace the placeholder values (`YOUR_...`) with your actual Auth0 application s
 
 ### Auth Provider
 
-The `AuthProvider` component wraps the entire application to provide authentication context:
+The `AuthProvider` component wraps the entire application to provide
+authentication context:
 
 ```typescript
 // src/auth/AuthProvider.tsx
@@ -63,7 +73,8 @@ import { useAuth0 } from '@auth0/auth0-react';
 
 ### Protected Route
 
-The `ProtectedRoute` component ensures content is only accessible to authenticated users:
+The `ProtectedRoute` component ensures content is only accessible to
+authenticated users:
 
 ```typescript
 // src/components/ProtectedRoute.tsx
@@ -78,11 +89,13 @@ import { useAuth0 } from '@auth0/auth0-react';
 3. If not authenticated, the login page is shown
 4. User clicks the Login button and is redirected to Auth0
 5. After successful authentication, Auth0 redirects back to the application
-6. The application displays the Dashboard with AuthNav showing the user's info
+6. The application displays the Dashboard with AuthNav showing the user's
+   info
 
 ## Accessing User Information
 
-You can access authentication state and user information using the `useAuth0` hook:
+You can access authentication state and user information using the
+`useAuth0` hook:
 
 ```typescript
 import { useAuth0 } from '@auth0/auth0-react';
@@ -96,7 +109,8 @@ function MyComponent() {
 
 ## Custom Claims and Roles
 
-For more advanced use cases, you can configure Auth0 to include custom claims and roles in the user token.
+For more advanced use cases, you can configure Auth0 to include custom
+claims and roles in the user token.
 
 ## Security Considerations
 
@@ -109,6 +123,9 @@ For more advanced use cases, you can configure Auth0 to include custom claims an
 
 **Common Issues**:
 
-1. **Redirect URI Mismatch**: Ensure the redirectUri in your Auth0 config matches your application's URL
-2. **Invalid Client ID or Domain**: Double-check your Auth0 application settings
-3. **CORS Errors**: Verify your Auth0 application's Allowed Web Origins includes your development URL 
+1. **Redirect URI Mismatch**: Ensure the redirectUri in your Auth0 config
+   matches your application's URL
+2. **Invalid Client ID or Domain**: Double-check your Auth0 application
+   settings
+3. **CORS Errors**: Verify your Auth0 application's Allowed Web Origins
+   includes your development URL 

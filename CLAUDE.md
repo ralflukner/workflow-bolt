@@ -1,10 +1,12 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working
+with code in this repository.
 
 ## Commands
 
 ### Development
+
 ```bash
 # Start the development server
 npm run dev
@@ -22,9 +24,13 @@ npm run lint
 ## Code Architecture
 
 ### Project Overview
-This is a Patient Flow Management dashboard built with Vite, React, TypeScript, and Tailwind CSS. It provides an interface for managing patient appointments and workflow in a clinical setting.
+
+This is a Patient Flow Management dashboard built with Vite, React,
+TypeScript, and Tailwind CSS. It provides an interface for managing patient
+appointments and workflow in a clinical setting.
 
 ### Core Technologies
+
 - Vite for build tooling
 - React 18+ for UI components
 - TypeScript for type safety
@@ -32,6 +38,7 @@ This is a Patient Flow Management dashboard built with Vite, React, TypeScript, 
 - Auth0 for authentication
 
 ### State Management
+
 The application uses React Context API for state management:
 
 1. **TimeContext** (`src/context/TimeContext.tsx`):
@@ -53,11 +60,12 @@ The application uses React Context API for state management:
 
 2. **PatientApptStatus** (`src/types/index.ts`):
    - Combined type for internal workflow and external scheduling statuses
-   - Statuses include: scheduled, arrived, appt-prep, ready-for-md, With Doctor, seen-by-md, completed
+   - Statuses include: scheduled, arrived, appt-prep, ready-for-md,
+     With Doctor, seen-by-md, completed
 
 ### Component Hierarchy
 
-```
+```text
 App
 ├── TimeProvider
 │   └── PatientProvider
@@ -71,6 +79,7 @@ App
 ```
 
 ### Data Flow
+
 1. The TimeContext provides current time (real or simulated)
 2. The PatientContext maintains patient data and status
 3. Components read from these contexts and dispatch actions
@@ -80,10 +89,12 @@ App
 ## Authentication
 
 The application uses Auth0 for authentication:
+
 - Auth0Provider wraps the application in `src/auth/AuthProvider.tsx`
 - Environmental variables configure the Auth0 connection
 - LoginButton and LogoutButton components handle authentication actions
-- ProtectedRoute component ensures content is only accessible to authenticated users
+- ProtectedRoute component ensures content is only accessible to
+  authenticated users
 
 ## Key Features
 

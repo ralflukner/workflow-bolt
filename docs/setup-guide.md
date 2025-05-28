@@ -58,6 +58,7 @@ src/
 ### Recommended IDE Setup
 
 We recommend using Visual Studio Code with the following extensions:
+
 - ESLint
 - Tailwind CSS IntelliSense
 - TypeScript Vue Plugin (Volar)
@@ -66,6 +67,7 @@ We recommend using Visual Studio Code with the following extensions:
 ## TypeScript Configuration
 
 The project uses TypeScript with the following configuration files:
+
 - `tsconfig.json`: Base configuration
 - `tsconfig.app.json`: Application-specific settings
 - `tsconfig.node.json`: Node.js-specific settings
@@ -102,7 +104,8 @@ npm run preview
 
 ## Testing
 
-Currently, the application uses manual testing. Automated testing will be added in the future.
+Currently, the application uses manual testing. Automated testing will be
+added in the future.
 
 ## Simulating the Application
 
@@ -123,6 +126,7 @@ The application uses mock data located in `src/data/mockData.ts`. You can:
 ## Versioning and Tagging
 
 The project follows [Semantic Versioning](https://semver.org/) (SemVer) principles:
+
 - MAJOR version (1.0.0) for incompatible API changes
 - MINOR version (0.1.0) for backward-compatible functionality additions
 - PATCH version (0.0.1) for backward-compatible bug fixes
@@ -132,12 +136,14 @@ The project follows [Semantic Versioning](https://semver.org/) (SemVer) principl
 To tag a version in GitHub:
 
 1. **Create a local tag** using Git:
+
    ```bash
    # Format: git tag -a v<version> -m "<message>"
    git tag -a v0.1.0 -m "Version 0.1.0 - Time handling improvements and Auth0 integration"
    ```
 
 2. **Push the tag** to the remote repository:
+
    ```bash
    git push origin v0.1.0
    ```
@@ -177,6 +183,7 @@ git checkout v0.1.0
 ### Getting Help
 
 If you encounter issues not covered in this guide, please:
+
 1. Check the existing GitHub issues
 2. Create a new issue with detailed information about the problem
-3. Include environment details (OS, Node version, browser) 
+3. Include environment details (OS, Node version, browser)

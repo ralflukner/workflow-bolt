@@ -1,6 +1,7 @@
 # Data Model
 
-This document details the data structures and state management approach used in the Patient Flow Management application.
+This document details the data structures and state management approach
+used in the Patient Flow Management application.
 
 ## Core Data Types
 
@@ -30,30 +31,38 @@ Key fields:
 - `name`: Patient's full name
 - `dob`: Date of birth in ISO format (YYYY-MM-DD)
 - `appointmentTime`: Scheduled appointment time as ISO string
-- `status`: Current status in the patient flow (using the combined PatientApptStatus type)
+- `status`: Current status in the patient flow (using the combined
+  PatientApptStatus type)
 - Timestamps for different stages of the patient visit
 
 ### Combined Patient Appointment Status
 
-The `PatientApptStatus` type combines both internal workflow statuses and external scheduling statuses:
+The `PatientApptStatus` type combines both internal workflow statuses and
+external scheduling statuses:
 
 ```typescript
-export type PatientApptStatus = 
+export type PatientApptStatus =
   // Internal workflow statuses (lowercase kebab-case)
-  | 'scheduled' | 'arrived' | 'appt-prep' | 'ready-for-md' | 'With Doctor' | 'seen-by-md' | 'completed'
+  | 'scheduled' | 'arrived' | 'appt-prep' | 'ready-for-md'
+  | 'With Doctor' | 'seen-by-md' | 'completed'
   // External scheduling statuses (Title Case with spaces)
-  | 'Scheduled' | 'Reminder Sent' | 'Confirmed' | 'Arrived' | 'Checked In' | 'Roomed' | 'Appt Prep Started' 
-  | 'Ready for MD' | 'Seen by MD' | 'Checked Out' | 'No Show' | 'Rescheduled' | 'Cancelled';
+  | 'Scheduled' | 'Reminder Sent' | 'Confirmed' | 'Arrived'
+  | 'Checked In' | 'Roomed' | 'Appt Prep Started'
+  | 'Ready for MD' | 'Seen by MD' | 'Checked Out'
+  | 'No Show' | 'Rescheduled' | 'Cancelled';
 ```
 
-This combined type allows the application to use a single status field that can represent both internal workflow states and external scheduling states.
+This combined type allows the application to use a single status field
+that can represent both internal workflow states and external scheduling
+states.
 
 ### Patient Flow Status (Legacy)
 
-The `PatientStatus` type defines the possible states in the patient workflow:
+The `PatientStatus` type defines the possible states in the patient
+workflow:
 
 ```typescript
-export type PatientStatus = 
+export type PatientStatus =
   | 'scheduled'     // Patient is scheduled but not arrived
   | 'arrived'       // Patient has arrived at the clinic
   | 'appt-prep'     // Patient is being prepared for appointment
@@ -63,14 +72,17 @@ export type PatientStatus =
   | 'completed';    // Patient has completed their visit
 ```
 
-This represents the internal workflow statuses that are now included in the combined `PatientApptStatus` type. This type is maintained for backward compatibility.
+This represents the internal workflow statuses that are now included in
+the combined `PatientApptStatus` type. This type is maintained for backward
+compatibility.
 
 ### Appointment Status (Legacy)
 
-The `AppointmentStatus` type defines the scheduling status of the appointment:
+The `AppointmentStatus` type defines the scheduling status of the
+appointment:
 
 ```typescript
-export type AppointmentStatus = 
+export type AppointmentStatus =
   | 'Scheduled'
   | 'Reminder Sent'
   | 'Confirmed'
@@ -86,7 +98,9 @@ export type AppointmentStatus =
   | 'Cancelled';
 ```
 
-This represents the external scheduling statuses that are now included in the combined `PatientApptStatus` type. This type is maintained for backward compatibility.
+This represents the external scheduling statuses that are now included in
+the combined `PatientApptStatus` type. This type is maintained for backward
+compatibility.
 
 ### Appointment Type
 
@@ -135,9 +149,11 @@ The application uses React Context API for state management:
 
 ![Data Flow Diagram](https://via.placeholder.com/800x400?text=Patient+Data+Flow+Diagram)
 
-1. Patient data is loaded from mock data or imported via the ImportSchedule component
+1. Patient data is loaded from mock data or imported via the
+   ImportSchedule component
 2. The PatientContext maintains the central state of all patients
-3. UI components read from PatientContext and display filtered subsets based on status
+3. UI components read from PatientContext and display filtered subsets
+   based on status
 4. Status changes trigger PatientContext updates, which update timestamps
 5. All components re-render based on context changes
 
@@ -149,4 +165,5 @@ The application tracks several key timestamps:
 - `withDoctorTime`: When the patient goes in with the doctor
 - `completedTime`: When the patient checks out
 
-These timestamps are used to calculate waiting times and efficiency metrics. 
+These timestamps are used to calculate waiting times and efficiency
+metrics. 

@@ -1,6 +1,7 @@
 # Auth0 and Netlify Setup Guide
 
-This guide walks you through configuring Auth0 for your Patient Flow Management application and deploying it to Netlify.
+This guide walks you through configuring Auth0 for your Patient Flow
+Management application and deploying it to Netlify.
 
 ## Auth0 Setup
 
@@ -10,9 +11,11 @@ If you don't already have one, [sign up for a free Auth0 account](https://auth0.
 
 ### 2. Create a New Application
 
-1. Once logged in to the Auth0 Dashboard, navigate to **Applications** > **Applications**.
+1. Once logged in to the Auth0 Dashboard, navigate to
+   **Applications** > **Applications**.
 2. Click **+ Create Application**.
-3. Enter a name for your application (e.g., "Patient Flow Management").
+3. Enter a name for your application
+   (e.g., "Patient Flow Management").
 4. Select **Single Page Web Application** as the application type.
 5. Click **Create**.
 
@@ -21,7 +24,9 @@ If you don't already have one, [sign up for a free Auth0 account](https://auth0.
 In your new application's settings, configure the following:
 
 #### Basic Information
-- Take note of your **Domain** and **Client ID** - you'll need these for your application.
+
+- Take note of your **Domain** and **Client ID** - you'll need these for
+  your application.
 
 #### Application URIs
 
@@ -31,14 +36,18 @@ For local development:
 - **Allowed Web Origins**: `http://localhost:5173`
 
 For Netlify deployment (add these after you know your Netlify URL):
+
 - **Allowed Callback URLs**: `https://your-netlify-app.netlify.app`
 - **Allowed Logout URLs**: `https://your-netlify-app.netlify.app`
 - **Allowed Web Origins**: `https://your-netlify-app.netlify.app`
 
-> **Note**: You can add multiple URLs for each setting, separated by commas.
+> **Note**: You can add multiple URLs for each setting, separated by
+> commas.
 
 #### Advanced Settings
-- Under **Advanced Settings** > **OAuth**, ensure **JsonWebToken Signature Algorithm** is set to `RS256`.
+
+- Under **Advanced Settings** > **OAuth**, ensure
+  **JsonWebToken Signature Algorithm** is set to `RS256`.
 
 ### 4. Create an API (Optional, for Backend Integration)
 
@@ -56,6 +65,7 @@ If you plan to use a backend API:
 ### 1. Set Up Your Repository for Netlify
 
 Ensure your project has:
+
 - A `netlify.toml` file with proper configuration
 - Build settings for Vite
 
@@ -71,7 +81,8 @@ Ensure your project has:
 
 ### 3. Configure Environment Variables in Netlify
 
-Go to **Site settings** > **Environment variables** and add the following variables:
+Go to **Site settings** > **Environment variables** and add the following
+variables:
 
 - `VITE_AUTH0_DOMAIN`: Your Auth0 domain
 - `VITE_AUTH0_CLIENT_ID`: Your Auth0 client ID
@@ -80,11 +91,14 @@ Go to **Site settings** > **Environment variables** and add the following variab
 
 ### 4. Update Auth0 Configuration
 
-After deployment, go back to your Auth0 application settings and add your Netlify app URL to the callback URLs, logout URLs, and web origins as mentioned in step 3.
+After deployment, go back to your Auth0 application settings and add your
+Netlify app URL to the callback URLs, logout URLs, and web origins as
+mentioned in step 3.
 
 ## Local Development with Auth0
 
-1. Create a `.env.local` file in the root of your project with the following:
+1. Create a `.env.local` file in the root of your project with the
+   following:
 
 ```
 VITE_AUTH0_DOMAIN=your-auth0-domain.auth0.com
@@ -106,15 +120,21 @@ npm run dev
 ### Common Issues
 
 1. **Login Doesn't Work**:
+
    - Verify Auth0 domain and client ID are correct
    - Check if callback URLs are correctly configured in Auth0
 
 2. **Redirect Issues After Login**:
-   - Ensure the redirect URI matches exactly with what's configured in Auth0
+
+   - Ensure the redirect URI matches exactly with what's configured in
+     Auth0
 
 3. **Netlify Deployment Fails**:
+
    - Confirm your `netlify.toml` file is configured correctly
    - Verify environment variables are set in the Netlify dashboard
 
 4. **CORS Errors**:
-   - Make sure your Auth0 application has the correct Allowed Web Origins 
+
+   - Make sure your Auth0 application has the correct Allowed Web
+     Origins 
