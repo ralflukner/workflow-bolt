@@ -79,11 +79,11 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
       } else if (['checked out', 'checkedout'].includes(statusLower)) {
         patientStatus = 'completed';
       } else if (statusLower === 'rescheduled') {
-        patientStatus = 'rescheduled';
+        patientStatus = 'Rescheduled';
       } else if (['cancelled', 'canceled'].includes(statusLower)) {
-        patientStatus = 'cancelled';
+        patientStatus = 'Cancelled';
       } else if (statusLower === 'no show') {
-        patientStatus = 'no-show';
+        patientStatus = 'No Show';
       }
 
       // Set check-in time for patients who have already checked in

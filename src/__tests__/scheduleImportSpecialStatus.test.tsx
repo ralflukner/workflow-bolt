@@ -105,7 +105,7 @@ describe('Schedule Import Special Status Handling', () => {
       expect(importedPatients).toHaveLength(rescheduledLines.length);
       
       importedPatients.forEach(patient => {
-        expect(patient.status).toBe('rescheduled');
+        expect(patient.status).toBe('Rescheduled');
       });
       
       done();
@@ -145,7 +145,7 @@ describe('Schedule Import Special Status Handling', () => {
       expect(importedPatients).toHaveLength(cancelledLines.length);
       
       importedPatients.forEach(patient => {
-        expect(patient.status).toBe('cancelled');
+        expect(patient.status).toBe('Cancelled');
       });
       
       done();
@@ -227,8 +227,8 @@ describe('Schedule Import Special Status Handling', () => {
 
       console.log('Status counts:', statusCounts);
       
-      expect(statusCounts['rescheduled']).toBe(2); // Two rescheduled appointments
-      expect(statusCounts['cancelled']).toBe(1);   // One cancelled appointment
+      expect(statusCounts['Rescheduled']).toBe(2); // Two rescheduled appointments
+      expect(statusCounts['Cancelled']).toBe(1);   // One cancelled appointment
       expect(statusCounts['completed']).toBe(9);   // Nine checked out appointments
       
       const scheduledCount = statusCounts['scheduled'] || 0;

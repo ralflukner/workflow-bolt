@@ -38,6 +38,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
       case 'Confirmed': return 'bg-green-600';
       case 'Rescheduled': return 'bg-orange-500';
       case 'Cancelled': return 'bg-red-500';
+      case 'No Show': return 'bg-red-600';
       case 'arrived': return 'bg-amber-500';
       case 'appt-prep': return 'bg-purple-500';
       case 'ready-for-md': return 'bg-cyan-500';
@@ -54,6 +55,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
       case 'Confirmed': return 'border-green-600';
       case 'Rescheduled': return 'border-orange-500';
       case 'Cancelled': return 'border-red-500';
+      case 'No Show': return 'border-red-600';
       case 'arrived': return 'border-amber-500';
       case 'appt-prep': return 'border-purple-500';
       case 'ready-for-md': return 'border-cyan-500';
