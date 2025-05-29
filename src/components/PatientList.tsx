@@ -18,6 +18,7 @@ const PatientList: React.FC<PatientListProps> = ({ status, title }) => {
       case 'Confirmed': return 'bg-green-800';
       case 'Rescheduled': return 'bg-orange-700';
       case 'Cancelled': return 'bg-red-700';
+      case 'No Show': return 'bg-red-800';
       case 'arrived': return 'bg-amber-700';
       case 'appt-prep': return 'bg-purple-700';
       case 'ready-for-md': return 'bg-cyan-700';

@@ -595,6 +595,22 @@ const Dashboard: React.FC = () => {
               <PatientList status={"Cancelled" as const} title="Cancelled Patients" />
             </div>
           </div>
+
+          <div>
+            <button 
+              onClick={() => toggleSection('No Show')}
+              className="w-full text-left mb-2 md:hidden flex items-center justify-between bg-gray-800 p-3 rounded"
+            >
+              <span className="text-white font-semibold">No Show Patients</span>
+              <ChevronDown 
+                size={20} 
+                className={`text-white transition-transform ${isExpanded('No Show') ? 'rotate-180' : ''}`} 
+              />
+            </button>
+            <div className={`${isExpanded('No Show') || window.innerWidth >= 768 ? 'block' : 'hidden'} md:block`}>
+              <PatientList status={"No Show" as const} title="No Show Patients" />
+            </div>
+          </div>
         </div>
       </main>
 
