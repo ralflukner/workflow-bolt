@@ -63,11 +63,14 @@ describe('PatientList', () => {
       }}>
         <PatientContext.Provider value={{
           patients: [],
-          setPatients: jest.fn(),
           addPatient: jest.fn(),
           updatePatientStatus: jest.fn(),
+          assignRoom: jest.fn(),
+          updateCheckInTime: jest.fn(),
           getPatientsByStatus: jest.fn(),
+          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
           getWaitTime: jest.fn(),
+          clearPatients: jest.fn(),
           exportPatientsToJSON: jest.fn(),
           importPatientsFromJSON: jest.fn(),
           tickCounter: 0
@@ -100,11 +103,14 @@ describe('PatientList', () => {
       }}>
         <PatientContext.Provider value={{
           patients: [],
-          setPatients: jest.fn(),
           addPatient: jest.fn(),
           updatePatientStatus: jest.fn(),
+          assignRoom: jest.fn(),
+          updateCheckInTime: jest.fn(),
           getPatientsByStatus: jest.fn(() => []),
+          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
           getWaitTime: jest.fn(),
+          clearPatients: jest.fn(),
           exportPatientsToJSON: jest.fn(),
           importPatientsFromJSON: jest.fn(),
           tickCounter: 0
