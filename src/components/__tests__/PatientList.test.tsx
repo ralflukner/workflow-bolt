@@ -55,6 +55,31 @@ jest.mock('../../utils/formatters', () => ({
 
 describe('PatientList', () => {
   it('renders correctly with patients', () => {
+    // Create a mock implementation of getPatientsByStatus
+    const mockGetPatientsByStatus = jest.fn((status: string) => {
+      if (status === 'scheduled') {
+        return [
+          {
+            id: 'test-1',
+            name: 'John Doe',
+            dob: '1990-01-01',
+            appointmentTime: '2023-01-01T09:00:00.000Z',
+            status: 'scheduled',
+            provider: 'Dr. Test'
+          },
+          {
+            id: 'test-2',
+            name: 'Jane Smith',
+            dob: '1985-05-15',
+            appointmentTime: '2023-01-01T10:00:00.000Z',
+            status: 'scheduled',
+            provider: 'Dr. Test'
+          }
+        ];
+      }
+      return [];
+    });
+    
     render(
       <TimeContext.Provider value={{
         timeMode: { simulated: false, currentTime: new Date().toISOString() },
@@ -70,9 +95,9 @@ describe('PatientList', () => {
           updatePatientStatus: jest.fn(),
           assignRoom: jest.fn(),
           updateCheckInTime: jest.fn(),
-          getPatientsByStatus: jest.fn(),
+          getPatientsByStatus: mockGetPatientsByStatus,
           getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(),
+          getWaitTime: jest.fn(() => 0),
           clearPatients: jest.fn(),
           exportPatientsToJSON: jest.fn(),
           importPatientsFromJSON: jest.fn(),
@@ -112,7 +137,7 @@ describe('PatientList', () => {
           updateCheckInTime: jest.fn(),
           getPatientsByStatus: jest.fn(() => []),
           getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(),
+          getWaitTime: jest.fn(() => 0),
           clearPatients: jest.fn(),
           exportPatientsToJSON: jest.fn(),
           importPatientsFromJSON: jest.fn(),
