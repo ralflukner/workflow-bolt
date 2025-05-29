@@ -1,5 +1,6 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { mockPatients } from '../../data/mockData';
+import { Patient } from '../../types';
 
 const mockCreateElement = jest.fn();
 const mockAppendChild = jest.fn();
@@ -11,9 +12,9 @@ const mockRevokeObjectURL = jest.fn();
 
 describe('PatientContext JSON functionality', () => {
   beforeEach(() => {
-    document.createElement = mockCreateElement;
-    document.body.appendChild = mockAppendChild;
-    document.body.removeChild = mockRemoveChild;
+    document.createElement = mockCreateElement as unknown as typeof document.createElement;
+    document.body.appendChild = mockAppendChild as unknown as typeof document.body.appendChild;
+    document.body.removeChild = mockRemoveChild as unknown as typeof document.body.removeChild;
     
     URL.createObjectURL = mockCreateObjectURL;
     URL.revokeObjectURL = mockRevokeObjectURL;
@@ -59,8 +60,8 @@ describe('PatientContext JSON functionality', () => {
       expect(mockCreateObjectURL).toHaveBeenCalledTimes(1);
       
       expect(mockCreateElement).toHaveBeenCalledWith('a');
-      expect(mockCreateElement.mock.results[0].value.href).toBe('mock-url');
-      expect(mockCreateElement.mock.results[0].value.download).toContain('patient-data-');
+      expect((mockCreateElement.mock.results[0].value as {href: string, download: string, click: jest.Mock}).href).toBe('mock-url');
+      expect((mockCreateElement.mock.results[0].value as {href: string, download: string, click: jest.Mock}).download).toContain('patient-data-');
       
       expect(mockAppendChild).toHaveBeenCalledTimes(1);
       expect(mockClick).toHaveBeenCalledTimes(1);
@@ -90,7 +91,7 @@ describe('PatientContext JSON functionality', () => {
       
       exportPatientsToJSON();
       
-      expect(mockCreateElement.mock.results[0].value.download).toBe('patient-data-2025-05-28.json');
+      expect((mockCreateElement.mock.results[0].value as {href: string, download: string, click: jest.Mock}).download).toBe('patient-data-2025-05-28.json');
       
       spy.mockRestore();
     });
@@ -100,7 +101,7 @@ describe('PatientContext JSON functionality', () => {
     it('should set patients state with imported data', () => {
       const setPatients = jest.fn();
       
-      const importPatientsFromJSON = (importedPatients: any[]) => {
+      const importPatientsFromJSON = (importedPatients: Patient[]) => {
         setPatients(importedPatients);
       };
       
@@ -115,7 +116,7 @@ describe('PatientContext JSON functionality', () => {
     it('should handle empty patient array', () => {
       const setPatients = jest.fn();
       
-      const importPatientsFromJSON = (importedPatients: any[]) => {
+      const importPatientsFromJSON = (importedPatients: Patient[]) => {
         setPatients(importedPatients);
       };
       
