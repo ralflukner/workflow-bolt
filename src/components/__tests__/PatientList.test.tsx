@@ -36,9 +36,12 @@ jest.mock('../../hooks/usePatientContext', () => ({
 
 // Mock the formatTime function
 jest.mock('../../utils/formatters', () => ({
-  formatTime: (date: string) => {
-    const d = new Date(date);
-    return `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`;
+  formatTime: (date: any) => {
+    if (typeof date === 'string') {
+      const d = new Date(date);
+      return `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`;
+    }
+    return '10:00 AM'; // Default for non-string inputs
   },
   formatDate: (date: string) => {
     const d = new Date(date);

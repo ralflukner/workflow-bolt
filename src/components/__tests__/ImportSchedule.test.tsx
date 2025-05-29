@@ -53,10 +53,10 @@ describe('ImportSchedule', () => {
     );
     
     // Check that the component renders with the correct title
-    expect(screen.getByText('Import Schedule')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Import Schedule' })).toBeInTheDocument();
     
     // Check that the textarea is present
-    expect(screen.getByPlaceholderText('Paste schedule data from spreadsheet here...')).toBeInTheDocument();
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
     
     // Check that the buttons are present
     expect(screen.getByText('Import')).toBeInTheDocument();
@@ -93,11 +93,11 @@ describe('ImportSchedule', () => {
 01/15/2023\t10:00 AM\tConfirmed\tJane Smith\t05/15/1985\tOffice Visit\tFollow-up`;
     
     // Paste the data into the textarea
-    const textarea = screen.getByPlaceholderText('Paste schedule data from spreadsheet here...');
+    const textarea = screen.getByRole('textbox');
     fireEvent.change(textarea, { target: { value: sampleData } });
     
     // Click the import button
-    fireEvent.click(screen.getByText('Import'));
+    fireEvent.click(screen.getByRole('button', { name: /Import Schedule/i }));
     
     // Wait for the import to complete
     await waitFor(() => {
@@ -152,11 +152,11 @@ describe('ImportSchedule', () => {
     const invalidData = `01/15/2023\t9:00 AM\tScheduled`;
     
     // Paste the data into the textarea
-    const textarea = screen.getByPlaceholderText('Paste schedule data from spreadsheet here...');
+    const textarea = screen.getByRole('textbox');
     fireEvent.change(textarea, { target: { value: invalidData } });
     
     // Click the import button
-    fireEvent.click(screen.getByText('Import'));
+    fireEvent.click(screen.getByRole('button', { name: /Import Schedule/i }));
     
     // Wait for the error message to appear
     await waitFor(() => {

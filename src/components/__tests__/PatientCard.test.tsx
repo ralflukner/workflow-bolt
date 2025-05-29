@@ -21,11 +21,25 @@ jest.mock('../../hooks/useTimeContext', () => ({
   })
 }));
 
-// Mock the formatTime function used in PatientCard
+// Mock the formatters functions used in PatientCard
 jest.mock('../../utils/formatters', () => ({
   formatTime: (date: string) => {
     const d = new Date(date);
     return `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`;
+  },
+  formatDate: (date: string) => {
+    const d = new Date(date);
+    return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+  },
+  formatDOB: (dob: string) => {
+    // Simple implementation for tests
+    if (dob === '1990-01-01') return '01/01/1990';
+    if (dob === '1985-05-15') return '05/15/1985';
+    const parts = dob.split('-');
+    if (parts.length === 3) {
+      return `${parts[1]}/${parts[2]}/${parts[0]}`;
+    }
+    return dob; // Return as-is if not in expected format
   }
 }));
 
