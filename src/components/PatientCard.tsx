@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Patient, PatientApptStatus } from '../types';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
-import { formatTime, formatDate, formatDOB } from '../utils/formatters';
+import { formatTime as utilFormatTime, formatDate, formatDOB } from '../utils/formatters';
 
 interface PatientCardProps {
   patient: Patient;
@@ -10,7 +10,7 @@ interface PatientCardProps {
 
 const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
   const { updatePatientStatus, assignRoom, updateCheckInTime, getWaitTime } = usePatientContext();
-  const { formatDateTime, formatTime, getCurrentTime } = useTimeContext();
+  const { formatDateTime, getCurrentTime } = useTimeContext();
   const [isEditingCheckIn, setIsEditingCheckIn] = useState(false);
   const [checkInDateInput, setCheckInDateInput] = useState('');
   const [checkInTimeInput, setCheckInTimeInput] = useState('');
@@ -241,7 +241,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
           <p className="text-gray-400">Date</p>
           <p className="text-white">{formatDate(patient.appointmentTime)}</p>
           <p className="text-gray-400 mt-1">Time</p>
-          <p className="text-white">{formatTime(patient.appointmentTime)}</p>
+          <p className="text-white">{utilFormatTime(patient.appointmentTime)}</p>
         </div>
         <div>
           <p className="text-gray-400">Provider</p>
