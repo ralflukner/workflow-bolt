@@ -1,4 +1,4 @@
-import React from 'react';
+// React is used implicitly for JSX
 import { render, screen, fireEvent } from '@testing-library/react';
 import PatientCard from '../PatientCard';
 import { PatientContext } from '../../context/PatientContextDef';
