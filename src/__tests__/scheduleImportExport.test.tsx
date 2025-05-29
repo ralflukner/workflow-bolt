@@ -4,6 +4,7 @@ import { PatientProvider } from '../context/PatientContext';
 import { TimeProvider } from '../context/TimeProvider';
 import { usePatientContext } from '../hooks/usePatientContext';
 import React from 'react';
+import { PatientApptStatus, Patient } from '../types';
 
 // Sample schedule data in tab-separated format (simulating what might be pasted from a spreadsheet)
 const sampleScheduleData = `05/19/2025	9:00 AM	Scheduled	JOHN DOE	01/01/1990	Office Visit	-
@@ -44,7 +45,7 @@ describe('Schedule Import/Export Functionality', () => {
     setTimeout(() => {
       // Parse the sample data (this would typically be done in a separate parser function)
       const lines = sampleScheduleData.trim().split('\n');
-      const parsedPatients = lines.map((line, index) => {
+      const parsedPatients: (Omit<Patient, 'status'> & { status: PatientApptStatus })[] = lines.map((line, index) => {
         const [date, time, status, name, dob, , notes] = line.split('\t');
         
         // Parse date and time
@@ -71,7 +72,7 @@ describe('Schedule Import/Export Functionality', () => {
           appointmentTime,
           appointmentType: 'Office Visit' as const,
           provider: 'Dr. Test',
-          status: status as any, // Will be normalized by the context
+          status: status as PatientApptStatus, // Will be normalized by the context
           chiefComplaint: notes !== '-' ? notes : undefined
         };
       });
@@ -119,7 +120,7 @@ describe('Schedule Import/Export Functionality', () => {
           appointmentTime: '2024-05-19T09:00:00.000Z',
           appointmentType: 'Office Visit' as const,
           provider: 'Dr. Test',
-          status: 'InvalidStatus' as any // Invalid status
+          status: 'InvalidStatus' as PatientApptStatus // Invalid status
         }
       ];
 
@@ -133,4 +134,4 @@ describe('Schedule Import/Export Functionality', () => {
       done();
     }, 0);
   });
-}); 
+});      

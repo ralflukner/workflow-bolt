@@ -81,7 +81,7 @@ describe('JSON Import/Export Integration', () => {
   });
   
   it('should handle validation during import cycle', () => {
-    const validatePatientData = jest.fn((data: any): data is Patient[] => {
+    const validatePatientData = jest.fn((data: unknown): data is Patient[] => {
       if (!Array.isArray(data)) {
         throw new Error('JSON data must be an array of patients');
       }

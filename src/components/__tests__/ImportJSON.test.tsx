@@ -14,7 +14,7 @@ const validPatientData: Patient[] = [
 
 describe('ImportJSON Component Validation', () => {
   describe('validatePatientData function', () => {
-    const validatePatientData = (data: any): data is Patient[] => {
+    const validatePatientData = (data: unknown): data is Patient[] => {
       if (!Array.isArray(data)) {
         throw new Error('JSON data must be an array of patients');
       }
@@ -71,19 +71,19 @@ describe('ImportJSON Component Validation', () => {
       const mockSetProcessing = jest.fn();
       
       const mockFileReader = {
-        onload: null as any,
-        onerror: null as any,
-        readAsText: jest.fn((_file) => {
+        onload: null as ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null,
+        onerror: null as ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null,
+        readAsText: jest.fn(() => {
           setTimeout(() => {
             if (mockFileReader.onload) {
-              mockFileReader.onload({ target: { result: 'not valid json' } });
+              (mockFileReader.onload as (ev: {target: {result: string}}) => void)({ target: { result: 'not valid json' } });
             }
           }, 0);
         })
       };
       
       const originalFileReader = globalThis.FileReader;
-      globalThis.FileReader = jest.fn(() => mockFileReader) as any;
+      globalThis.FileReader = jest.fn(() => mockFileReader) as unknown as typeof FileReader;
       
       const mockFile = new File([''], 'test.json', { type: 'application/json' });
       
