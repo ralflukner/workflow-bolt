@@ -55,10 +55,11 @@ describe('PatientList', () => {
     render(
       <TimeContext.Provider value={{
         timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        setTimeMode: jest.fn(),
+        toggleSimulation: jest.fn(),
+        adjustTime: jest.fn(),
         getCurrentTime: jest.fn(() => new Date()),
-        speedUpTime: jest.fn(),
-        resetTime: jest.fn()
+        formatTime: jest.fn(date => date.toLocaleTimeString()),
+        formatDateTime: jest.fn(date => date.toLocaleString())
       }}>
         <PatientContext.Provider value={{
           patients: [],
@@ -91,10 +92,11 @@ describe('PatientList', () => {
     render(
       <TimeContext.Provider value={{
         timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        setTimeMode: jest.fn(),
+        toggleSimulation: jest.fn(),
+        adjustTime: jest.fn(),
         getCurrentTime: jest.fn(() => new Date()),
-        speedUpTime: jest.fn(),
-        resetTime: jest.fn()
+        formatTime: jest.fn(date => date.toLocaleTimeString()),
+        formatDateTime: jest.fn(date => date.toLocaleString())
       }}>
         <PatientContext.Provider value={{
           patients: [],
