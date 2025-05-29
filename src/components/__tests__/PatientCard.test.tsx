@@ -17,7 +17,8 @@ jest.mock('../../hooks/usePatientContext', () => ({
 
 jest.mock('../../hooks/useTimeContext', () => ({
   useTimeContext: () => ({
-    getCurrentTime: () => new Date('2023-01-01T10:00:00.000Z')
+    getCurrentTime: () => new Date('2023-01-01T10:00:00.000Z'),
+    formatDateTime: (date: Date) => `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`
   })
 }));
 
