@@ -96,9 +96,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         console.error(`Failed to load from ${storageType}, starting with empty list:`, error);
         setPatients([]);
         setHasRealData(false);
-        if (isFirebaseConfigured) {
-          setPersistenceEnabled(false); // Only disable for Firebase errors
-        }
+        // Disable persistence for any storage errors to maintain consistency
+        setPersistenceEnabled(false);
       } finally {
         setIsLoading(false);
       }
@@ -135,9 +134,14 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
       
       // Periodic save every 5 minutes during real time mode (only real data)
       if (!timeMode.simulated && persistenceEnabled && patients.length > 0 && hasRealData) {
-        storageService.saveTodaysSession(patients).catch(error => {
-          console.error(`Periodic save to ${storageType} failed:`, error);
-        });
+        const saveResult = storageService.saveTodaysSession(patients);
+        
+        // Handle both sync (localStorage) and async (Firebase) saves
+        if (saveResult && typeof saveResult.catch === 'function') {
+          saveResult.catch((error: unknown) => {
+            console.error(`Periodic save to ${storageType} failed:`, error);
+          });
+        }
       }
     };
 
@@ -323,20 +327,20 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
 
   // Force save current session (manual trigger)
 const saveCurrentSession = async () => {
-    if (!persistenceEnabled) return;
-    
-    try {
-      await dailySessionService.saveTodaysSession(patients);
-      // Only mark as real data if we have actual patient data
-      if (patients.length > 0) {
-        setHasRealData(true);
-      }
-      console.log('Session saved manually');
-    } catch (error) {
-      console.error('Manual save failed:', error);
-      throw error;
-    }
-  };
+   if (!persistenceEnabled) return;
+   
+   try {
+    await storageService.saveTodaysSession(patients);
+     // Only mark as real data if we have actual patient data
+     if (patients.length > 0) {
+       setHasRealData(true);
+     }
+    console.log(`Session saved manually to ${storageType}`);
+   } catch (error) {
+    console.error(`Manual save to ${storageType} failed:`, error);
+     throw error;
+   }
+ };
 
   // Toggle persistence (for testing/debugging)
   const togglePersistence = () => {

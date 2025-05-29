@@ -124,7 +124,7 @@ export class LocalSessionService {
       return {
         currentSessionDate: this.getTodayId(),
         hasCurrentSession: false,
-        totalSessions: 0
+        patientCount: 0
       };
     }
   }
