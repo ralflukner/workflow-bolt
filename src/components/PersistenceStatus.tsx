@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { dailySessionService } from '../services/firebase/dailySessionService';
+import { localSessionService } from '../services/localStorage/localSessionService';
+import { isFirebaseConfigured } from '../config/firebase';
 
 interface SessionStats {
   currentSessionDate: string;
   hasCurrentSession: boolean;
   totalSessions: number;
-  oldestSession?: string;
 }
 
 export const PersistenceStatus: React.FC = () => {
@@ -14,137 +15,144 @@ export const PersistenceStatus: React.FC = () => {
     persistenceEnabled, 
     togglePersistence, 
     saveCurrentSession, 
-    isLoading,
-    patients 
+    patients,
+    hasRealData,
+    isLoading 
   } = usePatientContext();
   
   const [sessionStats, setSessionStats] = useState<SessionStats | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [purging, setPurging] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isPurging, setIsPurging] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+
+  // Determine which storage service to use
+  const storageService = isFirebaseConfigured ? dailySessionService : localSessionService;
+  const storageType = isFirebaseConfigured ? 'Firebase' : 'LocalStorage';
 
   // Load session statistics
   useEffect(() => {
-    if (!persistenceEnabled) return;
-
     const loadStats = async () => {
       try {
-        const stats = await dailySessionService.getSessionStats();
+        const stats = await storageService.getSessionStats();
         setSessionStats(stats);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load session stats');
+      } catch (error) {
+        console.error(`Failed to load session stats from ${storageType}:`, error);
       }
     };
 
-    loadStats();
-    
-    // Refresh stats every 30 seconds
-    const interval = setInterval(loadStats, 30000);
-    return () => clearInterval(interval);
-  }, [persistenceEnabled]);
+    if (persistenceEnabled) {
+      loadStats();
+      const interval = setInterval(loadStats, 30000); // Update every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [persistenceEnabled, patients.length, storageService, storageType]);
 
   const handleManualSave = async () => {
-    if (!persistenceEnabled) return;
-    
+    if (!hasRealData) {
+      alert('No real patient data to save. Add or import patients first.');
+      return;
+    }
+
+    setIsSaving(true);
     try {
-      setSaving(true);
-      setError(null);
       await saveCurrentSession();
+      setLastSaved(new Date().toLocaleTimeString());
       
-      // Refresh stats after save
-      const stats = await dailySessionService.getSessionStats();
+      // Refresh stats
+      const stats = await storageService.getSessionStats();
       setSessionStats(stats);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save session');
+      
+      alert(`Session saved successfully to ${storageType}!`);
+    } catch (error) {
+      console.error('Manual save failed:', error);
+      alert(`Failed to save session to ${storageType}. Check console for details.`);
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   };
 
-  const handleForcePurge = async () => {
-    if (!persistenceEnabled) return;
-    
-    const confirmed = window.confirm(
-      'This will permanently delete ALL session data from Firebase. This action cannot be undone. Are you sure?'
-    );
-    
-    if (!confirmed) return;
-    
+  const handlePurgeData = async () => {
+    if (!confirm(`This will clear all session data from ${storageType}. Are you sure?`)) {
+      return;
+    }
+
+    setIsPurging(true);
     try {
-      setPurging(true);
-      setError(null);
-      await dailySessionService.purgeAllSessions();
+      if ('clearSession' in storageService) {
+        await storageService.clearSession();
+      }
       
-      // Refresh stats after purge
-      const stats = await dailySessionService.getSessionStats();
+      // Refresh stats
+      const stats = await storageService.getSessionStats();
       setSessionStats(stats);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to purge sessions');
+      
+      alert(`Session data cleared from ${storageType}!`);
+    } catch (error) {
+      console.error('Purge failed:', error);
+      alert(`Failed to clear session data from ${storageType}. Check console for details.`);
     } finally {
-      setPurging(false);
+      setIsPurging(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4">
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+          <span className="text-sm text-gray-600">Loading session data...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Data Persistence</h3>
+    <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-semibold text-gray-800">Data Persistence</h3>
         <div className="flex items-center space-x-2">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            persistenceEnabled 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
+          <span className={`px-2 py-1 rounded text-xs font-medium ${
+            persistenceEnabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
           }`}>
             {persistenceEnabled ? 'Enabled' : 'Disabled'}
           </span>
-          {isLoading && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              Loading...
-            </span>
-          )}
+          <span className={`px-2 py-1 rounded text-xs font-medium ${
+            isFirebaseConfigured ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            {storageType}
+          </span>
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-3">
-          <p className="text-sm text-red-700">{error}</p>
-        </div>
-      )}
-
       {persistenceEnabled && sessionStats && (
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
           <div>
-            <span className="font-medium text-gray-700">Today's Session:</span>
-            <p className="text-gray-900">{sessionStats.currentSessionDate}</p>
+            <span className="text-gray-600">Session Date:</span>
+            <p className="font-medium">{sessionStats.currentSessionDate}</p>
           </div>
           <div>
-            <span className="font-medium text-gray-700">Session Exists:</span>
-            <p className={sessionStats.hasCurrentSession ? 'text-green-600' : 'text-red-600'}>
-              {sessionStats.hasCurrentSession ? 'Yes' : 'No'}
+            <span className="text-gray-600">Current Session:</span>
+            <p className={`font-medium ${sessionStats.hasCurrentSession ? 'text-green-600' : 'text-gray-500'}`}>
+              {sessionStats.hasCurrentSession ? 'Active' : 'None'}
             </p>
           </div>
           <div>
-            <span className="font-medium text-gray-700">Total Sessions:</span>
-            <p className="text-gray-900">{sessionStats.totalSessions}</p>
+            <span className="text-gray-600">Patient Count:</span>
+            <p className="font-medium">{patients.length}</p>
           </div>
           <div>
-            <span className="font-medium text-gray-700">Current Patients:</span>
-            <p className="text-gray-900">{patients.length}</p>
+            <span className="text-gray-600">Data Type:</span>
+            <p className={`font-medium ${hasRealData ? 'text-green-600' : 'text-blue-600'}`}>
+              {hasRealData ? 'Real Data' : 'Mock Data'}
+            </p>
           </div>
-          {sessionStats.oldestSession && (
-            <div className="col-span-2">
-              <span className="font-medium text-gray-700">Oldest Session:</span>
-              <p className="text-gray-900">{sessionStats.oldestSession}</p>
-            </div>
-          )}
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 pt-2 border-t">
+      <div className="flex flex-wrap gap-2 mb-3">
         <button
           onClick={togglePersistence}
-          className={`px-3 py-2 rounded-md text-sm font-medium ${
+          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
             persistenceEnabled
               ? 'bg-red-100 text-red-700 hover:bg-red-200'
               : 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -157,31 +165,44 @@ export const PersistenceStatus: React.FC = () => {
           <>
             <button
               onClick={handleManualSave}
-              disabled={saving || isLoading}
-              className="px-3 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSaving || !hasRealData}
+              className="px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving ? 'Saving...' : 'Manual Save'}
+              {isSaving ? 'Saving...' : `Save to ${storageType}`}
             </button>
 
             <button
-              onClick={handleForcePurge}
-              disabled={purging || isLoading}
-              className="px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handlePurgeData}
+              disabled={isPurging}
+              className="px-3 py-1.5 bg-orange-100 text-orange-700 hover:bg-orange-200 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {purging ? 'Purging...' : 'Force Purge All'}
+              {isPurging ? 'Clearing...' : `Clear ${storageType}`}
             </button>
           </>
         )}
       </div>
 
-      <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-md">
-        <p className="font-medium mb-1">HIPAA Compliance Notes:</p>
-        <ul className="list-disc list-inside space-y-1">
-          <li>Patient data is automatically purged after 24 hours</li>
-          <li>Data is encrypted in transit and at rest</li>
-          <li>Access is logged and auditable</li>
-          <li>Only current day sessions are retained</li>
-        </ul>
+      {lastSaved && (
+        <p className="text-xs text-green-600 mb-2">
+          Last saved: {lastSaved}
+        </p>
+      )}
+
+      <div className="text-xs text-gray-500 space-y-1">
+        {isFirebaseConfigured ? (
+          <>
+            <p>• Using Firebase for cloud data persistence</p>
+            <p>• Data is shared across devices and auto-purged daily</p>
+            <p>• HIPAA compliant with 24-hour retention policy</p>
+          </>
+        ) : (
+          <>
+            <p>• Using browser localStorage for local persistence</p>
+            <p>• Data only available on this device/browser</p>
+            <p>• Data clears automatically at end of day</p>
+          </>
+        )}
+        <p>• Only real patient data is auto-saved (not mock data)</p>
       </div>
     </div>
   );
