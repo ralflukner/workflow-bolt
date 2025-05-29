@@ -7,11 +7,17 @@ import { Patient } from '../../types';
 
 // Mock the hooks and functions
 const mockUpdatePatientStatus = jest.fn();
+const mockAssignRoom = jest.fn();
+const mockUpdateCheckInTime = jest.fn();
 
 jest.mock('../../hooks/usePatientContext', () => ({
   usePatientContext: () => ({
     updatePatientStatus: mockUpdatePatientStatus,
-    getWaitTime: () => 25
+    assignRoom: mockAssignRoom,
+    updateCheckInTime: mockUpdateCheckInTime,
+    getWaitTime: (patient: Patient) => {
+      return patient.status === 'arrived' ? 25 : 0;
+    }
   })
 }));
 
@@ -36,6 +42,7 @@ jest.mock('../../utils/formatters', () => ({
     // Simple implementation for tests
     if (dob === '1990-01-01') return '01/01/1990';
     if (dob === '1985-05-15') return '05/15/1985';
+    if (dob === '1975-10-20') return '10/20/1975';
     const parts = dob.split('-');
     if (parts.length === 3) {
       return `${parts[1]}/${parts[2]}/${parts[0]}`;
@@ -43,8 +50,6 @@ jest.mock('../../utils/formatters', () => ({
     return dob; // Return as-is if not in expected format
   }
 }));
-
-
 
 describe('PatientCard', () => {
   const scheduledPatient: Patient = {
@@ -66,6 +71,28 @@ describe('PatientCard', () => {
     checkInTime: '2023-01-01T09:35:00.000Z'
   };
 
+  const prepPatient: Patient = {
+    id: 'test-3',
+    name: 'Bob Johnson',
+    dob: '1975-10-20',
+    appointmentTime: '2023-01-01T10:00:00.000Z',
+    status: 'appt-prep',
+    provider: 'Dr. Test',
+    checkInTime: '2023-01-01T10:05:00.000Z',
+    room: '1'
+  };
+
+  const completedPatient: Patient = {
+    id: 'test-4',
+    name: 'Alice Brown',
+    dob: '1980-03-15',
+    appointmentTime: '2023-01-01T08:00:00.000Z',
+    status: 'completed',
+    provider: 'Dr. Test',
+    checkInTime: '2023-01-01T08:05:00.000Z',
+    completedTime: '2023-01-01T09:00:00.000Z'
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -74,18 +101,22 @@ describe('PatientCard', () => {
     render(
       <TimeContext.Provider value={{
         timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        setTimeMode: jest.fn(),
+        toggleSimulation: jest.fn(),
+        adjustTime: jest.fn(),
         getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        speedUpTime: jest.fn(),
-        resetTime: jest.fn()
+        formatTime: jest.fn(date => date.toLocaleTimeString()),
+        formatDateTime: jest.fn(date => date.toLocaleString())
       }}>
         <PatientContext.Provider value={{
           patients: [],
-          setPatients: jest.fn(),
           addPatient: jest.fn(),
           updatePatientStatus: mockUpdatePatientStatus,
+          assignRoom: mockAssignRoom,
+          updateCheckInTime: mockUpdateCheckInTime,
           getPatientsByStatus: jest.fn(),
+          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
           getWaitTime: jest.fn(() => 0),
+          clearPatients: jest.fn(),
           exportPatientsToJSON: jest.fn(),
           importPatientsFromJSON: jest.fn(),
           tickCounter: 0
@@ -112,18 +143,22 @@ describe('PatientCard', () => {
     render(
       <TimeContext.Provider value={{
         timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        setTimeMode: jest.fn(),
+        toggleSimulation: jest.fn(),
+        adjustTime: jest.fn(),
         getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        speedUpTime: jest.fn(),
-        resetTime: jest.fn()
+        formatTime: jest.fn(date => date.toLocaleTimeString()),
+        formatDateTime: jest.fn(date => date.toLocaleString())
       }}>
         <PatientContext.Provider value={{
           patients: [],
-          setPatients: jest.fn(),
           addPatient: jest.fn(),
           updatePatientStatus: mockUpdatePatientStatus,
+          assignRoom: mockAssignRoom,
+          updateCheckInTime: mockUpdateCheckInTime,
           getPatientsByStatus: jest.fn(),
+          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
           getWaitTime: jest.fn(() => 25), // 25 minutes wait time
+          clearPatients: jest.fn(),
           exportPatientsToJSON: jest.fn(),
           importPatientsFromJSON: jest.fn(),
           tickCounter: 0
@@ -147,18 +182,22 @@ describe('PatientCard', () => {
     render(
       <TimeContext.Provider value={{
         timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        setTimeMode: jest.fn(),
+        toggleSimulation: jest.fn(),
+        adjustTime: jest.fn(),
         getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        speedUpTime: jest.fn(),
-        resetTime: jest.fn()
+        formatTime: jest.fn(date => date.toLocaleTimeString()),
+        formatDateTime: jest.fn(date => date.toLocaleString())
       }}>
         <PatientContext.Provider value={{
           patients: [],
-          setPatients: jest.fn(),
           addPatient: jest.fn(),
           updatePatientStatus: mockUpdatePatientStatus,
+          assignRoom: mockAssignRoom,
+          updateCheckInTime: mockUpdateCheckInTime,
           getPatientsByStatus: jest.fn(),
+          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
           getWaitTime: jest.fn(() => 0),
+          clearPatients: jest.fn(),
           exportPatientsToJSON: jest.fn(),
           importPatientsFromJSON: jest.fn(),
           tickCounter: 0
@@ -175,8 +214,166 @@ describe('PatientCard', () => {
     expect(mockUpdatePatientStatus).toHaveBeenCalledWith('test-1', 'arrived');
   });
 
-  // Skipping this test as it requires UI interaction that's difficult to test
-  it.skip('shows expanded details when card is clicked', () => {
-    // This test will be implemented in a future update
+  it('handles room assignment for arrived patients', () => {
+    render(
+      <TimeContext.Provider value={{
+        timeMode: { simulated: false, currentTime: new Date().toISOString() },
+        toggleSimulation: jest.fn(),
+        adjustTime: jest.fn(),
+        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
+        formatTime: jest.fn(date => date.toLocaleTimeString()),
+        formatDateTime: jest.fn(date => date.toLocaleString())
+      }}>
+        <PatientContext.Provider value={{
+          patients: [],
+          addPatient: jest.fn(),
+          updatePatientStatus: mockUpdatePatientStatus,
+          assignRoom: mockAssignRoom,
+          updateCheckInTime: mockUpdateCheckInTime,
+          getPatientsByStatus: jest.fn(),
+          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
+          getWaitTime: jest.fn(() => 25),
+          clearPatients: jest.fn(),
+          exportPatientsToJSON: jest.fn(),
+          importPatientsFromJSON: jest.fn(),
+          tickCounter: 0
+        }}>
+          <PatientCard patient={arrivedPatient} />
+        </PatientContext.Provider>
+      </TimeContext.Provider>
+    );
+
+    const roomSelect = screen.getByRole('combobox');
+    expect(roomSelect).toBeInTheDocument();
+    
+    fireEvent.change(roomSelect, { target: { value: '2' } });
+    
+    // Verify that assignRoom was called with the correct parameters
+    expect(mockAssignRoom).toHaveBeenCalledWith('test-2', '2');
+  });
+
+  it('shows status dropdown for scheduled patients when clicked', () => {
+    render(
+      <TimeContext.Provider value={{
+        timeMode: { simulated: false, currentTime: new Date().toISOString() },
+        toggleSimulation: jest.fn(),
+        adjustTime: jest.fn(),
+        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
+        formatTime: jest.fn(date => date.toLocaleTimeString()),
+        formatDateTime: jest.fn(date => date.toLocaleString())
+      }}>
+        <PatientContext.Provider value={{
+          patients: [],
+          addPatient: jest.fn(),
+          updatePatientStatus: mockUpdatePatientStatus,
+          assignRoom: mockAssignRoom,
+          updateCheckInTime: mockUpdateCheckInTime,
+          getPatientsByStatus: jest.fn(),
+          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
+          getWaitTime: jest.fn(() => 0),
+          clearPatients: jest.fn(),
+          exportPatientsToJSON: jest.fn(),
+          importPatientsFromJSON: jest.fn(),
+          tickCounter: 0
+        }}>
+          <PatientCard patient={scheduledPatient} />
+        </PatientContext.Provider>
+      </TimeContext.Provider>
+    );
+
+    const statusBadge = screen.getByText('scheduled');
+    fireEvent.click(statusBadge);
+    
+    // Check that dropdown options are displayed
+    expect(screen.getByText('Confirmed')).toBeInTheDocument();
+    expect(screen.getByText('Rescheduled')).toBeInTheDocument();
+    expect(screen.getByText('Cancelled')).toBeInTheDocument();
+    
+    fireEvent.click(screen.getByText('Confirmed'));
+    
+    // Verify that updatePatientStatus was called with the correct parameters
+    expect(mockUpdatePatientStatus).toHaveBeenCalledWith('test-1', 'Confirmed');
+  });
+
+  it('allows editing check-in time for patients in prep', () => {
+    render(
+      <TimeContext.Provider value={{
+        timeMode: { simulated: false, currentTime: new Date().toISOString() },
+        toggleSimulation: jest.fn(),
+        adjustTime: jest.fn(),
+        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
+        formatTime: jest.fn(date => date.toLocaleTimeString()),
+        formatDateTime: jest.fn(date => date.toLocaleString())
+      }}>
+        <PatientContext.Provider value={{
+          patients: [],
+          addPatient: jest.fn(),
+          updatePatientStatus: mockUpdatePatientStatus,
+          assignRoom: mockAssignRoom,
+          updateCheckInTime: mockUpdateCheckInTime,
+          getPatientsByStatus: jest.fn(),
+          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
+          getWaitTime: jest.fn(() => 0),
+          clearPatients: jest.fn(),
+          exportPatientsToJSON: jest.fn(),
+          importPatientsFromJSON: jest.fn(),
+          tickCounter: 0
+        }}>
+          <PatientCard patient={prepPatient} />
+        </PatientContext.Provider>
+      </TimeContext.Provider>
+    );
+
+    const editButton = screen.getByText('Edit');
+    fireEvent.click(editButton);
+    
+    // Check that date and time inputs are displayed
+    const dateInput = screen.getByRole('textbox');
+    const timeInput = screen.getAllByRole('textbox')[1];
+    expect(dateInput).toBeInTheDocument();
+    expect(timeInput).toBeInTheDocument();
+    
+    fireEvent.change(dateInput, { target: { value: '2023-01-01' } });
+    fireEvent.change(timeInput, { target: { value: '09:45' } });
+    
+    const saveButton = screen.getByText('Save');
+    fireEvent.click(saveButton);
+    
+    // Verify that updateCheckInTime was called with the correct parameters
+    expect(mockUpdateCheckInTime).toHaveBeenCalledWith('test-3', '2023-01-01T09:45:00.000Z');
+  });
+
+  it('displays different wait time format for completed patients', () => {
+    render(
+      <TimeContext.Provider value={{
+        timeMode: { simulated: false, currentTime: new Date().toISOString() },
+        toggleSimulation: jest.fn(),
+        adjustTime: jest.fn(),
+        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
+        formatTime: jest.fn(date => date.toLocaleTimeString()),
+        formatDateTime: jest.fn(date => date.toLocaleString())
+      }}>
+        <PatientContext.Provider value={{
+          patients: [],
+          addPatient: jest.fn(),
+          updatePatientStatus: mockUpdatePatientStatus,
+          assignRoom: mockAssignRoom,
+          updateCheckInTime: mockUpdateCheckInTime,
+          getPatientsByStatus: jest.fn(),
+          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
+          getWaitTime: jest.fn(() => 55), // 55 minutes total time
+          clearPatients: jest.fn(),
+          exportPatientsToJSON: jest.fn(),
+          importPatientsFromJSON: jest.fn(),
+          tickCounter: 0
+        }}>
+          <PatientCard patient={completedPatient} />
+        </PatientContext.Provider>
+      </TimeContext.Provider>
+    );
+
+    // Check that total time is displayed instead of wait time
+    expect(screen.getByText('Total Time')).toBeInTheDocument();
+    expect(screen.getByText('Total: 55 min')).toBeInTheDocument();
   });
 });
