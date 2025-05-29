@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Patient, PatientApptStatus } from '../types';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
+import { formatTime, formatDate, formatDOB } from '../utils/formatters';
 
 interface PatientCardProps {
   patient: Patient;
@@ -195,7 +196,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
         <div>
           <h3 className="text-lg font-semibold text-white">{patient.name}</h3>
           <div className="text-sm text-gray-300">
-            <p>DOB: {patient.dob}</p>
+            <p>DOB: {formatDOB(patient.dob)}</p>
             {patient.appointmentType && (
               <p>{patient.appointmentType} - {patient.chiefComplaint}</p>
             )}
@@ -238,14 +239,9 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
       <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
         <div>
           <p className="text-gray-400">Date</p>
-          <p className="text-white">{appointmentDate.toLocaleDateString('en-US', {
-            month: 'numeric',
-            day: 'numeric',
-            year: 'numeric',
-            timeZone: 'America/Chicago'
-          })}</p>
+          <p className="text-white">{formatDate(patient.appointmentTime)}</p>
           <p className="text-gray-400 mt-1">Time</p>
-          <p className="text-white">{formatTime(appointmentDate)}</p>
+          <p className="text-white">{formatTime(patient.appointmentTime)}</p>
         </div>
         <div>
           <p className="text-gray-400">Provider</p>

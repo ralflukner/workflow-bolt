@@ -5,10 +5,13 @@ import { PatientContext } from '../../context/PatientContextDef';
 import { TimeContext } from '../../context/TimeContextDef';
 import { Patient } from '../../types';
 
-// Mock the hooks
+// Mock the hooks and functions
+const mockUpdatePatientStatus = jest.fn();
+
 jest.mock('../../hooks/usePatientContext', () => ({
   usePatientContext: () => ({
-    updatePatientStatus: mockUpdatePatientStatus
+    updatePatientStatus: mockUpdatePatientStatus,
+    getWaitTime: () => 25
   })
 }));
 
@@ -18,8 +21,15 @@ jest.mock('../../hooks/useTimeContext', () => ({
   })
 }));
 
-// Mock functions
-const mockUpdatePatientStatus = jest.fn();
+// Mock the formatTime function used in PatientCard
+jest.mock('../../utils/formatters', () => ({
+  formatTime: (date: string) => {
+    const d = new Date(date);
+    return `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`;
+  }
+}));
+
+
 
 describe('PatientCard', () => {
   const scheduledPatient: Patient = {
