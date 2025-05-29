@@ -59,8 +59,8 @@ describe('ImportSchedule', () => {
     expect(screen.getByRole('textbox')).toBeInTheDocument();
     
     // Check that the buttons are present
-    expect(screen.getByText('Import')).toBeInTheDocument();
-    expect(screen.getByText('Cancel')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Import Schedule/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cancel/i })).toBeInTheDocument();
   });
   
   it('handles import of valid schedule data', async () => {
