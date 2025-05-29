@@ -13,4 +13,8 @@ export interface PatientContextType {
   exportPatientsToJSON: () => void;
   importPatientsFromJSON: (patients: Patient[]) => void;
   tickCounter: number; // Add the tickCounter property to trigger re-renders
+  isLoading: boolean; // Loading state for Firebase operations
+  persistenceEnabled: boolean; // Whether Firebase persistence is enabled
+  saveCurrentSession: () => Promise<void>; // Manual save trigger
+  togglePersistence: () => void; // Toggle persistence on/off
 }

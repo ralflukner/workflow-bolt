@@ -3,8 +3,7 @@ import { Patient, PatientApptStatus, Metrics } from '../types';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { mockPatients } from '../data/mockData';
 import { PatientContext } from './PatientContextDef';
-// TODO: Uncomment when implementing Firebase persistence
-// import { patientService } from '../services/firebase/patientService';
+import { dailySessionService } from '../services/firebase/dailySessionService';
 
 interface PatientProviderProps {
   children: ReactNode;
@@ -56,35 +55,92 @@ const normalizeStatus = (status: string): string => {
 };
 
 export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) => {
-  const [patients, setPatients] = useState<Patient[]>(mockPatients);
-  const [tickCounter, setTickCounter] = useState(0); // Add a tick counter state
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [tickCounter, setTickCounter] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [persistenceEnabled, setPersistenceEnabled] = useState(true);
   const { getCurrentTime, timeMode } = useTimeContext();
 
-  // Set up an interval to force re-renders based on the time mode.
-  // This ensures consumers get updated context values periodically.
+  // Load today's session data on mount
+  useEffect(() => {
+    const loadTodaysData = async () => {
+      if (!persistenceEnabled) {
+        setPatients(mockPatients);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const savedPatients = await dailySessionService.loadTodaysSession();
+        
+        if (savedPatients.length > 0) {
+          console.log(`Loaded ${savedPatients.length} patients from today's session`);
+          setPatients(savedPatients);
+        } else {
+          console.log('No saved session found, starting with mock data');
+          setPatients(mockPatients);
+          // Save initial mock data
+          await dailySessionService.saveTodaysSession(mockPatients);
+        }
+      } catch (error) {
+        console.error('Failed to load today\'s session, using mock data:', error);
+        setPatients(mockPatients);
+        setPersistenceEnabled(false); // Disable persistence if it fails
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadTodaysData();
+  }, [persistenceEnabled]);
+
+  // Auto-save patients data periodically and when data changes
+  useEffect(() => {
+    if (!persistenceEnabled || isLoading || patients.length === 0) return;
+
+    const saveSession = async () => {
+      try {
+        await dailySessionService.saveTodaysSession(patients);
+        console.log('Session auto-saved successfully');
+      } catch (error) {
+        console.error('Failed to auto-save session:', error);
+      }
+    };
+
+    // Save immediately when patients change
+    const timeoutId = setTimeout(saveSession, 2000); // Debounce saves by 2 seconds
+
+    return () => clearTimeout(timeoutId);
+  }, [patients, persistenceEnabled, isLoading]);
+
+  // Set up an interval to force re-renders and periodic saves
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | undefined;
 
     const tick = () => {
-      // Force re-render by incrementing the tick counter
       setTickCounter(prev => prev + 1);
+      
+      // Periodic save every 5 minutes during real time mode
+      if (!timeMode.simulated && persistenceEnabled && patients.length > 0) {
+        dailySessionService.saveTodaysSession(patients).catch(error => {
+          console.error('Periodic save failed:', error);
+        });
+      }
     };
 
     if (timeMode.simulated) {
-      // For simulated time, update very frequently
-      intervalId = setInterval(tick, 1000); // Update every second
+      intervalId = setInterval(tick, 1000);
     } else {
-      // For real time, update less frequently (every 6 seconds)
-      intervalId = setInterval(tick, 6000); // Update every 6 seconds
+      intervalId = setInterval(tick, 300000); // 5 minutes for real time
     }
 
-    // Cleanup interval on mode change or unmount
     return () => {
       if (intervalId) {
         clearInterval(intervalId);
       }
     };
-  }, [timeMode.simulated, timeMode.currentTime]); // Depend on both simulation mode and current time
+  }, [timeMode.simulated, timeMode.currentTime, persistenceEnabled, patients]);
 
   const clearPatients = () => {
     setPatients([]);
@@ -93,7 +149,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   const addPatient = (patientData: Omit<Patient, 'id'>) => {
     const newPatient: Patient = {
       ...patientData,
-      id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Ensure uniqueness
+      id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     };
 
     setPatients(prev => [...prev, newPatient]);
@@ -107,10 +163,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         if (patient.id === id) {
           const updatedPatient = { ...patient, status };
 
-          // Normalize status variations to handle timestamps consistently
           updatedPatient.status = normalizeStatus(status) as PatientApptStatus;
 
-          // Arrival/check-in timestamps
           if (
             updatedPatient.status === 'arrived' ||
             updatedPatient.status === 'Arrived' ||
@@ -119,7 +173,6 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
             updatedPatient.checkInTime = updatedPatient.checkInTime || now;
           }
 
-          // With-doctor timestamps
           if (
             updatedPatient.status === 'With Doctor' ||
             updatedPatient.status === 'seen-by-md' ||
@@ -128,7 +181,6 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
             updatedPatient.withDoctorTime = updatedPatient.withDoctorTime || now;
           }
 
-          // Completion timestamps
           if (updatedPatient.status === 'completed' || updatedPatient.status === 'Checked Out') {
             updatedPatient.completedTime = updatedPatient.completedTime || now;
           }
@@ -160,7 +212,6 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     return patients.filter(patient => patient.status === status);
   };
 
-  // Calculate wait time in minutes
   const getWaitTime = (patient: Patient): number => {
     if (!patient.checkInTime) return 0;
 
@@ -169,16 +220,11 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
       ? new Date(patient.withDoctorTime)
       : getCurrentTime();
 
-    // Calculate wait time in milliseconds
     const waitTimeMs = endTime.valueOf() - checkInTime.valueOf();
-
-    // Convert to minutes and ensure non-negative
     return Math.max(0, Math.floor(waitTimeMs / 60000));
   };
 
   const getMetrics = (): Metrics => {
-    // Include only patients who have been checked in, preparation started, or completed (MD Ready)
-    // Exclude scheduled, confirmed, MD Seen, and Checked out statuses
     const waitingPatients = patients.filter(p => 
       ['arrived', 'appt-prep', 'ready-for-md'].includes(p.status as string)
     );
@@ -214,12 +260,10 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   };
 
   const importPatientsFromJSON = (importedPatients: Patient[]) => {
-     // Basic validation
      if (!Array.isArray(importedPatients)) {
        throw new Error('Invalid data format: expected array of patients');
      }
 
-     // Normalize statuses and ensure timestamps
      const normalized = importedPatients.map(p => {
        const updated = { ...p };
        const normalizedStatus = normalizeStatus(updated.status as string);
@@ -227,7 +271,6 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
 
        const now = new Date().toISOString();
 
-       // Set timestamps based on normalized status
        if (['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'].includes(normalizedStatus)) {
          updated.checkInTime = updated.checkInTime || now;
        }
@@ -243,7 +286,6 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
        return updated;
      });
 
-     // Validate each patient has required fields
      const requiredFields = ['id', 'name', 'dob', 'appointmentTime', 'provider', 'status'];
      normalized.forEach((patient, index) => {
        requiredFields.forEach(field => {
@@ -255,6 +297,24 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
 
      setPatients(normalized);
    };
+
+  // Force save current session (manual trigger)
+  const saveCurrentSession = async () => {
+    if (!persistenceEnabled) return;
+    
+    try {
+      await dailySessionService.saveTodaysSession(patients);
+      console.log('Session saved manually');
+    } catch (error) {
+      console.error('Manual save failed:', error);
+      throw error;
+    }
+  };
+
+  // Toggle persistence (for testing/debugging)
+  const togglePersistence = () => {
+    setPersistenceEnabled(prev => !prev);
+  };
 
   const value = {
     patients,
@@ -268,7 +328,11 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     clearPatients,
     exportPatientsToJSON,
     importPatientsFromJSON,
-    tickCounter, // Include the tick counter in the context value
+    tickCounter,
+    isLoading,
+    persistenceEnabled,
+    saveCurrentSession,
+    togglePersistence,
   };
 
   return (

@@ -124,7 +124,7 @@ This project is configured for easy deployment to
      - `your-auth0-client-id`: Your Auth0 client ID from your Auth0 account
      - `your-netlify-site-name.netlify.app`: Your actual Netlify domain
 
-   > **Important**: You must create your own Auth0 account 
+   > **Important**: You must create your own Auth0 account
    > and application to get the necessary credentials.
    > Never use shared or example
    > credentials in a production environment.
