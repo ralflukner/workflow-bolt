@@ -102,7 +102,11 @@ describe('PatientCard', () => {
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getWaitTime: jest.fn((_patient: any) => 0)
+          getWaitTime: jest.fn((patient) => {
+            if (patient?.status === 'arrived') return 25;
+            if (patient?.completedTime) return 55;
+            return 0;
+          })
         }}
         timeContextOverrides={{
           getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
@@ -132,7 +136,11 @@ describe('PatientCard', () => {
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getWaitTime: jest.fn((_patient) => 25) // 25 minutes wait time
+          getWaitTime: jest.fn((patient) => {
+            if (patient?.status === 'arrived') return 25;
+            if (patient?.completedTime) return 55;
+            return 0;
+          }) // 25 minutes wait time
         }}
         timeContextOverrides={{
           getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
@@ -159,7 +167,11 @@ describe('PatientCard', () => {
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getWaitTime: jest.fn((_patient: any) => 0)
+          getWaitTime: jest.fn((patient) => {
+            if (patient?.status === 'arrived') return 25;
+            if (patient?.completedTime) return 55;
+            return 0;
+          })
         }}
         timeContextOverrides={{
           getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
@@ -183,7 +195,11 @@ describe('PatientCard', () => {
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getWaitTime: jest.fn((_patient) => 25)
+          getWaitTime: jest.fn((patient) => {
+            if (patient?.status === 'arrived') return 25;
+            if (patient?.completedTime) return 55;
+            return 0;
+          })
         }}
         timeContextOverrides={{
           getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
@@ -209,7 +225,11 @@ describe('PatientCard', () => {
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getWaitTime: jest.fn((_patient: any) => 0)
+          getWaitTime: jest.fn((patient) => {
+            if (patient?.status === 'arrived') return 25;
+            if (patient?.completedTime) return 55;
+            return 0;
+          })
         }}
         timeContextOverrides={{
           getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
@@ -240,7 +260,11 @@ describe('PatientCard', () => {
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getWaitTime: jest.fn((_patient: any) => 0)
+          getWaitTime: jest.fn((patient) => {
+            if (patient?.status === 'arrived') return 25;
+            if (patient?.completedTime) return 55;
+            return 0;
+          })
         }}
         timeContextOverrides={{
           getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
@@ -276,7 +300,11 @@ describe('PatientCard', () => {
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getWaitTime: jest.fn((_patient) => 55) // 55 minutes total time
+          getWaitTime: jest.fn((patient) => {
+            if (patient?.status === 'arrived') return 25;
+            if (patient?.completedTime) return 55;
+            return 0;
+          }) // 55 minutes total time
         }}
         timeContextOverrides={{
           getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))

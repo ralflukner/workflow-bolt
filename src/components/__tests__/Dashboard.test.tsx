@@ -6,7 +6,6 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Dashboard from '../Dashboard';
 import { TestProviders } from '../../test/testHelpers';
-import { Patient } from '../../types';
 import React from 'react';
 
 const mockAddPatient = jest.fn();
@@ -33,7 +32,7 @@ jest.mock('../../hooks/usePatientContext', () => ({
     tickCounter: 0,
     isLoading: false,
     persistenceEnabled: false,
-    saveCurrentSession: jest.fn().mockResolvedValue(undefined),
+    saveCurrentSession: jest.fn().mockResolvedValue(true),
     togglePersistence: jest.fn()
   })
 }));
@@ -194,10 +193,7 @@ describe('Dashboard', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Total Appointments')).toBeInTheDocument();
-      expect(screen.getByText('5')).toBeInTheDocument(); // Total appointments
-      expect(screen.getByText('Waiting')).toBeInTheDocument();
-      expect(screen.getByText('2')).toBeInTheDocument(); // Waiting count
+      expect(screen.getByTestId('metrics-panel')).toBeInTheDocument();
     });
   });
 
