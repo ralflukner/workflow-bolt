@@ -12,16 +12,25 @@ export class PatientEncryptionService {
    */
   private static getEncryptionKey(): string {
     if (process.env.NODE_ENV === 'test') {
-      return process.env.REACT_APP_PATIENT_ENCRYPTION_KEY || 'default-dev-key-not-for-production';
+      const testKey = process.env.REACT_APP_PATIENT_ENCRYPTION_KEY;
+      if (!testKey) {
+        throw new Error('Missing encryption key in test environment. Set REACT_APP_PATIENT_ENCRYPTION_KEY.');
+      }
+      return testKey;
     }
     
     // In production, this should use a secure key management system
     try {
       const envKey = typeof process !== 'undefined' && process.env?.REACT_APP_PATIENT_ENCRYPTION_KEY;
       
-      return envKey || 'default-dev-key-not-for-production';
-    } catch {
-      return 'default-dev-key-not-for-production';
+      if (!envKey) {
+        throw new Error('Missing encryption key. Set REACT_APP_PATIENT_ENCRYPTION_KEY environment variable.');
+      }
+      
+      return envKey;
+    } catch (error) {
+      console.error('Error retrieving encryption key:', error);
+      throw new Error('Failed to retrieve encryption key. Ensure REACT_APP_PATIENT_ENCRYPTION_KEY is set.');
     }
   }
 
