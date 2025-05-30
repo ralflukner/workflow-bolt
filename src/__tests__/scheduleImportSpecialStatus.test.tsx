@@ -1,32 +1,29 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { render, act, waitFor } from '@testing-library/react';
-import { PatientProvider } from '../context/PatientContext';
-import { TimeProvider } from '../context/TimeProvider';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { Patient, PatientApptStatus } from '../types';
 import React from 'react';
+import { TestProviders } from '../test/testHelpers';
 
 // Mock Firebase and localStorage services to prevent real persistence calls
 jest.mock('../services/firebase/dailySessionService', () => ({
   dailySessionService: {
-    loadTodaysSession: jest.fn<() => Promise<Patient[]>>().mockResolvedValue([]),
-    saveTodaysSession: jest.fn<(patients: Patient[]) => Promise<void>>().mockResolvedValue(undefined),
+    loadTodaysSession: jest.fn(() => Promise.resolve([])),
+    saveTodaysSession: jest.fn(() => Promise.resolve()),
   }
 }));
 
 jest.mock('../services/localStorage/localSessionService', () => ({
   localSessionService: {
-    loadTodaysSession: jest.fn<() => Promise<Patient[]>>().mockResolvedValue([]),
-    saveTodaysSession: jest.fn<(patients: Patient[]) => Promise<void>>().mockResolvedValue(undefined),
+    loadTodaysSession: jest.fn(() => Promise.resolve([])),
+    saveTodaysSession: jest.fn(() => Promise.resolve()),
   }
 }));
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <TimeProvider>
-    <PatientProvider>
-      {children}
-    </PatientProvider>
-  </TimeProvider>
+  <TestProviders>
+    {children}
+  </TestProviders>
 );
 
 const ContextConsumer = ({ onContext }: { onContext: (ctx: ReturnType<typeof usePatientContext>) => void }) => {
