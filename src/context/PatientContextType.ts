@@ -17,4 +17,6 @@ export interface PatientContextType {
   persistenceEnabled: boolean; // Whether Firebase persistence is enabled
   saveCurrentSession: () => Promise<void>; // Manual save trigger
   togglePersistence: () => void; // Toggle persistence on/off
+  hasRealData: boolean; // Whether current data is real patient data or mock data
+  loadMockData: () => void; // Manually load mock data for development/testing
 }

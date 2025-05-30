@@ -1,9 +1,24 @@
-import { describe, it, expect } from '@jest/globals';
-import { render, act } from '@testing-library/react';
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { render, act, waitFor } from '@testing-library/react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { Patient, PatientApptStatus } from '../types';
 import React from 'react';
 import { TestProviders } from '../test/testHelpers';
+
+// Mock Firebase and localStorage services to prevent real persistence calls
+jest.mock('../services/firebase/dailySessionService', () => ({
+  dailySessionService: {
+    loadTodaysSession: jest.fn(() => Promise.resolve([])),
+    saveTodaysSession: jest.fn(() => Promise.resolve()),
+  }
+}));
+
+jest.mock('../services/localStorage/localSessionService', () => ({
+  localSessionService: {
+    loadTodaysSession: jest.fn(() => Promise.resolve([])),
+    saveTodaysSession: jest.fn(() => Promise.resolve()),
+  }
+}));
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
   <TestProviders>
@@ -20,6 +35,16 @@ const ContextConsumer = ({ onContext }: { onContext: (ctx: ReturnType<typeof use
 };
 
 describe('Schedule Import Special Status Handling', () => {
+  beforeEach(() => {
+    jest.clearAllTimers();
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.clearAllTimers();
+  });
+
   const sampleScheduleData = `05/19/2025\t9:00 AM\tRescheduled\tJAMEY ALLEN COOK\t04/14/1980\tOffice Visit\t-
 05/19/2025\t9:30 AM\tCheckedOut\tMARISOL HERNANDEZ MARTINEZ\t08/17/1974\tOffice Visit (Follow Up: nothing has changed)\t-
 05/19/2025\t10:00 AM\tCheckedOut\tBRITTON THOMAS WHITE\t03/12/1986\tOffice Visit\t-
@@ -69,7 +94,7 @@ describe('Schedule Import Special Status Handling', () => {
     };
   };
 
-  it('should correctly handle Rescheduled appointments', (done) => {
+  it('should correctly handle Rescheduled appointments', async () => {
     let context: ReturnType<typeof usePatientContext>;
     const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
       context = ctx;
@@ -80,36 +105,39 @@ describe('Schedule Import Special Status Handling', () => {
       </TestWrapper>
     );
 
-    setTimeout(() => {
-      const rescheduledLines = sampleScheduleData.split('\n')
-        .filter(line => line.includes('Rescheduled'));
-      
-      expect(rescheduledLines.length).toBeGreaterThan(0);
-      
-      const patients = rescheduledLines.map(line => {
-        const patientData = parseScheduleLine(line);
-        return {
-          id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          ...patientData
-        } as Patient;
-      });
+    // Wait for context to be available
+    await waitFor(() => {
+      expect(context).toBeDefined();
+    });
 
-      act(() => {
-        context.importPatientsFromJSON(patients);
-      });
+    const rescheduledLines = sampleScheduleData.split('\n')
+      .filter(line => line.includes('Rescheduled'));
+    
+    expect(rescheduledLines.length).toBeGreaterThan(0);
+    
+    const patients = rescheduledLines.map(line => {
+      const patientData = parseScheduleLine(line);
+      return {
+        id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        ...patientData
+      } as Patient;
+    });
 
+    act(() => {
+      context.importPatientsFromJSON(patients);
+    });
+
+    await waitFor(() => {
       const importedPatients = context.patients;
       expect(importedPatients).toHaveLength(rescheduledLines.length);
       
       importedPatients.forEach(patient => {
         expect(patient.status).toBe('Rescheduled');
       });
-      
-      done();
-    }, 0);
+    });
   });
 
-  it('should correctly handle Cancelled appointments', (done) => {
+  it('should correctly handle Cancelled appointments', async () => {
     let context: ReturnType<typeof usePatientContext>;
     const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
       context = ctx;
@@ -120,36 +148,39 @@ describe('Schedule Import Special Status Handling', () => {
       </TestWrapper>
     );
 
-    setTimeout(() => {
-      const cancelledLines = sampleScheduleData.split('\n')
-        .filter(line => line.includes('Cancelled'));
-      
-      expect(cancelledLines.length).toBeGreaterThan(0);
-      
-      const patients = cancelledLines.map(line => {
-        const patientData = parseScheduleLine(line);
-        return {
-          id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          ...patientData
-        } as Patient;
-      });
+    // Wait for context to be available
+    await waitFor(() => {
+      expect(context).toBeDefined();
+    });
 
-      act(() => {
-        context.importPatientsFromJSON(patients);
-      });
+    const cancelledLines = sampleScheduleData.split('\n')
+      .filter(line => line.includes('Cancelled'));
+    
+    expect(cancelledLines.length).toBeGreaterThan(0);
+    
+    const patients = cancelledLines.map(line => {
+      const patientData = parseScheduleLine(line);
+      return {
+        id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        ...patientData
+      } as Patient;
+    });
 
+    act(() => {
+      context.importPatientsFromJSON(patients);
+    });
+
+    await waitFor(() => {
       const importedPatients = context.patients;
       expect(importedPatients).toHaveLength(cancelledLines.length);
       
       importedPatients.forEach(patient => {
         expect(patient.status).toBe('Cancelled');
       });
-      
-      done();
-    }, 0);
+    });
   });
 
-  it('should correctly handle CheckedOut appointments', (done) => {
+  it('should correctly handle CheckedOut appointments', async () => {
     let context: ReturnType<typeof usePatientContext>;
     const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
       context = ctx;
@@ -160,24 +191,29 @@ describe('Schedule Import Special Status Handling', () => {
       </TestWrapper>
     );
 
-    setTimeout(() => {
-      const checkedOutLines = sampleScheduleData.split('\n')
-        .filter(line => line.includes('CheckedOut'));
-      
-      expect(checkedOutLines.length).toBeGreaterThan(0);
-      
-      const patients = checkedOutLines.map(line => {
-        const patientData = parseScheduleLine(line);
-        return {
-          id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          ...patientData
-        } as Patient;
-      });
+    // Wait for context to be available
+    await waitFor(() => {
+      expect(context).toBeDefined();
+    });
 
-      act(() => {
-        context.importPatientsFromJSON(patients);
-      });
+    const checkedOutLines = sampleScheduleData.split('\n')
+      .filter(line => line.includes('CheckedOut'));
+    
+    expect(checkedOutLines.length).toBeGreaterThan(0);
+    
+    const patients = checkedOutLines.map(line => {
+      const patientData = parseScheduleLine(line);
+      return {
+        id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        ...patientData
+      } as Patient;
+    });
 
+    act(() => {
+      context.importPatientsFromJSON(patients);
+    });
+
+    await waitFor(() => {
       const importedPatients = context.patients;
       expect(importedPatients).toHaveLength(checkedOutLines.length);
       
@@ -185,12 +221,10 @@ describe('Schedule Import Special Status Handling', () => {
         expect(patient.status).toBe('completed');
         expect(patient.completedTime).toBeDefined();
       });
-      
-      done();
-    }, 0);
+    });
   });
 
-  it('should handle all special statuses in a mixed import', (done) => {
+  it('should handle all special statuses in a mixed import', async () => {
     let context: ReturnType<typeof usePatientContext>;
     const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
       context = ctx;
@@ -201,19 +235,24 @@ describe('Schedule Import Special Status Handling', () => {
       </TestWrapper>
     );
 
-    setTimeout(() => {
-      const patients = sampleScheduleData.split('\n').map(line => {
-        const patientData = parseScheduleLine(line);
-        return {
-          id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          ...patientData
-        } as Patient;
-      });
+    // Wait for context to be available
+    await waitFor(() => {
+      expect(context).toBeDefined();
+    });
 
-      act(() => {
-        context.importPatientsFromJSON(patients);
-      });
+    const patients = sampleScheduleData.split('\n').map(line => {
+      const patientData = parseScheduleLine(line);
+      return {
+        id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        ...patientData
+      } as Patient;
+    });
 
+    act(() => {
+      context.importPatientsFromJSON(patients);
+    });
+
+    await waitFor(() => {
       const importedPatients = context.patients;
       expect(importedPatients).toHaveLength(sampleScheduleData.split('\n').length);
 
@@ -231,8 +270,6 @@ describe('Schedule Import Special Status Handling', () => {
       const scheduledCount = statusCounts['scheduled'] || 0;
       const confirmedCount = statusCounts['Confirmed'] || 0;
       expect(scheduledCount + confirmedCount).toBe(1);   // One confirmed appointment
-      
-      done();
-    }, 0);
+    });
   });
 });

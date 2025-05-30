@@ -1,9 +1,24 @@
-import { describe, it, expect } from '@jest/globals';
-import { render, act } from '@testing-library/react';
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { render, act, waitFor } from '@testing-library/react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { Patient, PatientApptStatus } from '../types';
 import React from 'react';
 import { TestProviders } from '../test/testHelpers';
+
+// Mock Firebase and localStorage services to prevent real persistence calls
+jest.mock('../services/firebase/dailySessionService', () => ({
+  dailySessionService: {
+    loadTodaysSession: jest.fn(() => Promise.resolve([])),
+    saveTodaysSession: jest.fn(() => Promise.resolve()),
+  }
+}));
+
+jest.mock('../services/localStorage/localSessionService', () => ({
+  localSessionService: {
+    loadTodaysSession: jest.fn(() => Promise.resolve([])),
+    saveTodaysSession: jest.fn(() => Promise.resolve()),
+  }
+}));
 
 // Test wrapper component
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
@@ -22,6 +37,16 @@ const ContextConsumer = ({ onContext }: { onContext: (ctx: ReturnType<typeof use
 };
 
 describe('Schedule Import Functionality', () => {
+  beforeEach(() => {
+    jest.clearAllTimers();
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.clearAllTimers();
+  });
+
   // Helper function to parse schedule line
   const parseScheduleLine = (line: string): Partial<Patient> => {
     const [date, time, status, name, dob, type, notes] = line.split('\t');
@@ -61,56 +86,61 @@ describe('Schedule Import Functionality', () => {
     };
   };
 
-  it('should correctly parse and import a single schedule line', (done) => {
+  it('should correctly parse and import a single schedule line', async () => {
     let context: ReturnType<typeof usePatientContext>;
     const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
       context = ctx;
     };
+    
     render(
       <TestWrapper>
         <ContextConsumer onContext={handleContext} />
       </TestWrapper>
     );
 
-    // Wait for context to be set
-    setTimeout(() => {
-      // Test a single line with various statuses
-      const testCases = [
-        {
-          line: '05/19/2025\t9:00 AM\tCheckedOut\tJOHN DOE\t01/01/1990\tOffice Visit\t-',
-          expectedStatus: 'completed',
-          expectedType: 'Office Visit'
-        },
-        {
-          line: '05/19/2025\t9:30 AM\tRoomed\tJANE DOE\t02/02/1991\tSPA - BOTOX / FILLER\tFollow-up',
-          expectedStatus: 'appt-prep',
-          expectedType: 'SPA - BOTOX / FILLER'
-        },
-        {
-          line: '05/19/2025\t10:00 AM\tScheduled\tBOB SMITH\t03/03/1992\tOffice Visit\t-',
-          expectedStatus: 'scheduled',
-          expectedType: 'Office Visit'
-        }
-      ];
+    // Wait for context to be available
+    await waitFor(() => {
+      expect(context).toBeDefined();
+    });
 
-      testCases.forEach(testCase => {
-        // Clear existing patients
-        act(() => {
-          context.clearPatients();
-        });
+    // Test a single line with various statuses
+    const testCases = [
+      {
+        line: '05/19/2025\t9:00 AM\tCheckedOut\tJOHN DOE\t01/01/1990\tOffice Visit\t-',
+        expectedStatus: 'completed',
+        expectedType: 'Office Visit'
+      },
+      {
+        line: '05/19/2025\t9:30 AM\tRoomed\tJANE DOE\t02/02/1991\tSPA - BOTOX / FILLER\tFollow-up',
+        expectedStatus: 'appt-prep',
+        expectedType: 'SPA - BOTOX / FILLER'
+      },
+      {
+        line: '05/19/2025\t10:00 AM\tScheduled\tBOB SMITH\t03/03/1992\tOffice Visit\t-',
+        expectedStatus: 'scheduled',
+        expectedType: 'Office Visit'
+      }
+    ];
 
-        // Parse and import the test line
-        const patientData = parseScheduleLine(testCase.line);
-        const patient: Patient = {
-          id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          ...patientData
-        } as Patient;
+    for (const testCase of testCases) {
+      // Clear existing patients
+      act(() => {
+        context.clearPatients();
+      });
 
-        act(() => {
-          context.importPatientsFromJSON([patient]);
-        });
+      // Parse and import the test line
+      const patientData = parseScheduleLine(testCase.line);
+      const patient: Patient = {
+        id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        ...patientData
+      } as Patient;
 
-        // Verify the import
+      act(() => {
+        context.importPatientsFromJSON([patient]);
+      });
+
+      // Verify the import
+      await waitFor(() => {
         const patients = context.patients;
         expect(patients).toHaveLength(1);
         
@@ -129,37 +159,43 @@ describe('Schedule Import Functionality', () => {
           expect(importedPatient.checkInTime).toBeDefined();
         }
       });
-      done();
-    }, 0);
+    }
   });
 
-  it('should handle multiple lines with different statuses', (done) => {
+  it('should handle multiple lines with different statuses', async () => {
     let context: ReturnType<typeof usePatientContext>;
     const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
       context = ctx;
     };
+    
     render(
       <TestWrapper>
         <ContextConsumer onContext={handleContext} />
       </TestWrapper>
     );
-    setTimeout(() => {
-      const multiLineSchedule = `05/19/2025\t9:00 AM\tCheckedOut\tJOHN DOE\t01/01/1990\tOffice Visit\t-\n05/19/2025\t9:30 AM\tRoomed\tJANE DOE\t02/02/1991\tSPA - BOTOX / FILLER\tFollow-up\n05/19/2025\t10:00 AM\tScheduled\tBOB SMITH\t03/03/1992\tOffice Visit\t-`;
 
-      // Parse and import all lines
-      const patients = multiLineSchedule.split('\n').map(line => {
-        const patientData = parseScheduleLine(line);
-        return {
-          id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          ...patientData
-        } as Patient;
-      });
+    // Wait for context to be available
+    await waitFor(() => {
+      expect(context).toBeDefined();
+    });
 
-      act(() => {
-        context.importPatientsFromJSON(patients);
-      });
+    const multiLineSchedule = `05/19/2025\t9:00 AM\tCheckedOut\tJOHN DOE\t01/01/1990\tOffice Visit\t-\n05/19/2025\t9:30 AM\tRoomed\tJANE DOE\t02/02/1991\tSPA - BOTOX / FILLER\tFollow-up\n05/19/2025\t10:00 AM\tScheduled\tBOB SMITH\t03/03/1992\tOffice Visit\t-`;
 
-      // Verify the import
+    // Parse and import all lines
+    const patients = multiLineSchedule.split('\n').map(line => {
+      const patientData = parseScheduleLine(line);
+      return {
+        id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        ...patientData
+      } as Patient;
+    });
+
+    act(() => {
+      context.importPatientsFromJSON(patients);
+    });
+
+    // Verify the import
+    await waitFor(() => {
       const importedPatients = context.patients;
       expect(importedPatients).toHaveLength(3);
 
@@ -181,45 +217,51 @@ describe('Schedule Import Functionality', () => {
       expect(completedPatients).toHaveLength(1);
       expect(preppedPatients).toHaveLength(1);
       expect(scheduledPatients).toHaveLength(1);
-      done();
-    }, 0);
+    });
   });
 
-  it('should handle edge cases in schedule data', (done) => {
+  it('should handle edge cases in schedule data', async () => {
     let context: ReturnType<typeof usePatientContext>;
     const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
       context = ctx;
     };
+    
     render(
       <TestWrapper>
         <ContextConsumer onContext={handleContext} />
       </TestWrapper>
     );
-    setTimeout(() => {
-      const edgeCases = [
-        // Empty notes
-        '05/19/2025\t9:00 AM\tCheckedOut\tJOHN DOE\t01/01/1990\tOffice Visit\t-',
-        // Notes with special characters
-        '05/19/2025\t9:30 AM\tRoomed\tJANE DOE\t02/02/1991\tSPA - BOTOX / FILLER\tFollow-up (2nd visit)',
-        // Different appointment types
-        '05/19/2025\t10:00 AM\tScheduled\tBOB SMITH\t03/03/1992\tLABS\t-',
-        // Different date formats (should be handled by the parser)
-        '05/19/2025\t11:00 AM\tCheckedOut\tALICE SMITH\t04/04/1993\tOffice Visit\t-'
-      ];
 
-      const patients = edgeCases.map(line => {
-        const patientData = parseScheduleLine(line);
-        return {
-          id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          ...patientData
-        } as Patient;
-      });
+    // Wait for context to be available
+    await waitFor(() => {
+      expect(context).toBeDefined();
+    });
 
-      act(() => {
-        context.importPatientsFromJSON(patients);
-      });
+    const edgeCases = [
+      // Empty notes
+      '05/19/2025\t9:00 AM\tCheckedOut\tJOHN DOE\t01/01/1990\tOffice Visit\t-',
+      // Notes with special characters
+      '05/19/2025\t9:30 AM\tRoomed\tJANE DOE\t02/02/1991\tSPA - BOTOX / FILLER\tFollow-up (2nd visit)',
+      // Different appointment types
+      '05/19/2025\t10:00 AM\tScheduled\tBOB SMITH\t03/03/1992\tLABS\t-',
+      // Different date formats (should be handled by the parser)
+      '05/19/2025\t11:00 AM\tCheckedOut\tALICE SMITH\t04/04/1993\tOffice Visit\t-'
+    ];
 
-      // Verify the import
+    const patients = edgeCases.map(line => {
+      const patientData = parseScheduleLine(line);
+      return {
+        id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        ...patientData
+      } as Patient;
+    });
+
+    act(() => {
+      context.importPatientsFromJSON(patients);
+    });
+
+    // Verify the import
+    await waitFor(() => {
       const importedPatients = context.patients;
       expect(importedPatients).toHaveLength(4);
 
@@ -234,7 +276,6 @@ describe('Schedule Import Functionality', () => {
           expect(patient.chiefComplaint).toBe(notes);
         }
       });
-      done();
-    }, 0);
+    });
   });
-});  
+});      

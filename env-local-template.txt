@@ -1,0 +1,18 @@
+# Local Environment Variables Template
+# Copy this content to .env.local and update with your actual credentials
+# .env.local is gitignored and will not be committed to version control
+
+# Tebra EHR Credentials (REQUIRED - Update with actual values)
+REACT_APP_TEBRA_USERNAME="work-flow@luknerclinic.com"
+REACT_APP_TEBRA_PASSWORD="s?3dVK=iXBj73*i$%5i8/5<4xtiP9?"
+
+# Optional: Override Auth0 settings for local development
+# VITE_AUTH0_DOMAIN="your-local-auth0-domain.auth0.com"
+# VITE_AUTH0_CLIENT_ID="your-local-client-id"
+
+# Setup Instructions:
+# 1. Copy this file to .env.local:
+#    cp env-local-template.txt .env.local
+# 2. Edit .env.local with your actual credentials
+# 3. The .envrc file will automatically load .env.local if it exists
+# 4. Never commit .env.local to version control 

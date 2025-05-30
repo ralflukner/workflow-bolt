@@ -1,150 +1,243 @@
 import React, { useState, useEffect } from 'react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { dailySessionService } from '../services/firebase/dailySessionService';
+import { localSessionService } from '../services/localStorage/localSessionService';
+import { isFirebaseConfigured } from '../config/firebase';
+import { StorageService, SessionStats } from '../services/storageService';
 
-interface SessionStats {
-  currentSessionDate: string;
-  hasCurrentSession: boolean;
-  totalSessions: number;
-  oldestSession?: string;
-}
+// Type guard to check if stats are from Firebase
+const isFirebaseStats = (stats: SessionStats): stats is SessionStats & { totalSessions: number } => {
+  return stats.backend === 'firebase' && 'totalSessions' in stats;
+};
+
+// Type guard to check if stats are from LocalStorage
+const isLocalStats = (stats: SessionStats): stats is SessionStats & { lastUpdated: string } => {
+  return stats.backend === 'local' && 'lastUpdated' in stats;
+};
 
 export const PersistenceStatus: React.FC = () => {
   const { 
     persistenceEnabled, 
     togglePersistence, 
     saveCurrentSession, 
-    isLoading,
-    patients 
+    patients,
+    hasRealData,
+    isLoading 
   } = usePatientContext();
   
   const [sessionStats, setSessionStats] = useState<SessionStats | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [purging, setPurging] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isPurging, setIsPurging] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'info' | 'error'>('info');
+
+  // Determine which storage service to use (stable ref)
+  const { storageService, storageType } = React.useMemo(() => {
+    return isFirebaseConfigured
+      ? { storageService: dailySessionService as StorageService, storageType: 'Firebase' as const }
+      : { storageService: localSessionService as StorageService, storageType: 'LocalStorage' as const };
+   
+  }, []);
 
   // Load session statistics
   useEffect(() => {
-    if (!persistenceEnabled) return;
-
     const loadStats = async () => {
       try {
-        const stats = await dailySessionService.getSessionStats();
+        const stats = await storageService.getSessionStats();
         setSessionStats(stats);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load session stats');
+      } catch (error) {
+        console.error(`Failed to load session stats from ${storageType}:`, error);
       }
     };
 
-    loadStats();
-    
-    // Refresh stats every 30 seconds
-    const interval = setInterval(loadStats, 30000);
-    return () => clearInterval(interval);
-  }, [persistenceEnabled]);
+    if (persistenceEnabled) {
+    // Refresh stats every 2 minutes
+    const interval = setInterval(loadStats, 120000);
+      return () => clearInterval(interval);
+    }
+  }, [persistenceEnabled, patients.length, storageService, storageType]);
+
+  // Toast auto-hide effect
+  useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 4000); // Hide after 4 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
+
+  const showToastMessage = (message: string, type: 'success' | 'info' | 'error') => {
+    setToastMessage(message);
+    setToastType(type);
+    setShowToast(true);
+  };
 
   const handleManualSave = async () => {
-    if (!persistenceEnabled) return;
-    
+    if (!hasRealData) {
+      showToastMessage(
+        'No real patient data to save. Add or import patients first, or load mock data and then modify it to make it "real".',
+        'info'
+      );
+      return;
+    }
+
+    setIsSaving(true);
     try {
-      setSaving(true);
-      setError(null);
       await saveCurrentSession();
+      setLastSaved(new Date().toLocaleTimeString());
       
-      // Refresh stats after save
-      const stats = await dailySessionService.getSessionStats();
+      // Refresh stats
+      const stats = await storageService.getSessionStats();
       setSessionStats(stats);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save session');
+      
+      showToastMessage(`Session saved successfully to ${storageType}!`, 'success');
+    } catch (error) {
+      console.error('Manual save failed:', error);
+      showToastMessage(`Failed to save session to ${storageType}. Check console for details.`, 'error');
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   };
 
-  const handleForcePurge = async () => {
-    if (!persistenceEnabled) return;
-    
-    const confirmed = window.confirm(
-      'This will permanently delete ALL session data from Firebase. This action cannot be undone. Are you sure?'
-    );
-    
-    if (!confirmed) return;
-    
+  const handlePurgeData = async () => {
+    if (!confirm(`This will clear all session data from ${storageType}. Are you sure?`)) {
+      return;
+    }
+
+    setIsPurging(true);
     try {
-      setPurging(true);
-      setError(null);
-      await dailySessionService.purgeAllSessions();
+      if (storageService.clearSession) {
+        await storageService.clearSession();
+      }
       
-      // Refresh stats after purge
-      const stats = await dailySessionService.getSessionStats();
+      // Refresh stats
+      const stats = await storageService.getSessionStats();
       setSessionStats(stats);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to purge sessions');
+      
+      showToastMessage(`Session data cleared from ${storageType}!`, 'success');
+    } catch (error) {
+      console.error('Purge failed:', error);
+      showToastMessage(`Failed to clear session data from ${storageType}. Check console for details.`, 'error');
     } finally {
-      setPurging(false);
+      setIsPurging(false);
     }
   };
 
-  return (
-    <div className="bg-white rounded-lg shadow-sm border p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Data Persistence</h3>
+  if (isLoading) {
+    return (
+      <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4">
         <div className="flex items-center space-x-2">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            persistenceEnabled 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
-          }`}>
-            {persistenceEnabled ? 'Enabled' : 'Disabled'}
-          </span>
-          {isLoading && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              Loading...
-            </span>
-          )}
+          <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+          <span className="text-sm text-gray-600">Loading session data...</span>
         </div>
       </div>
+    );
+  }
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-3">
-          <p className="text-sm text-red-700">{error}</p>
+  return (
+    <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4">
+      {/* Toast Notification */}
+      {showToast && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border max-w-sm ${
+          toastType === 'success' 
+            ? 'bg-green-50 border-green-200 text-green-800' 
+            : toastType === 'error'
+            ? 'bg-red-50 border-red-200 text-red-800'
+            : 'bg-blue-50 border-blue-200 text-blue-800'
+        }`}>
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              {toastType === 'success' && (
+                <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              )}
+              {toastType === 'error' && (
+                <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              )}
+              {toastType === 'info' && (
+                <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              )}
+            </div>
+            <div className="ml-3 flex-1">
+              <p className="text-sm font-medium">{toastMessage}</p>
+            </div>
+            <button
+              onClick={() => setShowToast(false)}
+              className="ml-2 flex-shrink-0 text-gray-400 hover:text-gray-600"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-semibold text-gray-800">Data Persistence</h3>
+        <div className="flex items-center space-x-2">
+          <span className={`px-2 py-1 rounded text-xs font-medium ${
+            persistenceEnabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
+            {persistenceEnabled ? 'Enabled' : 'Disabled'}
+          </span>
+          <span className={`px-2 py-1 rounded text-xs font-medium ${
+            isFirebaseConfigured ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            {storageType}
+          </span>
+        </div>
+      </div>
+
       {persistenceEnabled && sessionStats && (
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
           <div>
-            <span className="font-medium text-gray-700">Today's Session:</span>
-            <p className="text-gray-900">{sessionStats.currentSessionDate}</p>
+            <span className="text-gray-600">Session Date:</span>
+            <p className="font-medium">{sessionStats.currentSessionDate}</p>
           </div>
           <div>
-            <span className="font-medium text-gray-700">Session Exists:</span>
-            <p className={sessionStats.hasCurrentSession ? 'text-green-600' : 'text-red-600'}>
-              {sessionStats.hasCurrentSession ? 'Yes' : 'No'}
+            <span className="text-gray-600">Current Session:</span>
+            <p className={`font-medium ${sessionStats.hasCurrentSession ? 'text-green-600' : 'text-gray-500'}`}>
+              {sessionStats.hasCurrentSession ? 'Active' : 'None'}
             </p>
           </div>
           <div>
-            <span className="font-medium text-gray-700">Total Sessions:</span>
-            <p className="text-gray-900">{sessionStats.totalSessions}</p>
+            <span className="text-gray-600">Patient Count:</span>
+            <p className="font-medium">{patients.length}</p>
           </div>
           <div>
-            <span className="font-medium text-gray-700">Current Patients:</span>
-            <p className="text-gray-900">{patients.length}</p>
+            <span className="text-gray-600">Data Type:</span>
+            <p className={`font-medium ${hasRealData ? 'text-green-600' : 'text-blue-600'}`}>
+              {hasRealData ? 'Real Data' : 'Mock Data'}
+            </p>
           </div>
-          {sessionStats.oldestSession && (
-            <div className="col-span-2">
-              <span className="font-medium text-gray-700">Oldest Session:</span>
-              <p className="text-gray-900">{sessionStats.oldestSession}</p>
+          {isFirebaseStats(sessionStats) && (
+            <div>
+              <span className="text-gray-600">Total Sessions:</span>
+              <p className="font-medium">{sessionStats.totalSessions}</p>
+            </div>
+          )}
+          {isLocalStats(sessionStats) && sessionStats.lastUpdated && (
+            <div>
+              <span className="text-gray-600">Last Updated:</span>
+              <p className="font-medium">{new Date(sessionStats.lastUpdated).toLocaleTimeString()}</p>
             </div>
           )}
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 pt-2 border-t">
+      <div className="flex flex-wrap gap-2 mb-3">
         <button
           onClick={togglePersistence}
-          className={`px-3 py-2 rounded-md text-sm font-medium ${
+          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
             persistenceEnabled
               ? 'bg-red-100 text-red-700 hover:bg-red-200'
               : 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -157,31 +250,49 @@ export const PersistenceStatus: React.FC = () => {
           <>
             <button
               onClick={handleManualSave}
-              disabled={saving || isLoading}
-              className="px-3 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSaving || !hasRealData}
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                !hasRealData 
+                  ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' 
+                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              title={!hasRealData ? 'No real patient data to save' : `Save current session to ${storageType}`}
             >
-              {saving ? 'Saving...' : 'Manual Save'}
+              {isSaving ? 'Saving...' : `Save to ${storageType}`}
             </button>
 
             <button
-              onClick={handleForcePurge}
-              disabled={purging || isLoading}
-              className="px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handlePurgeData}
+              disabled={isPurging}
+              className="px-3 py-1.5 bg-orange-100 text-orange-700 hover:bg-orange-200 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {purging ? 'Purging...' : 'Force Purge All'}
+              {isPurging ? 'Clearing...' : `Clear ${storageType}`}
             </button>
           </>
         )}
       </div>
 
-      <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-md">
-        <p className="font-medium mb-1">HIPAA Compliance Notes:</p>
-        <ul className="list-disc list-inside space-y-1">
-          <li>Patient data is automatically purged after 24 hours</li>
-          <li>Data is encrypted in transit and at rest</li>
-          <li>Access is logged and auditable</li>
-          <li>Only current day sessions are retained</li>
-        </ul>
+      {lastSaved && (
+        <p className="text-xs text-green-600 mb-2">
+          Last saved: {lastSaved}
+        </p>
+      )}
+
+      <div className="text-xs text-gray-500 space-y-1">
+        {isFirebaseConfigured ? (
+          <>
+            <p>• Using Firebase for cloud data persistence</p>
+            <p>• Data is shared across devices and auto-purged daily</p>
+            <p>• HIPAA compliant with 24-hour retention policy</p>
+          </>
+        ) : (
+          <>
+            <p>• Using browser localStorage for local persistence</p>
+            <p>• Data only available on this device/browser</p>
+            <p>• Data clears automatically at end of day</p>
+          </>
+        )}
+        <p>• Only real patient data is auto-saved (not mock data)</p>
       </div>
     </div>
   );

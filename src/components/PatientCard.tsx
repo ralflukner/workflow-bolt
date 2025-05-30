@@ -31,7 +31,6 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
     };
   }, []);
 
-
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'scheduled': return 'bg-gray-500';

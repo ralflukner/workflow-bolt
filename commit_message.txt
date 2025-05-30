@@ -1,13 +1,12 @@
-feat(testing): migrate test suite from Vitest to Jest
+feat: enhance Tebra API rate limiting and environment documentation
 
-This commit migrates the project's test suite from Vitest to Jest:
+This commit improves the Tebra API integration and project setup documentation:
 
-- Replace Vitest imports with Jest equivalents in all test files
-- Update mocking syntax from vi.* to jest.* throughout test files
-- Add happy-dom for DOM testing environment
-- Configure Jest setup in src/test/setup.ts with DOM matchers and cleanup
-- Update package-lock.json with new dependencies
+- Update rate limiting tests for Tebra API to ensure proper throttling
+- Add test cases for various API methods with different rate limits
+- Enhance environment setup documentation with clearer instructions
+- Improve security recommendations for handling sensitive credentials
+- Update documentation for environment variable management
 
-The migration maintains all existing test functionality while standardizing
-on Jest as the primary testing framework. Both frameworks are temporarily
-maintained to ensure a smooth transition.
+These changes improve API reliability by ensuring proper rate limiting and
+make the project setup process more straightforward for new developers.

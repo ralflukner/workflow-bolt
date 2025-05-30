@@ -15,14 +15,14 @@ export async function scheduledPurge(): Promise<{
     
     // Get session stats before purge
     const statsBefore = await dailySessionService.getSessionStats();
-    console.log(`Sessions before purge: ${statsBefore.totalSessions}`);
+    console.log(`Sessions before purge: ${statsBefore.totalSessions ?? 0}`);
     
     // Perform the purge
     await dailySessionService.purgeOldSessions();
     
     // Get session stats after purge
     const statsAfter = await dailySessionService.getSessionStats();
-    const deletedCount = statsBefore.totalSessions - statsAfter.totalSessions;
+    const deletedCount = Math.max(0, (statsBefore.totalSessions ?? 0) - (statsAfter.totalSessions ?? 0));
     
     console.log(`Scheduled purge completed. Deleted ${deletedCount} old sessions.`);
     
@@ -69,7 +69,7 @@ export async function manualPurge(confirmationKey: string): Promise<{
   error?: string;
 }> {
   // Require confirmation key for safety
-  if (confirmationKey !== 'CONFIRM_PURGE_ALL_DATA') {
+if (confirmationKey !== process.env.PURGE_CONFIRM_KEY) {
     return {
       success: false,
       message: 'Invalid confirmation key',
@@ -118,8 +118,9 @@ export async function purgeHealthCheck(): Promise<{
     const sessionDates = await dailySessionService.getSessionDates();
     
     // Check if there are too many sessions (more than 2 days worth)
-    if (stats.totalSessions > 2) {
-      issues.push(`Too many sessions: ${stats.totalSessions} (expected <= 2)`);
+    const totalSessions = stats.totalSessions ?? 0;
+    if (totalSessions > 2) {
+      issues.push(`Too many sessions: ${totalSessions} (expected <= 2)`);
     }
     
     // Check if there are very old sessions
@@ -134,7 +135,7 @@ export async function purgeHealthCheck(): Promise<{
     
     return {
       healthy: issues.length === 0,
-      sessionCount: stats.totalSessions,
+      sessionCount: totalSessions,
       oldestSession: sessionDates.length > 0 ? sessionDates[sessionDates.length - 1] : undefined,
       newestSession: sessionDates.length > 0 ? sessionDates[0] : undefined,
       issues

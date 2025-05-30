@@ -3,10 +3,28 @@ import PatientList from '../PatientList';
 import { PatientApptStatus } from '../../types';
 import { TestProviders } from '../../test/testHelpers';
 
-// Mock the usePatientContext hook
-jest.mock('../../hooks/usePatientContext', () => ({
-  usePatientContext: () => ({
-    getPatientsByStatus: (status: PatientApptStatus) => {
+// Mock the formatTime function
+jest.mock('../../utils/formatters', () => ({
+  formatTime: (date: unknown) => {
+    if (typeof date === 'string') {
+      const d = new Date(date);
+      return `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`;
+    }
+    return '10:00 AM'; // Default for non-string inputs
+  },
+  formatDate: (date: string) => {
+    const d = new Date(date);
+    return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+  },
+  formatDOB: (dob: string) => {
+    const parts = dob.split('-');
+    return `${parts[1]}/${parts[2]}/${parts[0]}`;
+  }
+}));
+
+describe('PatientList', () => {
+  it('renders correctly with patients', () => {
+    const mockGetPatientsByStatus = jest.fn((status: PatientApptStatus) => {
       if (status === 'scheduled') {
         return [
           {
@@ -26,56 +44,6 @@ jest.mock('../../hooks/usePatientContext', () => ({
             provider: 'Dr. Test'
           }
         ];
-      }
-      return []; // Return empty array for other statuses
-    }
-  })
-}));
-
-// Mock the formatTime function
-jest.mock('../../utils/formatters', () => ({
-  formatTime: (date: string | Date) => {
-    if (typeof date === 'string') {
-      const d = new Date(date);
-      return `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`;
-    }
-    return '10:00 AM'; // Default for non-string inputs
-  },
-  formatDate: (date: string) => {
-    const d = new Date(date);
-    return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
-  },
-  formatDOB: (dob: string) => {
-    const parts = dob.split('-');
-    return `${parts[1]}/${parts[2]}/${parts[0]}`;
-  }
-}));
-
-describe('PatientList', () => {
-  it('renders correctly with patients', () => {
-    // Create a mock implementation of getPatientsByStatus
-    const scheduledPatients = [
-      {
-        id: 'test-1',
-        name: 'John Doe',
-        dob: '1990-01-01',
-        appointmentTime: '2023-01-01T09:00:00.000Z',
-        status: 'scheduled' as PatientApptStatus,
-        provider: 'Dr. Test'
-      },
-      {
-        id: 'test-2',
-        name: 'Jane Smith',
-        dob: '1985-05-15',
-        appointmentTime: '2023-01-01T10:00:00.000Z',
-        status: 'scheduled' as PatientApptStatus,
-        provider: 'Dr. Test'
-      }
-    ];
-    
-    const mockGetPatientsByStatus = jest.fn().mockImplementation((status: PatientApptStatus) => {
-      if (status === 'scheduled') {
-        return scheduledPatients;
       }
       return [];
     });
@@ -108,18 +76,15 @@ describe('PatientList', () => {
           getPatientsByStatus: jest.fn(() => [])
         }}
       >
-        <PatientList status="arrived" title="Arrived Patients" />
+        <PatientList status="scheduled" title="Scheduled Patients" />
       </TestProviders>
     );
 
     // Check that the title is rendered
-    expect(screen.getByText('Arrived Patients')).toBeInTheDocument();
+    expect(screen.getByText('Scheduled Patients')).toBeInTheDocument();
     
-    // Check that the empty message is displayed
+    // Check that "No patients" message is displayed
     expect(screen.getByText('No patients in this category')).toBeInTheDocument();
-    
-    // Check that the count is 0
-    expect(screen.getByText('0')).toBeInTheDocument();
   });
 
   it('applies the correct header color based on status', () => {

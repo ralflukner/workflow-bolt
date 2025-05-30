@@ -4,6 +4,8 @@ import { useTimeContext } from '../hooks/useTimeContext';
 import { mockPatients } from '../data/mockData';
 import { PatientContext } from './PatientContextDef';
 import { dailySessionService } from '../services/firebase/dailySessionService';
+import { localSessionService } from '../services/localStorage/localSessionService';
+import { isFirebaseConfigured } from '../config/firebase';
 
 interface PatientProviderProps {
   children: ReactNode;
@@ -59,52 +61,67 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   const [tickCounter, setTickCounter] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [persistenceEnabled, setPersistenceEnabled] = useState(true);
+  const [hasRealData, setHasRealData] = useState(false);
   const { getCurrentTime, timeMode } = useTimeContext();
+
+  // Determine which storage service to use
+  const storageService = isFirebaseConfigured ? dailySessionService : localSessionService;
+  const storageType = isFirebaseConfigured ? 'Firebase' : 'LocalStorage';
 
   // Load today's session data on mount
   useEffect(() => {
     const loadTodaysData = async () => {
       if (!persistenceEnabled) {
         setPatients(mockPatients);
+        setHasRealData(false);
         setIsLoading(false);
         return;
       }
 
-      try {
-        setIsLoading(true);
-        const savedPatients = await dailySessionService.loadTodaysSession();
+try {
+         setIsLoading(true);
+         console.log(`Using ${storageType} for data persistence`);
+         const savedPatients = await storageService.loadTodaysSession();
+         
+         if (savedPatients.length > 0) {
+           console.log(`Loaded ${savedPatients.length} patients from ${storageType}`);
+           setPatients(savedPatients);
+           setHasRealData(true);
+         } else {
+           console.log(`No saved session found in ${storageType}, starting with empty patient list`);
+           setPatients([]);
+           setHasRealData(false);
+         }
+       } catch (error) {
+         console.error(`Failed to load from ${storageType}, starting with empty list:`, error);
+         setPatients([]);
+         setHasRealData(false);
         
-        if (savedPatients.length > 0) {
-          console.log(`Loaded ${savedPatients.length} patients from today's session`);
-          setPatients(savedPatients);
+        // Only disable persistence for localStorage errors, not Firebase network issues
+        if (!isFirebaseConfigured) {
+          setPersistenceEnabled(false);
+          console.warn('localStorage persistence disabled due to data corruption');
         } else {
-          console.log('No saved session found, starting with mock data');
-          setPatients(mockPatients);
-          // Save initial mock data
-          await dailySessionService.saveTodaysSession(mockPatients);
+          console.warn('Firebase load failed, but persistence remains enabled for retry');
         }
-      } catch (error) {
-        console.error('Failed to load today\'s session, using mock data:', error);
-        setPatients(mockPatients);
-        setPersistenceEnabled(false); // Disable persistence if it fails
-      } finally {
+       } finally {
         setIsLoading(false);
       }
     };
 
     loadTodaysData();
-  }, [persistenceEnabled]);
+  }, [persistenceEnabled, storageService, storageType]);
 
   // Auto-save patients data periodically and when data changes
   useEffect(() => {
-    if (!persistenceEnabled || isLoading || patients.length === 0) return;
+    if (!persistenceEnabled || isLoading || !hasRealData) return;
 
     const saveSession = async () => {
       try {
-        await dailySessionService.saveTodaysSession(patients);
-        console.log('Session auto-saved successfully');
+        await storageService.saveTodaysSession(patients);
+        console.log(`Session auto-saved to ${storageType}`);
       } catch (error) {
-        console.error('Failed to auto-save session:', error);
+        console.error(`Failed to auto-save to ${storageType}:`, error);
       }
     };
 
@@ -112,7 +129,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     const timeoutId = setTimeout(saveSession, 2000); // Debounce saves by 2 seconds
 
     return () => clearTimeout(timeoutId);
-  }, [patients, persistenceEnabled, isLoading]);
+  }, [patients, persistenceEnabled, isLoading, hasRealData, storageService, storageType]);
 
   // Set up an interval to force re-renders and periodic saves
   useEffect(() => {
@@ -121,11 +138,22 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     const tick = () => {
       setTickCounter(prev => prev + 1);
       
-      // Periodic save every 5 minutes during real time mode
-      if (!timeMode.simulated && persistenceEnabled && patients.length > 0) {
-        dailySessionService.saveTodaysSession(patients).catch(error => {
-          console.error('Periodic save failed:', error);
-        });
+      // Periodic save every 5 minutes during real time mode (only real data)
+      if (!timeMode.simulated && persistenceEnabled && patients.length > 0 && hasRealData) {
+        const saveResult = storageService.saveTodaysSession(patients);
+        
+        // Handle both sync (localStorage) and async (Firebase) saves
+        try {
+          if (isFirebaseConfigured) {
+            // Firebase service returns a Promise
+            (saveResult as Promise<void>).catch((error: unknown) => {
+              console.error(`Periodic save to ${storageType} failed:`, error);
+            });
+          }
+          // localStorage service returns void - no additional handling needed
+        } catch (error) {
+          console.error(`Periodic save to ${storageType} failed:`, error);
+        }
       }
     };
 
@@ -140,10 +168,11 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         clearInterval(intervalId);
       }
     };
-  }, [timeMode.simulated, timeMode.currentTime, persistenceEnabled, patients]);
+  }, [timeMode.simulated, persistenceEnabled, patients, hasRealData, storageService, storageType]);
 
   const clearPatients = () => {
     setPatients([]);
+    setHasRealData(false);
   };
 
   const addPatient = (patientData: Omit<Patient, 'id'>) => {
@@ -153,6 +182,14 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     };
 
     setPatients(prev => [...prev, newPatient]);
+    setHasRealData(true); // Mark as real data when user adds patients
+  };
+
+  // Load mock data manually (for development/testing)
+  const loadMockData = () => {
+    setPatients(mockPatients);
+    setHasRealData(false); // This is mock data, don't auto-save it
+    console.log('Mock data loaded for development/testing');
   };
 
   const updatePatientStatus = (id: string, status: PatientApptStatus) => {
@@ -259,6 +296,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     URL.revokeObjectURL(url);
   };
 
+  // Import patients and mark as real data
   const importPatientsFromJSON = (importedPatients: Patient[]) => {
      if (!Array.isArray(importedPatients)) {
        throw new Error('Invalid data format: expected array of patients');
@@ -296,20 +334,25 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
      });
 
      setPatients(normalized);
+     setHasRealData(true); // Imported data is real data
    };
 
   // Force save current session (manual trigger)
-  const saveCurrentSession = async () => {
-    if (!persistenceEnabled) return;
-    
-    try {
-      await dailySessionService.saveTodaysSession(patients);
-      console.log('Session saved manually');
-    } catch (error) {
-      console.error('Manual save failed:', error);
-      throw error;
-    }
-  };
+const saveCurrentSession = async () => {
+   if (!persistenceEnabled) return;
+   
+   try {
+    await storageService.saveTodaysSession(patients);
+     // Only mark as real data if we have actual patient data
+     if (patients.length > 0) {
+       setHasRealData(true);
+     }
+    console.log(`Session saved manually to ${storageType}`);
+   } catch (error) {
+    console.error(`Manual save to ${storageType} failed:`, error);
+     throw error;
+   }
+ };
 
   // Toggle persistence (for testing/debugging)
   const togglePersistence = () => {
@@ -333,6 +376,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     persistenceEnabled,
     saveCurrentSession,
     togglePersistence,
+    hasRealData,
+    loadMockData,
   };
 
   return (
