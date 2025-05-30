@@ -7,4 +7,21 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  build: {
+    rollupOptions: {
+      external: [
+        'soap',
+        'formidable', 
+        'node:events',
+        'node:fs',
+        'node:crypto',
+        'node:stream',
+        'node:os',
+        'node:path'
+      ]
+    }
+  },
+  define: {
+    global: 'globalThis'
+  }
 });
