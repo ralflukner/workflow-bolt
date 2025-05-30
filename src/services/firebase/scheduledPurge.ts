@@ -22,7 +22,7 @@ export async function scheduledPurge(): Promise<{
     
     // Get session stats after purge
     const statsAfter = await dailySessionService.getSessionStats();
-    const deletedCount = (statsBefore.totalSessions ?? 0) - (statsAfter.totalSessions ?? 0);
+    const deletedCount = Math.max(0, (statsBefore.totalSessions ?? 0) - (statsAfter.totalSessions ?? 0));
     
     console.log(`Scheduled purge completed. Deleted ${deletedCount} old sessions.`);
     
