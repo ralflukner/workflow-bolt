@@ -12,6 +12,7 @@ This project uses multiple environment files to manage configuration and sensiti
 ## Setup Instructions
 
 ### 1. Install direnv (optional but recommended)
+
 ```bash
 # macOS
 brew install direnv
@@ -22,6 +23,7 @@ eval "$(direnv hook bash)" # for bash
 ```
 
 ### 2. Set up local environment variables
+
 ```bash
 # Copy the template to create your local environment file
 cp env-local-template.txt .env.local
@@ -33,11 +35,13 @@ cp env-local-template.txt .env.local
 ### 3. Load environment variables
 
 **With direnv:**
+
 ```bash
 direnv allow  # This will load .envrc automatically
 ```
 
 **Without direnv:**
+
 ```bash
 source .envrc  # Manually load variables
 ```
@@ -45,6 +49,7 @@ source .envrc  # Manually load variables
 ## Environment Variables
 
 ### Public Configuration (in .envrc)
+
 - `VITE_AUTH0_DOMAIN` - Auth0 domain
 - `VITE_AUTH0_CLIENT_ID` - Auth0 client ID  
 - `VITE_AUTH0_REDIRECT_URI` - Auth0 redirect URI
@@ -54,6 +59,7 @@ source .envrc  # Manually load variables
 - `REACT_APP_TEBRA_WSDL_URL` - Tebra WSDL endpoint URL
 
 ### Sensitive Credentials (in .env.local)
+
 - `REACT_APP_TEBRA_USERNAME` - Tebra EHR username
 - `REACT_APP_TEBRA_PASSWORD` - Tebra EHR password
 
@@ -62,4 +68,5 @@ source .envrc  # Manually load variables
 - Never commit `.env.local` to version control
 - The `.envrc` file automatically loads `.env.local` if it exists
 - All sensitive credentials should be in `.env.local` only
-- The `env-local-template.txt` shows the required format but contains placeholder/example values 
+- The `env-local-template.txt` shows the required format but contains placeholder/example values
+ 

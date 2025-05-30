@@ -18,7 +18,7 @@ describe('TebraRateLimiter', () => {
     const elapsed = Date.now() - startTime;
     // Should have waited at least 250ms for the second call
     expect(elapsed).toBeGreaterThanOrEqual(240); // Allow for small timing variations
-  });
+  }, 15000); // 15 second timeout for rate limiting test
 
   it('should handle different rate limits for different methods', async () => {
     // GetAppointments has 1000ms limit
@@ -29,7 +29,7 @@ describe('TebraRateLimiter', () => {
 
     // Should have waited at least 1000ms for the second call
     expect(appointmentCallElapsed).toBeGreaterThanOrEqual(990); // Allow for small timing variations
-  });
+  }, 15000); // 15 second timeout for rate limiting test
 
   it('should warn about unknown methods', async () => {
     const originalWarn = console.warn;
