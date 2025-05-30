@@ -1,27 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+// Mock must be at the very top before any imports
+jest.mock('../services/firebase/dailySessionService', () => ({
+  dailySessionService: {
+    loadTodaysSession: jest.fn(),
+    saveTodaysSession: jest.fn(),
+    deleteTodaysSession: jest.fn(),
+    getSessionStats: jest.fn().mockResolvedValue({
+      currentSessionDate: '2023-01-01',
+      hasCurrentSession: false,
+      totalSessions: 0,
+      backend: 'firebase'
+    })
+  },
+}));
+
 import React from 'react';
 import { render, waitFor, act, screen } from '@testing-library/react';
 import { PatientProvider } from '../context/PatientContext';
 import { TimeProvider } from '../context/TimeProvider';
 import { usePatientContext } from '../hooks/usePatientContext';
-import { SessionStats } from '../services/storageService';
 
-// Define the mock object fully before jest.mock
-const mockDailySessionService = {
-  loadTodaysSession: jest.fn(),
-  saveTodaysSession: jest.fn(),
-  deleteTodaysSession: jest.fn(),
-  getSessionStats: jest.fn().mockResolvedValue({
-    currentSessionDate: '2023-01-01',
-    hasCurrentSession: false,
-    totalSessions: 0,
-    backend: 'firebase'
-  } as SessionStats)
-};
-
-jest.mock('../services/firebase/dailySessionService', () => ({
-  dailySessionService: mockDailySessionService,
-}));
+// Get the mocked service for test assertions
+import { dailySessionService } from '../services/firebase/dailySessionService';
+const mockDailySessionService = dailySessionService as jest.Mocked<typeof dailySessionService>;
 
 // Test wrapper component
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
