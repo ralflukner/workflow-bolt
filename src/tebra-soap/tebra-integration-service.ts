@@ -1,4 +1,6 @@
-import { TebraApiService, TebraDataTransformer, TebraCredentials, TebraPatient } from '../tebra-soap/tebra-api-service';
+import { TebraCredentials, TebraPatient } from './tebra-api-service.types';
+import { TebraApiService } from './tebra-api-service';
+import { TebraDataTransformer } from './tebra-data-transformer';
 import { Patient } from '../types';
 import { dailySessionService } from '../services/firebase/dailySessionService';
 
