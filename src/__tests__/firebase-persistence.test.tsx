@@ -115,6 +115,9 @@ describe('Firebase Persistence', () => {
   });
 
   it('should auto-save when patients data changes', async () => {
+    // Override the mock for this test to start with empty array
+    mockDailySessionService.loadTodaysSession.mockResolvedValue([]);
+    
     await act(async () => {
       render(
         <TestWrapper>
