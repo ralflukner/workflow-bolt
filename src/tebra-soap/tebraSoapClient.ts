@@ -13,10 +13,22 @@ export class TebraSoapClient {
   private readonly config: TebraConfig;
 
   constructor(config?: Partial<TebraConfig>) {
+    const getEnvVar = (name: string, fallback: string): string => {
+      if (process.env.NODE_ENV === 'test') {
+        return process.env[name] || fallback;
+      }
+      
+      try {
+        return (typeof process !== 'undefined' && process.env?.[name]) || fallback;
+      } catch (e) {
+        return fallback;
+      }
+    };
+
     this.config = {
-      wsdlUrl: process.env.TEBRA_SOAP_WSDL || 'https://example.com/tebra.wsdl',
-      username: process.env.TEBRA_SOAP_USERNAME || 'demo',
-      password: process.env.TEBRA_SOAP_PASSWORD || 'demo',
+      wsdlUrl: getEnvVar('REACT_APP_TEBRA_WSDL_URL', 'https://example.com/tebra.wsdl'),
+      username: getEnvVar('REACT_APP_TEBRA_USERNAME', 'demo'),
+      password: getEnvVar('REACT_APP_TEBRA_PASSWORD', 'demo'),
       ...config,
     } as TebraConfig;
   }
@@ -151,4 +163,4 @@ export class TebraSoapClient {
   }
 }
 
-export const tebraSoapClient = new TebraSoapClient(); 
+export const tebraSoapClient = new TebraSoapClient();  
