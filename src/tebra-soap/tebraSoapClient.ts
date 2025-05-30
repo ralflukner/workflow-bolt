@@ -1,5 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import soap, { Client } from 'soap';
+let soap: any;
+if (typeof window === 'undefined') {
+  try {
+    const soapModule = require('soap');
+    soap = soapModule.default || soapModule;
+  } catch (e) {
+    console.warn('SOAP client not available in browser environment');
+  }
+}
 import { tebraRateLimiter } from './tebra-rate-limiter';
 
 export interface TebraConfig {
@@ -9,8 +17,12 @@ export interface TebraConfig {
 }
 
 export class TebraSoapClient {
-  private client: Client | null = null;
+  private client: any | null = null;
   private readonly config: TebraConfig;
+  
+  private isBrowserEnvironment(): boolean {
+    return typeof window !== 'undefined';
+  }
 
   constructor(config?: Partial<TebraConfig>) {
     const getEnvVar = (name: string, fallback: string): string => {
@@ -36,7 +48,11 @@ export class TebraSoapClient {
   /**
    * Ensure SOAP client has been created/cached
    */
-  private async getClient(): Promise<Client> {
+  private async getClient(): Promise<any> {
+    if (this.isBrowserEnvironment() || !soap) {
+      throw new Error('SOAP client only available in Node.js environment');
+    }
+    
     if (this.client) return this.client;
     this.client = await soap.createClientAsync(this.config.wsdlUrl);
 
@@ -163,4 +179,4 @@ export class TebraSoapClient {
   }
 }
 
-export const tebraSoapClient = new TebraSoapClient();  
+export const tebraSoapClient = new TebraSoapClient();              
