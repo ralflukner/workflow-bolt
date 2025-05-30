@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import MetricsPanel from '../MetricsPanel';
 import { TestProviders } from '../../test/testHelpers';
@@ -25,11 +24,11 @@ describe('MetricsPanel', () => {
 
     expect(screen.getByText('Total Appointments')).toBeInTheDocument();
     expect(screen.getByText('10')).toBeInTheDocument();
-    expect(screen.getByText('Waiting')).toBeInTheDocument();
+    expect(screen.getByText('Patients Waiting')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
-    expect(screen.getByText('Avg Wait')).toBeInTheDocument();
+    expect(screen.getByText('Avg. Wait Time')).toBeInTheDocument();
     expect(screen.getByText('15 min')).toBeInTheDocument();
-    expect(screen.getByText('Max Wait')).toBeInTheDocument();
+    expect(screen.getByText('Max Wait Time')).toBeInTheDocument();
     expect(screen.getByText('30 min')).toBeInTheDocument();
   });
 
@@ -52,12 +51,12 @@ describe('MetricsPanel', () => {
     );
 
     expect(screen.getByText('Total Appointments')).toBeInTheDocument();
-    expect(screen.getByText('0')).toBeInTheDocument();
-    expect(screen.getByText('Waiting')).toBeInTheDocument();
-    expect(screen.getByText('0')).toBeInTheDocument();
-    expect(screen.getByText('Avg Wait')).toBeInTheDocument();
-    expect(screen.getByText('0 min')).toBeInTheDocument();
-    expect(screen.getByText('Max Wait')).toBeInTheDocument();
-    expect(screen.getByText('0 min')).toBeInTheDocument();
+    expect(screen.getAllByText('0')[0]).toBeInTheDocument();
+    expect(screen.getByText('Patients Waiting')).toBeInTheDocument();
+    expect(screen.getAllByText('0')[1]).toBeInTheDocument();
+    expect(screen.getByText('Avg. Wait Time')).toBeInTheDocument();
+    expect(screen.getAllByText('0 min')[0]).toBeInTheDocument();
+    expect(screen.getByText('Max Wait Time')).toBeInTheDocument();
+    expect(screen.getAllByText('0 min')[1]).toBeInTheDocument();
   });
 });
