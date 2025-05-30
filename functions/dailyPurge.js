@@ -28,18 +28,25 @@ exports.dailyDataPurge = onSchedule('0 2 * * *', async (event) => {
       return { success: true, message: 'No old sessions found', deletedCount: 0 };
     }
     
-    // Use batch for efficient deletion
-    const batch = db.batch();
-    let deleteCount = 0;
-    
-    querySnapshot.forEach((doc) => {
-      console.log(`Scheduling deletion of session: ${doc.id}`);
-      batch.delete(doc.ref);
-      deleteCount++;
-    });
-    
-    // Commit the batch deletion
-    await batch.commit();
+// Chunk into <=500-write batches
+let batch = db.batch();
+let opCounter = 0;
+let deleteCount = 0;
+const commits = [];
+
+querySnapshot.forEach((doc) => {
+  batch.delete(doc.ref);
+  deleteCount++;
+  if (++opCounter === 500) {
+    commits.push(batch.commit());
+    batch = db.batch();
+    opCounter = 0;
+  }
+});
+
+// Flush remaining writes
+commits.push(batch.commit());
+await Promise.all(commits);
     
     console.log(`Successfully purged ${deleteCount} old sessions`);
     
@@ -65,7 +72,10 @@ exports.dailyDataPurge = onSchedule('0 2 * * *', async (event) => {
     await db.collection('audit_logs').add({
       action: 'scheduled_purge_failed',
       timestamp: new Date(),
-      error: error.message,
+      error: {
+  message: error.message,
+  stack: error.stack,
+},
       reason: 'HIPAA_compliance_daily_purge_error'
     });
     

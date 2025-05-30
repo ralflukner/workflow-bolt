@@ -69,7 +69,7 @@ export async function manualPurge(confirmationKey: string): Promise<{
   error?: string;
 }> {
   // Require confirmation key for safety
-  if (confirmationKey !== 'CONFIRM_PURGE_ALL_DATA') {
+  if (confirmationKey !== process.env.PURGE_CONFIRM_KEY) {
     return {
       success: false,
       message: 'Invalid confirmation key',
