@@ -3,9 +3,12 @@ import { mockPatients } from '../data/mockData';
 import { Patient } from '../types';
 
 describe('JSON Import/Export Integration', () => {
-  const mockCreateElement = jest.fn();
-  const mockAppendChild = jest.fn();
-  const mockRemoveChild = jest.fn();
+  const mockCreateElement = jest.fn().mockReturnValue({
+    setAttribute: jest.fn(),
+    style: {},
+    appendChild: jest.fn(),
+    removeChild: jest.fn(),
+  });
   const mockClick = jest.fn();
   const mockCreateObjectURL = jest.fn(() => 'mock-url');
   const mockRevokeObjectURL = jest.fn();
@@ -18,14 +21,14 @@ describe('JSON Import/Export Integration', () => {
   
   beforeEach(() => {
     document.createElement = mockCreateElement as unknown as typeof document.createElement;
-    document.body.appendChild = mockAppendChild as unknown as typeof document.body.appendChild;
-    document.body.removeChild = mockRemoveChild as unknown as typeof document.body.removeChild;
+    document.body.appendChild = jest.fn() as unknown as typeof document.body.appendChild;
+    document.body.removeChild = jest.fn() as unknown as typeof document.body.removeChild;
     URL.createObjectURL = mockCreateObjectURL;
     URL.revokeObjectURL = mockRevokeObjectURL;
     
     mockCreateElement.mockReset();
-    mockAppendChild.mockReset();
-    mockRemoveChild.mockReset();
+    (document.body.appendChild as jest.Mock).mockReset();
+    (document.body.removeChild as jest.Mock).mockReset();
     mockClick.mockReset();
     mockCreateObjectURL.mockReset();
     mockRevokeObjectURL.mockReset();
@@ -68,9 +71,9 @@ describe('JSON Import/Export Integration', () => {
     
     expect(mockCreateObjectURL).toHaveBeenCalledTimes(1);
     expect(mockCreateElement).toHaveBeenCalledWith('a');
-    expect(mockAppendChild).toHaveBeenCalledTimes(1);
+    expect((document.body.appendChild as jest.Mock)).toHaveBeenCalledTimes(1);
     expect(mockClick).toHaveBeenCalledTimes(1);
-    expect(mockRemoveChild).toHaveBeenCalledTimes(1);
+    expect((document.body.removeChild as jest.Mock)).toHaveBeenCalledTimes(1);
     expect(mockRevokeObjectURL).toHaveBeenCalledWith('mock-url');
     
     const importedPatients = importPatientsFromJSON(exportedData);

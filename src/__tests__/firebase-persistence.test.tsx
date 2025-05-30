@@ -6,13 +6,8 @@ import { TimeProvider } from '../context/TimeProvider';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { SessionStats } from '../services/storageService';
 
-const mockDailySessionService: any = {};
-
-jest.mock('../services/firebase/dailySessionService', () => ({
-  dailySessionService: mockDailySessionService,
-}));
-
-Object.assign(mockDailySessionService, {
+// Define the mock object fully before jest.mock
+const mockDailySessionService = {
   loadTodaysSession: jest.fn(),
   saveTodaysSession: jest.fn(),
   deleteTodaysSession: jest.fn(),
@@ -22,7 +17,11 @@ Object.assign(mockDailySessionService, {
     totalSessions: 0,
     backend: 'firebase'
   } as SessionStats)
-});
+};
+
+jest.mock('../services/firebase/dailySessionService', () => ({
+  dailySessionService: mockDailySessionService,
+}));
 
 // Test wrapper component
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {

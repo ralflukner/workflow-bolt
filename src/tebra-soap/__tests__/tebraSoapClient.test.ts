@@ -16,8 +16,7 @@ describe('TebraSoapClient', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    // Reset cached client in singleton
-    // @ts-ignore
+    // @ts-expect-error resetting private cache for test
     tebraSoapClient['client'] = null;
   });
 
