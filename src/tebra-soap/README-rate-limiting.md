@@ -5,6 +5,7 @@ This implementation automatically enforces the rate limits specified in the Tebr
 ## Rate Limits Implemented
 
 ### Read Operations
+
 - **GetAllPatients**: 1 call every 5 seconds (5000ms)
 - **GetAppointment**: 1 call every ½ second (500ms)
 - **GetAppointments**: 1 call per second (1000ms)
@@ -22,6 +23,7 @@ This implementation automatically enforces the rate limits specified in the Tebr
 - **GetTransactions**: 1 call per second (1000ms)
 
 ### Write Operations
+
 - **CreateAppointment**: 1 call every ½ second (500ms)
 - **CreateEncounter**: 1 call every ½ second (500ms)
 - **CreatePatient**: 1 call every ½ second (500ms)
@@ -32,17 +34,20 @@ This implementation automatically enforces the rate limits specified in the Tebr
 - **DeleteAppointment**: 1 call every ½ second (500ms)
 
 ### Search Operations
+
 - **SearchPatient**: 1 call every ¼ second (250ms)
 
 ## Implementation Details
 
 ### TebraRateLimiter Class
+
 - Singleton pattern for global rate limit enforcement
 - Method-specific rate limiting based on Tebra documentation
 - Automatic waiting between API calls
 - Utility methods for rate limit monitoring
 
 ### Integration Points
+
 1. **TebraSoapClient**: All SOAP API calls automatically wait for appropriate intervals
 2. **TebraApiService**: Higher-level API methods that use the rate-limited SOAP client
 3. **TebraIntegrationService**: Business logic layer that orchestrates API calls
@@ -67,10 +72,13 @@ console.log(`Must wait ${waitTime}ms before next GetAppointments call`);
 ```
 
 ### Benefits
+
 - **Compliance**: Automatically follows Tebra's documented rate limits
 - **Reliability**: Prevents API throttling and service interruptions
 - **Transparency**: Clear logging of rate limit enforcement
 - **Flexibility**: Easy to adjust limits if Tebra updates their requirements
 
 ### Monitoring
-The integration UI displays rate limiting status and confirms that limits are being enforced automatically. 
+
+The integration UI displays rate limiting status and confirms that limits are being enforced automatically.
+ 

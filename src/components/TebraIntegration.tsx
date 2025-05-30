@@ -13,12 +13,17 @@ const TebraIntegration: React.FC = () => {
   const [integrationService, setIntegrationService] = useState<TebraIntegrationService | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
 
-  // Tebra credentials
+  // Tebra credentials - SECURE IMPLEMENTATION
   const tebraCredentials: TebraCredentials = {
-    username: 'workflow@luknerclinic.com',
-    password: '8gdwsh5J<[0]_xD81}lwi50bom#Y%r',
-    wsdlUrl: `https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl&customerkey=j57wt68dc39q`
+    username: process.env.REACT_APP_TEBRA_USERNAME || '',
+    password: process.env.REACT_APP_TEBRA_PASSWORD || '',
+    wsdlUrl: process.env.REACT_APP_TEBRA_WSDL_URL || ''
   };
+
+  // Validate credentials are available
+  const hasValidCredentials = tebraCredentials.username && 
+                              tebraCredentials.password && 
+                              tebraCredentials.wsdlUrl;
 
   useEffect(() => {
     // Set default date to current time
@@ -30,6 +35,13 @@ const TebraIntegration: React.FC = () => {
     // Initialize Tebra integration service
     const initializeService = async () => {
       try {
+        // Check if credentials are available
+        if (!hasValidCredentials) {
+          setStatusMessage('Tebra credentials not configured - contact administrator');
+          setIsConnected(false);
+          return;
+        }
+
         const config = createTebraConfig(tebraCredentials, {
           syncInterval: 30, // 30 minutes
           lookAheadDays: 7, // 1 week ahead
@@ -205,7 +217,7 @@ const TebraIntegration: React.FC = () => {
         <div className="bg-gray-700 rounded-lg p-3">
           <h4 className="text-white font-medium mb-2">Connection Info</h4>
           <div className="text-gray-300 text-sm space-y-1">
-            <p>User: {tebraCredentials.username}</p>
+            <p>User: {tebraCredentials.username ? '***@luknerclinic.com' : 'Not configured'}</p>
             <p>Status: {isConnected ? 'API Connected' : 'Using Fallback Data'}</p>
             <p>Current Mode: {timeMode.simulated ? 'Simulated Time' : 'Real Time'}</p>
           </div>

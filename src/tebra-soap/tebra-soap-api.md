@@ -108,6 +108,7 @@ The user asks me to help design a system to populate their patient flow manageme
 3. Populate their workflow app with this data
 
 ⠀From my earlier research, I know that Tebra uses:
+
 * Document/Literal SOAP binding style
 * BasicHttpBinding
 * SOAP 1.1
@@ -115,6 +116,7 @@ The user asks me to help design a system to populate their patient flow manageme
 * Endpoint: ~[https://webservice.kareo.com/services/soap/2.1/KareoServices.svc](https://webservice.kareo.com/services/soap/2.1/KareoServices.svc)~
 
 ⠀Looking at their existing types, they have:
+
 * Patient interface with ID, name, DOB, appointment time, status, etc.
 * PatientApptStatus types
 * Import/export functionality
@@ -239,29 +241,29 @@ Mapped out Tebra integration with dashboard and patient workflow.
 ## 2s
 
 Tebra Integration Implementation Guide
-Document 
+Document
 # Tebra SOAP API Integration Implementation Guide
 
 ## Overview
 
-This implementation provides a secure, HIPAA-compliant integration between your Patient Flow Management application and Tebra's SOAP API. The integration automatically syncs appointment 
+This implementation provides a secure, HIPAA-compliant integration between your Patient Flow Management application and Tebra's SOAP API. The integration automatically syncs appointment
 Engineered comprehensive Tebra SOAP API integration for patient workflow.
 
 ## 7s
 
-1 
-2 
-3 
-4 
-5 
+1
+2
+3
+4
+5
 
 ⠀
-* 
-* 
-* 
-* 
-* 
-* 
+*
+*
+*
+*
+*
+*
 
 ⠀
 ## Integration Design Summary
@@ -327,7 +329,7 @@ I would like to "cache" the schedule and patient information in a secure GCP Fir
 Edit
 Engineered comprehensive medical data sync strategy for Tebra EHR.
 
-## 
+##
 Thought process
 Excellent! Now I have comprehensive information about Tebra's SOAP interface. Based on the search results, I can provide a detailed overview covering the clinical documentation (SOAP notes) and the technical API aspect. Given the user's background as a Board-Certified Internal Medicine Physician, they'll likely be most interested in the clinical documentation features. Still, I should also mention the API capabilities for integration purposes.
 Let me structure my response to cover:
@@ -341,7 +343,7 @@ I should focus on the clinical workflow aspects since that's most relevant to th
 
 ⠀I'll design a comprehensive bidirectional integration system with Firebase as your secure clinical data cache. This will transform your workflow into a complete clinical decision support system.
 Firebase Medical Data Schema
-Code 
+Code
 // src/types/medicalData.ts
 export interface MedicalDataTypes {
   // Core Patient Demographics & IDs
@@ -355,16 +357,16 @@ Thought process
 Now I have a clearer picture of Tebra’s SOAP interface. Please also provide me with information about the specific note types and structures.
 ⠀
 Comprehensive Tebra SOAP API Service
-Code 
+Code
 // src/tebra-soap/comprehensiveTebraApi.ts
 import { TebraCredentials } from './tebraApiService';
-import { 
-  MedicalDataTypes, 
-  LabResult, 
-  ImagingResult, 
-  ProgressNote, 
-  Medication, 
-  Order, 
-  Allergy 
+import {
+  MedicalDataTypes,
+  LabResult,
+  ImagingResult,
+  ProgressNote,
+  Medication,
+  Order,
+  Allergy
 } from '../../types/medicalData';
 

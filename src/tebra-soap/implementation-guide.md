@@ -20,11 +20,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   // Load Tebra credentials from environment or secure storage
-  const tebraCredentials = {
-    customerKey: process.env.REACT_APP_TEBRA_CUSTOMER_KEY || '',
-    username: process.env.REACT_APP_TEBRA_USERNAME || '',
-    password: process.env.REACT_APP_TEBRA_PASSWORD || '',
-  };
+  // Credentials should be handled by backend API
+  // Client should authenticate and receive a session token
+  const authToken = await authenticateWithBackend();
 
   // Only pass credentials if they're available
   const hasCredentials = tebraCredentials.customerKey && 
@@ -94,36 +92,44 @@ const {
 Create a `.env.local` file in your project root:
 
 ```env
-# Tebra API Credentials
-REACT_APP_TEBRA_CUSTOMER_KEY=your_customer_key_here
-REACT_APP_TEBRA_USERNAME=your_api_username_here
-REACT_APP_TEBRA_PASSWORD=your_api_password_here
+# Backend API Configuration (no sensitive credentials in frontend)
+REACT_APP_BACKEND_API_URL=https://your-backend-api.com
+REACT_APP_TEBRA_INTEGRATION_ENABLED=true
 
 # Optional: Sync settings
 REACT_APP_TEBRA_SYNC_INTERVAL=15
 REACT_APP_TEBRA_LOOKAHEAD_DAYS=1
 ```
 
-**⚠️ Security Note:** Never commit actual credentials to version control. Use environment-specific configuration.
+**⚠️ CRITICAL Security Note:**
+
+- Never store API credentials in client-side code or environment variables accessible to React
+- Implement a secure backend service to proxy SOAP API calls
+- Use proper authentication tokens for client-backend communication
+- Never commit actual credentials to version control
 
 ### 4. HIPAA Compliance Measures
 
 #### Data Encryption
+
 - All API communications use HTTPS/TLS
 - Patient data is encrypted at rest in Firebase
 - Credentials are stored securely (consider using AWS Secrets Manager or similar in production)
 
 #### Data Retention
+
 - Patient data is automatically purged after 24 hours
 - Only current day appointments are synchronized
 - Historical data is not retained longer than necessary
 
 #### Access Controls
+
 - API credentials require proper authentication
 - User authentication via Auth0 protects access
 - Firebase security rules limit data access
 
 #### Audit Trail
+
 - All API calls are logged with timestamps
 - Sync operations are tracked and monitored
 - Failed attempts are logged for security review
@@ -177,6 +183,7 @@ The integration automatically maps Tebra statuses to your internal workflow:
 ### 7. Monitoring and Maintenance
 
 #### Health Checks
+
 ```typescript
 // Check integration health
 const checkTebraHealth = async () => {
@@ -195,6 +202,7 @@ const checkTebraHealth = async () => {
 ```
 
 #### Sync Monitoring
+
 - Monitor sync frequency and success rates
 - Alert on consecutive sync failures
 - Track patient data consistency
@@ -202,6 +210,7 @@ const checkTebraHealth = async () => {
 ### 8. Testing Strategy
 
 #### Unit Tests
+
 ```typescript
 // Test status mapping
 describe('TebraDataTransformer', () => {
@@ -213,6 +222,7 @@ describe('TebraDataTransformer', () => {
 ```
 
 #### Integration Tests
+
 ```typescript
 // Test API connectivity
 describe('Tebra API Integration', () => {
@@ -225,6 +235,7 @@ describe('Tebra API Integration', () => {
 ```
 
 #### End-to-End Tests
+
 - Test complete sync workflow
 - Verify patient data accuracy
 - Test fallback scenarios
@@ -232,6 +243,7 @@ describe('Tebra API Integration', () => {
 ### 9. Deployment Considerations
 
 #### Production Environment
+
 ```typescript
 // Use secure credential management
 const getTebraCredentials = () => {
@@ -248,6 +260,7 @@ const getTebraCredentials = () => {
 ```
 
 #### Scaling Considerations
+
 - Implement rate limiting for API calls
 - Use connection pooling for high-volume practices
 - Monitor API usage and costs
@@ -257,21 +270,25 @@ const getTebraCredentials = () => {
 #### Common Issues
 
 **Connection Failures:**
+
 - Verify API credentials
 - Check network connectivity
 - Confirm Tebra API endpoint availability
 
 **Sync Issues:**
+
 - Check date ranges for appointment queries
 - Verify patient data format compatibility
 - Monitor API rate limits
 
 **Data Inconsistencies:**
+
 - Review status mapping logic
 - Check timezone handling
 - Verify data transformation accuracy
 
 #### Debug Mode
+
 ```typescript
 // Enable detailed logging
 const debugConfig = createTebraConfig(credentials, {

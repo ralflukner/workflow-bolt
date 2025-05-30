@@ -12,7 +12,7 @@ export interface SessionStats {
 
 export interface StorageService {
   loadTodaysSession(): Promise<Patient[]>;
-  saveTodaysSession(patients: Patient[]): Promise<void> | void;
+  saveTodaysSession(patients: Patient[]): Promise<void>;
   getSessionStats(): Promise<SessionStats>;
   clearSession?(): Promise<void>; // Optional method
 } 

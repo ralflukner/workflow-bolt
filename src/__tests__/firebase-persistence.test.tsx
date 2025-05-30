@@ -2,10 +2,13 @@ import React from 'react';
 import { render, waitFor, act, screen } from '@testing-library/react';
 import { PatientProvider } from '../context/PatientContext';
 import { TimeProvider } from '../context/TimeProvider';
-import { usePatientContext } from '../hooks/usePatientContext';
+// ---------------- MOCKS --------------
+jest.mock('../config/firebase', () => (…
+jest.mock('../services/localStorage/localSessionService', () => (…
+jest.mock('../services/firebase/dailySessionService', () => (…
+// -------------------------------------
 
-// Mock Firebase configuration to return true
-jest.mock('../config/firebase', () => ({
+import { PatientProvider } from '../context/PatientContext';
   db: {},
   auth: {},
   app: {},

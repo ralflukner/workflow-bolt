@@ -24,7 +24,7 @@ export class LocalSessionService implements StorageService {
   /**
    * Save today's patient session data to localStorage
    */
-  saveTodaysSession(patients: Patient[]): void {
+  saveTodaysSession(patients: Patient[]): Promise<void> {
     const sessionId = this.getTodayId();
     const now = new Date().toISOString();
     
@@ -41,9 +41,10 @@ export class LocalSessionService implements StorageService {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
       console.log(`Local session saved for ${sessionId}`);
       
+      return Promise.resolve();
     } catch (error) {
       console.error('Error saving local session:', error);
-      throw new Error('Failed to save local session');
+      return Promise.reject(new Error('Failed to save local session'));
     }
   }
 

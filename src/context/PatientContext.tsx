@@ -114,7 +114,7 @@ try {
 
   // Auto-save patients data periodically and when data changes
   useEffect(() => {
-    if (!persistenceEnabled || isLoading || patients.length === 0 || !hasRealData) return;
+    if (!persistenceEnabled || isLoading || !hasRealData) return;
 
     const saveSession = async () => {
       try {
@@ -168,7 +168,7 @@ try {
         clearInterval(intervalId);
       }
     };
-  }, [timeMode.simulated, timeMode.currentTime, persistenceEnabled, patients, hasRealData, storageService, storageType]);
+  }, [timeMode.simulated, persistenceEnabled, patients, hasRealData, storageService, storageType]);
 
   const clearPatients = () => {
     setPatients([]);
