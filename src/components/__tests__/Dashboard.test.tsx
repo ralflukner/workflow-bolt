@@ -1,6 +1,7 @@
 // Dashboard tests temporarily skipped due to hanging issues
 // TODO: Investigate and fix hanging React component tests
 
+import '@testing-library/jest-dom';
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Dashboard from '../Dashboard';
@@ -160,9 +161,9 @@ const mockWindow = {
   focus: jest.fn(),
   print: jest.fn(),
   close: jest.fn(),
-  onafterprint: null as any,
+  onafterprint: null as ((this: Window, ev: Event) => void) | null,
 };
-global.window.open = jest.fn(() => mockWindow as any);
+global.window.open = jest.fn(() => mockWindow as unknown as Window);
 
 // Test wrapper component
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
@@ -363,7 +364,7 @@ describe('Dashboard', () => {
       click: jest.fn(),
     };
     const originalCreateElement = document.createElement;
-    document.createElement = jest.fn(() => mockElement as any);
+    document.createElement = jest.fn(() => mockElement as unknown as HTMLAnchorElement);
     const originalAppendChild = document.body.appendChild;
     document.body.appendChild = jest.fn();
     const originalRemoveChild = document.body.removeChild;

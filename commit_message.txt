@@ -1,13 +1,12 @@
-refactor(testing): improve test organization and remove unused Tebra SOAP files
+feat: enhance Tebra API rate limiting and environment documentation
 
-This commit enhances the project's testing infrastructure and removes unused code:
+This commit improves the Tebra API integration and project setup documentation:
 
-- Update Jest configuration for improved TypeScript diagnostics
-- Add ESLint ignore rules for specific Tebra SOAP files
-- Remove unused Tebra SOAP API files while preserving core client functionality
-- Reorganize test imports and mocks for better clarity
-- Fix conflict in PatientCard.tsx component
-- Enhance test coverage for Firebase persistence error handling
+- Update rate limiting tests for Tebra API to ensure proper throttling
+- Add test cases for various API methods with different rate limits
+- Enhance environment setup documentation with clearer instructions
+- Improve security recommendations for handling sensitive credentials
+- Update documentation for environment variable management
 
-These changes improve code maintainability by removing deprecated code and
-enhancing test reliability, while preserving all essential functionality.
+These changes improve API reliability by ensuring proper rate limiting and
+make the project setup process more straightforward for new developers.
