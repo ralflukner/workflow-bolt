@@ -1,29 +1,32 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import matchers from '@testing-library/jest-dom/matchers';
-import { afterEach, jest } from '@jest/globals';
+import { afterEach, jest, beforeEach } from '@jest/globals';
 
 // Extend Jest's expect with the matchers from jest-dom
 expect.extend(matchers);
 
-// Global test suite timeout - fail any remaining tests after 4 minutes
-const GLOBAL_TIMEOUT = 240000; // 4 minutes in milliseconds
-let globalTimeoutId: NodeJS.Timeout;
+// Mock timers globally to prevent hanging
+jest.useFakeTimers();
 
-beforeAll(() => {
-  globalTimeoutId = setTimeout(() => {
-    console.error('⏰ GLOBAL TIMEOUT: Test suite exceeded 4 minutes, forcing exit...');
-    process.exit(1);
-  }, GLOBAL_TIMEOUT);
+// Aggressive test cleanup
+beforeEach(() => {
+  jest.clearAllTimers();
+  jest.clearAllMocks();
+});
+
+afterEach(() => {
+  cleanup();
+  jest.clearAllMocks();
+  jest.clearAllTimers();
+  jest.runOnlyPendingTimers();
 });
 
 afterAll(() => {
-  if (globalTimeoutId) {
-    clearTimeout(globalTimeoutId);
-  }
+  jest.useRealTimers();
 });
 
-// Mock Firebase modules to prevent initialization errors in tests
+// Basic Firebase mocks
 jest.mock('firebase/app', () => ({
   initializeApp: jest.fn(() => ({})),
 }));
@@ -54,13 +57,7 @@ jest.mock('firebase/auth', () => ({
 globalThis.URL.createObjectURL = jest.fn(() => 'mock-url');
 globalThis.URL.revokeObjectURL = jest.fn();
 
-// Clean up after each test
-afterEach(() => {
-  cleanup();
-  jest.clearAllMocks();
-});
-
-// Mock Firebase modules
+// Mock Firebase config
 jest.mock('./config/firebase', () => ({
   db: {},
   auth: {},
@@ -69,18 +66,7 @@ jest.mock('./config/firebase', () => ({
   isLocalDevelopment: true,
 }));
 
-// Mock the time context hooks
-jest.mock('./hooks/useTimeContext', () => ({
-  useTimeContext: () => ({
-    timeMode: { simulated: false, currentTime: new Date().toISOString() },
-    setTimeMode: jest.fn(),
-    getCurrentTime: () => new Date(),
-    formatDateTime: (date: Date) => date.toLocaleString(),
-    resetTime: jest.fn(),
-  }),
-}));
-
-// Mock import.meta.env for Jest
+// Mock import.meta.env
 Object.defineProperty(global, 'import', {
   value: {
     meta: {
@@ -97,16 +83,15 @@ Object.defineProperty(global, 'import', {
   writable: true,
 });
 
-// Mock window.confirm for tests
+// Mock window.confirm
 Object.defineProperty(window, 'confirm', {
   value: jest.fn(() => true),
   writable: true,
 });
 
-// Mock console methods to reduce noise in tests
-const originalConsole = global.console;
+// Reduce console noise
 global.console = {
-  ...originalConsole,
+  ...console,
   log: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),

@@ -3,9 +3,17 @@ module.exports = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   
-  // Test timeout configurations
-  testTimeout: 30000, // 30 seconds per individual test
-  maxWorkers: 1, // Run tests sequentially to better control overall timing
+  // Very aggressive timeout configurations
+  testTimeout: 10000, // 10 seconds per individual test (reduced from 30)
+  maxWorkers: 1, // Run tests sequentially
+  
+  // Force exit and handle hanging tests aggressively
+  forceExit: true,
+  detectOpenHandles: true,
+  bail: 1, // Stop on first failure
+  
+  // Disable cache to prevent issues
+  cache: false,
   
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',

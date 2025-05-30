@@ -8,10 +8,10 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "jest --forceExit --detectOpenHandles --verbose",
-    "test:watch": "jest --watch --testTimeout=30000",
-    "test:coverage": "jest --coverage --forceExit --detectOpenHandles --verbose",
-    "test:jest": "jest --forceExit --detectOpenHandles --verbose"
+    "test": "jest --forceExit --detectOpenHandles --verbose --bail --testTimeout=10000",
+    "test:watch": "jest --watch --testTimeout=10000",
+    "test:coverage": "jest --coverage --forceExit --detectOpenHandles --verbose --bail --testTimeout=10000",
+    "test:jest": "jest --forceExit --detectOpenHandles --verbose --bail --testTimeout=10000"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
