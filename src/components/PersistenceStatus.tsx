@@ -3,23 +3,17 @@ import { usePatientContext } from '../hooks/usePatientContext';
 import { dailySessionService } from '../services/firebase/dailySessionService';
 import { localSessionService } from '../services/localStorage/localSessionService';
 import { isFirebaseConfigured } from '../config/firebase';
+import { StorageService, SessionStats } from '../services/storageService';
 
-// Union type to handle both Firebase and localStorage stats
-type FirebaseStats = {
-  currentSessionDate: string;
-  hasCurrentSession: boolean;
-  totalSessions: number;
-  oldestSession?: string;
+// Type guard to check if stats are from Firebase
+const isFirebaseStats = (stats: SessionStats): stats is SessionStats & { totalSessions: number } => {
+  return stats.backend === 'firebase' && 'totalSessions' in stats;
 };
 
-type LocalStorageStats = {
-  currentSessionDate: string;
-  hasCurrentSession: boolean;
-  patientCount: number;
-  lastUpdated?: string;
+// Type guard to check if stats are from LocalStorage
+const isLocalStats = (stats: SessionStats): stats is SessionStats & { lastUpdated: string } => {
+  return stats.backend === 'local' && 'lastUpdated' in stats;
 };
-
-type SessionStats = FirebaseStats | LocalStorageStats;
 
 export const PersistenceStatus: React.FC = () => {
   const { 
@@ -39,9 +33,12 @@ export const PersistenceStatus: React.FC = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'info' | 'error'>('info');
 
-  // Determine which storage service to use
-  const storageService = isFirebaseConfigured ? dailySessionService : localSessionService;
-  const storageType = isFirebaseConfigured ? 'Firebase' : 'LocalStorage';
+  // Determine which storage service to use (stable ref)
+  const { storageService, storageType } = React.useMemo(() => {
+    return isFirebaseConfigured
+      ? { storageService: dailySessionService as StorageService, storageType: 'Firebase' as const }
+      : { storageService: localSessionService as StorageService, storageType: 'LocalStorage' as const };
+  }, [isFirebaseConfigured]);
 
   // Load session statistics
   useEffect(() => {
@@ -111,7 +108,7 @@ export const PersistenceStatus: React.FC = () => {
 
     setIsPurging(true);
     try {
-      if ('clearSession' in storageService) {
+      if (storageService.clearSession) {
         await storageService.clearSession();
       }
       
@@ -221,13 +218,13 @@ export const PersistenceStatus: React.FC = () => {
               {hasRealData ? 'Real Data' : 'Mock Data'}
             </p>
           </div>
-          {isFirebaseConfigured && 'totalSessions' in sessionStats && (
+          {isFirebaseStats(sessionStats) && (
             <div>
               <span className="text-gray-600">Total Sessions:</span>
               <p className="font-medium">{sessionStats.totalSessions}</p>
             </div>
           )}
-          {!isFirebaseConfigured && 'lastUpdated' in sessionStats && sessionStats.lastUpdated && (
+          {isLocalStats(sessionStats) && sessionStats.lastUpdated && (
             <div>
               <span className="text-gray-600">Last Updated:</span>
               <p className="font-medium">{new Date(sessionStats.lastUpdated).toLocaleTimeString()}</p>
@@ -252,7 +249,7 @@ export const PersistenceStatus: React.FC = () => {
           <>
             <button
               onClick={handleManualSave}
-              disabled={isSaving}
+              disabled={isSaving || !hasRealData}
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                 !hasRealData 
                   ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' 

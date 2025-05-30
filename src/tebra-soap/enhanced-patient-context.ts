@@ -1,14 +1,19 @@
+// src/context/EnhancedPatientContext.tsx
 import React, { useState, useEffect, ReactNode } from 'react';
 import { Patient, PatientApptStatus, Metrics } from '../types';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { mockPatients } from '../data/mockData';
 import { PatientContext } from './PatientContextDef';
 import { dailySessionService } from '../services/firebase/dailySessionService';
-import { localSessionService } from '../services/localStorage/localSessionService';
-import { isFirebaseConfigured } from '../config/firebase';
+import { TebraIntegrationService, createTebraConfig } from '../services/tebra/tebraIntegrationService';
 
-interface PatientProviderProps {
+interface EnhancedPatientProviderProps {
   children: ReactNode;
+  tebraCredentials?: {
+    customerKey: string;
+    username: string;
+    password: string;
+  };
 }
 
 // Helper to normalize various status spellings/capitalizations
@@ -56,72 +61,126 @@ const normalizeStatus = (status: string): string => {
   }
 };
 
-export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) => {
+export const EnhancedPatientProvider: React.FC<EnhancedPatientProviderProps> = ({ 
+  children, 
+  tebraCredentials 
+}) => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [tickCounter, setTickCounter] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [persistenceEnabled, setPersistenceEnabled] = useState(true);
-  const [hasRealData, setHasRealData] = useState(false);
+  const [tebraIntegration, setTebraIntegration] = useState<TebraIntegrationService | null>(null);
+  const [lastTebraSync, setLastTebraSync] = useState<Date | null>(null);
   const { getCurrentTime, timeMode } = useTimeContext();
 
-  // Determine which storage service to use
-  const storageService = isFirebaseConfigured ? dailySessionService : localSessionService;
-  const storageType = isFirebaseConfigured ? 'Firebase' : 'LocalStorage';
-
-  // Load today's session data on mount
+  // Initialize Tebra integration if credentials provided
   useEffect(() => {
-    const loadTodaysData = async () => {
-      if (!persistenceEnabled) {
-        setPatients(mockPatients);
-        setHasRealData(false);
-        setIsLoading(false);
-        return;
-      }
+    if (tebraCredentials && !tebraIntegration) {
+      const initializeTebra = async () => {
+        try {
+          console.log('Initializing Tebra integration...');
+          const config = createTebraConfig(tebraCredentials, {
+            syncInterval: 15, // 15 minutes
+            lookAheadDays: 1,  // 1 day ahead
+            autoSync: true,
+            fallbackToMockData: true,
+          });
 
-try {
-         setIsLoading(true);
-         console.log(`Using ${storageType} for data persistence`);
-         const savedPatients = await storageService.loadTodaysSession();
-         
-         if (savedPatients.length > 0) {
-           console.log(`Loaded ${savedPatients.length} patients from ${storageType}`);
-           setPatients(savedPatients);
-           setHasRealData(true);
-         } else {
-           console.log(`No saved session found in ${storageType}, starting with empty patient list`);
-           setPatients([]);
-           setHasRealData(false);
-         }
-       } catch (error) {
-         console.error(`Failed to load from ${storageType}, starting with empty list:`, error);
-         setPatients([]);
-         setHasRealData(false);
-        
-        // Only disable persistence for localStorage errors, not Firebase network issues
-        if (!isFirebaseConfigured) {
-          setPersistenceEnabled(false);
-          console.warn('localStorage persistence disabled due to data corruption');
-        } else {
-          console.warn('Firebase load failed, but persistence remains enabled for retry');
+          const service = new TebraIntegrationService(config);
+          const initialized = await service.initialize();
+          
+          if (initialized) {
+            setTebraIntegration(service);
+            console.log('Tebra integration initialized successfully');
+            
+            // Perform initial sync
+            const syncResult = await service.syncTodaysSchedule();
+            if (syncResult.success) {
+              setLastTebraSync(new Date());
+              // Reload patients from storage after sync
+              await loadTodaysData();
+            }
+          }
+        } catch (error) {
+          console.error('Failed to initialize Tebra integration:', error);
         }
-       } finally {
-        setIsLoading(false);
+      };
+
+      initializeTebra();
+    }
+
+    return () => {
+      if (tebraIntegration) {
+        tebraIntegration.cleanup();
       }
     };
+  }, [tebraCredentials]);
 
+  // Load today's session data on mount
+  const loadTodaysData = async () => {
+    if (!persistenceEnabled) {
+      setPatients(mockPatients);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const savedPatients = await dailySessionService.loadTodaysSession();
+      
+      if (savedPatients.length > 0) {
+        console.log(`Loaded ${savedPatients.length} patients from today's session`);
+        setPatients(savedPatients);
+      } else {
+        // Try to sync from Tebra if available
+        if (tebraIntegration) {
+          console.log('No saved session found, attempting Tebra sync...');
+          const syncResult = await tebraIntegration.syncTodaysSchedule();
+          
+          if (syncResult.success && syncResult.patientsFound > 0) {
+            const syncedPatients = await dailySessionService.loadTodaysSession();
+            if (syncedPatients.length > 0) {
+              setPatients(syncedPatients);
+              setLastTebraSync(new Date());
+            } else {
+              console.log('Sync successful but no patients loaded, using mock data');
+              setPatients(mockPatients);
+              await dailySessionService.saveTodaysSession(mockPatients);
+            }
+          } else {
+            console.log('Tebra sync failed or no patients found, using mock data');
+            setPatients(mockPatients);
+            await dailySessionService.saveTodaysSession(mockPatients);
+          }
+        } else {
+          console.log('No saved session and no Tebra integration, using mock data');
+          setPatients(mockPatients);
+          await dailySessionService.saveTodaysSession(mockPatients);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load today\'s session, using mock data:', error);
+      setPatients(mockPatients);
+      setPersistenceEnabled(false); // Disable persistence if it fails
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadTodaysData();
-  }, [persistenceEnabled, storageService, storageType]);
+  }, [persistenceEnabled]);
 
   // Auto-save patients data periodically and when data changes
   useEffect(() => {
-    if (!persistenceEnabled || isLoading || patients.length === 0 || !hasRealData) return;
+    if (!persistenceEnabled || isLoading || patients.length === 0) return;
 
     const saveSession = async () => {
       try {
-        await storageService.saveTodaysSession(patients);
-        console.log(`Session auto-saved to ${storageType}`);
+        await dailySessionService.saveTodaysSession(patients);
+        console.log('Session auto-saved successfully');
       } catch (error) {
-        console.error(`Failed to auto-save to ${storageType}:`, error);
+        console.error('Failed to auto-save session:', error);
       }
     };
 
@@ -129,30 +188,38 @@ try {
     const timeoutId = setTimeout(saveSession, 2000); // Debounce saves by 2 seconds
 
     return () => clearTimeout(timeoutId);
-  }, [patients, persistenceEnabled, isLoading, hasRealData, storageService, storageType]);
+  }, [patients, persistenceEnabled, isLoading]);
 
-  // Set up an interval to force re-renders and periodic saves
+  // Set up an interval to force re-renders and periodic operations
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | undefined;
 
     const tick = () => {
       setTickCounter(prev => prev + 1);
       
-      // Periodic save every 5 minutes during real time mode (only real data)
-      if (!timeMode.simulated && persistenceEnabled && patients.length > 0 && hasRealData) {
-        const saveResult = storageService.saveTodaysSession(patients);
+      // Periodic save every 5 minutes during real time mode
+      if (!timeMode.simulated && persistenceEnabled && patients.length > 0) {
+        dailySessionService.saveTodaysSession(patients).catch(error => {
+          console.error('Periodic save failed:', error);
+        });
+      }
+
+      // Check if we need to sync from Tebra (every 15 minutes)
+      if (tebraIntegration && lastTebraSync) {
+        const now = new Date();
+        const timeSinceLastSync = now.getTime() - lastTebraSync.getTime();
+        const fifteenMinutes = 15 * 60 * 1000;
         
-        // Handle both sync (localStorage) and async (Firebase) saves
-        try {
-          if (isFirebaseConfigured) {
-            // Firebase service returns a Promise
-            (saveResult as Promise<void>).catch((error: unknown) => {
-              console.error(`Periodic save to ${storageType} failed:`, error);
-            });
-          }
-          // localStorage service returns void - no additional handling needed
-        } catch (error) {
-          console.error(`Periodic save to ${storageType} failed:`, error);
+        if (timeSinceLastSync > fifteenMinutes) {
+          console.log('Triggering scheduled Tebra sync...');
+          tebraIntegration.syncTodaysSchedule().then(result => {
+            if (result.success) {
+              setLastTebraSync(now);
+              loadTodaysData(); // Reload after sync
+            }
+          }).catch(error => {
+            console.error('Scheduled Tebra sync failed:', error);
+          });
         }
       }
     };
@@ -168,11 +235,37 @@ try {
         clearInterval(intervalId);
       }
     };
-  }, [timeMode.simulated, timeMode.currentTime, persistenceEnabled, patients, hasRealData, storageService, storageType]);
+  }, [timeMode.simulated, timeMode.currentTime, persistenceEnabled, patients, tebraIntegration, lastTebraSync]);
+
+  // Force sync from Tebra
+  const syncFromTebra = async (): Promise<boolean> => {
+    if (!tebraIntegration) {
+      console.warn('Tebra integration not available');
+      return false;
+    }
+
+    try {
+      setIsLoading(true);
+      const result = await tebraIntegration.syncTodaysSchedule();
+      
+      if (result.success) {
+        setLastTebraSync(new Date());
+        await loadTodaysData(); // Reload patients after sync
+        return true;
+      } else {
+        console.error('Tebra sync failed:', result.errors);
+        return false;
+      }
+    } catch (error) {
+      console.error('Manual Tebra sync failed:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const clearPatients = () => {
     setPatients([]);
-    setHasRealData(false);
   };
 
   const addPatient = (patientData: Omit<Patient, 'id'>) => {
@@ -182,14 +275,6 @@ try {
     };
 
     setPatients(prev => [...prev, newPatient]);
-    setHasRealData(true); // Mark as real data when user adds patients
-  };
-
-  // Load mock data manually (for development/testing)
-  const loadMockData = () => {
-    setPatients(mockPatients);
-    setHasRealData(false); // This is mock data, don't auto-save it
-    console.log('Mock data loaded for development/testing');
   };
 
   const updatePatientStatus = (id: string, status: PatientApptStatus) => {
@@ -296,7 +381,6 @@ try {
     URL.revokeObjectURL(url);
   };
 
-  // Import patients and mark as real data
   const importPatientsFromJSON = (importedPatients: Patient[]) => {
      if (!Array.isArray(importedPatients)) {
        throw new Error('Invalid data format: expected array of patients');
@@ -334,25 +418,20 @@ try {
      });
 
      setPatients(normalized);
-     setHasRealData(true); // Imported data is real data
    };
 
   // Force save current session (manual trigger)
-const saveCurrentSession = async () => {
-   if (!persistenceEnabled) return;
-   
-   try {
-    await storageService.saveTodaysSession(patients);
-     // Only mark as real data if we have actual patient data
-     if (patients.length > 0) {
-       setHasRealData(true);
-     }
-    console.log(`Session saved manually to ${storageType}`);
-   } catch (error) {
-    console.error(`Manual save to ${storageType} failed:`, error);
-     throw error;
-   }
- };
+  const saveCurrentSession = async () => {
+    if (!persistenceEnabled) return;
+    
+    try {
+      await dailySessionService.saveTodaysSession(patients);
+      console.log('Session saved manually');
+    } catch (error) {
+      console.error('Manual save failed:', error);
+      throw error;
+    }
+  };
 
   // Toggle persistence (for testing/debugging)
   const togglePersistence = () => {
@@ -376,8 +455,10 @@ const saveCurrentSession = async () => {
     persistenceEnabled,
     saveCurrentSession,
     togglePersistence,
-    hasRealData,
-    loadMockData,
+    // Tebra-specific functions
+    syncFromTebra,
+    lastTebraSync,
+    tebraConnected: !!tebraIntegration,
   };
 
   return (
@@ -386,3 +467,27 @@ const saveCurrentSession = async () => {
     </PatientContext.Provider>
   );
 };
+
+// Updated context type to include Tebra functions
+export interface EnhancedPatientContextType {
+  patients: Patient[];
+  addPatient: (patient: Omit<Patient, 'id'>) => void;
+  updatePatientStatus: (id: string, status: PatientApptStatus) => void;
+  assignRoom: (id: string, room: string) => void;
+  updateCheckInTime: (id: string, checkInTime: string) => void;
+  getPatientsByStatus: (status: PatientApptStatus) => Patient[];
+  getMetrics: () => Metrics;
+  getWaitTime: (patient: Patient) => number;
+  clearPatients: () => void;
+  exportPatientsToJSON: () => void;
+  importPatientsFromJSON: (patients: Patient[]) => void;
+  tickCounter: number;
+  isLoading: boolean;
+  persistenceEnabled: boolean;
+  saveCurrentSession: () => Promise<void>;
+  togglePersistence: () => void;
+  // Tebra-specific
+  syncFromTebra: () => Promise<boolean>;
+  lastTebraSync: Date | null;
+  tebraConnected: boolean;
+}

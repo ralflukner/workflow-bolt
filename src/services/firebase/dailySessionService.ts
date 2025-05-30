@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { Patient } from '../../types';
+import { StorageService, SessionStats } from '../storageService'; // Import shared interface
 
 export interface DailySession {
   id: string; // Format: YYYY-MM-DD
@@ -24,7 +25,7 @@ export interface DailySession {
 const COLLECTION_NAME = 'daily_sessions';
 const MAX_RETENTION_DAYS = 1; // Only keep current day for HIPAA compliance
 
-export class DailySessionService {
+export class DailySessionService implements StorageService {
   
   /**
    * Get today's date in YYYY-MM-DD format
@@ -67,14 +68,14 @@ export class DailySessionService {
       const docRef = doc(db, COLLECTION_NAME, sessionId);
       await setDoc(docRef, sessionData, { merge: true });
       
-      console.log(`Daily session saved for ${sessionId}`);
+      console.log(`Firebase session saved for ${sessionId}`);
       
       // Automatically purge old data after saving
       await this.purgeOldSessions();
       
     } catch (error) {
-      console.error('Error saving daily session:', error);
-      throw new Error('Failed to save daily session');
+      console.error('Error saving Firebase session:', error);
+      throw new Error('Failed to save Firebase session');
     }
   }
 
@@ -91,16 +92,16 @@ export class DailySessionService {
       
       if (todayDoc && todayDoc.exists()) {
         const sessionData = todayDoc.data() as DailySession;
-        console.log(`Daily session loaded for ${sessionId}`);
+        console.log(`Firebase session loaded for ${sessionId}`);
         return sessionData.patients || [];
       }
       
-      console.log(`No daily session found for ${sessionId}`);
+      console.log(`No Firebase session found for ${sessionId}`);
       return [];
       
     } catch (error) {
-      console.error('Error loading daily session:', error);
-      throw new Error('Failed to load daily session');
+      console.error('Error loading Firebase session:', error);
+      throw new Error('Failed to load Firebase session');
     }
   }
 
@@ -122,7 +123,7 @@ export class DailySessionService {
       const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) {
-        console.log('No old sessions to purge');
+        console.log('No old Firebase sessions to purge');
         return;
       }
 
@@ -136,11 +137,11 @@ export class DailySessionService {
       });
 
       await batch.commit();
-      console.log(`Purged ${deleteCount} old sessions for HIPAA compliance`);
+      console.log(`Purged ${deleteCount} old Firebase sessions`);
       
     } catch (error) {
-      console.error('Error purging old sessions:', error);
-      throw new Error('Failed to purge old sessions');
+      console.error('Error purging old Firebase sessions:', error);
+      throw new Error('Failed to purge old Firebase sessions');
     }
   }
 
@@ -152,7 +153,7 @@ export class DailySessionService {
       const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
       
       if (querySnapshot.empty) {
-        console.log('No sessions to purge');
+        console.log('No Firebase sessions to purge');
         return;
       }
 
@@ -165,11 +166,11 @@ export class DailySessionService {
       });
 
       await batch.commit();
-      console.log(`Force purged ${deleteCount} sessions`);
+      console.log(`Force purged ${deleteCount} Firebase sessions`);
       
     } catch (error) {
-      console.error('Error force purging sessions:', error);
-      throw new Error('Failed to force purge sessions');
+      console.error('Error force purging Firebase sessions:', error);
+      throw new Error('Failed to force purge Firebase sessions');
     }
   }
 
@@ -185,8 +186,8 @@ export class DailySessionService {
       return querySnapshot.docs.map(doc => doc.data().date);
       
     } catch (error) {
-      console.error('Error getting session dates:', error);
-      throw new Error('Failed to get session dates');
+      console.error('Error getting Firebase session dates:', error);
+      throw new Error('Failed to get Firebase session dates');
     }
   }
 
@@ -198,7 +199,7 @@ export class DailySessionService {
       const sessions = await this.getSessionDates();
       return sessions.includes(this.getTodayId());
     } catch (error) {
-      console.error('Error checking today\'s session:', error);
+      console.error('Error checking today\'s Firebase session:', error);
       return false;
     }
   }
@@ -206,17 +207,13 @@ export class DailySessionService {
   /**
    * Get session statistics
    */
-  async getSessionStats(): Promise<{
-    currentSessionDate: string;
-    hasCurrentSession: boolean;
-    totalSessions: number;
-    oldestSession?: string;
-  }> {
+  async getSessionStats(): Promise<SessionStats> {
     try {
       const dates = await this.getSessionDates();
       const currentDate = this.getTodayId();
       
       return {
+        backend: 'firebase',
         currentSessionDate: currentDate,
         hasCurrentSession: dates.includes(currentDate),
         totalSessions: dates.length,
@@ -224,8 +221,8 @@ export class DailySessionService {
       };
       
     } catch (error) {
-      console.error('Error getting session stats:', error);
-      throw new Error('Failed to get session stats');
+      console.error('Error getting Firebase session stats:', error);
+      throw new Error('Failed to get Firebase session stats');
     }
   }
 }

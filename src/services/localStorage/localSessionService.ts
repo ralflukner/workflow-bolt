@@ -1,4 +1,5 @@
 import { Patient } from '../../types';
+import { StorageService, SessionStats } from '../storageService'; // Import shared interface
 
 export interface LocalSession {
   id: string; // Format: YYYY-MM-DD
@@ -11,7 +12,7 @@ export interface LocalSession {
 
 const STORAGE_KEY = 'daily_session';
 
-export class LocalSessionService {
+export class LocalSessionService implements StorageService {
   
   /**
    * Get today's date in YYYY-MM-DD format
@@ -93,12 +94,7 @@ export class LocalSessionService {
   /**
    * Get session statistics
    */
-  async getSessionStats(): Promise<{
-    currentSessionDate: string;
-    hasCurrentSession: boolean;
-    patientCount: number;
-    lastUpdated?: string;
-  }> {
+  async getSessionStats(): Promise<SessionStats> {
     try {
       const sessionData = localStorage.getItem(STORAGE_KEY);
       const currentDate = this.getTodayId();
@@ -106,6 +102,7 @@ export class LocalSessionService {
       if (sessionData) {
         const session = JSON.parse(sessionData) as LocalSession;
         return {
+          backend: 'local',
           currentSessionDate: currentDate,
           hasCurrentSession: session.date === currentDate,
           patientCount: session.date === currentDate ? session.patients.length : 0,
@@ -114,6 +111,7 @@ export class LocalSessionService {
       }
       
       return {
+        backend: 'local',
         currentSessionDate: currentDate,
         hasCurrentSession: false,
         patientCount: 0
@@ -122,6 +120,7 @@ export class LocalSessionService {
     } catch (error) {
       console.error('Error getting local session stats:', error);
       return {
+        backend: 'local',
         currentSessionDate: this.getTodayId(),
         hasCurrentSession: false,
         patientCount: 0

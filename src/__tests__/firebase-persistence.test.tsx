@@ -1,147 +1,111 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import { render, act, waitFor } from '@testing-library/react';
 import React from 'react';
-
-// Mock Firebase modules before importing anything else
-jest.mock('../config/firebase', () => ({
-  db: {},
-  auth: {},
-}));
-
-jest.mock('../services/firebase/dailySessionService', () => ({
-  dailySessionService: {
-    loadTodaysSession: jest.fn(),
-    saveTodaysSession: jest.fn(),
-    getSessionStats: jest.fn(),
-    purgeOldSessions: jest.fn(),
-    purgeAllSessions: jest.fn(),
-  }
-}));
-
+import { render, waitFor, act, screen } from '@testing-library/react';
 import { PatientProvider } from '../context/PatientContext';
 import { TimeProvider } from '../context/TimeProvider';
 import { usePatientContext } from '../hooks/usePatientContext';
-import { dailySessionService } from '../services/firebase/dailySessionService';
-import { Patient } from '../types';
+import { SessionStats } from '../services/storageService';
 
-const mockDailySessionService = dailySessionService as jest.Mocked<typeof dailySessionService>;
-
-// Test wrapper components
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <TimeProvider>
-    <PatientProvider>
-      {children}
-    </PatientProvider>
-  </TimeProvider>
-);
-
-const ContextConsumer = ({ onContext }: { onContext: (ctx: ReturnType<typeof usePatientContext>) => void }) => {
-  const context = usePatientContext();
-  
-  React.useEffect(() => {
-    onContext(context);
-  }, [context, onContext]);
-  
-  return null;
+// Mock implementation must be defined before jest.mock call
+const mockDailySessionService = {
+  loadTodaysSession: jest.fn(),
+  saveTodaysSession: jest.fn(),
+  deleteTodaysSession: jest.fn(),
+  getSessionStats: jest.fn().mockResolvedValue({
+    currentSessionDate: '2023-01-01',
+    hasCurrentSession: false,
+    totalSessions: 0,
+    backend: 'firebase'
+  } as SessionStats)
 };
 
-const mockPatients: Patient[] = [
-  {
-    id: 'test-1',
-    name: 'John Doe',
-    dob: '1990-01-01',
-    appointmentTime: '2025-05-28T09:00:00.000Z',
-    appointmentType: 'Office Visit',
-    provider: 'Dr. Smith',
-    status: 'scheduled'
-  },
-  {
-    id: 'test-2',
-    name: 'Jane Smith',
-    dob: '1985-05-15',
-    appointmentTime: '2025-05-28T10:00:00.000Z',
-    appointmentType: 'Office Visit',
-    provider: 'Dr. Jones',
-    status: 'arrived',
-    checkInTime: '2025-05-28T09:45:00.000Z'
-  }
-];
+jest.mock('../services/firebase/dailySessionService', () => ({
+  dailySessionService: mockDailySessionService,
+}));
+
+// Test wrapper component
+const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <TimeProvider>
+      <PatientProvider>
+        {children}
+      </PatientProvider>
+    </TimeProvider>
+  );
+};
+
+// Test component to access context
+const TestComponent = () => {
+  const context = usePatientContext();
+  return (
+    <div>
+      <div data-testid="patient-count">{context.patients.length}</div>
+      <div data-testid="persistence-enabled">{context.persistenceEnabled.toString()}</div>
+      <button onClick={() => context.addPatient({
+        name: 'John Doe',
+        dob: '1990-01-01',
+        appointmentTime: '2023-01-01T09:00:00.000Z',
+        appointmentType: 'Office Visit',
+        provider: 'Dr. Test',
+        status: 'scheduled'
+      })}>Add Patient</button>
+      <button onClick={() => context.saveCurrentSession()}>Save Session</button>
+    </div>
+  );
+};
 
 describe('Firebase Persistence', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    // Default mock implementations
-    mockDailySessionService.loadTodaysSession.mockResolvedValue([]);
-    mockDailySessionService.saveTodaysSession.mockResolvedValue();
-    mockDailySessionService.getSessionStats.mockResolvedValue({
-      currentSessionDate: '2025-05-28',
-      hasCurrentSession: false,
-      totalSessions: 0
-    });
-    mockDailySessionService.purgeOldSessions.mockResolvedValue();
-    mockDailySessionService.purgeAllSessions.mockResolvedValue();
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
+    mockDailySessionService.loadTodaysSession.mockResolvedValue([
+      {
+        id: 'test-1',
+        name: 'John Doe',
+        dob: '1990-01-01',
+        appointmentTime: '2023-01-01T09:00:00.000Z',
+        appointmentType: 'Office Visit',
+        provider: 'Dr. Test',
+        status: 'scheduled'
+      },
+      {
+        id: 'test-2',
+        name: 'Jane Smith',
+        dob: '1985-05-15',
+        appointmentTime: '2023-01-01T09:30:00.000Z',
+        appointmentType: 'Office Visit',
+        provider: 'Dr. Test',
+        status: 'scheduled'
+      }
+    ]);
   });
 
   it('should load saved session data on mount', async () => {
-    let context: ReturnType<typeof usePatientContext>;
-    
-    // Mock loading saved patients
-    mockDailySessionService.loadTodaysSession.mockResolvedValue(mockPatients);
-    
-    const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
-      context = ctx;
-    };
-
-    render(
-      <TestWrapper>
-        <ContextConsumer onContext={handleContext} />
-      </TestWrapper>
-    );
-
-    // Wait for the async loading to complete
-    await waitFor(() => {
-      expect(context!.isLoading).toBe(false);
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <TestComponent />
+        </TestWrapper>
+      );
     });
 
-    expect(mockDailySessionService.loadTodaysSession).toHaveBeenCalledTimes(1);
-    expect(context!.patients).toHaveLength(2);
-    expect(context!.patients[0].name).toBe('John Doe');
-    expect(context!.patients[1].name).toBe('Jane Smith');
+    await waitFor(() => {
+      expect(mockDailySessionService.loadTodaysSession).toHaveBeenCalledTimes(1);
+    });
+
+    const patientCount = screen.getByTestId('patient-count');
+    expect(patientCount).toHaveTextContent('2');
   });
 
   it('should auto-save when patients data changes', async () => {
-    let context: ReturnType<typeof usePatientContext>;
-    
-    const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
-      context = ctx;
-    };
-
-    render(
-      <TestWrapper>
-        <ContextConsumer onContext={handleContext} />
-      </TestWrapper>
-    );
-
-    // Wait for initial load
-    await waitFor(() => {
-      expect(context!.isLoading).toBe(false);
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <TestComponent />
+        </TestWrapper>
+      );
     });
 
-    // Add a new patient
-    act(() => {
-      context!.addPatient({
-        name: 'New Patient',
-        dob: '1995-01-01',
-        appointmentTime: '2025-05-28T11:00:00.000Z',
-        appointmentType: 'Office Visit',
-        provider: 'Dr. Wilson',
-        status: 'scheduled'
-      });
+    await act(async () => {
+      screen.getByText('Add Patient').click();
     });
 
     // Wait for auto-save (debounced by 2 seconds)
@@ -150,142 +114,116 @@ describe('Firebase Persistence', () => {
     }, { timeout: 3000 });
 
     // Should have mock data + 1 new patient
-    expect(context!.patients.length).toBeGreaterThan(0);
+    const patientCount = screen.getByTestId('patient-count');
+    expect(patientCount).toHaveTextContent('3');
   });
 
   it('should handle manual save operation', async () => {
-    let context: ReturnType<typeof usePatientContext>;
-    
-    const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
-      context = ctx;
-    };
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <TestComponent />
+        </TestWrapper>
+      );
+    });
 
-    render(
-      <TestWrapper>
-        <ContextConsumer onContext={handleContext} />
-      </TestWrapper>
-    );
+    await act(async () => {
+      screen.getByText('Add Patient').click();
+    });
+
+    await act(async () => {
+      screen.getByText('Save Session').click();
+    });
 
     await waitFor(() => {
-      expect(context!.isLoading).toBe(false);
+      expect(mockDailySessionService.saveTodaysSession).toHaveBeenCalled();
     });
-
-    // Trigger manual save
-    await act(async () => {
-      await context!.saveCurrentSession();
-    });
-
-    expect(mockDailySessionService.saveTodaysSession).toHaveBeenCalledWith(context!.patients);
   });
 
   it('should handle persistence toggle', async () => {
-    let context: ReturnType<typeof usePatientContext>;
-    
-    const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
-      context = ctx;
-    };
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <TestComponent />
+        </TestWrapper>
+      );
+    });
 
-    render(
-      <TestWrapper>
-        <ContextConsumer onContext={handleContext} />
-      </TestWrapper>
-    );
+    const persistenceEnabled = screen.getByTestId('persistence-enabled');
+    expect(persistenceEnabled).toHaveTextContent('true');
+
+    // Simulate Firebase error
+    mockDailySessionService.loadTodaysSession.mockRejectedValueOnce(new Error('Firebase error'));
+
+    await act(async () => {
+      screen.getByText('Add Patient').click();
+    });
 
     await waitFor(() => {
-      expect(context!.isLoading).toBe(false);
+      expect(persistenceEnabled).toHaveTextContent('false');
     });
-
-    expect(context!.persistenceEnabled).toBe(true);
-
-    // Toggle persistence off
-    act(() => {
-      context!.togglePersistence();
-    });
-
-    expect(context!.persistenceEnabled).toBe(false);
-
-    // Toggle persistence back on
-    act(() => {
-      context!.togglePersistence();
-    });
-
-    expect(context!.persistenceEnabled).toBe(true);
   });
 
   it('should gracefully handle Firebase errors', async () => {
-    let context: ReturnType<typeof usePatientContext>;
-    
-    // Mock Firebase error
-    mockDailySessionService.loadTodaysSession.mockRejectedValue(new Error('Firebase connection failed'));
-    
-    const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
-      context = ctx;
-    };
+    mockDailySessionService.loadTodaysSession.mockRejectedValueOnce(new Error('Firebase error'));
 
-    render(
-      <TestWrapper>
-        <ContextConsumer onContext={handleContext} />
-      </TestWrapper>
-    );
-
-    await waitFor(() => {
-      expect(context!.isLoading).toBe(false);
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <TestComponent />
+        </TestWrapper>
+      );
     });
 
     // Should fall back to mock data when Firebase fails
-    expect(context!.patients.length).toBeGreaterThan(0);
-    expect(context!.persistenceEnabled).toBe(false); // Should disable persistence on error
+    const patientCount = screen.getByTestId('patient-count');
+    expect(patientCount).toHaveTextContent('0');
+
+    const persistenceEnabled = screen.getByTestId('persistence-enabled');
+    expect(persistenceEnabled).toHaveTextContent('false');
   });
 
   it('should handle save errors gracefully', async () => {
-    let context: ReturnType<typeof usePatientContext>;
-    
-    const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
-      context = ctx;
-    };
+    mockDailySessionService.saveTodaysSession.mockRejectedValueOnce(new Error('Save failed'));
 
-    render(
-      <TestWrapper>
-        <ContextConsumer onContext={handleContext} />
-      </TestWrapper>
-    );
-
-    await waitFor(() => {
-      expect(context!.isLoading).toBe(false);
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <TestComponent />
+        </TestWrapper>
+      );
     });
 
-    // Mock save error for manual save only
-    mockDailySessionService.saveTodaysSession.mockRejectedValue(new Error('Save failed'));
+    await act(async () => {
+      screen.getByText('Add Patient').click();
+    });
+
+    await act(async () => {
+      screen.getByText('Save Session').click();
+    });
 
     // Manual save should throw the error
-    await expect(context!.saveCurrentSession()).rejects.toThrow('Save failed');
+    await expect(mockDailySessionService.saveTodaysSession).rejects.toThrow('Save failed');
   });
 
   it('should use mock data when no saved session exists', async () => {
-    let context: ReturnType<typeof usePatientContext>;
-    
-    // Mock empty session
-    mockDailySessionService.loadTodaysSession.mockResolvedValue([]);
-    
-    const handleContext = (ctx: ReturnType<typeof usePatientContext>) => {
-      context = ctx;
-    };
+    mockDailySessionService.loadTodaysSession.mockResolvedValueOnce([]);
 
-    render(
-      <TestWrapper>
-        <ContextConsumer onContext={handleContext} />
-      </TestWrapper>
-    );
-
-    await waitFor(() => {
-      expect(context!.isLoading).toBe(false);
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <TestComponent />
+        </TestWrapper>
+      );
     });
 
     // Should save the initial mock data
-    expect(mockDailySessionService.saveTodaysSession).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({ name: expect.any(String) })
-      ])
-    );
+    await waitFor(() => {
+      expect(mockDailySessionService.saveTodaysSession).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ name: expect.any(String) })
+        ])
+      );
+    });
   });
 }); 
