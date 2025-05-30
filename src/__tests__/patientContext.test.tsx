@@ -3,7 +3,7 @@ import { render, act } from '@testing-library/react';
 import { PatientProvider } from '../context/PatientContext';
 import { TimeProvider } from '../context/TimeProvider';
 import { usePatientContext } from '../hooks/usePatientContext';
-import { Patient } from '../types';
+import { Patient, PatientApptStatus } from '../types';
 import React from 'react';
 
 // Mock patient data for testing

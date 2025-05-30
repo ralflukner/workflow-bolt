@@ -2,14 +2,23 @@
 import { tebraSoapClient } from '../tebraSoapClient';
 import soap from 'soap';
 
-jest.mock('soap');
-const mockedSoap = soap as jest.Mocked<typeof soap>;
+jest.mock('soap', () => ({
+  createClientAsync: jest.fn(),
+  BasicAuthSecurity: class {},
+}));
+
+const mockedSoap = soap as unknown as {
+  createClientAsync: jest.Mock;
+};
 
 describe('TebraSoapClient', () => {
   const mockPatientResponse = [{ patientId: '123', firstName: 'John', lastName: 'Doe' }];
 
   beforeEach(() => {
     jest.resetAllMocks();
+    // Reset cached client in singleton
+    // @ts-ignore
+    tebraSoapClient['client'] = null;
   });
 
   it('should call GetPatientAsync with correct parameters', async () => {
@@ -18,7 +27,7 @@ describe('TebraSoapClient', () => {
       setSecurity: jest.fn(),
       GetPatientAsync: jest.fn().mockResolvedValue(mockPatientResponse),
     };
-    (mockedSoap as any).createClientAsync = jest.fn().mockResolvedValue(mockClient);
+    mockedSoap.createClientAsync.mockResolvedValue(mockClient);
 
     // Act
     const result = await tebraSoapClient.getPatientById('123');
@@ -36,7 +45,7 @@ describe('TebraSoapClient', () => {
       setSecurity: jest.fn(),
       SearchPatientsAsync: jest.fn().mockResolvedValue([patients]),
     };
-    (mockedSoap as any).createClientAsync = jest.fn().mockResolvedValue(mockClient);
+    mockedSoap.createClientAsync.mockResolvedValue(mockClient);
 
     const result = await tebraSoapClient.searchPatients('Smith');
 

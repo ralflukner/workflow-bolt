@@ -17,9 +17,9 @@ describe('JSON Import/Export Integration', () => {
   };
   
   beforeEach(() => {
-    document.createElement = mockCreateElement;
-    document.body.appendChild = mockAppendChild;
-    document.body.removeChild = mockRemoveChild;
+    document.createElement = mockCreateElement as unknown as typeof document.createElement;
+    document.body.appendChild = mockAppendChild as unknown as typeof document.body.appendChild;
+    document.body.removeChild = mockRemoveChild as unknown as typeof document.body.removeChild;
     URL.createObjectURL = mockCreateObjectURL;
     URL.revokeObjectURL = mockRevokeObjectURL;
     

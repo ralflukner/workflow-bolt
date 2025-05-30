@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { render, waitFor, act, screen } from '@testing-library/react';
 import { PatientProvider } from '../context/PatientContext';
@@ -5,8 +6,13 @@ import { TimeProvider } from '../context/TimeProvider';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { SessionStats } from '../services/storageService';
 
-// Mock implementation must be defined before jest.mock call
-const mockDailySessionService = {
+const mockDailySessionService: any = {};
+
+jest.mock('../services/firebase/dailySessionService', () => ({
+  dailySessionService: mockDailySessionService,
+}));
+
+Object.assign(mockDailySessionService, {
   loadTodaysSession: jest.fn(),
   saveTodaysSession: jest.fn(),
   deleteTodaysSession: jest.fn(),
@@ -16,11 +22,7 @@ const mockDailySessionService = {
     totalSessions: 0,
     backend: 'firebase'
   } as SessionStats)
-};
-
-jest.mock('../services/firebase/dailySessionService', () => ({
-  dailySessionService: mockDailySessionService,
-}));
+});
 
 // Test wrapper component
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {

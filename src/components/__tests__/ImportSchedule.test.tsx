@@ -1,9 +1,8 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import ImportSchedule from '../ImportSchedule';
 import { PatientContext } from '../../context/PatientContextDef';
 import { TimeContext } from '../../context/TimeContextDef';
-import { Patient } from '../../types';
 
 // Mock the usePatientContext hook
 const mockAddPatient = jest.fn();
@@ -31,6 +30,7 @@ describe('ImportSchedule', () => {
     render(
       <TimeContext.Provider value={{
         timeMode: { simulated: false, currentTime: new Date().toISOString() },
+        // @ts-expect-error mock field
         setTimeMode: jest.fn(),
         getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
         speedUpTime: jest.fn(),
@@ -38,6 +38,7 @@ describe('ImportSchedule', () => {
       }}>
         <PatientContext.Provider value={{
           patients: [],
+          // @ts-expect-error mock field
           setPatients: jest.fn(),
           addPatient: mockAddPatient,
           updatePatientStatus: jest.fn(),
@@ -67,6 +68,7 @@ describe('ImportSchedule', () => {
     render(
       <TimeContext.Provider value={{
         timeMode: { simulated: false, currentTime: new Date().toISOString() },
+        // @ts-expect-error mock field
         setTimeMode: jest.fn(),
         getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
         speedUpTime: jest.fn(),
@@ -74,6 +76,7 @@ describe('ImportSchedule', () => {
       }}>
         <PatientContext.Provider value={{
           patients: [],
+          // @ts-expect-error mock field
           setPatients: jest.fn(),
           addPatient: mockAddPatient,
           updatePatientStatus: jest.fn(),
@@ -117,6 +120,7 @@ describe('ImportSchedule', () => {
     render(
       <TimeContext.Provider value={{
         timeMode: { simulated: false, currentTime: new Date().toISOString() },
+        // @ts-expect-error mock field
         setTimeMode: jest.fn(),
         getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
         speedUpTime: jest.fn(),
@@ -124,6 +128,7 @@ describe('ImportSchedule', () => {
       }}>
         <PatientContext.Provider value={{
           patients: [],
+          // @ts-expect-error mock field
           setPatients: jest.fn(),
           addPatient: mockAddPatient,
           updatePatientStatus: jest.fn(),
@@ -163,6 +168,7 @@ describe('ImportSchedule', () => {
     render(
       <TimeContext.Provider value={{
         timeMode: { simulated: false, currentTime: new Date().toISOString() },
+        // @ts-expect-error mock field
         setTimeMode: jest.fn(),
         getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
         speedUpTime: jest.fn(),
@@ -170,6 +176,7 @@ describe('ImportSchedule', () => {
       }}>
         <PatientContext.Provider value={{
           patients: [],
+          // @ts-expect-error mock field
           setPatients: jest.fn(),
           addPatient: mockAddPatient,
           updatePatientStatus: jest.fn(),

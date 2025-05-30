@@ -36,7 +36,7 @@ jest.mock('../../hooks/usePatientContext', () => ({
 
 // Mock the formatTime function
 jest.mock('../../utils/formatters', () => ({
-  formatTime: (date: any) => {
+  formatTime: (date: unknown) => {
     if (typeof date === 'string') {
       const d = new Date(date);
       return `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`;
@@ -95,6 +95,7 @@ describe('PatientList', () => {
           updatePatientStatus: jest.fn(),
           assignRoom: jest.fn(),
           updateCheckInTime: jest.fn(),
+          // @ts-expect-error testing mock
           getPatientsByStatus: mockGetPatientsByStatus,
           getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
           getWaitTime: jest.fn(() => 0),
@@ -135,7 +136,8 @@ describe('PatientList', () => {
           updatePatientStatus: jest.fn(),
           assignRoom: jest.fn(),
           updateCheckInTime: jest.fn(),
-          getPatientsByStatus: jest.fn(() => []),
+          // @ts-expect-error test property not in interface
+          setPatients: jest.fn(),
           getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
           getWaitTime: jest.fn(() => 0),
           clearPatients: jest.fn(),

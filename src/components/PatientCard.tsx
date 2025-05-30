@@ -31,8 +31,6 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
     };
   }, []);
 
-  const appointmentDate = new Date(patient.appointmentTime);
-
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'scheduled': return 'bg-gray-500';
