@@ -1,7 +1,6 @@
-// src/services/tebra/tebraIntegrationService.ts
-import { TebraApiService, TebraDataTransformer, TebraCredentials } from './tebraApiService';
-import { Patient } from '../../types';
-import { dailySessionService } from '../firebase/dailySessionService';
+import { TebraApiService, TebraDataTransformer, TebraCredentials, TebraPatient } from '../tebra-soap/tebra-api-service';
+import { Patient } from '../types';
+import { dailySessionService } from '../services/firebase/dailySessionService';
 
 export interface TebraIntegrationConfig {
   credentials: TebraCredentials;
@@ -132,9 +131,8 @@ export class TebraIntegrationService {
           lastSyncTime: startTime,
         };
       }
-
       // Extract unique patient IDs
-      const patientIds = [...new Set(appointments.map(apt => apt.PatientId))];
+      const patientIds = [...new Set(appointments.map((apt: { PatientId: string }) => apt.PatientId))];
       
       // Fetch patient details
       const patients = await this.apiService.getPatients(patientIds);
@@ -148,7 +146,7 @@ export class TebraIntegrationService {
       const internalPatients: Patient[] = [];
       
       for (const appointment of appointments) {
-        const patient = patients.find(p => p.PatientId === appointment.PatientId);
+        const patient = patients.find((p: TebraPatient) => p.PatientId === appointment.PatientId);
         if (patient) {
           try {
             const internalPatient = TebraDataTransformer.combineToInternalPatient(
