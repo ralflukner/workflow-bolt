@@ -53,8 +53,8 @@ export const PersistenceStatus: React.FC = () => {
     };
 
     if (persistenceEnabled) {
-      loadStats();
-      const interval = setInterval(loadStats, 30000); // Update every 30 seconds
+    // Refresh stats every 2 minutes
+    const interval = setInterval(loadStats, 120000);
       return () => clearInterval(interval);
     }
   }, [persistenceEnabled, patients.length, storageService, storageType]);

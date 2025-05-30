@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { initializeApp, FirebaseApp } from 'firebase/app';
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { getAuth, Auth } from 'firebase/auth';
 
 // Check if we're in development mode without Firebase config
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -34,9 +34,9 @@ const firebaseConfig = getFirebaseConfig();
 const hasFirebaseApiKey = firebaseConfig.apiKey !== 'demo-api-key';
 
 // Initialize Firebase
-let app;
-let db;
-let auth;
+let app: FirebaseApp | undefined;
+let db: Firestore | undefined;
+let auth: Auth | undefined;
 let isFirebaseConfigured: boolean;
 
 if (hasFirebaseApiKey) {

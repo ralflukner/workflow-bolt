@@ -1,4 +1,5 @@
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 
@@ -86,12 +87,80 @@ await Promise.all(commits);
 /**
  * Manual purge function for admin use
  * Requires authentication and admin role
+ * Note: Converted from scheduled to on-demand function to prevent unnecessary executions
  */
-exports.manualDataPurge = onSchedule('* * * * *', async (event) => {
-  // This is a placeholder - in production, this would be an HTTP function
-  // with proper authentication and authorization
-  console.log('Manual purge function placeholder');
-  return { message: 'Use HTTP function for manual purge' };
+// DISABLED: Previously scheduled every minute causing unnecessary cost
+// exports.manualDataPurge = onSchedule('* * * * *', async (event) => {
+//   // This is a placeholder - in production, this would be an HTTP function
+//   // with proper authentication and authorization
+//   console.log('Manual purge function placeholder');
+//   return { message: 'Use HTTP function for manual purge' };
+// });
+
+/**
+ * Manual data purge function for authenticated admin use
+ * Call this function only when manual purge is needed
+ */
+exports.manualDataPurge = onCall(async (request) => {
+  // TODO: Add authentication check
+  // if (!request.auth || !request.auth.token.admin) {
+  //   throw new HttpsError('permission-denied', 'Admin access required');
+  // }
+  
+  console.log('Manual purge function called by admin');
+  
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Query for all sessions (manual purge can be more aggressive)
+    const allSessionsQuery = db.collection('daily_sessions');
+    const querySnapshot = await allSessionsQuery.get();
+    
+    if (querySnapshot.empty) {
+      return { success: true, message: 'No sessions to purge', deletedCount: 0 };
+    }
+    
+    // Chunk into <=500-write batches
+    let batch = db.batch();
+    let opCounter = 0;
+    let deleteCount = 0;
+    const commits = [];
+
+    querySnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+      deleteCount++;
+      if (++opCounter === 500) {
+        commits.push(batch.commit());
+        batch = db.batch();
+        opCounter = 0;
+      }
+    });
+
+    // Flush remaining writes
+    if (opCounter > 0) {
+      commits.push(batch.commit());
+    }
+    await Promise.all(commits);
+    
+    // Log the manual purge activity
+    await db.collection('audit_logs').add({
+      action: 'manual_purge',
+      timestamp: new Date(),
+      deletedSessionCount: deleteCount,
+      initiator: request.auth?.uid || 'unknown',
+      reason: 'admin_manual_purge'
+    });
+    
+    return {
+      success: true,
+      message: `Successfully purged ${deleteCount} sessions`,
+      deletedCount: deleteCount
+    };
+    
+  } catch (error) {
+    console.error('Manual purge failed:', error);
+    throw new HttpsError('internal', 'Manual purge failed');
+  }
 });
 
 /**

@@ -2,12 +2,16 @@ import {
   collection,
   doc,
   getDocs,
+  getDoc,
   setDoc,
   query,
   where,
   Timestamp,
   writeBatch,
-  orderBy
+  orderBy,
+  serverTimestamp,
+  increment,
+  Firestore
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { Patient } from '../../types';
@@ -24,8 +28,20 @@ export interface DailySession {
 
 const COLLECTION_NAME = 'daily_sessions';
 const MAX_RETENTION_DAYS = 1; // Only keep current day for HIPAA compliance
+const FIRESTORE_BATCH_LIMIT = 500; // Firestore's maximum batch size
 
 export class DailySessionService implements StorageService {
+  
+  /**
+   * Get the Firestore database instance
+   * @throws Error if Firebase is not configured
+   */
+  private getDb(): Firestore {
+    if (!db) {
+      throw new Error('Firebase is not configured. Please check your Firebase configuration.');
+    }
+    return db;
+  }
   
   /**
    * Get today's date in YYYY-MM-DD format
@@ -56,23 +72,30 @@ export class DailySessionService implements StorageService {
         // Add encryption here if required
       }));
 
-const sessionData: Partial<DailySession> = {
-  id: sessionId,
-  date: sessionId,
-  patients: sanitizedPatients,
-  // Preserve original createdAt if it exists
-  createdAt: FieldValue.serverTimestamp(),
-  updatedAt: now,
-  version: FieldValue.increment(1),
-};
+      const sessionData = {
+        id: sessionId,
+        date: sessionId,
+        patients: sanitizedPatients,
+        // Use server timestamp for created time if this is a new document
+        createdAt: serverTimestamp(),
+        updatedAt: now,
+        version: increment(1),
+      };
 
-      const docRef = doc(db, COLLECTION_NAME, sessionId);
+      const docRef = doc(this.getDb(), COLLECTION_NAME, sessionId);
       await setDoc(docRef, sessionData, { merge: true });
       
       console.log(`Firebase session saved for ${sessionId}`);
       
-      // Automatically purge old data after saving
-      await this.purgeOldSessions();
+      // Automatically purge old data after saving - don't let purge errors affect save success
+      setTimeout(async () => {
+        try {
+          await this.purgeOldSessions();
+        } catch (purgeError) {
+          console.warn('Failed to purge old sessions after save:', purgeError);
+          // Log but don't throw - the save operation was successful
+        }
+      }, 0);
       
     } catch (error) {
       console.error('Error saving Firebase session:', error);
@@ -87,11 +110,10 @@ const sessionData: Partial<DailySession> = {
     const sessionId = this.getTodayId();
     
     try {
-      const docSnap = await getDocs(collection(db, COLLECTION_NAME));
+      const todayRef = doc(this.getDb(), COLLECTION_NAME, sessionId);
+      const todayDoc = await getDoc(todayRef);
       
-      const todayDoc = docSnap.docs.find(doc => doc.id === sessionId);
-      
-      if (todayDoc && todayDoc.exists()) {
+      if (todayDoc.exists()) {
         const sessionData = todayDoc.data() as DailySession;
         console.log(`Firebase session loaded for ${sessionId}`);
         return sessionData.patients || [];
@@ -116,7 +138,7 @@ const sessionData: Partial<DailySession> = {
       const cutoffId = this.getSessionId(cutoffDate);
 
       const q = query(
-        collection(db, COLLECTION_NAME),
+        collection(this.getDb(), COLLECTION_NAME),
         where('date', '<', cutoffId),
         orderBy('date')
       );
@@ -128,17 +150,25 @@ const sessionData: Partial<DailySession> = {
         return;
       }
 
-      // Use batch for efficient deletion
-      const batch = writeBatch(db);
-      let deleteCount = 0;
+      // Chunk deletions to respect Firestore's 500 operation limit
+      const docs = querySnapshot.docs;
+      let totalDeleteCount = 0;
 
-      querySnapshot.forEach((docSnapshot) => {
-        batch.delete(docSnapshot.ref);
-        deleteCount++;
-      });
+      for (let i = 0; i < docs.length; i += FIRESTORE_BATCH_LIMIT) {
+        const batch = writeBatch(this.getDb());
+        const chunk = docs.slice(i, i + FIRESTORE_BATCH_LIMIT);
+        
+        chunk.forEach((docSnapshot) => {
+          batch.delete(docSnapshot.ref);
+        });
 
-      await batch.commit();
-      console.log(`Purged ${deleteCount} old Firebase sessions`);
+        await batch.commit();
+        totalDeleteCount += chunk.length;
+        
+        console.log(`Purged batch of ${chunk.length} sessions (${totalDeleteCount}/${docs.length} total)`);
+      }
+
+      console.log(`Purged ${totalDeleteCount} old Firebase sessions`);
       
     } catch (error) {
       console.error('Error purging old Firebase sessions:', error);
@@ -151,23 +181,32 @@ const sessionData: Partial<DailySession> = {
    */
   async purgeAllSessions(): Promise<void> {
     try {
-      const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
+      const querySnapshot = await getDocs(collection(this.getDb(), COLLECTION_NAME));
       
       if (querySnapshot.empty) {
         console.log('No Firebase sessions to purge');
         return;
       }
 
-      const batch = writeBatch(db);
-      let deleteCount = 0;
+      // Chunk deletions to respect Firestore's 500 operation limit
+      const docs = querySnapshot.docs;
+      let totalDeleteCount = 0;
 
-      querySnapshot.forEach((docSnapshot) => {
-        batch.delete(docSnapshot.ref);
-        deleteCount++;
-      });
+      for (let i = 0; i < docs.length; i += FIRESTORE_BATCH_LIMIT) {
+        const batch = writeBatch(this.getDb());
+        const chunk = docs.slice(i, i + FIRESTORE_BATCH_LIMIT);
+        
+        chunk.forEach((docSnapshot) => {
+          batch.delete(docSnapshot.ref);
+        });
 
-      await batch.commit();
-      console.log(`Force purged ${deleteCount} Firebase sessions`);
+        await batch.commit();
+        totalDeleteCount += chunk.length;
+        
+        console.log(`Force purged batch of ${chunk.length} sessions (${totalDeleteCount}/${docs.length} total)`);
+      }
+
+      console.log(`Force purged ${totalDeleteCount} Firebase sessions`);
       
     } catch (error) {
       console.error('Error force purging Firebase sessions:', error);
@@ -181,7 +220,7 @@ const sessionData: Partial<DailySession> = {
   async getSessionDates(): Promise<string[]> {
     try {
       const querySnapshot = await getDocs(
-        query(collection(db, COLLECTION_NAME), orderBy('date', 'desc'))
+        query(collection(this.getDb(), COLLECTION_NAME), orderBy('date', 'desc'))
       );
       
       return querySnapshot.docs.map(doc => doc.data().date);
@@ -224,6 +263,23 @@ const sessionData: Partial<DailySession> = {
     } catch (error) {
       console.error('Error getting Firebase session stats:', error);
       throw new Error('Failed to get Firebase session stats');
+    }
+  }
+
+  /**
+   * Clear current session (optional method for StorageService interface)
+   */
+  async clearSession(): Promise<void> {
+    const sessionId = this.getTodayId();
+    
+    try {
+      const docRef = doc(this.getDb(), COLLECTION_NAME, sessionId);
+      await setDoc(docRef, { patients: [] }, { merge: true });
+      
+      console.log(`Firebase session cleared for ${sessionId}`);
+    } catch (error) {
+      console.error('Error clearing Firebase session:', error);
+      throw new Error('Failed to clear Firebase session');
     }
   }
 }

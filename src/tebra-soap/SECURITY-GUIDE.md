@@ -93,11 +93,11 @@ export class TebraCredentialProxy {
         'Content-Type': 'application/json'
       }
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to retrieve Tebra credentials');
     }
-    
+
     return response.json();
   }
 }
@@ -111,12 +111,12 @@ export const getTebraCredentials = (): TebraCredentials | null => {
   const username = process.env.REACT_APP_TEBRA_USERNAME;
   const password = process.env.REACT_APP_TEBRA_PASSWORD;
   const wsdlUrl = process.env.REACT_APP_TEBRA_WSDL_URL;
-  
+
   if (!username || !password || !wsdlUrl) {
     console.error('Tebra credentials not properly configured');
     return null;
   }
-  
+
   return { username, password, wsdlUrl };
 };
 ```
@@ -131,7 +131,7 @@ export class CredentialValidator {
     if (!credentials.username.includes('@')) return false;
     if (credentials.password.length < 8) return false;
     if (!credentials.wsdlUrl.startsWith('https://')) return false;
-    
+
     return true;
   }
 }
@@ -215,12 +215,11 @@ export class CredentialValidator {
 
 ## 📞 Emergency Contacts
 
-**Tebra Support**: Contact immediately for credential rotation  
-**HIPAA Officer**: Report security incident  
-**IT Security Team**: Coordinate response efforts  
-**Legal Counsel**: Review compliance implications  
+**Tebra Support**: Contact immediately for credential rotation
+**HIPAA Officer**: Report security incident
+**IT Security Team**: Coordinate response efforts
+**Legal Counsel**: Review compliance implications
 
 ---
 
 **Remember**: Patient data security is not optional. These measures protect both your patients and your practice from serious legal and financial consequences.
- 

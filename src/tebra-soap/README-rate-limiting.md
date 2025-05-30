@@ -81,4 +81,3 @@ console.log(`Must wait ${waitTime}ms before next GetAppointments call`);
 ### Monitoring
 
 The integration UI displays rate limiting status and confirms that limits are being enforced automatically.
- 

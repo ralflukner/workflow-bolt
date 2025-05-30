@@ -310,6 +310,7 @@ const debugConfig = createTebraConfig(credentials, {
 ## Compliance Notes
 
 This integration is designed with HIPAA compliance in mind:
+
 - Data encryption in transit and at rest
 - Automatic data purging after 24 hours
 - Access controls and authentication

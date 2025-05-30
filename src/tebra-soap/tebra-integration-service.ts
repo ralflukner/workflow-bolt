@@ -2,7 +2,7 @@ import { TebraCredentials, TebraPatient } from './tebra-api-service.types';
 import { TebraApiService } from './tebra-api-service';
 import { TebraDataTransformer } from './tebra-data-transformer';
 import { Patient } from '../types';
-import { dailySessionService } from '../services/firebase/dailySessionService';
+import { DailySessionService } from '../services/firebase/dailySessionService';
 
 export interface TebraIntegrationConfig {
   credentials: TebraCredentials;
@@ -26,10 +26,12 @@ export class TebraIntegrationService {
   private syncTimer: ReturnType<typeof setInterval> | null = null;
   private lastSyncResult: SyncResult | null = null;
   private isConnected = false;
+  private dailySessionService: DailySessionService;
 
   constructor(config: TebraIntegrationConfig) {
     this.config = config;
     this.apiService = new TebraApiService(config.credentials);
+    this.dailySessionService = new DailySessionService();
   }
 
   /**
@@ -167,7 +169,7 @@ export class TebraIntegrationService {
 
       // Save to persistent storage
       if (internalPatients.length > 0) {
-        await dailySessionService.saveTodaysSession(internalPatients);
+        await this.dailySessionService.saveTodaysSession(internalPatients);
         console.log(`Saved ${internalPatients.length} patients to session storage`);
       }
 
