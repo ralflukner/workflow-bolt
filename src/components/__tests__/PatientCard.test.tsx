@@ -158,6 +158,12 @@ describe('PatientCard', () => {
     
     // Check that the status button is displayed
     expect(screen.getByText('Start Prep')).toBeInTheDocument();
+    
+    // Check that check-in time is displayed (timezone-agnostic)
+    expect(screen.getByText('Check-in Time')).toBeInTheDocument();
+    
+    // Verify room is displayed (this was in the original test)
+    expect(screen.getByText('Room')).toBeInTheDocument();
   });
 
   it('handles status change when button is clicked', () => {
