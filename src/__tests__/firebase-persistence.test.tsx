@@ -132,9 +132,9 @@ describe('Firebase Persistence', () => {
       expect(mockDailySessionService.saveTodaysSession).toHaveBeenCalled();
     }, { timeout: 3000 });
 
-    // Should have mock data + 1 new patient
+    // Should have 1 new patient (since loadTodaysSession mocks empty array)
     const patientCount = screen.getByTestId('patient-count');
-    expect(patientCount).toHaveTextContent('3');
+    expect(patientCount).toHaveTextContent('1');
   });
 
   it('should handle manual save operation', async () => {

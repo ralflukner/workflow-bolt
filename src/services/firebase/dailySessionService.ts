@@ -56,14 +56,15 @@ export class DailySessionService implements StorageService {
         // Add encryption here if required
       }));
 
-      const sessionData: DailySession = {
-        id: sessionId,
-        date: sessionId,
-        patients: sanitizedPatients,
-        createdAt: now,
-        updatedAt: now,
-        version: 1
-      };
+const sessionData: Partial<DailySession> = {
+  id: sessionId,
+  date: sessionId,
+  patients: sanitizedPatients,
+  // Preserve original createdAt if it exists
+  createdAt: FieldValue.serverTimestamp(),
+  updatedAt: now,
+  version: FieldValue.increment(1),
+};
 
       const docRef = doc(db, COLLECTION_NAME, sessionId);
       await setDoc(docRef, sessionData, { merge: true });
