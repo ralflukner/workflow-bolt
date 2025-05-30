@@ -20,7 +20,7 @@ export class PatientEncryptionService {
       const envKey = typeof process !== 'undefined' && process.env?.REACT_APP_PATIENT_ENCRYPTION_KEY;
       
       return envKey || 'default-dev-key-not-for-production';
-    } catch (e) {
+    } catch {
       return 'default-dev-key-not-for-production';
     }
   }

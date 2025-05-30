@@ -16,6 +16,7 @@ import {
 import { db } from '../../config/firebase';
 import { Patient } from '../../types';
 import { StorageService, SessionStats } from '../storageService'; // Import shared interface
+import { PatientEncryptionService } from '../encryption/patientEncryptionService';
 
 export interface DailySession {
   id: string; // Format: YYYY-MM-DD
@@ -68,7 +69,6 @@ export class DailySessionService implements StorageService {
       // Encrypt sensitive patient data for HIPAA compliance
       const sanitizedPatients = patients.map(patient => {
         try {
-          const { PatientEncryptionService } = require('../encryption/patientEncryptionService');
           return PatientEncryptionService.encryptPatient(patient);
         } catch (error) {
           console.error('Error encrypting patient data:', error);
@@ -122,7 +122,6 @@ export class DailySessionService implements StorageService {
         console.log(`Firebase session loaded for ${sessionId}`);
         
         try {
-          const { PatientEncryptionService } = require('../encryption/patientEncryptionService');
           const decryptedPatients = sessionData.patients?.map(patient => 
             PatientEncryptionService.decryptPatient(patient)
           ) || [];
@@ -299,4 +298,4 @@ export class DailySessionService implements StorageService {
 }
 
 // Export singleton instance
-export const dailySessionService = new DailySessionService();    
+export const dailySessionService = new DailySessionService();          

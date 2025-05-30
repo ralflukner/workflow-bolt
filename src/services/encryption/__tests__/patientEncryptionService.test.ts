@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { PatientEncryptionService } from '../patientEncryptionService';
 import { Patient } from '../../../types';
 
