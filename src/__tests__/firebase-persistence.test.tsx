@@ -36,7 +36,7 @@ jest.mock('../services/firebase/dailySessionService', () => ({
 
 // Get the mocked service for test assertions
 import { dailySessionService } from '../services/firebase/dailySessionService';
-import { createMockTimeContext } from '../test/testHelpers';
+import { createMockTimeContext } from '../test/contextMocks';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { PatientContext } from '../context/PatientContextDef';
 import { TimeContext } from '../context/TimeContextDef';
@@ -277,4 +277,4 @@ describe('Firebase Persistence', () => {
     // The loadTodaysSession should have been called
     expect(mockDailySessionService.loadTodaysSession).toHaveBeenCalledTimes(1);
   });
-});                          
+});                            
