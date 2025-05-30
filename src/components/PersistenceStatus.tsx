@@ -38,7 +38,8 @@ export const PersistenceStatus: React.FC = () => {
     return isFirebaseConfigured
       ? { storageService: dailySessionService as StorageService, storageType: 'Firebase' as const }
       : { storageService: localSessionService as StorageService, storageType: 'LocalStorage' as const };
-  }, [isFirebaseConfigured]);
+   
+  }, []);
 
   // Load session statistics
   useEffect(() => {

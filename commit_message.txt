@@ -1,13 +1,15 @@
-feat(testing): migrate test suite from Vitest to Jest
+fix(persistence): improve Firebase error handling and test reliability
 
-This commit migrates the project's test suite from Vitest to Jest:
+This commit enhances the Firebase persistence mechanism and its tests:
 
-- Replace Vitest imports with Jest equivalents in all test files
-- Update mocking syntax from vi.* to jest.* throughout test files
-- Add happy-dom for DOM testing environment
-- Configure Jest setup in src/test/setup.ts with DOM matchers and cleanup
-- Update package-lock.json with new dependencies
+- Reorganize test imports and mocks for better clarity
+- Add explicit mocks for Firebase configuration and localStorage service
+- Fix persistence behavior to remain enabled during Firebase errors
+- Update test expectations to match the corrected behavior
+- Remove redundant test case for save errors
+- Modify initialization behavior to start with empty data instead of mock data
+- Fix dependency array in PersistenceStatus component's useCallback hook
 
-The migration maintains all existing test functionality while standardizing
-on Jest as the primary testing framework. Both frameworks are temporarily
-maintained to ensure a smooth transition.
+These changes improve the reliability of the persistence layer by ensuring
+that the application continues to function properly even when Firebase
+encounters temporary errors, providing a better user experience.
