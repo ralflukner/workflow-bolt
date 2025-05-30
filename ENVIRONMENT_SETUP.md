@@ -69,4 +69,3 @@ source .envrc  # Manually load variables
 - The `.envrc` file automatically loads `.env.local` if it exists
 - All sensitive credentials should be in `.env.local` only
 - The `env-local-template.txt` shows the required format but contains placeholder/example values
- 
