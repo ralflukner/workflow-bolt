@@ -1,9 +1,7 @@
-// React is used implicitly for JSX
 import { render, screen, fireEvent } from '@testing-library/react';
 import PatientCard from '../PatientCard';
-import { PatientContext } from '../../context/PatientContextDef';
-import { TimeContext } from '../../context/TimeContextDef';
 import { Patient } from '../../types';
+import { TestProviders } from '../../test/testHelpers';
 
 // Mock the hooks and functions
 const mockUpdatePatientStatus = jest.fn();
@@ -99,31 +97,19 @@ describe('PatientCard', () => {
 
   it('renders scheduled patient card correctly', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
-          patients: [],
-          addPatient: jest.fn(),
+      <TestProviders
+        patientContextOverrides={{
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getPatientsByStatus: jest.fn(),
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 0),
-          clearPatients: jest.fn(),
-          exportPatientsToJSON: jest.fn(),
-          importPatientsFromJSON: jest.fn(),
-          tickCounter: 0
-        }}>
-          <PatientCard patient={scheduledPatient} />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          getWaitTime: jest.fn((_patient) => 0)
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <PatientCard patient={scheduledPatient} />
+      </TestProviders>
     );
 
     // Check that patient name is displayed
@@ -141,31 +127,19 @@ describe('PatientCard', () => {
 
   it('renders arrived patient card correctly with wait time', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
-          patients: [],
-          addPatient: jest.fn(),
+      <TestProviders
+        patientContextOverrides={{
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getPatientsByStatus: jest.fn(),
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 25), // 25 minutes wait time
-          clearPatients: jest.fn(),
-          exportPatientsToJSON: jest.fn(),
-          importPatientsFromJSON: jest.fn(),
-          tickCounter: 0
-        }}>
-          <PatientCard patient={arrivedPatient} />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          getWaitTime: jest.fn((_patient) => 25) // 25 minutes wait time
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <PatientCard patient={arrivedPatient} />
+      </TestProviders>
     );
 
     // Check that patient name is displayed
@@ -180,31 +154,19 @@ describe('PatientCard', () => {
 
   it('handles status change when button is clicked', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
-          patients: [],
-          addPatient: jest.fn(),
+      <TestProviders
+        patientContextOverrides={{
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getPatientsByStatus: jest.fn(),
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 0),
-          clearPatients: jest.fn(),
-          exportPatientsToJSON: jest.fn(),
-          importPatientsFromJSON: jest.fn(),
-          tickCounter: 0
-        }}>
-          <PatientCard patient={scheduledPatient} />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          getWaitTime: jest.fn((_patient) => 0)
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <PatientCard patient={scheduledPatient} />
+      </TestProviders>
     );
 
     // Click the check-in button
@@ -216,31 +178,19 @@ describe('PatientCard', () => {
 
   it('handles room assignment for arrived patients', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
-          patients: [],
-          addPatient: jest.fn(),
+      <TestProviders
+        patientContextOverrides={{
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getPatientsByStatus: jest.fn(),
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 25),
-          clearPatients: jest.fn(),
-          exportPatientsToJSON: jest.fn(),
-          importPatientsFromJSON: jest.fn(),
-          tickCounter: 0
-        }}>
-          <PatientCard patient={arrivedPatient} />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          getWaitTime: jest.fn((_patient) => 25)
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <PatientCard patient={arrivedPatient} />
+      </TestProviders>
     );
 
     const roomSelect = screen.getByRole('combobox');
@@ -254,31 +204,19 @@ describe('PatientCard', () => {
 
   it('shows status dropdown for scheduled patients when clicked', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
-          patients: [],
-          addPatient: jest.fn(),
+      <TestProviders
+        patientContextOverrides={{
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getPatientsByStatus: jest.fn(),
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 0),
-          clearPatients: jest.fn(),
-          exportPatientsToJSON: jest.fn(),
-          importPatientsFromJSON: jest.fn(),
-          tickCounter: 0
-        }}>
-          <PatientCard patient={scheduledPatient} />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          getWaitTime: jest.fn((_patient) => 0)
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <PatientCard patient={scheduledPatient} />
+      </TestProviders>
     );
 
     const statusBadge = screen.getByText('scheduled');
@@ -297,31 +235,19 @@ describe('PatientCard', () => {
 
   it('allows editing check-in time for patients in prep', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
-          patients: [],
-          addPatient: jest.fn(),
+      <TestProviders
+        patientContextOverrides={{
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getPatientsByStatus: jest.fn(),
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 0),
-          clearPatients: jest.fn(),
-          exportPatientsToJSON: jest.fn(),
-          importPatientsFromJSON: jest.fn(),
-          tickCounter: 0
-        }}>
-          <PatientCard patient={prepPatient} />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          getWaitTime: jest.fn((_patient) => 0)
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <PatientCard patient={prepPatient} />
+      </TestProviders>
     );
 
     const editButton = screen.getByText('Edit');
@@ -345,31 +271,19 @@ describe('PatientCard', () => {
 
   it('displays different wait time format for completed patients', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
-          patients: [],
-          addPatient: jest.fn(),
+      <TestProviders
+        patientContextOverrides={{
           updatePatientStatus: mockUpdatePatientStatus,
           assignRoom: mockAssignRoom,
           updateCheckInTime: mockUpdateCheckInTime,
-          getPatientsByStatus: jest.fn(),
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 55), // 55 minutes total time
-          clearPatients: jest.fn(),
-          exportPatientsToJSON: jest.fn(),
-          importPatientsFromJSON: jest.fn(),
-          tickCounter: 0
-        }}>
-          <PatientCard patient={completedPatient} />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          getWaitTime: jest.fn((_patient) => 55) // 55 minutes total time
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <PatientCard patient={completedPatient} />
+      </TestProviders>
     );
 
     // Check that total time is displayed instead of wait time

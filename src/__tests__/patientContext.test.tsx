@@ -1,10 +1,9 @@
 import { describe, it, expect } from '@jest/globals';
 import { render, act } from '@testing-library/react';
-import { PatientProvider } from '../context/PatientContext';
-import { TimeProvider } from '../context/TimeProvider';
 import { usePatientContext } from '../hooks/usePatientContext';
-import { Patient } from '../types';
+import { Patient, PatientApptStatus } from '../types';
 import React from 'react';
+import { TestProviders } from '../test/testHelpers';
 
 // Mock patient data for testing
 const mockPatientData: Patient[] = [
@@ -32,11 +31,9 @@ const mockPatientData: Patient[] = [
 
 // Test wrapper component
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <TimeProvider>
-    <PatientProvider>
-      {children}
-    </PatientProvider>
-  </TimeProvider>
+  <TestProviders>
+    {children}
+  </TestProviders>
 );
 
 // Context consumer for testing
@@ -125,4 +122,4 @@ describe('Patient Context JSON Operations', () => {
       done();
     }, 0);
   });
-}); 
+});    

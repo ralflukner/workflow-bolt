@@ -18,21 +18,18 @@ jest.mock('../services/firebase/dailySessionService', () => ({
   }
 }));
 
-import { PatientProvider } from '../context/PatientContext';
-import { TimeProvider } from '../context/TimeProvider';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { dailySessionService } from '../services/firebase/dailySessionService';
 import { Patient } from '../types';
+import { TestProviders } from '../test/testHelpers';
 
 const mockDailySessionService = dailySessionService as jest.Mocked<typeof dailySessionService>;
 
 // Test wrapper components
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <TimeProvider>
-    <PatientProvider>
-      {children}
-    </PatientProvider>
-  </TimeProvider>
+  <TestProviders>
+    {children}
+  </TestProviders>
 );
 
 const ContextConsumer = ({ onContext }: { onContext: (ctx: ReturnType<typeof usePatientContext>) => void }) => {
@@ -288,4 +285,4 @@ describe('Firebase Persistence', () => {
       ])
     );
   });
-}); 
+});  

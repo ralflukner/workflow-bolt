@@ -1,8 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import Dashboard from '../Dashboard';
-import { PatientContext } from '../../context/PatientContextDef';
-import { TimeContext } from '../../context/TimeContextDef';
-import { Patient } from '../../types';
+import { TestProviders } from '../../test/testHelpers';
 
 const mockAddPatient = jest.fn();
 const mockExportPatientsToJSON = jest.fn();
@@ -25,7 +23,11 @@ jest.mock('../../hooks/usePatientContext', () => ({
     clearPatients: mockClearPatients,
     exportPatientsToJSON: mockExportPatientsToJSON,
     importPatientsFromJSON: mockImportPatientsFromJSON,
-    tickCounter: 0
+    tickCounter: 0,
+    isLoading: false,
+    persistenceEnabled: false,
+    saveCurrentSession: jest.fn().mockResolvedValue(undefined),
+    togglePersistence: jest.fn()
   })
 }));
 
@@ -73,31 +75,22 @@ describe('Dashboard', () => {
 
   it('renders dashboard with metrics panel', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
+      <TestProviders
+        patientContextOverrides={{
           patients: [],
           addPatient: mockAddPatient,
-          updatePatientStatus: jest.fn(),
-          assignRoom: jest.fn(),
-          updateCheckInTime: jest.fn(),
           getPatientsByStatus: jest.fn(() => []),
           getMetrics: jest.fn(() => ({ totalAppointments: 5, waitingCount: 2, averageWaitTime: 15, maxWaitTime: 30 })),
-          getWaitTime: jest.fn(() => 0),
           clearPatients: mockClearPatients,
           exportPatientsToJSON: mockExportPatientsToJSON,
-          importPatientsFromJSON: mockImportPatientsFromJSON,
-          tickCounter: 0
-        }}>
-          <Dashboard />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          importPatientsFromJSON: mockImportPatientsFromJSON
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <Dashboard />
+      </TestProviders>
     );
 
     expect(screen.getByText('Total Appointments')).toBeInTheDocument();
@@ -108,31 +101,21 @@ describe('Dashboard', () => {
 
   it('opens new patient modal when button is clicked', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
+      <TestProviders
+        patientContextOverrides={{
           patients: [],
           addPatient: mockAddPatient,
-          updatePatientStatus: jest.fn(),
-          assignRoom: jest.fn(),
-          updateCheckInTime: jest.fn(),
           getPatientsByStatus: jest.fn(() => []),
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 0),
           clearPatients: mockClearPatients,
           exportPatientsToJSON: mockExportPatientsToJSON,
-          importPatientsFromJSON: mockImportPatientsFromJSON,
-          tickCounter: 0
-        }}>
-          <Dashboard />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          importPatientsFromJSON: mockImportPatientsFromJSON
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <Dashboard />
+      </TestProviders>
     );
 
     fireEvent.click(screen.getByText('New Patient'));
@@ -144,41 +127,21 @@ describe('Dashboard', () => {
 
   it('toggles section visibility when section headers are clicked', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
+      <TestProviders
+        patientContextOverrides={{
           patients: [],
           addPatient: mockAddPatient,
-          updatePatientStatus: jest.fn(),
-          assignRoom: jest.fn(),
-          updateCheckInTime: jest.fn(),
-          getPatientsByStatus: jest.fn((status) => {
-            if (status === 'scheduled') return [{ 
-              id: '1', 
-              name: 'Test Patient', 
-              dob: '1990-01-01',
-              appointmentTime: '2023-01-01T09:00:00.000Z',
-              status: 'scheduled',
-              provider: 'Dr. Test'
-            }];
-            return [];
-          }) as jest.Mock<Patient[], [status: string]>,
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 0),
+          getPatientsByStatus: jest.fn(),
           clearPatients: mockClearPatients,
           exportPatientsToJSON: mockExportPatientsToJSON,
-          importPatientsFromJSON: mockImportPatientsFromJSON,
-          tickCounter: 0
-        }}>
-          <Dashboard />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          importPatientsFromJSON: mockImportPatientsFromJSON
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <Dashboard />
+      </TestProviders>
     );
 
     const scheduledHeader = screen.getByText('Scheduled Patients');
@@ -196,31 +159,21 @@ describe('Dashboard', () => {
 
   it('opens import schedule modal when button is clicked', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
+      <TestProviders
+        patientContextOverrides={{
           patients: [],
           addPatient: mockAddPatient,
-          updatePatientStatus: jest.fn(),
-          assignRoom: jest.fn(),
-          updateCheckInTime: jest.fn(),
           getPatientsByStatus: jest.fn(() => []),
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 0),
           clearPatients: mockClearPatients,
           exportPatientsToJSON: mockExportPatientsToJSON,
-          importPatientsFromJSON: mockImportPatientsFromJSON,
-          tickCounter: 0
-        }}>
-          <Dashboard />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          importPatientsFromJSON: mockImportPatientsFromJSON
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <Dashboard />
+      </TestProviders>
     );
 
     fireEvent.click(screen.getByText('Import Schedule'));
@@ -231,31 +184,21 @@ describe('Dashboard', () => {
 
   it('opens import JSON modal when button is clicked', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
+      <TestProviders
+        patientContextOverrides={{
           patients: [],
           addPatient: mockAddPatient,
-          updatePatientStatus: jest.fn(),
-          assignRoom: jest.fn(),
-          updateCheckInTime: jest.fn(),
           getPatientsByStatus: jest.fn(() => []),
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 0),
           clearPatients: mockClearPatients,
           exportPatientsToJSON: mockExportPatientsToJSON,
-          importPatientsFromJSON: mockImportPatientsFromJSON,
-          tickCounter: 0
-        }}>
-          <Dashboard />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          importPatientsFromJSON: mockImportPatientsFromJSON
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <Dashboard />
+      </TestProviders>
     );
 
     fireEvent.click(screen.getByText('Import JSON'));
@@ -265,31 +208,21 @@ describe('Dashboard', () => {
 
   it('calls exportPatientsToJSON when export button is clicked', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
+      <TestProviders
+        patientContextOverrides={{
           patients: [],
           addPatient: mockAddPatient,
-          updatePatientStatus: jest.fn(),
-          assignRoom: jest.fn(),
-          updateCheckInTime: jest.fn(),
           getPatientsByStatus: jest.fn(() => []),
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 0),
           clearPatients: mockClearPatients,
           exportPatientsToJSON: mockExportPatientsToJSON,
-          importPatientsFromJSON: mockImportPatientsFromJSON,
-          tickCounter: 0
-        }}>
-          <Dashboard />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          importPatientsFromJSON: mockImportPatientsFromJSON
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <Dashboard />
+      </TestProviders>
     );
 
     fireEvent.click(screen.getByText('Export JSON'));
@@ -299,31 +232,21 @@ describe('Dashboard', () => {
 
   it('opens report modal when button is clicked', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
+      <TestProviders
+        patientContextOverrides={{
           patients: [],
           addPatient: mockAddPatient,
-          updatePatientStatus: jest.fn(),
-          assignRoom: jest.fn(),
-          updateCheckInTime: jest.fn(),
           getPatientsByStatus: jest.fn(() => []),
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 0),
           clearPatients: mockClearPatients,
           exportPatientsToJSON: mockExportPatientsToJSON,
-          importPatientsFromJSON: mockImportPatientsFromJSON,
-          tickCounter: 0
-        }}>
-          <Dashboard />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+          importPatientsFromJSON: mockImportPatientsFromJSON
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <Dashboard />
+      </TestProviders>
     );
 
     fireEvent.click(screen.getByText('Generate Report'));

@@ -1,10 +1,9 @@
 import { describe, it, expect } from '@jest/globals';
 import { render, act } from '@testing-library/react';
-import { PatientProvider } from '../context/PatientContext';
-import { TimeProvider } from '../context/TimeProvider';
 import { usePatientContext } from '../hooks/usePatientContext';
 import React from 'react';
 import { PatientApptStatus, Patient } from '../types';
+import { TestProviders } from '../test/testHelpers';
 
 // Sample schedule data in tab-separated format (simulating what might be pasted from a spreadsheet)
 const sampleScheduleData = `05/19/2025	9:00 AM	Scheduled	JOHN DOE	01/01/1990	Office Visit	-
@@ -13,11 +12,9 @@ const sampleScheduleData = `05/19/2025	9:00 AM	Scheduled	JOHN DOE	01/01/1990	Off
 
 // Test wrapper component
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <TimeProvider>
-    <PatientProvider>
-      {children}
-    </PatientProvider>
-  </TimeProvider>
+  <TestProviders>
+    {children}
+  </TestProviders>
 );
 
 // Context consumer for testing
@@ -134,4 +131,4 @@ describe('Schedule Import/Export Functionality', () => {
       done();
     }, 0);
   });
-});      
+});            

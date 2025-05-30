@@ -1,17 +1,14 @@
 import { describe, it, expect } from '@jest/globals';
 import { render, act } from '@testing-library/react';
-import { PatientProvider } from '../context/PatientContext';
-import { TimeProvider } from '../context/TimeProvider';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { Patient, PatientApptStatus } from '../types';
 import React from 'react';
+import { TestProviders } from '../test/testHelpers';
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <TimeProvider>
-    <PatientProvider>
-      {children}
-    </PatientProvider>
-  </TimeProvider>
+  <TestProviders>
+    {children}
+  </TestProviders>
 );
 
 const ContextConsumer = ({ onContext }: { onContext: (ctx: ReturnType<typeof usePatientContext>) => void }) => {

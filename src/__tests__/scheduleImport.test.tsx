@@ -1,18 +1,15 @@
 import { describe, it, expect } from '@jest/globals';
 import { render, act } from '@testing-library/react';
-import { PatientProvider } from '../context/PatientContext';
-import { TimeProvider } from '../context/TimeProvider';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { Patient, PatientApptStatus } from '../types';
 import React from 'react';
+import { TestProviders } from '../test/testHelpers';
 
 // Test wrapper component
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <TimeProvider>
-    <PatientProvider>
-      {children}
-    </PatientProvider>
-  </TimeProvider>
+  <TestProviders>
+    {children}
+  </TestProviders>
 );
 
 // Context consumer for testing
@@ -240,4 +237,4 @@ describe('Schedule Import Functionality', () => {
       done();
     }, 0);
   });
-}); 
+});  
