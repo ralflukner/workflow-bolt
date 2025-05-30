@@ -51,9 +51,6 @@ For your systems-thinking approach, Tebra also offers SOAP APIs that interact wi
 The SOAP interface is fully integrated with Tebra's broader platform, allowing you to customize templates for your specialty, use macros and text shortcuts for faster documentation, order prescriptions and labs directly from notes, and pull forward past notes instantly regardless of note type [Tebra](https://www.tebra.com/ehr-software)[Tebra](https://www.tebra.com/ehr-software/charting).
 The interface appears well-suited for rural internal medicine practice, offering both the clinical rigor you need for complex cases and the efficiency tools to help manage the diverse patient population and conditions you encounter.
 Would you like me to explore any specific aspects of the SOAP interface in more detail, such as the template customization process or integration with specific clinical workflows?
-
-
-
 Retry
 **RL**
 Does Tebra EHR SOAP API use **WSDL Binding Styles: Document vs. RPC?**
@@ -212,29 +209,17 @@ The user is asking me to help design a system to populate their patient flow man
 * Integration with their existing workflow states
 
 ⠀Based on your patient flow management application and the Tebra SOAP API specifications, I'll help you design a comprehensive integration system. Given your medical background and the clinical nature of this application, I'll prioritize HIPAA compliance, reliability, and seamless workflow integration.
-
-
-
 Thought process
 
 ## 1s
 Now I need to create the integration service that will handle the scheduled fetching and integration with the existing patient context.
-
-
-
 Engineered React hook and configuration for Tebra integration.
 
 ## 1s
 
-
-
-
 Strategized patient context integration with Tebra service workflow.
 
 ## 2s
-
-
-
 
 Mapped out Tebra integration with dashboard and patient workflow.
 
@@ -320,9 +305,6 @@ I've designed a comprehensive Tebra SOAP API integration for your patient flow m
 
 ⠀The design preserves your existing patient flow states while enriching them with real EHR data, making your rural practice workflow more efficient without disrupting your current clinical processes.
 Would you like me to elaborate on any specific component or help you with the initial setup steps?
-
-
-
 Retry
 **RL**
 I would like to "cache" the schedule and patient information in a secure GCP Firebase database so I don't need to keep polling the SOAP interface for information.  The GCP Firebase should provide bidirectional polling and writing back to Tebra EHR SOAP API.  The firebase should be able to import lab results, imaging results, medical records, including previous progress notes, etc.  The firebase should facilitate analysis of the patient's medical condition along with planning the appointment, providing real-time information for the appointment, and finally documenting the encounter and orders and writing those back to Tebra EHR and planning future visits.

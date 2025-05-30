@@ -1,19 +1,14 @@
 import React from 'react';
 import { render, waitFor, act, screen } from '@testing-library/react';
 import { PatientProvider } from '../context/PatientContext';
+import { usePatientContext } from '../hooks/usePatientContext';
 import { TimeProvider } from '../context/TimeProvider';
 // ---------------- MOCKS --------------
-jest.mock('../config/firebase', () => (…
-jest.mock('../services/localStorage/localSessionService', () => (…
-jest.mock('../services/firebase/dailySessionService', () => (…
-// -------------------------------------
-
-import { PatientProvider } from '../context/PatientContext';
+jest.mock('../config/firebase', () => ({
   db: {},
   auth: {},
   app: {},
   isFirebaseConfigured: true,
-  isLocalDevelopment: false,
 }));
 
 // Mock the localStorage service as well (in case of fallback)
@@ -40,6 +35,7 @@ jest.mock('../services/firebase/dailySessionService', () => ({
     })
   },
 }));
+// -------------------------------------
 
 // Get the mocked service for test assertions
 import { dailySessionService } from '../services/firebase/dailySessionService';
