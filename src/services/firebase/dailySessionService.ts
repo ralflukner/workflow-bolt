@@ -16,6 +16,7 @@ import {
 import { db } from '../../config/firebase';
 import { Patient } from '../../types';
 import { StorageService, SessionStats } from '../storageService'; // Import shared interface
+import { PatientEncryptionService } from '../encryption/patientEncryptionService';
 
 export interface DailySession {
   id: string; // Format: YYYY-MM-DD
@@ -65,12 +66,15 @@ export class DailySessionService implements StorageService {
     const now = Timestamp.now();
     
     try {
-      // Sanitize patient data for storage (remove sensitive fields if needed)
-      const sanitizedPatients = patients.map(patient => ({
-        ...patient,
-        // Remove any fields that shouldn't be persisted
-        // Add encryption here if required
-      }));
+      // Encrypt sensitive patient data for HIPAA compliance
+      const sanitizedPatients = patients.map(patient => {
+        try {
+          return PatientEncryptionService.encryptPatient(patient);
+        } catch (error) {
+          console.error('Error encrypting patient data:', error);
+          return patient;
+        }
+      });
 
       const sessionData = {
         id: sessionId,
@@ -116,7 +120,16 @@ export class DailySessionService implements StorageService {
       if (todayDoc.exists()) {
         const sessionData = todayDoc.data() as DailySession;
         console.log(`Firebase session loaded for ${sessionId}`);
-        return sessionData.patients || [];
+        
+        try {
+          const decryptedPatients = sessionData.patients?.map(patient => 
+            PatientEncryptionService.decryptPatient(patient)
+          ) || [];
+          return decryptedPatients;
+        } catch (error) {
+          console.error('Error decrypting patient data:', error);
+          return sessionData.patients || [];
+        }
       }
       
       console.log(`No Firebase session found for ${sessionId}`);
@@ -285,4 +298,4 @@ export class DailySessionService implements StorageService {
 }
 
 // Export singleton instance
-export const dailySessionService = new DailySessionService(); 
+export const dailySessionService = new DailySessionService();          

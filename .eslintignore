@@ -1,4 +1,0 @@
-# Ignore large spec stub files
-src/tebra-soap/**
-!src/tebra-soap/tebraSoapClient.ts
-!src/tebra-soap/__tests__/** 

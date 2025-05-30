@@ -25,5 +25,22 @@ export default defineConfig({
       'node:path': 'path-browserify',
       'node:string_decoder': 'string_decoder',
     }
+  },
+  build: {
+    rollupOptions: {
+      external: [
+        'soap',
+        'formidable', 
+        'node:events',
+        'node:fs',
+        'node:crypto',
+        'node:stream',
+        'node:os',
+        'node:path'
+      ]
+    }
+  },
+  define: {
+    global: 'globalThis'
   }
 });

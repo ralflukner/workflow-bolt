@@ -37,7 +37,18 @@ const TebraIntegration: React.FC = () => {
       try {
         // Check if credentials are available
         if (!hasValidCredentials) {
-          setStatusMessage('Tebra credentials not configured - contact administrator');
+          setStatusMessage('Tebra credentials not configured - environment variables missing');
+          console.warn('Tebra credentials missing. Please set REACT_APP_TEBRA_USERNAME, REACT_APP_TEBRA_PASSWORD, and REACT_APP_TEBRA_WSDL_URL in .env.local');
+          setIsConnected(false);
+          return;
+        }
+        
+        // Validate credential format
+        if (tebraCredentials.username.trim() === '' || 
+            tebraCredentials.password.trim() === '' || 
+            tebraCredentials.wsdlUrl.trim() === '') {
+          setStatusMessage('Tebra credentials are invalid - check environment variables');
+          console.warn('Tebra credentials are empty or invalid. Please check your environment variables.');
           setIsConnected(false);
           return;
         }
@@ -78,7 +89,8 @@ const TebraIntegration: React.FC = () => {
 
   const handleImportFromTebra = async () => {
     if (!integrationService) {
-      setStatusMessage('Integration service not initialized');
+      setStatusMessage('Integration service not initialized. Please check environment variables and reload.');
+      console.error('Attempted to import from Tebra but integration service is not initialized');
       return;
     }
 
@@ -95,7 +107,11 @@ const TebraIntegration: React.FC = () => {
         );
         
         // Refresh the current patient list
-        window.location.reload(); // Simple refresh - could be improved with context refresh
+        try {
+          window.location.reload(); // Simple refresh - could be improved with context refresh
+        } catch {
+          console.log('Page reload not available in test environment');
+        }
       } else {
         setStatusMessage(`Import failed: ${result.errors.join(', ')}`);
       }
@@ -242,4 +258,4 @@ const TebraIntegration: React.FC = () => {
   );
 };
 
-export default TebraIntegration; 
+export default TebraIntegration;          
