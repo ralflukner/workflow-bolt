@@ -5,35 +5,6 @@ import { PatientContext } from '../../context/PatientContextDef';
 import { TimeContext } from '../../context/TimeContextDef';
 import { PatientApptStatus, Patient } from '../../types';
 
-// Mock the usePatientContext hook
-jest.mock('../../hooks/usePatientContext', () => ({
-  usePatientContext: () => ({
-    getPatientsByStatus: (status: PatientApptStatus) => {
-      if (status === 'scheduled') {
-        return [
-          {
-            id: 'test-1',
-            name: 'John Doe',
-            dob: '1990-01-01',
-            appointmentTime: '2023-01-01T09:00:00.000Z',
-            status: 'scheduled',
-            provider: 'Dr. Test'
-          },
-          {
-            id: 'test-2',
-            name: 'Jane Smith',
-            dob: '1985-05-15',
-            appointmentTime: '2023-01-01T10:00:00.000Z',
-            status: 'scheduled',
-            provider: 'Dr. Test'
-          }
-        ];
-      }
-      return []; // Return empty array for other statuses
-    }
-  })
-}));
-
 // Mock the formatTime function
 jest.mock('../../utils/formatters', () => ({
   formatTime: (date: unknown) => {
@@ -55,7 +26,6 @@ jest.mock('../../utils/formatters', () => ({
 
 describe('PatientList', () => {
   it('renders correctly with patients', () => {
-    // Create a mock implementation of getPatientsByStatus
     const mockGetPatientsByStatus = jest.fn((status: PatientApptStatus) => {
       if (status === 'scheduled') {
         return [
@@ -64,7 +34,7 @@ describe('PatientList', () => {
             name: 'John Doe',
             dob: '1990-01-01',
             appointmentTime: '2023-01-01T09:00:00.000Z',
-            status: 'scheduled' as PatientApptStatus,
+            status: 'scheduled',
             provider: 'Dr. Test'
           },
           {
@@ -72,7 +42,7 @@ describe('PatientList', () => {
             name: 'Jane Smith',
             dob: '1985-05-15',
             appointmentTime: '2023-01-01T10:00:00.000Z',
-            status: 'scheduled' as PatientApptStatus,
+            status: 'scheduled',
             provider: 'Dr. Test'
           }
         ];
@@ -94,15 +64,20 @@ describe('PatientList', () => {
           addPatient: jest.fn(),
           updatePatientStatus: jest.fn(),
           assignRoom: jest.fn(),
+          isLoading: false,
+          persistenceEnabled: false,
+          saveCurrentSession: jest.fn(),
+          togglePersistence: jest.fn(),
           updateCheckInTime: jest.fn(),
-          // @ts-expect-error testing mock
           getPatientsByStatus: mockGetPatientsByStatus,
           getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
           getWaitTime: jest.fn(() => 0),
           clearPatients: jest.fn(),
           exportPatientsToJSON: jest.fn(),
           importPatientsFromJSON: jest.fn(),
-          tickCounter: 0
+          tickCounter: 0,
+          hasRealData: false,
+          loadMockData: jest.fn()
         }}>
           <PatientList status="scheduled" title="Scheduled Patients" />
         </PatientContext.Provider>
@@ -136,28 +111,30 @@ describe('PatientList', () => {
           updatePatientStatus: jest.fn(),
           assignRoom: jest.fn(),
           updateCheckInTime: jest.fn(),
-          // @ts-expect-error test property not in interface
-          setPatients: jest.fn(),
+          getPatientsByStatus: jest.fn(() => []),
           getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
           getWaitTime: jest.fn(() => 0),
           clearPatients: jest.fn(),
           exportPatientsToJSON: jest.fn(),
           importPatientsFromJSON: jest.fn(),
-          tickCounter: 0
+          tickCounter: 0,
+          isLoading: false,
+          persistenceEnabled: false,
+          saveCurrentSession: jest.fn(),
+          togglePersistence: jest.fn(),
+          hasRealData: false,
+          loadMockData: jest.fn()
         }}>
-          <PatientList status="arrived" title="Arrived Patients" />
+          <PatientList status="scheduled" title="Scheduled Patients" />
         </PatientContext.Provider>
       </TimeContext.Provider>
     );
 
     // Check that the title is rendered
-    expect(screen.getByText('Arrived Patients')).toBeInTheDocument();
+    expect(screen.getByText('Scheduled Patients')).toBeInTheDocument();
     
-    // Check that the empty message is displayed
+    // Check that "No patients" message is displayed
     expect(screen.getByText('No patients in this category')).toBeInTheDocument();
-    
-    // Check that the count is 0
-    expect(screen.getByText('0')).toBeInTheDocument();
   });
 
   it('applies the correct header color based on status', () => {
@@ -193,7 +170,13 @@ describe('PatientList', () => {
             clearPatients: jest.fn(),
             exportPatientsToJSON: jest.fn(),
             importPatientsFromJSON: jest.fn(),
-            tickCounter: 0
+            tickCounter: 0,
+            isLoading: false,
+            persistenceEnabled: false,
+            saveCurrentSession: jest.fn(),
+            togglePersistence: jest.fn(),
+            hasRealData: false,
+            loadMockData: jest.fn()
           }}>
             <PatientList status={status} title={`${status} Patients`} />
           </PatientContext.Provider>

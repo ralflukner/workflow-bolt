@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ImportSchedule from '../ImportSchedule';
 import { PatientContext } from '../../context/PatientContextDef';

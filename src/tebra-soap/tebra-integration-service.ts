@@ -22,7 +22,7 @@ export interface SyncResult {
 export class TebraIntegrationService {
   private apiService: TebraApiService;
   private config: TebraIntegrationConfig;
-  private syncTimer: NodeJS.Timeout | null = null;
+  private syncTimer: ReturnType<typeof setInterval> | null = null;
   private lastSyncResult: SyncResult | null = null;
   private isConnected = false;
 
@@ -216,7 +216,7 @@ export class TebraIntegrationService {
   /**
    * Manually trigger sync
    */
-  async forcSync(): Promise<SyncResult> {
+  async forceSync(): Promise<SyncResult> {
     return await this.syncTodaysSchedule();
   }
 
