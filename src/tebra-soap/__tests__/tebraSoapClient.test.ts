@@ -16,7 +16,7 @@ describe('TebraSoapClient', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    // @ts-expect-error resetting private cache for test
+    // Resetting private cache for test
     tebraSoapClient['client'] = null;
   });
 
@@ -51,4 +51,4 @@ describe('TebraSoapClient', () => {
     expect(mockClient.SearchPatientsAsync).toHaveBeenCalledWith({ lastName: 'Smith' });
     expect(result).toEqual(patients.patients);
   });
-}); 
+});   
