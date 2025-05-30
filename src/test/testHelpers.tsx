@@ -32,6 +32,8 @@ export const createMockPatientContext = (overrides = {}) => ({
   persistenceEnabled: false,
   saveCurrentSession: jest.fn().mockResolvedValue(undefined),
   togglePersistence: jest.fn(),
+  hasRealData: false,
+  loadMockData: jest.fn(),
   ...overrides
 });
 
