@@ -7,16 +7,6 @@ module.exports = {
   testTimeout: 30000, // 30 seconds per individual test
   maxWorkers: 1, // Run tests sequentially to better control overall timing
   
-  // Global timeout for entire test suite (4 minutes)
-  globals: {
-    'ts-jest': {
-      diagnostics: false,
-    },
-  },
-  
-  // Jest CLI options can be added via package.json scripts
-  // Overall suite timeout will be handled via --forceExit and custom timeout logic
-  
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '\\.(gif|ttf|eot|svg|png)$': '<rootDir>/test/__mocks__/fileMock.js',
@@ -28,6 +18,7 @@ module.exports = {
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
       },
+      diagnostics: false,
     }],
   },
   testMatch: [
