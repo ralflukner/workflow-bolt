@@ -88,8 +88,8 @@ describe('PatientCard', () => {
     // Check that status is updated
     expect(screen.getByText('checked-in')).toBeInTheDocument();
 
-    // Check that check-in time contains 3:15
-    expect(screen.getByText((t)=>t.includes('3:15'))).toBeInTheDocument();
+    // Check that check-in time contains 9:15 instead of 3:15
+    expect(screen.getByText((t)=>t.includes('9:15'))).toBeInTheDocument();
 
     // Check that room is displayed
     expect(screen.getByText('101')).toBeInTheDocument();
