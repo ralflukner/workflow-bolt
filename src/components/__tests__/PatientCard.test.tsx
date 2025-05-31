@@ -52,6 +52,24 @@ describe('PatientCard', () => {
     jest.clearAllMocks();
   });
 
+  beforeAll(() => {
+    jest.spyOn(Date.prototype, 'toLocaleTimeString').mockImplementation(function (this: Date) {
+      // Always return the same time for the test date
+      if (this.toISOString() === '2023-01-01T09:15:00.000Z') return '09:15:00 AM';
+      if (this.toISOString() === '2023-01-01T09:00:00.000Z') return '09:00:00 AM';
+      return '00:00:00 AM';
+    });
+    jest.spyOn(Date.prototype, 'toLocaleDateString').mockImplementation(function (this: Date) {
+      if (this.toISOString().startsWith('2023-01-01')) return '1/1/2023';
+      if (this.toISOString().startsWith('1990-01-01')) return '1/1/1990';
+      return '1/1/1970';
+    });
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
   it('renders scheduled patient card correctly', async () => {
     await act(async () => {
       renderWithProviders(<PatientCard patient={mockPatient} />);
@@ -63,8 +81,8 @@ describe('PatientCard', () => {
     // Check that DOB line is displayed
     expect(screen.getByText((t)=>t.includes('DOB'))).toBeInTheDocument();
 
-    // Check that appointment time contains 3:00
-    expect(screen.getByText((t)=>t.includes('3:00'))).toBeInTheDocument();
+    // Check that appointment time contains 09:00:00 AM (mocked)
+    expect(screen.getByText((t)=>t.includes('09:00:00 AM'))).toBeInTheDocument();
 
     // Check that the status button is displayed
     expect(screen.getByText('Check In')).toBeInTheDocument();
@@ -88,8 +106,8 @@ describe('PatientCard', () => {
     // Check that status is updated
     expect(screen.getByText('checked-in')).toBeInTheDocument();
 
-    // Check that check-in time contains 9:15 instead of 3:15
-    expect(screen.getByText((t)=>t.includes('9:15'))).toBeInTheDocument();
+    // Check that check-in time contains 09:15:00 AM (mocked)
+    expect(screen.getByText((t)=>t.includes('09:15:00 AM'))).toBeInTheDocument();
 
     // Check that room is displayed
     expect(screen.getByText('101')).toBeInTheDocument();
