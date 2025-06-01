@@ -170,8 +170,8 @@ exports.tebraTestConnection = onCall(async () => {
 /**
  * Get patient by ID
  */
-exports.tebraGetPatient = onCall(async (request) => {
-  const { patientId } = request.data;
+exports.tebraGetPatient = onCall(async ({ data }) => {
+  const { patientId } = data;
 
   if (!patientId) {
     throw new HttpsError('invalid-argument', 'Patient ID is required');
@@ -192,8 +192,8 @@ exports.tebraGetPatient = onCall(async (request) => {
 /**
  * Search patients
  */
-exports.tebraSearchPatients = onCall(async (request) => {
-  const { searchCriteria } = request.data;
+exports.tebraSearchPatients = onCall(async ({ data }) => {
+  const { searchCriteria } = data;
 
   if (!searchCriteria) {
     throw new HttpsError('invalid-argument', 'Search criteria is required');
@@ -214,8 +214,8 @@ exports.tebraSearchPatients = onCall(async (request) => {
 /**
  * Get appointments for a specific date
  */
-exports.tebraGetAppointments = onCall(async (request) => {
-  const { date } = request.data;
+exports.tebraGetAppointments = onCall(async ({ data }) => {
+  const { date } = data;
 
   if (!date) {
     throw new HttpsError('invalid-argument', 'Date is required');
@@ -252,8 +252,8 @@ exports.tebraGetProviders = onCall(async () => {
 /**
  * Create a new appointment
  */
-exports.tebraCreateAppointment = onCall(async (request) => {
-  const { appointmentData } = request.data;
+exports.tebraCreateAppointment = onCall(async ({ data }) => {
+  const { appointmentData } = data;
 
   if (!appointmentData) {
     throw new HttpsError('invalid-argument', 'Appointment data is required');
@@ -274,8 +274,8 @@ exports.tebraCreateAppointment = onCall(async (request) => {
 /**
  * Update an existing appointment
  */
-exports.tebraUpdateAppointment = onCall(async (request) => {
-  const { appointmentData } = request.data;
+exports.tebraUpdateAppointment = onCall(async ({ data }) => {
+  const { appointmentData } = data;
 
   if (!appointmentData) {
     throw new HttpsError('invalid-argument', 'Appointment data is required');
@@ -347,7 +347,7 @@ exports.tebraSyncTodaysSchedule = onCall(async () => {
  * Scheduled function to auto-sync Tebra data
  * Runs every 15 minutes during business hours (8 AM - 6 PM, Mon-Fri)
  */
-exports.tebraAutoSync = onSchedule('*/15 8-18 * * 1-5', async () => {
+exports.tebraAutoSync = onSchedule('*/15 8-18 * * 1-5', async (_event) => {
   console.log('Starting auto-sync of Tebra schedule...');
 
   try {
