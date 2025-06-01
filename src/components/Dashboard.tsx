@@ -5,7 +5,7 @@ import PatientList from './PatientList';
 import NewPatientForm from './NewPatientForm';
 import ImportSchedule from './ImportSchedule';
 import ImportJSON from './ImportJSON';
-import TebraIntegration from './TebraIntegration';
+import TebraIntegration from './TebraIntegrationNew';
 import AuthNav from './AuthNav';
 import { PlusCircle, FileDown, ChevronDown, Upload, X, Download } from 'lucide-react';
 import { usePatientContext } from '../hooks/usePatientContext';
