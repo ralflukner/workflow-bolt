@@ -6,11 +6,12 @@
 
 ## 🚨 Current Vulnerabilities
 
-### 1. Exposed Credentials
+### 1. Credential Security
 
-- Username: `workflow@luknerclinic.com`
-- Password: `8gdwsh5J<[0]_xD81}lwi50bom#Y%r`
-- Customer Key: `j57wt68dc39q`
+- Store credentials in environment variables
+- Never hardcode credentials in source code
+- Use secure credential management systems in production
+- Rotate credentials regularly
 
 ### 2. Security Risks
 

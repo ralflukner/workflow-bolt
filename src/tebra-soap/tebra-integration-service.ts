@@ -103,11 +103,26 @@ export class TebraIntegrationService {
   /**
    * Sync today's schedule from Tebra
    */
+  private isBrowserEnvironment(): boolean {
+    return typeof window !== 'undefined';
+  }
+
   async syncTodaysSchedule(): Promise<SyncResult> {
     const startTime = new Date();
     const errors: string[] = [];
 
     try {
+      if (this.isBrowserEnvironment()) {
+        console.warn('Tebra SOAP integration not available in browser environment');
+        return {
+          success: false,
+          patientsFound: 0,
+          appointmentsFound: 0,
+          errors: ['Tebra SOAP integration not available in browser environment'],
+          lastSyncTime: startTime,
+        };
+      }
+      
       if (!this.isConnected) {
         throw new Error('Not connected to Tebra API');
       }

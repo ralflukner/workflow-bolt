@@ -139,7 +139,7 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
     });
 
     it('should warn about unknown methods', async () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       
       await rateLimiter.waitForRateLimit('UnknownMethod');
       
@@ -222,6 +222,9 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
     });
 
     it('should sync today\'s schedule with rate limiting', async () => {
+      // Mock the isBrowserEnvironment method to return false for testing
+      jest.spyOn(integrationService as any, 'isBrowserEnvironment').mockReturnValue(false);
+      
       const syncResult = await integrationService.syncTodaysSchedule();
       
       expect(syncResult.success).toBe(true);
@@ -232,6 +235,9 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
     });
 
     it('should handle force sync', async () => {
+      // Mock the isBrowserEnvironment method to return false for testing
+      jest.spyOn(integrationService as any, 'isBrowserEnvironment').mockReturnValue(false);
+      
       const syncResult = await integrationService.forceSync();
       
       expect(syncResult.success).toBe(true);
@@ -294,4 +300,4 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
       expect(config.fallbackToMockData).toBe(false);
     });
   });
-}); 
+});        

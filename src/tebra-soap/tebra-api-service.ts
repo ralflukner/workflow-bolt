@@ -38,11 +38,9 @@ interface SoapPatientResponse {
 }
 
 export class TebraApiService {
-  private credentials: TebraCredentials;
   private soapClient: TebraSoapClient;
 
   constructor(credentials: TebraCredentials) {
-    this.credentials = credentials;
     this.soapClient = new TebraSoapClient({
       wsdlUrl: credentials.wsdlUrl,
       username: credentials.username,
@@ -243,4 +241,4 @@ export class TebraApiService {
     const rateLimiter = this.soapClient.getRateLimiter();
     return rateLimiter.getRemainingWaitTime(methodName);
   }
-} 
+}  

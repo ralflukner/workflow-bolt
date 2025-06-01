@@ -1,8 +1,5 @@
 import React from 'react';
 import { render, waitFor, act, screen } from '@testing-library/react';
-import { PatientProvider } from '../context/PatientContext';
-import { usePatientContext } from '../hooks/usePatientContext';
-import { TimeProvider } from '../context/TimeProvider';
 // ---------------- MOCKS --------------
 jest.mock('../config/firebase', () => ({
   db: {},
@@ -39,16 +36,71 @@ jest.mock('../services/firebase/dailySessionService', () => ({
 
 // Get the mocked service for test assertions
 import { dailySessionService } from '../services/firebase/dailySessionService';
+import { createMockTimeContext } from '../test/contextMocks';
+import { usePatientContext } from '../hooks/usePatientContext';
+import { PatientContext } from '../context/PatientContextDef';
+import { TimeContext } from '../context/TimeContextDef';
+import { PatientContextType } from '../context/PatientContextType';
+import { Patient } from '../types';
 const mockDailySessionService = dailySessionService as jest.Mocked<typeof dailySessionService>;
 
-// Test wrapper component
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [patients, setPatients] = React.useState<Patient[]>([]);
+  const [persistenceEnabled, setPersistenceEnabled] = React.useState(true);
+  
+  React.useEffect(() => {
+    const loadPatients = async () => {
+      try {
+        const loadedPatients = await mockDailySessionService.loadTodaysSession();
+        setPatients(Array.isArray(loadedPatients) ? loadedPatients as Patient[] : []);
+      } catch (error) {
+        console.error('Error loading patients:', error);
+      }
+    };
+    
+    loadPatients();
+  }, []);
+  
+  const mockContext: PatientContextType = {
+    patients,
+    persistenceEnabled,
+    addPatient: (patient: Omit<Patient, 'id'>) => {
+      const newPatient = { ...patient, id: `test-${Date.now()}` } as Patient;
+      setPatients(prev => [...prev, newPatient]);
+      
+      setTimeout(() => {
+        mockDailySessionService.saveTodaysSession(patients);
+      }, 100);
+      
+      return newPatient;
+    },
+    saveCurrentSession: async () => {
+      await mockDailySessionService.saveTodaysSession(patients);
+    },
+    togglePersistence: () => {
+      setPersistenceEnabled(prev => !prev);
+    },
+    updatePatientStatus: jest.fn(),
+    assignRoom: jest.fn(),
+    updateCheckInTime: jest.fn(),
+    getPatientsByStatus: jest.fn(),
+    getMetrics: jest.fn(),
+    getWaitTime: jest.fn(),
+    clearPatients: jest.fn(),
+    exportPatientsToJSON: jest.fn(),
+    importPatientsFromJSON: jest.fn(),
+    tickCounter: 0,
+    isLoading: false,
+    hasRealData: true,
+    loadMockData: jest.fn()
+  };
+  
   return (
-    <TimeProvider>
-      <PatientProvider>
+    <TimeContext.Provider value={createMockTimeContext()}>
+      <PatientContext.Provider value={mockContext}>
         {children}
-      </PatientProvider>
-    </TimeProvider>
+      </PatientContext.Provider>
+    </TimeContext.Provider>
   );
 };
 
@@ -225,4 +277,4 @@ describe('Firebase Persistence', () => {
     // The loadTodaysSession should have been called
     expect(mockDailySessionService.loadTodaysSession).toHaveBeenCalledTimes(1);
   });
-}); 
+});                            

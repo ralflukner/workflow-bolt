@@ -5,9 +5,7 @@ import '@testing-library/jest-dom';
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Dashboard from '../Dashboard';
-import { PatientProvider } from '../../context/PatientContext';
-import { TimeProvider } from '../../context/TimeProvider';
-import { Patient } from '../../types';
+import { TestProviders } from '../../test/testHelpers';
 import React from 'react';
 
 const mockAddPatient = jest.fn();
@@ -31,7 +29,11 @@ jest.mock('../../hooks/usePatientContext', () => ({
     clearPatients: mockClearPatients,
     exportPatientsToJSON: mockExportPatientsToJSON,
     importPatientsFromJSON: mockImportPatientsFromJSON,
-    tickCounter: 0
+    tickCounter: 0,
+    isLoading: false,
+    persistenceEnabled: false,
+    saveCurrentSession: jest.fn().mockResolvedValue(true),
+    togglePersistence: jest.fn()
   })
 }));
 
@@ -75,15 +77,15 @@ jest.mock('../../utils/formatters', () => ({
 // Mock Firebase and localStorage services
 jest.mock('../../services/firebase/dailySessionService', () => ({
   dailySessionService: {
-    loadTodaysSession: jest.fn<() => Promise<Patient[]>>().mockResolvedValue([]),
-    saveTodaysSession: jest.fn<(patients: Patient[]) => Promise<void>>().mockResolvedValue(undefined),
+    loadTodaysSession: jest.fn(() => Promise.resolve([])),
+    saveTodaysSession: jest.fn(() => Promise.resolve()),
   }
 }));
 
 jest.mock('../../services/localStorage/localSessionService', () => ({
   localSessionService: {
-    loadTodaysSession: jest.fn<() => Promise<Patient[]>>().mockResolvedValue([]),
-    saveTodaysSession: jest.fn<(patients: Patient[]) => Promise<void>>().mockResolvedValue(undefined),
+    loadTodaysSession: jest.fn(() => Promise.resolve([])),
+    saveTodaysSession: jest.fn(() => Promise.resolve()),
   }
 }));
 
@@ -167,11 +169,9 @@ global.window.open = jest.fn(() => mockWindow as unknown as Window);
 
 // Test wrapper component
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <TimeProvider>
-    <PatientProvider>
-      {children}
-    </PatientProvider>
-  </TimeProvider>
+  <TestProviders>
+    {children}
+  </TestProviders>
 );
 
 describe('Dashboard', () => {
@@ -183,6 +183,18 @@ describe('Dashboard', () => {
   afterEach(() => {
     jest.runOnlyPendingTimers();
     jest.clearAllTimers();
+  });
+  
+  it('renders dashboard with metrics panel', async () => {
+    render(
+      <TestWrapper>
+        <Dashboard />
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('metrics-panel')).toBeInTheDocument();
+    });
   });
 
   it('renders dashboard with all main components', async () => {

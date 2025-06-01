@@ -1,9 +1,7 @@
-// React is used implicitly for JSX
 import { render, screen } from '@testing-library/react';
 import PatientList from '../PatientList';
-import { PatientContext } from '../../context/PatientContextDef';
-import { TimeContext } from '../../context/TimeContextDef';
-import { PatientApptStatus, Patient } from '../../types';
+import { PatientApptStatus } from '../../types';
+import { TestProviders } from '../../test/testHelpers';
 
 // Mock the formatTime function
 jest.mock('../../utils/formatters', () => ({
@@ -48,40 +46,16 @@ describe('PatientList', () => {
         ];
       }
       return [];
-    }) as jest.Mock<Patient[], [status: PatientApptStatus]>;
+    });
     
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date()),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
-          patients: [],
-          addPatient: jest.fn(),
-          updatePatientStatus: jest.fn(),
-          assignRoom: jest.fn(),
-          isLoading: false,
-          persistenceEnabled: false,
-          saveCurrentSession: jest.fn(),
-          togglePersistence: jest.fn(),
-          updateCheckInTime: jest.fn(),
-          getPatientsByStatus: mockGetPatientsByStatus,
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 0),
-          clearPatients: jest.fn(),
-          exportPatientsToJSON: jest.fn(),
-          importPatientsFromJSON: jest.fn(),
-          tickCounter: 0,
-          hasRealData: false,
-          loadMockData: jest.fn()
-        }}>
-          <PatientList status="scheduled" title="Scheduled Patients" />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+      <TestProviders
+        patientContextOverrides={{
+          getPatientsByStatus: mockGetPatientsByStatus
+        }}
+      >
+        <PatientList status="scheduled" title="Scheduled Patients" />
+      </TestProviders>
     );
 
     // Check that the title is rendered
@@ -97,37 +71,13 @@ describe('PatientList', () => {
 
   it('renders correctly with no patients', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        toggleSimulation: jest.fn(),
-        adjustTime: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date()),
-        formatTime: jest.fn(date => date.toLocaleTimeString()),
-        formatDateTime: jest.fn(date => date.toLocaleString())
-      }}>
-        <PatientContext.Provider value={{
-          patients: [],
-          addPatient: jest.fn(),
-          updatePatientStatus: jest.fn(),
-          assignRoom: jest.fn(),
-          updateCheckInTime: jest.fn(),
-          getPatientsByStatus: jest.fn(() => []),
-          getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-          getWaitTime: jest.fn(() => 0),
-          clearPatients: jest.fn(),
-          exportPatientsToJSON: jest.fn(),
-          importPatientsFromJSON: jest.fn(),
-          tickCounter: 0,
-          isLoading: false,
-          persistenceEnabled: false,
-          saveCurrentSession: jest.fn(),
-          togglePersistence: jest.fn(),
-          hasRealData: false,
-          loadMockData: jest.fn()
-        }}>
-          <PatientList status="scheduled" title="Scheduled Patients" />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+      <TestProviders
+        patientContextOverrides={{
+          getPatientsByStatus: jest.fn(() => [])
+        }}
+      >
+        <PatientList status="scheduled" title="Scheduled Patients" />
+      </TestProviders>
     );
 
     // Check that the title is rendered
@@ -150,37 +100,9 @@ describe('PatientList', () => {
     
     statuses.forEach((status, index) => {
       render(
-        <TimeContext.Provider value={{
-          timeMode: { simulated: false, currentTime: new Date().toISOString() },
-          toggleSimulation: jest.fn(),
-          adjustTime: jest.fn(),
-          getCurrentTime: jest.fn(() => new Date()),
-          formatTime: jest.fn(date => date.toLocaleTimeString()),
-          formatDateTime: jest.fn(date => date.toLocaleString())
-        }}>
-          <PatientContext.Provider value={{
-            patients: [],
-            addPatient: jest.fn(),
-            updatePatientStatus: jest.fn(),
-            assignRoom: jest.fn(),
-            updateCheckInTime: jest.fn(),
-            getPatientsByStatus: jest.fn(() => []),
-            getMetrics: jest.fn(() => ({ totalAppointments: 0, waitingCount: 0, averageWaitTime: 0, maxWaitTime: 0 })),
-            getWaitTime: jest.fn(() => 0),
-            clearPatients: jest.fn(),
-            exportPatientsToJSON: jest.fn(),
-            importPatientsFromJSON: jest.fn(),
-            tickCounter: 0,
-            isLoading: false,
-            persistenceEnabled: false,
-            saveCurrentSession: jest.fn(),
-            togglePersistence: jest.fn(),
-            hasRealData: false,
-            loadMockData: jest.fn()
-          }}>
-            <PatientList status={status} title={`${status} Patients`} />
-          </PatientContext.Provider>
-        </TimeContext.Provider>
+        <TestProviders>
+          <PatientList status={status} title={`${status} Patients`} />
+        </TestProviders>
       );
       
       // Check that the header has the correct background color class

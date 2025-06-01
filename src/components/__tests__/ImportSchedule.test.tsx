@@ -1,7 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import ImportSchedule from '../ImportSchedule';
-import { PatientContext } from '../../context/PatientContextDef';
-import { TimeContext } from '../../context/TimeContextDef';
+import { TestProviders } from '../../test/testHelpers';
 
 // Mock the usePatientContext hook
 const mockAddPatient = jest.fn();
@@ -27,29 +26,16 @@ describe('ImportSchedule', () => {
   
   it('renders the import form correctly', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        // @ts-expect-error mock field
-        setTimeMode: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        speedUpTime: jest.fn(),
-        resetTime: jest.fn()
-      }}>
-        <PatientContext.Provider value={{
-          patients: [],
-          // @ts-expect-error mock field
-          setPatients: jest.fn(),
-          addPatient: mockAddPatient,
-          updatePatientStatus: jest.fn(),
-          getPatientsByStatus: jest.fn(),
-          getWaitTime: jest.fn(),
-          exportPatientsToJSON: jest.fn(),
-          importPatientsFromJSON: jest.fn(),
-          tickCounter: 0
-        }}>
-          <ImportSchedule onClose={onClose} />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+      <TestProviders
+        patientContextOverrides={{
+          addPatient: mockAddPatient
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <ImportSchedule onClose={onClose} />
+      </TestProviders>
     );
     
     // Check that the component renders with the correct title
@@ -65,29 +51,16 @@ describe('ImportSchedule', () => {
   
   it('handles import of valid schedule data', async () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        // @ts-expect-error mock field
-        setTimeMode: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        speedUpTime: jest.fn(),
-        resetTime: jest.fn()
-      }}>
-        <PatientContext.Provider value={{
-          patients: [],
-          // @ts-expect-error mock field
-          setPatients: jest.fn(),
-          addPatient: mockAddPatient,
-          updatePatientStatus: jest.fn(),
-          getPatientsByStatus: jest.fn(),
-          getWaitTime: jest.fn(),
-          exportPatientsToJSON: jest.fn(),
-          importPatientsFromJSON: jest.fn(),
-          tickCounter: 0
-        }}>
-          <ImportSchedule onClose={onClose} />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+      <TestProviders
+        patientContextOverrides={{
+          addPatient: mockAddPatient
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <ImportSchedule onClose={onClose} />
+      </TestProviders>
     );
     
     // Sample schedule data in tab-separated format
@@ -117,29 +90,16 @@ describe('ImportSchedule', () => {
   
   it('handles import of invalid schedule data with error message', async () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        // @ts-expect-error mock field
-        setTimeMode: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        speedUpTime: jest.fn(),
-        resetTime: jest.fn()
-      }}>
-        <PatientContext.Provider value={{
-          patients: [],
-          // @ts-expect-error mock field
-          setPatients: jest.fn(),
-          addPatient: mockAddPatient,
-          updatePatientStatus: jest.fn(),
-          getPatientsByStatus: jest.fn(),
-          getWaitTime: jest.fn(),
-          exportPatientsToJSON: jest.fn(),
-          importPatientsFromJSON: jest.fn(),
-          tickCounter: 0
-        }}>
-          <ImportSchedule onClose={onClose} />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+      <TestProviders
+        patientContextOverrides={{
+          addPatient: mockAddPatient
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <ImportSchedule onClose={onClose} />
+      </TestProviders>
     );
     
     // Invalid data (missing fields)
@@ -165,29 +125,16 @@ describe('ImportSchedule', () => {
   
   it('closes the modal when cancel is clicked', () => {
     render(
-      <TimeContext.Provider value={{
-        timeMode: { simulated: false, currentTime: new Date().toISOString() },
-        // @ts-expect-error mock field
-        setTimeMode: jest.fn(),
-        getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
-        speedUpTime: jest.fn(),
-        resetTime: jest.fn()
-      }}>
-        <PatientContext.Provider value={{
-          patients: [],
-          // @ts-expect-error mock field
-          setPatients: jest.fn(),
-          addPatient: mockAddPatient,
-          updatePatientStatus: jest.fn(),
-          getPatientsByStatus: jest.fn(),
-          getWaitTime: jest.fn(),
-          exportPatientsToJSON: jest.fn(),
-          importPatientsFromJSON: jest.fn(),
-          tickCounter: 0
-        }}>
-          <ImportSchedule onClose={onClose} />
-        </PatientContext.Provider>
-      </TimeContext.Provider>
+      <TestProviders
+        patientContextOverrides={{
+          addPatient: mockAddPatient
+        }}
+        timeContextOverrides={{
+          getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
+        }}
+      >
+        <ImportSchedule onClose={onClose} />
+      </TestProviders>
     );
     
     // Click the cancel button
