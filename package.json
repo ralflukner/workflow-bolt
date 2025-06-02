@@ -1,7 +1,7 @@
 {
   "name": "vite-react-typescript-starter",
   "private": true,
-  "version": "0.1.0-alpha.8",
+  "version": "0.2.0-alpha.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,8 @@
     "test": "jest --forceExit --detectOpenHandles --verbose --bail --testTimeout=10000",
     "test:watch": "jest --watch --testTimeout=10000",
     "test:coverage": "jest --coverage --forceExit --detectOpenHandles --verbose --bail --testTimeout=10000",
-    "test:jest": "jest --forceExit --detectOpenHandles --verbose --bail --testTimeout=10000"
+    "test:jest": "jest --forceExit --detectOpenHandles --verbose --bail --testTimeout=10000",
+    "diagnose": "node scripts/tebra-diagnose.mjs"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
