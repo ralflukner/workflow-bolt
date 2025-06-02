@@ -3,7 +3,7 @@ const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const axios = require('axios');
-const { defineString } = require('firebase-functions/params');
+const { defineString, defineBool } = require('firebase-functions/params');
 
 // Load environment variables
 require('dotenv').config();
@@ -16,6 +16,9 @@ const tebraProxyUrl = defineString('TEBRA_PROXY_URL', {
 const tebraProxyApiKey = defineString('TEBRA_PROXY_API_KEY', {
   default: 'UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y='
 });
+
+// Feature-flag controls
+const syncEnabled = defineBool('SYNC_ENABLED', { default: true });   // set to false to disable all backend auto-syncs
 
 // Initialize Firebase Admin SDK
 initializeApp();
@@ -308,6 +311,21 @@ exports.tebraGetPractices = onCall({ invoker: 'public' }, async () => {
   }
 });
 
+// Helper to compute next Monday when today is Fri/Sat/Sun
+function getTargetSyncDate(preferredDate = null) {
+  if (preferredDate) return preferredDate;
+  const today = new Date();
+  const day = today.getUTCDay(); // 0 = Sun, 5 = Fri, 6 = Sat
+  if (day === 5) {           // Friday → add 3 days
+    today.setUTCDate(today.getUTCDate() + 3);
+  } else if (day === 6) {    // Saturday → add 2 days
+    today.setUTCDate(today.getUTCDate() + 2);
+  } else if (day === 0) {    // Sunday → add 1 day
+    today.setUTCDate(today.getUTCDate() + 1);
+  }
+  return today.toISOString().split('T')[0];
+}
+
 // Helper to perform daily sync – shared by manual callable and scheduled job
 async function performDailySync(targetDate) {
   console.log(`Performing daily sync for ${targetDate}`);
@@ -347,18 +365,18 @@ async function performDailySync(targetDate) {
 /**
  * Sync today's schedule from Tebra
  */
-exports.tebraSyncTodaysSchedule = onCall({}, async () => {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    const data = await performDailySync(today);
+exports.tebraSyncTodaysSchedule = onCall({}, async ({ data }) => {
+  const { date: customDate, force = false } = data || {};
 
-    return {
-      success: true,
-      data,
-      message: `Synced ${data.length} appointments for ${today}`
-    };
+  if (!syncEnabled.value() && !force) {
+    return { success: false, message: 'Sync disabled by configuration' };
+  }
+  try {
+    const targetDate = getTargetSyncDate(customDate);
+    const patients = await performDailySync(targetDate);
+    return { success: true, data: patients, message: `Synced ${patients.length} appointments for ${targetDate}` };
   } catch (error) {
-    console.error('Failed to sync schedule (callable):', error);
+    console.error('Manual sync failed:', error);
     throw error;
   }
 });
@@ -368,14 +386,86 @@ exports.tebraSyncTodaysSchedule = onCall({}, async () => {
  * Runs every 15 minutes during business hours (8 AM - 6 PM, Mon-Fri)
  */
 exports.tebraAutoSync = onSchedule('*/15 8-18 * * 1-5', async () => {
-  console.log('Starting auto-sync of Tebra schedule...');
+  if (!syncEnabled.value()) {
+    console.log('Auto-sync skipped – disabled by configuration');
+    return { success: false, message: 'Sync disabled' };
+  }
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const data = await performDailySync(today);
-    return { success: true, count: data.length };
+    const targetDate = getTargetSyncDate();
+    const patients = await performDailySync(targetDate);
+    return { success: true, count: patients.length };
   } catch (error) {
     console.error('Auto-sync failed:', error);
     throw error;
+  }
+});
+
+/**
+ * Manually import a full schedule (array of patients) for a given date.
+ * If merge=true we append/merge; otherwise we overwrite the existing doc.
+ * The caller (UI or CLI) must already have validated that PHI may be sent.
+ */
+exports.manualImportSchedule = onCall({ invoker: 'public' }, async ({ data, auth }) => {
+  const { date, patients, merge = false } = data || {};
+
+  if (!Array.isArray(patients) || patients.length === 0) {
+    throw new HttpsError('invalid-argument', 'patients array required');
+  }
+  const targetDate = date || new Date().toISOString().split('T')[0];
+
+  try {
+    const docRef = db.collection('daily_sessions').doc(targetDate);
+    if (merge) {
+      await docRef.set({
+        date: targetDate,
+        lastSync: new Date(),
+        source: 'manual_import',
+        patients
+      }, { merge: true });
+    } else {
+      await docRef.set({
+        date: targetDate,
+        lastSync: new Date(),
+        source: 'manual_import',
+        patients
+      });
+    }
+
+    console.log(`Manual schedule import for ${targetDate}: ${patients.length} patients (merge=${merge})`);
+    return { success: true, count: patients.length };
+  } catch (err) {
+    console.error('Manual import failed:', err);
+    throw new HttpsError('internal', err.message);
+  }
+});
+
+/**
+ * Manually append a single patient entry to a day's schedule.
+ */
+exports.manualAddPatient = onCall({ invoker: 'public' }, async ({ data }) => {
+  const { date, patient } = data || {};
+  if (!patient) {
+    throw new HttpsError('invalid-argument', 'patient object required');
+  }
+  const targetDate = date || new Date().toISOString().split('T')[0];
+  const docRef = db.collection('daily_sessions').doc(targetDate);
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(docRef);
+      const existing = snap.exists ? (snap.data().patients || []) : [];
+      tx.set(docRef, {
+        date: targetDate,
+        lastSync: new Date(),
+        source: 'manual_add',
+        patients: [...existing, patient]
+      }, { merge: true });
+    });
+
+    console.log(`Added manual patient to ${targetDate}: ${patient.id || patient.name}`);
+    return { success: true };
+  } catch (e) {
+    console.error('manualAddPatient failed:', e);
+    throw new HttpsError('internal', e.message);
   }
 });
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { tebraApiService } from '../services/tebraApiService';
 import { TebraConnectionDebugger } from './TebraConnectionDebugger';
+import { doc, onSnapshot, getFirestore } from 'firebase/firestore';
 
 interface SyncResult {
   success: boolean;
@@ -56,45 +57,30 @@ const TebraIntegration: React.FC = () => {
     }
   };
 
-  const handleSyncSchedule = async (forceSync = false) => {
-    if (!isConnected && !forceSync) {
-      setStatusMessage('❌ Cannot sync: Not connected to Tebra API');
-      return;
-    }
-
-    setIsLoading(true);
-    setStatusMessage('Syncing schedule from Tebra...');
-
+  // Remove handleSyncSchedule and instead listen to Firestore
+  useEffect(() => {
+    // Skip Firebase calls in test environment
+    if (typeof window === 'undefined' || process.env.NODE_ENV === 'test') return;
+    
     try {
-      const result = await tebraApiService.syncTodaysSchedule();
-      
-      const syncResult: SyncResult = {
-        success: result.success,
-        message: result.message || (result.success ? 'Sync completed successfully' : 'Sync failed'),
-        patientCount: result.patients?.length || 0,
-        lastSync: new Date()
-      };
-
-      setLastSyncResult(syncResult);
-
-      if (result.success) {
-        setStatusMessage(`✅ ${syncResult.message} (${syncResult.patientCount} appointments)`);
-      } else {
-        setStatusMessage(`❌ ${syncResult.message}`);
-      }
+      const db = getFirestore();
+      const targetDate = selectedDate || new Date().toISOString().split('T')[0];
+      const unsub = onSnapshot(doc(db, 'daily_sessions', targetDate), (snap) => {
+        if (snap.exists()) {
+          const patientCount = (snap.data().patients || []).length;
+          setLastSyncResult({
+            success: true,
+            message: 'Auto-synced',
+            patientCount,
+            lastSync: snap.data().lastSync?.toDate ? snap.data().lastSync.toDate() : new Date()
+          });
+        }
+      });
+      return () => unsub();
     } catch (error) {
-      console.error('Sync failed:', error);
-      const errorResult: SyncResult = {
-        success: false,
-        message: `Sync failed: ${error}`,
-        lastSync: new Date()
-      };
-      setLastSyncResult(errorResult);
-      setStatusMessage(`❌ ${errorResult.message}`);
-    } finally {
-      setIsLoading(false);
+      console.error('Firestore listener error:', error);
     }
-  };
+  }, [selectedDate]);
 
   const handleTestPatientSearch = async () => {
     if (!isConnected) {
@@ -169,76 +155,40 @@ const TebraIntegration: React.FC = () => {
         </div>
       </div>
 
-      {/* Sync Controls */}
-      <div className="space-y-4">
-        <div className="flex items-center space-x-4">
-          <label htmlFor="sync-date" className="text-sm text-gray-300">
-            Sync Date:
-          </label>
-          <input
-            id="sync-date"
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-3 py-1 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-          />
-        </div>
-
-        <div className="flex space-x-2">
+      {/* Test Operations & Last Sync Result */}
+      <div className="border-t border-gray-700 pt-4">
+        <h3 className="text-lg font-medium text-white mb-2">Test Operations</h3>
+        <div className="flex space-x-2 mb-4">
           <button
-            onClick={() => handleSyncSchedule(false)}
+            onClick={handleTestPatientSearch}
             disabled={isLoading || !isConnected}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Syncing...' : 'Sync Schedule'}
+            Test Patient Search
           </button>
 
           <button
-            onClick={() => handleSyncSchedule(true)}
-            disabled={isLoading}
-            className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleGetProviders}
+            disabled={isLoading || !isConnected}
+            className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Syncing...' : 'Force Sync'}
+            Get Providers
           </button>
         </div>
 
-        {/* Test Operations */}
-        <div className="border-t border-gray-700 pt-4">
-          <h3 className="text-lg font-medium text-white mb-2">Test Operations</h3>
-          <div className="flex space-x-2">
-            <button
-              onClick={handleTestPatientSearch}
-              disabled={isLoading || !isConnected}
-              className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Test Patient Search
-            </button>
-
-            <button
-              onClick={handleGetProviders}
-              disabled={isLoading || !isConnected}
-              className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Get Providers
-            </button>
-          </div>
-        </div>
-
-        {/* Last Sync Result */}
         {lastSyncResult && (
           <div className="border-t border-gray-700 pt-4">
             <h3 className="text-lg font-medium text-white mb-2">Last Sync Result</h3>
             <div className="text-sm text-gray-300 space-y-1">
-              <p>Status: <span className={lastSyncResult.success ? 'text-green-400' : 'text-red-400'}>
-                {lastSyncResult.success ? 'Success' : 'Failed'}
-              </span></p>
+              <p>
+                Status:{' '}
+                <span className={lastSyncResult.success ? 'text-green-400' : 'text-red-400'}>
+                  {lastSyncResult.success ? 'Success' : 'Failed'}
+                </span>
+              </p>
               <p>Message: {lastSyncResult.message}</p>
-              {lastSyncResult.patientCount !== undefined && (
-                <p>Patients: {lastSyncResult.patientCount}</p>
-              )}
-              {lastSyncResult.lastSync && (
-                <p>Time: {lastSyncResult.lastSync.toLocaleString()}</p>
-              )}
+              {lastSyncResult.patientCount !== undefined && <p>Patients: {lastSyncResult.patientCount}</p>}
+              {lastSyncResult.lastSync && <p>Time: {lastSyncResult.lastSync.toLocaleString()}</p>}
             </div>
           </div>
         )}

@@ -1,0 +1,7 @@
+# Ignore third-party & build artifacts
+node_modules/
+dist/
+build/
+
+# Ignore PHP proxy vendor tree (contains JS test fixtures that break ESLint)
+tebra-proxy/vendor/ 

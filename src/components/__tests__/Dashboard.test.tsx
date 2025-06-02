@@ -152,6 +152,12 @@ jest.mock('../TebraIntegration', () => {
   };
 });
 
+jest.mock('../TebraIntegrationNew', () => {
+  return function MockTebraIntegrationNew() {
+    return <div data-testid="tebra-integration">Tebra Integration</div>;
+  };
+});
+
 jest.mock('../AuthNav', () => {
   return function MockAuthNav() {
     return <div data-testid="auth-nav">Auth Nav</div>;
