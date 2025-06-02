@@ -203,7 +203,7 @@ exports.tebraTestConnection = onCall({ invoker: 'public' }, async () => {
 /**
  * Get patient by ID
  */
-exports.tebraGetPatient = onCall(async ({ data }) => {
+exports.tebraGetPatient = onCall({ invoker: 'public' }, async ({ data }) => {
   const { patientId } = data;
 
   if (!patientId) {
@@ -225,7 +225,7 @@ exports.tebraGetPatient = onCall(async ({ data }) => {
 /**
  * Search patients
  */
-exports.tebraSearchPatients = onCall(async ({ data }) => {
+exports.tebraSearchPatients = onCall({ invoker: 'public' }, async ({ data }) => {
   const { searchCriteria } = data;
 
   if (!searchCriteria) {
@@ -247,7 +247,7 @@ exports.tebraSearchPatients = onCall(async ({ data }) => {
 /**
  * Get appointments for a specific date
  */
-exports.tebraGetAppointments = onCall(async ({ data }) => {
+exports.tebraGetAppointments = onCall({ invoker: 'public' }, async ({ data }) => {
   const { date } = data;
 
   if (!date) {
@@ -269,7 +269,7 @@ exports.tebraGetAppointments = onCall(async ({ data }) => {
 /**
  * Get all providers
  */
-exports.tebraGetProviders = onCall(async () => {
+exports.tebraGetProviders = onCall({ invoker: 'public' }, async () => {
   try {
     const client = new TebraApiClient();
     await rateLimiter.waitForRateLimit('GetProviders');
@@ -285,7 +285,7 @@ exports.tebraGetProviders = onCall(async () => {
 /**
  * Get practices
  */
-exports.tebraGetPractices = onCall(async () => {
+exports.tebraGetPractices = onCall({ invoker: 'public' }, async () => {
   try {
     const client = new TebraApiClient();
     await rateLimiter.waitForRateLimit('GetPractices');
@@ -301,7 +301,7 @@ exports.tebraGetPractices = onCall(async () => {
 /**
  * Sync today's schedule from Tebra
  */
-exports.tebraSyncTodaysSchedule = onCall(async () => {
+exports.tebraSyncTodaysSchedule = onCall({ invoker: 'public' }, async () => {
   try {
     const today = new Date().toISOString().split('T')[0];
     const client = new TebraApiClient();
