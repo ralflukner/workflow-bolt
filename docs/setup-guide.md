@@ -51,7 +51,7 @@ your terminal).
 
 Familiarize yourself with the code structure:
 
-```
+```plaintext
 src/
 ├── components/        # React components
 ├── context/           # Context providers

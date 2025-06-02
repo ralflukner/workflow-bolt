@@ -2,6 +2,14 @@
 // TODO: Investigate and fix hanging React component tests
 
 import '@testing-library/jest-dom';
+
+// Mock EnvDebugger BEFORE importing Dashboard to avoid import.meta parsing issues
+jest.mock('../EnvDebugger', () => {
+  return {
+    EnvDebugger: () => null,
+  };
+});
+
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Dashboard from '../Dashboard';

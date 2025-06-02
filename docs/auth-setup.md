@@ -139,4 +139,3 @@ npm run dev
 
    - Make sure your Auth0 application has the correct Allowed Web
      Origins
-

@@ -1,4 +1,5 @@
 # tebra-soap-api.md
+
 Tell me about the Tebra SOAP EHR interface
 Edit
 Probed Tebra's SOAP interface for current healthcare technology insights.
@@ -23,11 +24,14 @@ Probed Tebra's SOAP interface and note structure details.
 Fetched Note Types and Default Sections
 helpme.tebra.com
 Based on the current information about Tebra's SOAP EHR interface, here's a comprehensive overview that should be particularly relevant for your internal medicine practice:
+
 ## Tebra SOAP Note Interface Overview
 Tebra provides a dedicated SOAP note type with structured sections including Chief Complaint (CC), Subjective, Objective, Assessment, and Plan, each with multiple entry options including text shortcuts, templates, and free-form text [Note Types and Default Sections - Tebra Help Center](https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections). The system is designed to streamline clinical documentation while maintaining the traditional SOAP format you know.
+
 ## Key Clinical Documentation Features
 **Template-Driven Documentation**: Tebra templates provide an efficient and thorough way to document notes, with templates available in various sections throughout the note using an easy-to-use checklist format that generates text for selected items and automatically adds them to the note [Using Templates Within Note - Tebra Help Center](https://helpme.tebra.com/Clinical/Patient_Management/Notes/Complete_Note_Sections/Using_Templates_Within_Note). Clinical provides over 200 system templates to streamline physician documentation, and you can create custom templates or use the Template Editor to rename and customize existing templates [Navigate Templates - Tebra Help Center](https://helpme.tebra.com/Clinical/My_Settings/Templates/Navigate_Templates).
 **Multiple Entry Methods**: For each SOAP section, you have several documentation options:
+
 * **Text Shortcuts**: Pre-configured phrases and common documentation elements
 * **Templates**: Structured checklists with expandable options
 * **Free-form text**: Traditional typing for unique cases
@@ -35,18 +39,24 @@ Tebra provides a dedicated SOAP note type with structured sections including Chi
 
 ⠀SOAP Section Structure
 The SOAP note type includes: Chief Complaint (text shortcut and free-form text), Subjective (text shortcut, template, and free-form text), integrated Medications and Allergies management, Mental/Functional screening tools, Vitals management, Objective (text shortcut, template, and free-form text), Assessment (text shortcut, include problems, and free-form text), and Plan (text shortcut, patient education, template, medications, vaccines, labs/studies, and free-form text) [Note Types and Default Sections - Tebra Help Center](https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections).
+
 ## Workflow Efficiency Features
 **Autosave and Session Management**: Clinical logs users out after 15 minutes of inactivity and doesn't save new notes in progress. Still, you can enable autosave by clicking Save & Close, then clicking Open to continue documenting [Using Templates Within Note - Tebra Help Center](https://helpme.tebra.com/Clinical/Patient_Management/Notes/Complete_Note_Sections/Using_Templates_Within_Note).
 **Template Customization**: You can select different system or custom templates, save templates as favorites, and customize options including checkboxes, numeric values with number pad entry, additional information fields, and positive/negative indicators with visual color coding [Using Templates Within Note - Tebra Help Center](https://helpme.tebra.com/Clinical/Patient_Management/Notes/Complete_Note_Sections/Using_Templates_Within_Note).
+
 ## Specialized Features for Your Practice
 Given your focus on comprehensive adult and pediatric care, substance use disorders, and chronic disease management, you'll benefit from:
+
+
 * **Mental/Functional Screening Tools**: Built-in screening assessments integrated into the SOAP workflow
 * **Chronic Disease Templates**: Structured documentation for diabetes, heart disease, and kidney disease
 * **Substance Use Disorder Support**: Specialized templates and documentation tools
 * **Problem List Integration**: Direct integration with assessment sections for ongoing care management
 
-⠀Integration Capabilities
+## Integration Capabilities
+
 For your systems-thinking approach, Tebra also offers SOAP APIs that interact with third-party applications. These APIs allow developers to build programs that access Tebra data and functionality [Get Started: Tebra SOAP APIs—Tebra Help Center](https://helpme.tebra.com/Tebra_PM/12_API_and_Integration), which could support data-driven methodologies and integration with other clinical systems in your rural practice.
+
 ## Practice Management Integration
 The SOAP interface is fully integrated with Tebra's broader platform, allowing you to customize templates for your specialty, use macros and text shortcuts for faster documentation, order prescriptions and labs directly from notes, and pull forward past notes instantly regardless of note type [Tebra](https://www.tebra.com/ehr-software)[Tebra](https://www.tebra.com/ehr-software/charting).
 The interface appears well-suited for rural internal medicine practice, offering both the clinical rigor you need for complex cases and the efficiency tools to help manage the diverse patient population and conditions you encounter.
@@ -106,6 +116,7 @@ The user asks me to help design a system to populate their patient flow manageme
 
 ⠀From my earlier research, I know that Tebra uses:
 
+
 * Document/Literal SOAP binding style
 * BasicHttpBinding
 * SOAP 1.1
@@ -114,11 +125,13 @@ The user asks me to help design a system to populate their patient flow manageme
 
 ⠀Looking at their existing types, they have:
 
+
 * Patient interface with ID, name, DOB, appointment time, status, etc.
 * PatientApptStatus types
 * Import/export functionality
 
 ⠀I need to design:
+
 1 SOAP client integration
 2 Data mapping between Tebra API and their internal types
 3 Scheduled data fetching
@@ -126,6 +139,7 @@ The user asks me to help design a system to populate their patient flow manageme
 5 Integration with their existing workflow
 
 ⠀Given their medical background as an Internal Medicine Physician, I should focus on:
+
 * HIPAA compliance
 * Data security
 * Reliability for clinical workflows
@@ -133,18 +147,23 @@ The user asks me to help design a system to populate their patient flow manageme
 
 ⠀
 Based on the available technical documentation and developer examples I found, I can provide you with specific information about Tebra's SOAP API WSDL binding style:
+
 ## Tebra SOAP API WSDL Binding Style
 **Tebra's SOAP API uses Document/Literal binding style**, not RPC/Encoded. Here are the technical details:
+
 ### Binding Configuration
 Kareo's SOAP API uses the Web Services Description Language (WSDL) which is an XML-based interface description language used to describe the functionality offered by a web service, available via the endpoint: ~[https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?singleWsdl](https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?singleWsdl)~ [GitHub - CarrieKroutil/KareoTool](https://github.com/CarrieKroutil/KareoTool).
 The service uses BasicHttpBinding, as evidenced by multiple developer implementations and the NuGet package examples showing BasicHttpsBinding binding = new BasicHttpsBinding() and EndpointAddress endpointAddress = new EndpointAddress("~[https://webservice.kareo.com/services/soap/2.1/KareoServices.svc](https://webservice.kareo.com/services/soap/2.1/KareoServices.svc)~") [Stack Overflow](https://stackoverflow.com/questions/11147077/how-do-i-figure-out-what-a-wcf-service-is-expecting)[Libraries](https://libraries.io/nuget/kareo.wsdl).
+
 ### Technical Specifications
 **Binding Style**: Document/Literal
+
 * BasicHttpBinding uses HTTP as the transport for sending SOAP 1.1 messages and conforms to WS-I BP 1.1 (Web Services Interoperability Basic Profile 1.1) [BasicHttpBinding Class \(System.ServiceModel\) | Microsoft Learn](https://learn.microsoft.com/en-us/dotnet/api/system.servicemodel.basichttpbinding?view=net-9.0-pp&viewFallbackFrom=net-8.0)
 * It uses a "Text" message encoding and UTF-8 text encoding by default [BasicHttpBinding Class \(System.ServiceModel\) | Microsoft Learn](https://learn.microsoft.com/en-us/dotnet/api/system.servicemodel.basichttpbinding?view=net-9.0-pp&viewFallbackFrom=net-8.0)
 * Document/Literal is the default and recommended binding style for BasicHttpBinding
 
 ⠀**Message Format**:
+
 * SOAP 1.1 (not SOAP 1.2)
 * Content-Type: text/xml; charset=utf-8 (not application/soap+xml)
 * BasicHttpBinding uses SOAP 1.1 messages [SOAP 1.2 message format with BasicHttpBinding](https://pvlerick.github.io/2008/10/soap-12-message-format-with-basichttpbinding)
@@ -184,6 +203,7 @@ The user is asking me to help design a system to populate their patient flow man
 3 Populate their workflow app with this data
 
 ⠀From my earlier research, I know that Tebra uses:
+
 * Document/Literal SOAP binding style
 * BasicHttpBinding
 * SOAP 1.1
@@ -191,11 +211,13 @@ The user is asking me to help design a system to populate their patient flow man
 * Endpoint: ~[https://webservice.kareo.com/services/soap/2.1/KareoServices.svc](https://webservice.kareo.com/services/soap/2.1/KareoServices.svc)~
 
 ⠀Looking at their existing types, they have:
+
 * Patient interface with id, name, dob, appointmentTime, status, etc.
 * PatientApptStatus types
 * Import/export functionality
 
 ⠀I need to design:
+
 1 SOAP client integration
 2 Data mapping between Tebra API and their internal types
 3 Scheduled data fetching
@@ -203,6 +225,7 @@ The user is asking me to help design a system to populate their patient flow man
 5 Integration with their existing workflow
 
 ⠀Given their medical background as an Internal Medicine Physician, I should focus on:
+
 * HIPAA compliance
 * Data security
 * Reliability for clinical workflows
@@ -227,7 +250,7 @@ Mapped out Tebra integration with dashboard and patient workflow.
 
 Tebra Integration Implementation Guide
 Document
-# Tebra SOAP API Integration Implementation Guide
+## Tebra SOAP API Integration Implementation Guide
 
 ## Overview
 
@@ -251,10 +274,13 @@ Engineered comprehensive Tebra SOAP API integration for patient workflow.
 *
 
 ⠀
+
 ## Integration Design Summary
 I've designed a comprehensive Tebra SOAP API integration for your patient flow management application that addresses your clinical workflow needs while maintaining HIPAA compliance. Here's what I've created:
+
 ## Key Components
-### 1.Tebra API Service
+### 1. Tebra API Service
+
 * Document/Literal SOAP implementation using text/xml; charset=utf-8
 * Handles authentication with your Tebra credentials
 * Fetches appointments, patients, and provider data
@@ -351,4 +377,3 @@ import {
   Order,
   Allergy
 } from '../../types/medicalData';
-

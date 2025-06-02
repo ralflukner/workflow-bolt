@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts', '<rootDir>/src/setupJestEnv.js'],
   
   // Very aggressive timeout configurations
   testTimeout: 10000, // 10 seconds per individual test (reduced from 30)
