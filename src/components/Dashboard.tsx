@@ -11,6 +11,7 @@ import { PlusCircle, FileDown, ChevronDown, Upload, X, Download } from 'lucide-r
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { Patient } from '../types';
+import { EnvDebugger } from './EnvDebugger';
 
 interface ReportModalProps {
   onClose: () => void;
@@ -439,6 +440,7 @@ const Dashboard: React.FC = () => {
       </header>
 
       <main>
+        <EnvDebugger />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
             <button 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { tebraApiService } from '../services/tebraApiService';
+import { TebraConnectionDebugger } from './TebraConnectionDebugger';
 
 interface SyncResult {
   success: boolean;
@@ -162,6 +163,10 @@ const TebraIntegration: React.FC = () => {
         >
           {isLoading ? 'Testing...' : 'Test Connection'}
         </button>
+
+        <div className="mt-2">
+          <TebraConnectionDebugger />
+        </div>
       </div>
 
       {/* Sync Controls */}
