@@ -3,7 +3,10 @@
     <description>PHP_CodeSniffer rules for Tebra SOAP proxy (PSR-12).</description>
 
     <!-- Use PSR12 ruleset -->
-    <rule ref="PSR12"/>
+    <rule ref="PSR12">
+        <!-- Allow executable front-controller files (index.php) to mix symbols and side-effects -->
+        <exclude name="PSR1.Files.SideEffects.FoundWithSymbols"/>
+    </rule>
 
     <!-- Ignore third-party code -->
     <exclude-pattern>vendor/*</exclude-pattern>
