@@ -15,6 +15,7 @@ describe('Environment variables', () => {
     it(`${key} should be defined`, () => {
       // `import.meta.env` is populated in setupJestEnv.js
       // Fallback to process.env if the helper did not inject it
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const value = (global as any).import?.meta?.env?.[key] ?? process.env[key];
       expect(value).toBeDefined();
       expect(value).not.toBe('');

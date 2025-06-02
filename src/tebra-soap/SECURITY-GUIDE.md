@@ -88,15 +88,15 @@ Ensure sensitive files are excluded:
 export class TebraCredentialProxy {
   private async getSecureCredentials(): Promise<TebraCredentials> {
     // Fetch from secure backend endpoint
-    const response = await fetch('/api/tebra/credentials', {
+    const response = await fetch("/api/tebra/credentials", {
       headers: {
-        'Authorization': `Bearer ${userToken}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${userToken}`,
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
-      throw new Error('Failed to retrieve Tebra credentials');
+      throw new Error("Failed to retrieve Tebra credentials");
     }
 
     return response.json();
@@ -114,7 +114,7 @@ export const getTebraCredentials = (): TebraCredentials | null => {
   const wsdlUrl = process.env.REACT_APP_TEBRA_WSDL_URL;
 
   if (!username || !password || !wsdlUrl) {
-    console.error('Tebra credentials not properly configured');
+    console.error("Tebra credentials not properly configured");
     return null;
   }
 
@@ -129,9 +129,9 @@ export const getTebraCredentials = (): TebraCredentials | null => {
 export class CredentialValidator {
   static validateTebraCredentials(credentials: TebraCredentials): boolean {
     // Validate credential format
-    if (!credentials.username.includes('@')) return false;
+    if (!credentials.username.includes("@")) return false;
     if (credentials.password.length < 8) return false;
-    if (!credentials.wsdlUrl.startsWith('https://')) return false;
+    if (!credentials.wsdlUrl.startsWith("https://")) return false;
 
     return true;
   }

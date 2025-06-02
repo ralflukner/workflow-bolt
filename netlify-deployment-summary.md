@@ -3,11 +3,13 @@
 ## Changes Made
 
 1. **Updated netlify.toml**
+
    - Verified build settings (`npm run build` and `dist` directory)
    - Confirmed SPA redirect rules are in place
    - Updated environment variable examples to match the project's requirements
 
 2. **Added Deployment Instructions to README.md**
+
    - Step-by-step guide for deploying to Netlify
    - Instructions for setting up environment variables
    - Instructions for updating Auth0 configuration
@@ -23,6 +25,7 @@ To deploy this project to Netlify:
 1. **Create a Netlify account** if you don't have one already.
 
 2. **Deploy to Netlify** using one of these methods:
+
    - **Git Integration (Recommended)**: Connect your
      GitHub/GitLab/Bitbucket repository to Netlify for continuous
      deployment.
@@ -32,6 +35,7 @@ To deploy this project to Netlify:
      (`npm install -g netlify-cli`) and run `netlify deploy`.
 
 3. **Configure environment variables** in the Netlify UI:
+
    - Go to Site settings > Build & deploy > Environment
    - Add the following variables:
 

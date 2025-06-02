@@ -87,60 +87,60 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     function getUserRole() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
-    
+
     function isAdmin() {
       return isAuthenticated() && getUserRole() == 'admin';
     }
-    
+
     function isProvider() {
       return isAuthenticated() && getUserRole() == 'provider';
     }
-    
+
     function isStaff() {
       return isAuthenticated() && getUserRole() == 'staff';
     }
-    
+
     // Patients collection
     match /patients/{patientId} {
       // Admins have full access
       allow read, write: if isAdmin();
-      
+
       // Providers can read/write patients assigned to them
-      allow read, write: if isProvider() && 
+      allow read, write: if isProvider() &&
         resource.data.provider == request.auth.uid;
-      
+
       // Staff can read all patients, update status only
       allow read: if isStaff();
-      allow update: if isStaff() && 
+      allow update: if isStaff() &&
         request.resource.data.diff(resource.data).affectedKeys()
         .hasOnly(['status', 'checkInTime', 'withDoctorTime', 'completedTime', 'updatedAt']);
     }
-    
+
     // Appointments collection
     match /appointments/{appointmentId} {
       allow read, write: if isAdmin();
-      allow read, write: if isProvider() && 
+      allow read, write: if isProvider() &&
         resource.data.providerId == request.auth.uid;
       allow read: if isStaff();
     }
-    
+
     // Providers collection
     match /providers/{providerId} {
       allow read, write: if isAdmin();
       allow read: if isProvider() || isStaff();
       allow update: if isProvider() && providerId == request.auth.uid;
     }
-    
+
     // Rooms collection
     match /rooms/{roomId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin() || isStaff();
     }
-    
+
     // User profiles
     match /users/{userId} {
       allow read, write: if isAdmin();
@@ -191,6 +191,7 @@ The system uses a hybrid approach combining last-write-wins with intelligent
 conflict detection:
 
 1. **Timestamp-Based Resolution**
+
    - All documents include `updatedAt` timestamp
    - Server timestamp takes precedence over client timestamp
    - Conflicts resolved by comparing server-side timestamps
@@ -199,19 +200,21 @@ conflict detection:
 
    ```typescript
    interface ConflictResolution {
-     strategy: 'last-write-wins' | 'merge' | 'manual';
+     strategy: "last-write-wins" | "merge" | "manual";
      conflictFields: string[];
-     resolution: 'server' | 'client' | 'merge';
+     resolution: "server" | "client" | "merge";
      timestamp: Timestamp;
    }
    ```
 
 3. **Critical Field Protection**
+
    - Patient status changes require server validation
    - Appointment times cannot be modified offline
    - Provider assignments need admin approval
 
 4. **Edge Case Handling**
+
    - **Simultaneous Status Updates**: Server timestamp wins, client notified
    - **Offline Patient Creation**: Temporary ID until server sync
    - **Network Partition**: Queue operations, sync on reconnection
@@ -362,13 +365,13 @@ graph TD
     B --> C[Firebase Services]
     C --> D[Firestore Database]
     C --> E[Firebase Auth]
-    
+
     F[Real-time Listeners] --> B
     D --> F
-    
+
     G[Offline Cache] --> C
     C --> G
-    
+
     H[Security Rules] --> D
     E --> H
 ```
@@ -381,7 +384,7 @@ sequenceDiagram
     participant A as Auth0/Firebase Auth
     participant F as Firestore
     participant R as Security Rules
-    
+
     U->>A: Login Request
     A->>U: JWT Token
     U->>F: Request with Token
@@ -399,12 +402,12 @@ graph LR
     B --> D[AppointmentProvider]
     B --> E[ProviderProvider]
     B --> F[RoomProvider]
-    
+
     C --> G[PatientService]
     D --> H[AppointmentService]
     E --> I[ProviderService]
     F --> J[RoomService]
-    
+
     G --> K[Firestore]
     H --> K
     I --> K
@@ -437,16 +440,19 @@ stateDiagram-v2
 #### Visual Documentation Requirements
 
 1. **Component Hierarchy Diagrams**
+
    - Show React component tree structure
    - Highlight data flow between components
    - Document prop passing patterns
 
 2. **Database Schema Visuals**
+
    - Entity relationship diagrams
    - Collection structure charts
    - Index optimization guides
 
 3. **Security Model Diagrams**
+
    - Role permission matrices
    - Data access flow charts
    - Audit trail visualizations

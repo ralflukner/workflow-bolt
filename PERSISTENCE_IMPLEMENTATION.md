@@ -38,8 +38,10 @@ Firebase configuration:
 
 ```typescript
 // In PatientContext.tsx
-const storageService = isFirebaseConfigured ? dailySessionService : localSessionService;
-const storageType = isFirebaseConfigured ? 'Firebase' : 'LocalStorage';
+const storageService = isFirebaseConfigured
+  ? dailySessionService
+  : localSessionService;
+const storageType = isFirebaseConfigured ? "Firebase" : "LocalStorage";
 ```
 
 ## Implementation Details
@@ -81,11 +83,11 @@ useEffect(() => {
 // Auto-save with debouncing
 useEffect(() => {
   if (!persistenceEnabled || !hasRealData) return;
-  
+
   const saveSession = async () => {
     await storageService.saveTodaysSession(patients);
   };
-  
+
   const timeoutId = setTimeout(saveSession, 2000);
   return () => clearTimeout(timeoutId);
 }, [patients, persistenceEnabled, hasRealData]);
@@ -148,12 +150,12 @@ useEffect(() => {
 
 ```typescript
 interface LocalSession {
-  id: string;           // YYYY-MM-DD format
-  date: string;         // ISO date string
-  patients: Patient[];  // Array of patient data
-  createdAt: string;    // ISO timestamp
-  updatedAt: string;    // ISO timestamp
-  version: number;      // Version for future compatibility
+  id: string; // YYYY-MM-DD format
+  date: string; // ISO date string
+  patients: Patient[]; // Array of patient data
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
+  version: number; // Version for future compatibility
 }
 ```
 
@@ -161,12 +163,12 @@ interface LocalSession {
 
 ```typescript
 interface DailySession {
-  id: string;                // YYYY-MM-DD format
-  date: string;             // ISO date string
-  patients: Patient[];      // Array of patient data
-  createdAt: Timestamp;     // Firebase timestamp
-  updatedAt: Timestamp;     // Firebase timestamp
-  version: number;          // Version for conflict resolution
+  id: string; // YYYY-MM-DD format
+  date: string; // ISO date string
+  patients: Patient[]; // Array of patient data
+  createdAt: Timestamp; // Firebase timestamp
+  updatedAt: Timestamp; // Firebase timestamp
+  version: number; // Version for conflict resolution
 }
 ```
 
@@ -175,12 +177,14 @@ interface DailySession {
 ### Visual Indicators
 
 1. **Persistence Status Panel**:
+
    - Green/Red badge for enabled/disabled state
    - Blue badge for Firebase, Yellow badge for LocalStorage
    - Real-time session statistics
    - Manual control buttons
 
 2. **Console Logging**:
+
    - Clear indication of which storage system is being used
    - Save/load operation confirmations
    - Error messages with context
@@ -228,11 +232,13 @@ interface DailySession {
 ### Common Issues
 
 1. **Data Not Persisting**:
+
    - Check if persistence is enabled in UI
    - Verify `hasRealData` flag (mock data doesn't auto-save)
    - Check browser console for error messages
 
 2. **Firebase Connection Issues**:
+
    - Verify environment variables are set
    - Check Firebase project configuration
    - System will automatically fall back to localStorage

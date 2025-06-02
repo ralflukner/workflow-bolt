@@ -189,7 +189,7 @@ $ curl -X POST https://webservice.kareo.com/services/soap/2.1/KareoServices.svc 
   -H "Content-Type: text/xml; charset=utf-8" \
   -H "SOAPAction: http://www.kareo.com/ServiceContracts/2.1/GetProviders" \
   -d '<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" 
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
                xmlns:kar="http://www.kareo.com/ServiceContracts/2.1">
   <soap:Header>
     <kar:RequestHeader>

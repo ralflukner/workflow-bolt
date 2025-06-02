@@ -8,10 +8,12 @@ Management application for development and testing.
 Before you begin, ensure you have the following installed:
 
 - **Node.js**: Version 18.0.0 or newer
+
   - Download from [nodejs.org](https://nodejs.org/)
   - Verify with `node --version`
 
 - **npm**: Typically installed with Node.js
+
   - Verify with `npm --version`
 
 - **Git**: For version control
@@ -177,10 +179,12 @@ git checkout v0.1.0
 ### Common Issues
 
 1. **Module not found errors**
+
    - Ensure all dependencies are installed with `npm install`
    - Check import paths for correct casing
 
 2. **TypeScript errors**
+
    - Make sure TypeScript types are correctly defined
    - Check that `@types/react` and `@types/react-dom` are installed
 

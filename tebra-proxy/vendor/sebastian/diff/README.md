@@ -36,6 +36,7 @@ print $differ->diff('foo', 'bar');
 ```
 
 The code above yields the output below:
+
 ```diff
 --- Original
 +++ New
@@ -58,7 +59,7 @@ use SebastianBergmann\Diff\Output\UnifiedDiffOutputBuilder;
 
 $builder = new UnifiedDiffOutputBuilder(
     "--- Original\n+++ New\n", // custom header
-    false                      // do not add line numbers to the diff 
+    false                      // do not add line numbers to the diff
 );
 
 $differ = new Differ($builder);

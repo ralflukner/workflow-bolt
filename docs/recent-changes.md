@@ -92,23 +92,23 @@ of statuses:
 
 ```typescript
 // Before
-export type AppointmentStatus = 'Scheduled' | 'Confirmed' | 'Cancelled';
+export type AppointmentStatus = "Scheduled" | "Confirmed" | "Cancelled";
 
 // After
-export type AppointmentStatus = 
-  | 'Scheduled'
-  | 'Reminder Sent'
-  | 'Confirmed'
-  | 'Arrived'
-  | 'Checked In'
-  | 'Roomed'
-  | 'Appt Prep Started'
-  | 'Ready for MD'
-  | 'Seen by MD'
-  | 'Checked Out'
-  | 'No Show'
-  | 'Rescheduled'
-  | 'Cancelled';
+export type AppointmentStatus =
+  | "Scheduled"
+  | "Reminder Sent"
+  | "Confirmed"
+  | "Arrived"
+  | "Checked In"
+  | "Roomed"
+  | "Appt Prep Started"
+  | "Ready for MD"
+  | "Seen by MD"
+  | "Checked Out"
+  | "No Show"
+  | "Rescheduled"
+  | "Cancelled";
 ```
 
 This change provides more granular status tracking and better alignment
@@ -158,8 +158,8 @@ Enhanced type safety in the PatientCard component:
 
 // After (type-safe color mapping)
 const buttonColors: Record<string, string> = {
-  amber: 'bg-amber-500 hover:bg-amber-600',
-  purple: 'bg-purple-500 hover:bg-purple-600'
+  amber: "bg-amber-500 hover:bg-amber-600",
+  purple: "bg-purple-500 hover:bg-purple-600",
 };
 
 // className now uses the pre-defined color mapping from buttonColors
@@ -175,17 +175,20 @@ Updated the PatientCard component to display appointment statuses with
 appropriate color coding:
 
 ```typescript
-patient.appointmentStatus === 'Confirmed' ? 'bg-blue-600 text-white' : 
-patient.appointmentStatus === 'Reminder Sent' ? 'bg-indigo-600 text-white' : 
-patient.appointmentStatus === 'Arrived' ||
-  patient.appointmentStatus === 'Checked In' ||
-  patient.appointmentStatus === 'Roomed' ? 'bg-green-600 text-white' : 
-patient.appointmentStatus === 'Appt Prep Started' ||
-  patient.appointmentStatus === 'Ready for MD' ||
-  patient.appointmentStatus === 'Seen by MD' ||
-  patient.appointmentStatus === 'Checked Out' ?
-  'bg-teal-600 text-white' : 
-'bg-red-600 text-white'
+patient.appointmentStatus === "Confirmed"
+  ? "bg-blue-600 text-white"
+  : patient.appointmentStatus === "Reminder Sent"
+    ? "bg-indigo-600 text-white"
+    : patient.appointmentStatus === "Arrived" ||
+        patient.appointmentStatus === "Checked In" ||
+        patient.appointmentStatus === "Roomed"
+      ? "bg-green-600 text-white"
+      : patient.appointmentStatus === "Appt Prep Started" ||
+          patient.appointmentStatus === "Ready for MD" ||
+          patient.appointmentStatus === "Seen by MD" ||
+          patient.appointmentStatus === "Checked Out"
+        ? "bg-teal-600 text-white"
+        : "bg-red-600 text-white";
 ```
 
 This provides better visual distinction between different appointment statuses.

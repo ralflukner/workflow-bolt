@@ -23,6 +23,7 @@ A secure PHP proxy server for Tebra (Kareo) SOAP API integration with Firebase F
 ## 🚀 Quick Deployment
 
 1. **Set Environment Variables:**
+
 ```bash
 export TEBRA_SOAP_USERNAME="work-flow@luknerclinic.com"
 export TEBRA_SOAP_PASSWORD="your-tebra-password"
@@ -30,31 +31,33 @@ export TEBRA_SOAP_CUSTKEY="your-customer-key"
 ```
 
 2. **Login to Google Cloud:**
+
 ```bash
 gcloud auth login
 gcloud config set project luknerlumina-firebase
 ```
 
 3. **Deploy:**
+
 ```bash
 cd tebra-proxy
 ./deploy.sh
 ```
 
 4. **Save the Generated API Key!** 📝
-The deployment will output a secure API key - save this for Firebase Functions.
+   The deployment will output a secure API key - save this for Firebase Functions.
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `TEBRA_SOAP_USERNAME` | Tebra API username | ✅ |
-| `TEBRA_SOAP_PASSWORD` | Tebra API password | ✅ |
-| `TEBRA_SOAP_CUSTKEY` | Tebra customer key | ✅ |
-| `API_KEY` | Secure API key for authentication | ✅ |
-| `LOG_LEVEL` | Logging level (debug/info/warn/error) | ❌ |
+| Variable              | Description                           | Required |
+| --------------------- | ------------------------------------- | -------- |
+| `TEBRA_SOAP_USERNAME` | Tebra API username                    | ✅       |
+| `TEBRA_SOAP_PASSWORD` | Tebra API password                    | ✅       |
+| `TEBRA_SOAP_CUSTKEY`  | Tebra customer key                    | ✅       |
+| `API_KEY`             | Secure API key for authentication     | ✅       |
+| `LOG_LEVEL`           | Logging level (debug/info/warn/error) | ❌       |
 
 ### Firebase Functions Integration
 
@@ -71,18 +74,21 @@ firebase functions:config:set \
 All endpoints require `X-API-Key` header for authentication.
 
 ### Health Check
+
 ```bash
 GET /test
 X-API-Key: your-api-key
 ```
 
 ### Get Providers
+
 ```bash
 GET /providers
 X-API-Key: your-api-key
 ```
 
 ### Get Appointments
+
 ```bash
 POST /appointments
 X-API-Key: your-api-key
@@ -95,12 +101,14 @@ Content-Type: application/json
 ```
 
 ### Get Practices
+
 ```bash
 GET /practices
 X-API-Key: your-api-key
 ```
 
 ### Patient Operations
+
 ```bash
 # Get patient by ID
 GET /patients/{id}
@@ -119,14 +127,16 @@ Content-Type: application/json
 
 ## 🛡️ HIPAA Compliance
 
-### Required Steps:
+### Required Steps
 
 1. **Sign BAA with Google Cloud:**
+
    - Navigate to Google Cloud Console
    - Go to Compliance → BAA
    - Review and sign the Business Associate Agreement
 
 2. **Enable Audit Logging:**
+
    ```bash
    gcloud logging sinks create tebra-audit-sink \
      storage.googleapis.com/your-audit-bucket \
@@ -134,6 +144,7 @@ Content-Type: application/json
    ```
 
 3. **Set Up Monitoring:**
+
    ```bash
    gcloud alpha monitoring policies create --policy-from-file=monitoring-policy.yaml
    ```
@@ -143,7 +154,7 @@ Content-Type: application/json
    - Monitor for unusual activity
    - Update dependencies regularly
 
-### Security Checklist:
+### Security Checklist
 
 - ✅ All data encrypted in transit (HTTPS)
 - ✅ All data encrypted at rest (Google Cloud default)
@@ -158,12 +169,14 @@ Content-Type: application/json
 ## 🔧 Local Development
 
 1. **Start PHP development server:**
+
 ```bash
 cd tebra-proxy
 php -S localhost:8080
 ```
 
 2. **Test with API key:**
+
 ```bash
 curl -H "X-API-Key: secure-random-key-change-in-production" \
      http://localhost:8080/test
@@ -171,31 +184,36 @@ curl -H "X-API-Key: secure-random-key-change-in-production" \
 
 ## 📊 Monitoring
 
-### Cloud Run Metrics:
+### Cloud Run Metrics
+
 - Request count and latency
 - Error rates and status codes
 - Memory and CPU usage
 - Instance count
 
-### Application Logs:
+### Application Logs
+
 - All requests logged with audit information
 - Error tracking with stack traces
 - Security events (failed authentication)
 
-### Alerts:
+### Alerts
+
 - High error rate (>5%)
 - Unusual traffic patterns
 - Authentication failures
 
 ## 🆘 Troubleshooting
 
-### Common Issues:
+### Common Issues
 
 1. **Authentication Failed (401)**
+
    - Check API key in request headers
    - Verify environment variable is set correctly
 
 2. **Rate Limited (429)**
+
    - Implement exponential backoff in client
    - Consider increasing rate limits if legitimate
 
@@ -204,7 +222,8 @@ curl -H "X-API-Key: secure-random-key-change-in-production" \
    - Verify customer key is correct
    - Check network connectivity
 
-### Log Analysis:
+### Log Analysis
+
 ```bash
 # View recent logs
 gcloud logs read "resource.type=cloud_run_revision" --limit=50
@@ -216,6 +235,7 @@ gcloud logs read "resource.type=cloud_run_revision AND severity>=ERROR" --limit=
 ## 📞 Support
 
 For technical issues:
+
 1. Check Cloud Run logs
 2. Verify environment variables
 3. Test endpoints directly
@@ -223,4 +243,4 @@ For technical issues:
 
 ---
 
-**⚠️ Important:** This proxy handles PHI (Protected Health Information). Ensure all HIPAA compliance requirements are met before production use. 
+**⚠️ Important:** This proxy handles PHI (Protected Health Information). Ensure all HIPAA compliance requirements are met before production use.

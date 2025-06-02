@@ -25,14 +25,14 @@ function App() {
   const authToken = await authenticateWithBackend();
 
   // Only pass credentials if they're available
-  const hasCredentials = tebraCredentials.customerKey && 
-                         tebraCredentials.username && 
+  const hasCredentials = tebraCredentials.customerKey &&
+                         tebraCredentials.username &&
                          tebraCredentials.password;
 
   return (
     <AuthProvider>
       <TimeProvider>
-        <EnhancedPatientProvider 
+        <EnhancedPatientProvider
           tebraCredentials={hasCredentials ? tebraCredentials : undefined}
         >
           <ProtectedRoute>
@@ -60,14 +60,14 @@ import { usePatientContext } from '../hooks/usePatientContext';
 const [showTebraPanel, setShowTebraPanel] = useState(false);
 
 // Access Tebra-specific functions (if using EnhancedPatientProvider)
-const { 
-  syncFromTebra, 
-  lastTebraSync, 
-  tebraConnected 
+const {
+  syncFromTebra,
+  lastTebraSync,
+  tebraConnected
 } = usePatientContext() as any; // Type assertion for enhanced context
 
 // Add button to header section
-<button 
+<button
   onClick={() => setShowTebraPanel(true)}
   className={`flex items-center px-4 py-2 text-white rounded transition-colors ${
     tebraConnected ? 'bg-green-600 hover:bg-green-500' : 'bg-gray-600 hover:bg-gray-500'
@@ -143,7 +143,7 @@ The integration includes robust error handling:
 const config = createTebraConfig(credentials, {
   fallbackToMockData: true, // Ensures clinical workflow continues
   autoSync: true,
-  syncInterval: 15
+  syncInterval: 15,
 });
 
 // Manual sync with error handling
@@ -151,12 +151,12 @@ const handleManualSync = async () => {
   try {
     const success = await syncFromTebra();
     if (success) {
-      console.log('Sync completed successfully');
+      console.log("Sync completed successfully");
     } else {
-      console.warn('Sync failed, using existing data');
+      console.warn("Sync failed, using existing data");
     }
   } catch (error) {
-    console.error('Sync error:', error);
+    console.error("Sync error:", error);
     // Application continues with existing patient data
   }
 };
@@ -166,19 +166,19 @@ const handleManualSync = async () => {
 
 The integration automatically maps Tebra statuses to your internal workflow:
 
-| Tebra Status | Internal Status | Description |
-|-------------|----------------|-------------|
-| Scheduled | scheduled | Initial appointment state |
-| Confirmed | scheduled | Confirmed appointment |
-| Arrived | arrived | Patient has checked in |
-| Roomed | appt-prep | Patient in preparation |
-| Ready for MD | ready-for-md | Ready for doctor |
-| With Doctor | With Doctor | Currently with physician |
-| Seen by MD | seen-by-md | Appointment completed |
-| Checked Out | completed | Patient has left |
-| Rescheduled | Rescheduled | Appointment rescheduled |
-| Cancelled | Cancelled | Appointment cancelled |
-| No Show | No Show | Patient did not arrive |
+| Tebra Status | Internal Status | Description               |
+| ------------ | --------------- | ------------------------- |
+| Scheduled    | scheduled       | Initial appointment state |
+| Confirmed    | scheduled       | Confirmed appointment     |
+| Arrived      | arrived         | Patient has checked in    |
+| Roomed       | appt-prep       | Patient in preparation    |
+| Ready for MD | ready-for-md    | Ready for doctor          |
+| With Doctor  | With Doctor     | Currently with physician  |
+| Seen by MD   | seen-by-md      | Appointment completed     |
+| Checked Out  | completed       | Patient has left          |
+| Rescheduled  | Rescheduled     | Appointment rescheduled   |
+| Cancelled    | Cancelled       | Appointment cancelled     |
+| No Show      | No Show         | Patient did not arrive    |
 
 ### 7. Monitoring and Maintenance
 
@@ -191,11 +191,11 @@ const checkTebraHealth = async () => {
   if (service) {
     const connected = service.isApiConnected();
     const lastSync = service.getLastSyncResult();
-    
-    console.log('Tebra Health:', {
+
+    console.log("Tebra Health:", {
       connected,
       lastSync: lastSync?.lastSyncTime,
-      errors: lastSync?.errors
+      errors: lastSync?.errors,
     });
   }
 };
@@ -213,10 +213,14 @@ const checkTebraHealth = async () => {
 
 ```typescript
 // Test status mapping
-describe('TebraDataTransformer', () => {
-  it('should map Tebra statuses correctly', () => {
-    expect(TebraDataTransformer.mapTebraStatusToInternal('Checked Out')).toBe('completed');
-    expect(TebraDataTransformer.mapTebraStatusToInternal('Roomed')).toBe('appt-prep');
+describe("TebraDataTransformer", () => {
+  it("should map Tebra statuses correctly", () => {
+    expect(TebraDataTransformer.mapTebraStatusToInternal("Checked Out")).toBe(
+      "completed",
+    );
+    expect(TebraDataTransformer.mapTebraStatusToInternal("Roomed")).toBe(
+      "appt-prep",
+    );
   });
 });
 ```
@@ -225,8 +229,8 @@ describe('TebraDataTransformer', () => {
 
 ```typescript
 // Test API connectivity
-describe('Tebra API Integration', () => {
-  it('should connect to Tebra API', async () => {
+describe("Tebra API Integration", () => {
+  it("should connect to Tebra API", async () => {
     const service = new TebraApiService(testCredentials);
     const connected = await service.testConnection();
     expect(connected).toBe(true);
@@ -247,7 +251,7 @@ describe('Tebra API Integration', () => {
 ```typescript
 // Use secure credential management
 const getTebraCredentials = () => {
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === "production") {
     return {
       customerKey: process.env.TEBRA_CUSTOMER_KEY,
       username: process.env.TEBRA_USERNAME,
@@ -294,7 +298,7 @@ const getTebraCredentials = () => {
 const debugConfig = createTebraConfig(credentials, {
   syncInterval: 5, // More frequent syncing
   fallbackToMockData: true,
-  debug: true // If implemented
+  debug: true, // If implemented
 });
 ```
 
@@ -321,4 +325,4 @@ For full HIPAA compliance, ensure your infrastructure, policies, and procedures 
 
 ---
 
-*This integration enhances your rural practice workflow by automatically syncing appointment data while maintaining the security and compliance standards required for healthcare applications.*
+_This integration enhances your rural practice workflow by automatically syncing appointment data while maintaining the security and compliance standards required for healthcare applications._

@@ -31,7 +31,7 @@ const Dashboard: React.FC = () => {
   const [showImportSchedule, setShowImportSchedule] = useState(false);
 
   // Component rendering logic
-}
+};
 ```
 
 **Responsibilities:**
@@ -56,7 +56,7 @@ const PatientList: React.FC<PatientListProps> = ({ status, title }) => {
   const patients = getPatientsByStatus(status);
 
   // Rendering logic for the list of patients
-}
+};
 ```
 
 **Responsibilities:**
@@ -81,7 +81,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
   // Functions for status colors, actions, etc.
 
   // Rendering logic for patient information and actions
-}
+};
 ```
 
 **Responsibilities:**
@@ -98,16 +98,11 @@ The TimeControl component allows users to manipulate time for testing.
 ```typescript
 // TimeControl.tsx
 const TimeControl: React.FC = () => {
-  const {
-    timeMode,
-    toggleSimulation,
-    adjustTime,
-    getCurrentTime,
-    formatTime
-  } = useTimeContext();
+  const { timeMode, toggleSimulation, adjustTime, getCurrentTime, formatTime } =
+    useTimeContext();
 
   // Time management logic and UI
-}
+};
 ```
 
 **Responsibilities:**
@@ -127,7 +122,7 @@ const MetricsPanel: React.FC = () => {
   const metrics = getMetrics();
 
   // Rendering logic for metrics
-}
+};
 ```
 
 **Responsibilities:**
@@ -147,7 +142,7 @@ interface NewPatientFormProps {
 
 const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
   // Form state and submission logic
-}
+};
 ```
 
 #### ImportSchedule
@@ -160,7 +155,7 @@ interface ImportScheduleProps {
 
 const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
   // Import logic and UI
-}
+};
 ```
 
 ## UI Design Patterns
@@ -173,14 +168,22 @@ Each patient status has a consistent color code applied across components:
 // Example from PatientCard.tsx
 const getStatusColor = (status: string): string => {
   switch (status) {
-    case 'scheduled': return 'bg-gray-500';
-    case 'arrived': return 'bg-amber-500';
-    case 'appt-prep': return 'bg-purple-500';
-    case 'ready-for-md': return 'bg-cyan-500';
-    case 'With Doctor': return 'bg-blue-500';
-    case 'seen-by-md': return 'bg-teal-500';
-    case 'completed': return 'bg-green-500';
-    default: return 'bg-gray-500';
+    case "scheduled":
+      return "bg-gray-500";
+    case "arrived":
+      return "bg-amber-500";
+    case "appt-prep":
+      return "bg-purple-500";
+    case "ready-for-md":
+      return "bg-cyan-500";
+    case "With Doctor":
+      return "bg-blue-500";
+    case "seen-by-md":
+      return "bg-teal-500";
+    case "completed":
+      return "bg-green-500";
+    default:
+      return "bg-gray-500";
   }
 };
 ```
@@ -191,11 +194,14 @@ Appointment statuses use a different color scheme:
 
 ```typescript
 // Example from PatientCard.tsx
-patient.appointmentStatus === 'Confirmed' ? 'bg-blue-600 text-white' : 
-patient.appointmentStatus === 'Reminder Sent' ?
-  'bg-indigo-600 text-white' : 
-patient.appointmentStatus === 'Arrived' || patient.appointmentStatus === 'Checked In' ? 'bg-green-600 text-white' : 
-'bg-red-600 text-white'
+patient.appointmentStatus === "Confirmed"
+  ? "bg-blue-600 text-white"
+  : patient.appointmentStatus === "Reminder Sent"
+    ? "bg-indigo-600 text-white"
+    : patient.appointmentStatus === "Arrived" ||
+        patient.appointmentStatus === "Checked In"
+      ? "bg-green-600 text-white"
+      : "bg-red-600 text-white";
 ```
 
 ### Responsive Design

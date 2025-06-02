@@ -157,7 +157,7 @@ The functions implement Tebra API rate limiting:
 Use the `TebraApiService` to call functions from your React app:
 
 ```typescript
-import { tebraApiService } from '../services/tebraApiService';
+import { tebraApiService } from "../services/tebraApiService";
 
 // Test connection
 const isConnected = await tebraApiService.testConnection();
@@ -166,7 +166,7 @@ const isConnected = await tebraApiService.testConnection();
 const result = await tebraApiService.syncTodaysSchedule();
 
 // Search patients
-const patients = await tebraApiService.searchPatients({ lastName: 'Smith' });
+const patients = await tebraApiService.searchPatients({ lastName: "Smith" });
 ```
 
 ## Error Handling
@@ -204,7 +204,7 @@ Consider adding authentication to sensitive functions:
 
 ```javascript
 if (!request.auth) {
-  throw new HttpsError('unauthenticated', 'Authentication required');
+  throw new HttpsError("unauthenticated", "Authentication required");
 }
 ```
 
@@ -233,7 +233,7 @@ if (!request.auth) {
 Enable detailed logging:
 
 ```javascript
-console.log('Debug info:', {
+console.log("Debug info:", {
   wsdlUrl: this.config.wsdlUrl,
   // Don't log credentials!
 });

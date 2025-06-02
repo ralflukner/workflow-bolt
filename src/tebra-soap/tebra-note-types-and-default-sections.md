@@ -2,12 +2,13 @@
 
 Tebra provides several types of notes. Each note type contains default sections with various entry options to make
 documenting easy. The table below outlines the default sections for each note type and the type of entry options under
-each section. You can always add sections to, or remove sections from, the default list.*
-## *Note Type Default Section Headers and Entry Options*
+each section. You can always add sections to, or remove sections from, the default list.\*
 
-### *H&P*
+## _Note Type Default Section Headers and Entry Options_
 
-*(History and Physical)
+### _H&P_
+
+_(History and Physical)
 CC: Text Shortcut and free-form text
 HPI: Text Shortcut, Template, and free-form text
 PMHx: Select past medical history (e.g., Blindness, Angina, Gout, etc.)
@@ -31,11 +32,11 @@ Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
 Labs/Studies, and free-form text
 Minor Procedures: Text Shortcut, Template, and free-form text
 Goals: Text Shortcut, Template, and free-form text
-Health Concerns: Text Shortcut and free-form text*
+Health Concerns: Text Shortcut and free-form text_
 
-### *SOAP*
+### _SOAP_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 Subjective: Text Shortcut, Template, and free-form text
 Medications: Manage Active, Discontinued, or Not Administered
 medications
@@ -46,16 +47,16 @@ Vitals: Add and manage vitals
 Objective: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
-Labs/Studies, and free-form text*
+Labs/Studies, and free-form text_
 
-*<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
-Updated: Thu, 29 May 2025 22:29:04 GMT*
+_<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
+Updated: Thu, 29 May 2025 22:29:04 GMT_
 
-*1*
+_1_
 
-### *Acupuncture Follow Up*
+### _Acupuncture Follow Up_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 Subjective: Text Shortcut, Template, and free-form text
 Medications: Manage Active, Discontinued, or Not Administered
 medications
@@ -65,11 +66,11 @@ TCM Exam: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
 Labs/Studies, and free-form text
-Treatment: Text Shortcut, Template, and free-form text*
+Treatment: Text Shortcut, Template, and free-form text_
 
-### *Acupuncture Initial Visit*
+### _Acupuncture Initial Visit_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 Subjective: Text Shortcut, Template, and free-form text
 Medications: Manage Active, Discontinued, or Not Administered
 medications
@@ -79,11 +80,11 @@ TCM Exam: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
 Labs/Studies, and free-form text
-Treatment: Text Shortcut, Template, and free-form text*
+Treatment: Text Shortcut, Template, and free-form text_
 
-### *Acupuncture Reassessment*
+### _Acupuncture Reassessment_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 Subjective: Text Shortcut, Template, and free-form text
 Medications: Manage Active, Discontinued, or Not Administered
 medications
@@ -93,17 +94,17 @@ TCM Exam: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
 Labs/Studies, and free-form text
-Treatment: Text Shortcut, Template, and free-form text*
+Treatment: Text Shortcut, Template, and free-form text_
 
-### *Amendment*
+### _Amendment_
 
-*Source of Request: Text Shortcut and free-form text
+_Source of Request: Text Shortcut and free-form text
 Request Details: Text Shortcut and free-form text
-Decision: Manage decision, Text Shortcut, and free-form text*
+Decision: Manage decision, Text Shortcut, and free-form text_
 
-### *Consultation*
+### _Consultation_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 HPI: Text Shortcut, Template, and free-form text
 PMHx: Select past medical history (e.g., Blindness, Angina, Gout, etc.)
 PSHx: Select past surgical history (e.g., Appendectomy, LASIK, etc.)
@@ -114,12 +115,12 @@ Total Pregnancy, etc.)
 Hospitalizations: Add and manage hospitalizations or procedures
 Implantable Devices: Add and manage implantable devices
 ROS: Text Shortcut, Template, and free-form text
-Medications: Manage Active, Discontinued, or Not Administered*
+Medications: Manage Active, Discontinued, or Not Administered_
 
-*<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
-Updated: Thu, 29 May 2025 22:29:04 GMT*
+_<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
+Updated: Thu, 29 May 2025 22:29:04 GMT_
 
-*2
+_2
 medications
 Allergies: Manage Active or Inactive allergies
 Mental/Functional: Screening Tools, Text Shortcut, Template, and free-form
@@ -131,11 +132,11 @@ Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
 Labs/Studies, and free-form text
 Minor Procedures: Text Shortcut, Template, and free-form text
 Goals: Text Shortcut, Template, and free-form text
-Health Concerns: Text Shortcut and free-form text*
+Health Concerns: Text Shortcut and free-form text_
 
-### *Discharge Summary*
+### _Discharge Summary_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 HPI: Text Shortcut, Template, and free-form text
 PMHx: Select past medical history (e.g., Blindness, Angina, Gout, etc.)
 PSHx: Select past surgical history (e.g., Appendectomy, LASIK, etc.)
@@ -158,44 +159,44 @@ Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
 Labs/Studies, and free-form text
 Minor Procedures: Text Shortcut, Template, and free-form text
 Goals: Text Shortcut, Template, and free-form text
-Health Concerns: Text Shortcut and free-form text*
+Health Concerns: Text Shortcut and free-form text_
 
-### *Group*
+### _Group_
 
-*Group Session Content: Text Shortcut and free-form text
+_Group Session Content: Text Shortcut and free-form text
 Session Details: Text Shortcut and free-form text
 Individual Behavior during Session: Text Shortcut and free-form text
 DSM-5: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
-Labs/Studies, and free-form text*
+Labs/Studies, and free-form text_
 
-### *Med Spa IV Procedure*
+### _Med Spa IV Procedure_
 
-*Procedure: Text Shortcut, Template, and free-form text
+_Procedure: Text Shortcut, Template, and free-form text
 Performed By: Text Shortcut, Template, and free-form text
 Indication: Text Shortcut, Template, and free-form text
 Comments: Free-form text
-Procedure: Text Shortcut, Template, and free-form text*
+Procedure: Text Shortcut, Template, and free-form text_
 
-*<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
-Updated: Thu, 29 May 2025 22:29:04 GMT*
+_<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
+Updated: Thu, 29 May 2025 22:29:04 GMT_
 
-*3*
+_3_
 
-### *Med Spa Procedure*
+### _Med Spa Procedure_
 
-*Performed By: Text Shortcut, Template, and free-form text
+_Performed By: Text Shortcut, Template, and free-form text
 Indication: Text Shortcut, Template, and free-form text
-Comments: Free-form text*
+Comments: Free-form text_
 
-### *Memo to Record*
+### _Memo to Record_
 
-*Memo: Free-form text*
+_Memo: Free-form text_
 
-### *Nurse Visit*
+### _Nurse Visit_
 
-*HPI: Text Shortcut, Template, and free-form text
+_HPI: Text Shortcut, Template, and free-form text
 PMHx: Select past medical history (e.g., Blindness, Angina, Gout, etc.)
 PSHx: Select past surgical history (e.g., Appendectomy, LASIK, etc.)
 FHx: Select family history (e.g., Diabetes, Hypertension, etc.)
@@ -206,11 +207,11 @@ Hospitalizations: Add and manage hospitalizations or procedures
 Medications: Manage Active, Discontinued, or Not Administered
 medications
 Allergies: Manage Active or Inactive allergies
-Vitals: Add and manage vitals*
+Vitals: Add and manage vitals_
 
-### *OB Evaluation*
+### _OB Evaluation_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 HPI: Text Shortcut, Template, and free-form text
 PMHx: Select past medical history (e.g., Blindness, Angina, Gout, etc.)
 PSHx: Select past surgical history (e.g., Appendectomy, LASIK, etc.)
@@ -232,49 +233,35 @@ OB Exam: Text Shortcut, Template, and free-form text
 Past Lab Hx: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
-Labs/Studies, and free-form text*
+Labs/Studies, and free-form text_
 
-### *Office Form*
+### _Office Form_
 
-*Form: Text Shortcut, Template, and free-form text*
+_Form: Text Shortcut, Template, and free-form text_
 
-### *Phone*
+### _Phone_
 
-*Discussion: Free-form text*
+_Discussion: Free-form text_
 
-*<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
-Updated: Thu, 29 May 2025 22:29:04 GMT*
+_<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
+Updated: Thu, 29 May 2025 22:29:04 GMT_
 
-*4*
+_4_
 
-### *Physical Therapy Discharge Summary*
+### _Physical Therapy Discharge Summary_
 
-*Reason for Referral: Text Shortcut, Template, free-form text
+_Reason for Referral: Text Shortcut, Template, free-form text
 Subjective: Text Shortcut, Template, free-form text
 Objective: Text Shortcut, Template, free-form text
 Tests and Measures: Text Shortcut, Template, free-form text
 Treatment: Text Shortcut, Template, free-form text
 Assessment: Text Shortcut, Include Problems
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
-Labs/Studies, and free-form text*
+Labs/Studies, and free-form text_
 
-### *Physical Therapy Initial Evaluation*
+### _Physical Therapy Initial Evaluation_
 
-*Reason for Referral: Text Shortcut, Template, free-form text
-Subjective: Text Shortcut, Template, free-form text
-Medications: Manage Active, Discontinued, or Not Administered
-medications
-Vitals: Add and manage vitals
-Objective: Text Shortcut, Template, free-form text
-Tests and Measures: Text Shortcut, Template, free-form text
-Treatment: Text Shortcut, Template, free-form text
-Assessment: Text Shortcut, Include Problems
-Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
-Labs/Studies, and free-form text*
-
-### *Physical Therapy Interim*
-
-*Reason for Referral: Text Shortcut, Template, free-form text
+_Reason for Referral: Text Shortcut, Template, free-form text
 Subjective: Text Shortcut, Template, free-form text
 Medications: Manage Active, Discontinued, or Not Administered
 medications
@@ -284,11 +271,11 @@ Tests and Measures: Text Shortcut, Template, free-form text
 Treatment: Text Shortcut, Template, free-form text
 Assessment: Text Shortcut, Include Problems
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
-Labs/Studies, and free-form text*
+Labs/Studies, and free-form text_
 
-### *Physical Therapy Progress*
+### _Physical Therapy Interim_
 
-*Reason for Referral: Text Shortcut, Template, free-form text
+_Reason for Referral: Text Shortcut, Template, free-form text
 Subjective: Text Shortcut, Template, free-form text
 Medications: Manage Active, Discontinued, or Not Administered
 medications
@@ -298,25 +285,39 @@ Tests and Measures: Text Shortcut, Template, free-form text
 Treatment: Text Shortcut, Template, free-form text
 Assessment: Text Shortcut, Include Problems
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
-Labs/Studies, and free-form text*
+Labs/Studies, and free-form text_
 
-### *Procedure*
+### _Physical Therapy Progress_
 
-*Procedure: Text Shortcut, Template, and free-form text
+_Reason for Referral: Text Shortcut, Template, free-form text
+Subjective: Text Shortcut, Template, free-form text
+Medications: Manage Active, Discontinued, or Not Administered
+medications
+Vitals: Add and manage vitals
+Objective: Text Shortcut, Template, free-form text
+Tests and Measures: Text Shortcut, Template, free-form text
+Treatment: Text Shortcut, Template, free-form text
+Assessment: Text Shortcut, Include Problems
+Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
+Labs/Studies, and free-form text_
+
+### _Procedure_
+
+_Procedure: Text Shortcut, Template, and free-form text
 Performed By: Text Shortcut, Template, and free-form text
 Indication: Text Shortcut, Template, and free-form text
 Comments: Free-form text
 CC: Text Shortcut and free-form text
-HPI: Text Shortcut, Template, and free-form text*
+HPI: Text Shortcut, Template, and free-form text_
 
-*<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
-Updated: Thu, 29 May 2025 22:29:04 GMT*
+_<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
+Updated: Thu, 29 May 2025 22:29:04 GMT_
 
-*5*
+_5_
 
-### *Psych Initial Visit*
+### _Psych Initial Visit_
 
-*PsychHx: Text Shortcut, Template, and free-form text
+_PsychHx: Text Shortcut, Template, and free-form text
 PMHx: Select past medical history (e.g., Blindness, Angina, Gout, etc.)
 PSHx: Select past surgical history (e.g., Appendectomy, LASIK, etc.)
 PsychFHx: Text Shortcut, Template, and free-form text
@@ -329,11 +330,11 @@ Psych Impression: Text Shortcut, Template, and free-form text
 DSM-5: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
-Labs/Studies, and free-form text*
+Labs/Studies, and free-form text_
 
-### *Psych Progress*
+### _Psych Progress_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 Psych Symptom/Follow Up: Text Shortcut, Template, and free-form text
 Psych Syndromes: Text Shortcut, Template, and free-form text
 Medications: Manage Active, Discontinued, or Not Administered
@@ -344,11 +345,11 @@ DSM-5: Text Shortcut, Template, and free-form text
 Psych Intervention: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
-Labs/Studies, and free-form text*
+Labs/Studies, and free-form text_
 
-### *Speech and Language Initial Evaluation*
+### _Speech and Language Initial Evaluation_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 History: Text Shortcut, Template, and free-form text
 Speech Development: Text Shortcut, Template, and free-form text
 Receptive/Expressive Language: Text Shortcut, Template, and free-form
@@ -361,11 +362,11 @@ Voice: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
 Labs/Studies, and free-form text
-Goals: Text Shortcut and free-form text*
+Goals: Text Shortcut and free-form text_
 
-### *Speech and Language Progress Report*
+### _Speech and Language Progress Report_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 Subjective: Text Shortcut, Template, and free-form text
 Current Goals: Text Shortcut and free-form text
 Receptive/Expressive Language: Text Shortcut, Template, and free-form
@@ -373,31 +374,31 @@ text
 Pragmatics: Text Shortcut, Template, and free-form text
 Oral Mechanism Exam: Text Shortcut, Template, and free-form text
 Articulation: Text Shortcut, Template, and free-form text
-Fluency: Text Shortcut, Template, and free-form text*
+Fluency: Text Shortcut, Template, and free-form text_
 
-*<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
-Updated: Thu, 29 May 2025 22:29:04 GMT*
+_<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
+Updated: Thu, 29 May 2025 22:29:04 GMT_
 
-*6
+_6
 Voice: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
 Labs/Studies, and free-form text
-Goals: Text Shortcut and free-form text*
+Goals: Text Shortcut and free-form text_
 
-### *Speech and Language Treatment Note*
+### _Speech and Language Treatment Note_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 Subjective: Text Shortcut, Template, and free-form text
 Objective (Speech/Language): Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
 Labs/Studies, and free-form text
-Goals: Text Shortcut and free-form text*
+Goals: Text Shortcut and free-form text_
 
-### *Telehealth H&P*
+### _Telehealth H&P_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 HPI: Text Shortcut, Template, and free-form text
 PMHx: Select past medical history (e.g., Blindness, Angina, Gout, etc.)
 PSHx: Select past surgical history (e.g., Appendectomy, LASIK, etc.)
@@ -419,11 +420,11 @@ Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
 Labs/Studies, and free-form text
 Goals: Text Shortcut and free-form text
-Health Concerns: Text Shortcut and free-form text*
+Health Concerns: Text Shortcut and free-form text_
 
-### *Telehealth SOAP*
+### _Telehealth SOAP_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 Subjective: Text Shortcut, Template, and free-form text
 Medications: Manage Active, Discontinued, or Not Administered
 medications
@@ -435,16 +436,16 @@ Objective: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
 Labs/Studies, and free-form text
-CC: Text Shortcut and free-form text*
+CC: Text Shortcut and free-form text_
 
-*<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
-Updated: Thu, 29 May 2025 22:29:04 GMT*
+_<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
+Updated: Thu, 29 May 2025 22:29:04 GMT_
 
-*7*
+_7_
 
-### *Therapist Initial Visit*
+### _Therapist Initial Visit_
 
-*HPI: Text Shortcut, Template, and free-form text
+_HPI: Text Shortcut, Template, and free-form text
 PsychHx: Text Shortcut, Template, and free-form text
 PsychFHx: Text Shortcut, Template, and free-form text
 PsychSHx: Text Shortcut, Template, and free-form text
@@ -456,11 +457,11 @@ Psych Impression: Text Shortcut, Template, and free-form text
 DSM-5: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
-Labs/Studies, and free-form text*
+Labs/Studies, and free-form text_
 
-### *Therapist Progress*
+### _Therapist Progress_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 Psych Symptom/Follow Up: Text Shortcut, Template, and free-form text
 Psych Syndromes: Text Shortcut, Template, and free-form text
 Medications: Manage Active, Discontinued, or Not Administered
@@ -471,11 +472,11 @@ DSM-5: Text Shortcut, Template, and free-form text
 Psych Intervention: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
-Labs/Studies, and free-form text*
+Labs/Studies, and free-form text_
 
-### *Urgent Care*
+### _Urgent Care_
 
-*CC: Text Shortcut and free-form text
+_CC: Text Shortcut and free-form text
 HPI: Text Shortcut, Template, and free-form text
 PMHx: Select past medical history (e.g., Blindness, Angina, Gout, etc.)
 PSHx: Select past surgical history (e.g., Appendectomy, LASIK, etc.)
@@ -493,10 +494,9 @@ Medical Decision Making: Text Shortcut, Template, and free-form text
 Assessment: Text Shortcut, Include Problems, and free-form text
 Plan: Text Shortcut, Patient Education, Template, Medications, Vaccines,
 Labs/Studies, and free-form text
-Minor Procedures: Text Shortcut, Template, and free-form text*
+Minor Procedures: Text Shortcut, Template, and free-form text_
 
-*<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
-Updated: Thu, 29 May 2025 22:29:04 GMT*
+_<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
+Updated: Thu, 29 May 2025 22:29:04 GMT_
 
-*8*
-
+_8_

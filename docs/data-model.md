@@ -44,13 +44,27 @@ external scheduling statuses:
 ```typescript
 export type PatientApptStatus =
   // Internal workflow statuses (lowercase kebab-case)
-  | 'scheduled' | 'arrived' | 'appt-prep' | 'ready-for-md'
-  | 'With Doctor' | 'seen-by-md' | 'completed'
+  | "scheduled"
+  | "arrived"
+  | "appt-prep"
+  | "ready-for-md"
+  | "With Doctor"
+  | "seen-by-md"
+  | "completed"
   // External scheduling statuses (Title Case with spaces)
-  | 'Scheduled' | 'Reminder Sent' | 'Confirmed' | 'Arrived'
-  | 'Checked In' | 'Roomed' | 'Appt Prep Started'
-  | 'Ready for MD' | 'Seen by MD' | 'Checked Out'
-  | 'No Show' | 'Rescheduled' | 'Cancelled';
+  | "Scheduled"
+  | "Reminder Sent"
+  | "Confirmed"
+  | "Arrived"
+  | "Checked In"
+  | "Roomed"
+  | "Appt Prep Started"
+  | "Ready for MD"
+  | "Seen by MD"
+  | "Checked Out"
+  | "No Show"
+  | "Rescheduled"
+  | "Cancelled";
 ```
 
 This combined type allows the application to use a single status field
@@ -64,13 +78,13 @@ workflow:
 
 ```typescript
 export type PatientStatus =
-  | 'scheduled'     // Patient is scheduled but not arrived
-  | 'arrived'       // Patient has arrived at the clinic
-  | 'appt-prep'     // Patient is being prepared for appointment
-  | 'ready-for-md'  // Patient is ready to see the doctor
-  | 'With Doctor'   // Patient is currently with the doctor
-  | 'seen-by-md'    // Patient has been seen by the doctor
-  | 'completed';    // Patient has completed their visit
+  | "scheduled" // Patient is scheduled but not arrived
+  | "arrived" // Patient has arrived at the clinic
+  | "appt-prep" // Patient is being prepared for appointment
+  | "ready-for-md" // Patient is ready to see the doctor
+  | "With Doctor" // Patient is currently with the doctor
+  | "seen-by-md" // Patient has been seen by the doctor
+  | "completed"; // Patient has completed their visit
 ```
 
 This represents the internal workflow statuses that are now included in
@@ -84,19 +98,19 @@ appointment:
 
 ```typescript
 export type AppointmentStatus =
-  | 'Scheduled'
-  | 'Reminder Sent'
-  | 'Confirmed'
-  | 'Arrived'
-  | 'Checked In'
-  | 'Roomed'
-  | 'Appt Prep Started'
-  | 'Ready for MD'
-  | 'Seen by MD'
-  | 'Checked Out'
-  | 'No Show'
-  | 'Rescheduled'
-  | 'Cancelled';
+  | "Scheduled"
+  | "Reminder Sent"
+  | "Confirmed"
+  | "Arrived"
+  | "Checked In"
+  | "Roomed"
+  | "Appt Prep Started"
+  | "Ready for MD"
+  | "Seen by MD"
+  | "Checked Out"
+  | "No Show"
+  | "Rescheduled"
+  | "Cancelled";
 ```
 
 This represents the external scheduling statuses that are now included in
@@ -106,7 +120,7 @@ compatibility.
 ### Appointment Type
 
 ```typescript
-export type AppointmentType = 'Office Visit' | 'LABS';
+export type AppointmentType = "Office Visit" | "LABS";
 ```
 
 ### Time Mode
@@ -136,6 +150,7 @@ export interface Metrics {
 The application uses React Context API for state management:
 
 1. **TimeContext**
+
    - Manages current time (real or simulated)
    - Controls time simulation features
    - Provides time formatting utilities

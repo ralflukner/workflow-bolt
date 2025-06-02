@@ -55,19 +55,19 @@ This implementation automatically enforces the rate limits specified in the Tebr
 ### Usage Example
 
 ```typescript
-import { tebraRateLimiter } from './tebra-rate-limiter';
+import { tebraRateLimiter } from "./tebra-rate-limiter";
 
 // Check if a method can be called immediately
-if (tebraRateLimiter.canCallImmediately('GetPatient')) {
+if (tebraRateLimiter.canCallImmediately("GetPatient")) {
   // Make the call
 } else {
   // Wait for rate limit
-  await tebraRateLimiter.waitForRateLimit('GetPatient');
+  await tebraRateLimiter.waitForRateLimit("GetPatient");
   // Now make the call
 }
 
 // Get remaining wait time
-const waitTime = tebraRateLimiter.getRemainingWaitTime('GetAppointments');
+const waitTime = tebraRateLimiter.getRemainingWaitTime("GetAppointments");
 console.log(`Must wait ${waitTime}ms before next GetAppointments call`);
 ```
 

@@ -52,7 +52,7 @@ source .envrc  # Manually load variables
 ### Public Configuration (in .envrc)
 
 - `VITE_AUTH0_DOMAIN` - Auth0 domain
-- `VITE_AUTH0_CLIENT_ID` - Auth0 client ID  
+- `VITE_AUTH0_CLIENT_ID` - Auth0 client ID
 - `VITE_AUTH0_REDIRECT_URI` - Auth0 redirect URI
 - `VITE_AUTH0_AUDIENCE` - Auth0 API audience
 - `VITE_APP_NAME` - Application name

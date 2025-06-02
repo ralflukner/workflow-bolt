@@ -176,11 +176,11 @@ Specify your license here (e.g., MIT, Apache-2.0, etc.).
 
 ---
 
-*This project was bootstrapped with [Vite](https://vitejs.dev/).*
+_This project was bootstrapped with [Vite](https://vitejs.dev/)._
 
 ---
 
-*(Content below was moved from `docs/README.md`)*
+_(Content below was moved from `docs/README.md`)_
 
 ## Documentation
 
@@ -202,12 +202,12 @@ Management application.
 - [Setup Guide](docs/setup-guide.md) - Instructions for setting up the
   development environment
 
-*Note: Links above have been updated to point to the `docs/` directory.*
+_Note: Links above have been updated to point to the `docs/` directory._
 
 ### Quick Start
 
 For quick setup instructions, refer to the main content in the project root.
-*(Note: This is now part of the main README).*
+_(Note: This is now part of the main README)._
 
 ### Contributing
 

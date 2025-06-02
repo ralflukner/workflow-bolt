@@ -42,6 +42,7 @@ appointments and workflow in a clinical setting.
 The application uses React Context API for state management:
 
 1. **TimeContext** (`src/context/TimeContext.tsx`):
+
    - Manages real or simulated time
    - Provides time simulation capabilities
    - Offers time formatting utilities
@@ -55,6 +56,7 @@ The application uses React Context API for state management:
 ### Key Data Types
 
 1. **Patient** (`src/types/index.ts`):
+
    - Central data structure for patient information
    - Contains appointment details, status, and timestamps
 

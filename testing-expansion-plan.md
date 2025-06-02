@@ -149,11 +149,11 @@ describe('PatientCard', () => {
   const mockAssignRoom = jest.fn();
   const mockUpdateCheckInTime = jest.fn();
   const mockGetWaitTime = jest.fn().mockReturnValue(10);
-  
+
   const mockFormatDateTime = jest.fn().mockReturnValue('5/29/2025 10:00 AM');
   const mockFormatTime = jest.fn().mockReturnValue('10:00 AM');
   const mockGetCurrentTime = jest.fn().mockReturnValue(new Date('2025-05-29T10:00:00'));
-  
+
   const mockPatient: Patient = {
     id: 'test-id',
     name: 'John Doe',
@@ -164,7 +164,7 @@ describe('PatientCard', () => {
     appointmentType: 'Office Visit',
     chiefComplaint: 'Follow-up'
   };
-  
+
   const renderPatientCard = (patient: Patient = mockPatient) => {
     return render(
       <TimeContext.Provider value={{
@@ -197,7 +197,7 @@ describe('PatientCard', () => {
 
   it('renders patient information correctly', () => {
     renderPatientCard();
-    
+
     expect(screen.getByText('John Doe')).toBeInTheDocument();
     expect(screen.getByText('DOB: 1980-01-01')).toBeInTheDocument();
     expect(screen.getByText('Office Visit - Follow-up')).toBeInTheDocument();
@@ -206,10 +206,10 @@ describe('PatientCard', () => {
 
   it('transitions patient status when action button is clicked', () => {
     renderPatientCard();
-    
+
     const checkInButton = screen.getByText('Check In');
     fireEvent.click(checkInButton);
-    
+
     expect(mockUpdatePatientStatus).toHaveBeenCalledWith('test-id', 'arrived');
   });
 
@@ -218,10 +218,10 @@ describe('PatientCard', () => {
       ...mockPatient,
       status: 'arrived'
     });
-    
+
     const roomSelect = screen.getByRole('combobox');
     fireEvent.change(roomSelect, { target: { value: '1' } });
-    
+
     expect(mockAssignRoom).toHaveBeenCalledWith('test-id', '1');
   });
 }
@@ -249,7 +249,7 @@ describe('TimeContext Provider', () => {
     const { result } = renderHook(() => useTimeContext(), {
       wrapper: ({ children }) => <TimeProvider>{children}</TimeProvider>
     });
-    
+
     expect(result.current.timeMode.simulated).toBe(false);
     expect(new Date(result.current.timeMode.currentTime).getHours()).toBe(10);
   });
@@ -258,11 +258,11 @@ describe('TimeContext Provider', () => {
     const { result } = renderHook(() => useTimeContext(), {
       wrapper: ({ children }) => <TimeProvider>{children}</TimeProvider>
     });
-    
+
     act(() => {
       result.current.toggleSimulation();
     });
-    
+
     expect(result.current.timeMode.simulated).toBe(true);
   });
 }

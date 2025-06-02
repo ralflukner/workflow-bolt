@@ -34,6 +34,7 @@ where the provider is initialized.
 ## Setting Up Auth0
 
 1. **Create an Auth0 Account and Application**:
+
    - Sign up at [Auth0.com](https://auth0.com/)
    - Create a new Application (choose Single Page Application)
    - Configure the Allowed Callback URLs, Logout URLs, and Web Origins to
@@ -52,7 +53,7 @@ authentication context:
 
 ```typescript
 // src/auth/AuthProvider.tsx
-import { Auth0Provider } from '@auth0/auth0-react';
+import { Auth0Provider } from "@auth0/auth0-react";
 // ...
 ```
 
@@ -62,13 +63,13 @@ Simple components for triggering authentication:
 
 ```typescript
 // src/components/LoginButton.tsx
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth0 } from "@auth0/auth0-react";
 // ...
 ```
 
 ```typescript
 // src/components/LogoutButton.tsx
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth0 } from "@auth0/auth0-react";
 // ...
 ```
 
@@ -79,7 +80,7 @@ authenticated users:
 
 ```typescript
 // src/components/ProtectedRoute.tsx
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth0 } from "@auth0/auth0-react";
 // ...
 ```
 
@@ -99,7 +100,7 @@ You can access authentication state and user information using the
 `useAuth0` hook:
 
 ```typescript
-import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth0 } from "@auth0/auth0-react";
 
 function MyComponent() {
   const { user, isAuthenticated, isLoading } = useAuth0();

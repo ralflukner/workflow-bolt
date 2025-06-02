@@ -10,11 +10,13 @@ monitor patient status, manage room assignments, and track waiting times.
 ## Project Goals
 
 1. **Improve Patient Experience**
+
    - Reduce waiting times
    - Provide clear status tracking
    - Streamline check-in and check-out processes
 
 2. **Enhance Staff Efficiency**
+
    - Visualize patient flow in real-time
    - Track room utilization
    - Identify bottlenecks in the patient journey
