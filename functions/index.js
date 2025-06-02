@@ -2,7 +2,7 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
-const soap = require('soap');
+const axios = require('axios');
 
 // Load environment variables
 require('dotenv').config();
@@ -11,44 +11,102 @@ require('dotenv').config();
 initializeApp();
 const db = getFirestore();
 
-// Tebra SOAP Client Class
-class TebraSoapClient {
+// Tebra API Client using PHP Proxy
+class TebraApiClient {
   constructor(config = {}) {
     this.config = {
-      wsdlUrl: config.wsdlUrl || process.env.TEBRA_SOAP_WSDL,
-      username: config.username || process.env.TEBRA_SOAP_USERNAME,
-      password: config.password || process.env.TEBRA_SOAP_PASSWORD,
+      proxyBaseUrl: config.proxyBaseUrl || process.env.TEBRA_PROXY_URL || 'http://localhost:8080',
+      apiKey: config.apiKey || process.env.TEBRA_PROXY_API_KEY || 'secure-random-key-change-in-production',
+      timeout: config.timeout || 30000, // 30 seconds
     };
 
-    // Validate required configuration
-    if (!this.config.wsdlUrl || !this.config.username || !this.config.password) {
-      throw new Error('Tebra SOAP configuration is incomplete. Please check environment variables.');
-    }
-
-    this.client = null;
+    console.log('Tebra API Client initialized with proxy:', this.config.proxyBaseUrl);
   }
 
-  async getClient() {
-    if (this.client) return this.client;
-
+  /**
+   * Make HTTP request to PHP proxy with API key authentication
+   */
+  async makeRequest(endpoint, method = 'GET', data = null) {
     try {
-      console.log('Creating SOAP client with WSDL:', this.config.wsdlUrl);
-      this.client = await soap.createClientAsync(this.config.wsdlUrl);
-      this.client.setSecurity(new soap.BasicAuthSecurity(this.config.username, this.config.password));
-      console.log('SOAP client created successfully');
-      return this.client;
+      const url = `${this.config.proxyBaseUrl}/${endpoint}`;
+      console.log(`Making ${method} request to: ${url}`);
+      
+      const config = {
+        method,
+        url,
+        timeout: this.config.timeout,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': this.config.apiKey,
+          'User-Agent': 'LuknerClinic-Firebase/1.0'
+        }
+      };
+      
+      if (data && (method === 'POST' || method === 'PUT')) {
+        config.data = data;
+      }
+      
+      const response = await axios(config);
+      
+      if (response.data.success) {
+        console.log(`${endpoint} request successful`);
+        return response.data.data;
+      } else {
+        throw new Error(response.data.error || 'Unknown API error');
+      }
     } catch (error) {
-      console.error('Failed to create SOAP client:', error);
-      throw new HttpsError('internal', `Failed to connect to Tebra API: ${error.message}`);
+      console.error(`${endpoint} request failed:`, error.response?.data || error.message);
+      
+      // Handle specific error cases
+      if (error.response?.status === 401) {
+        throw new HttpsError('unauthenticated', 'Invalid API key for Tebra proxy');
+      } else if (error.response?.status === 429) {
+        throw new HttpsError('resource-exhausted', 'Rate limit exceeded for Tebra proxy');
+      } else {
+        throw new HttpsError('internal', `Failed to call ${endpoint}: ${error.message}`);
+      }
+    }
+  }
+
+  async testConnection() {
+    try {
+      console.log('Testing Tebra API connection via PHP proxy...');
+      const healthData = await this.makeRequest('test');
+      
+      // Test providers endpoint to verify full functionality
+      const providers = await this.getProviders();
+      
+      return {
+        success: true,
+        message: 'Tebra API connection successful via PHP proxy',
+        authenticated: true,
+        authorized: true,
+        customerValid: true,
+        proxy: healthData,
+        providerCount: providers.length
+      };
+    } catch (error) {
+      console.error('Failed to test connection:', error);
+      throw error;
+    }
+  }
+
+  async getProviders() {
+    try {
+      console.log('Getting providers via PHP proxy');
+      const result = await this.makeRequest('providers');
+      return result.providers || [];
+    } catch (error) {
+      console.error('Failed to get providers:', error);
+      throw new HttpsError('internal', `Failed to retrieve providers: ${error.message}`);
     }
   }
 
   async getPatientById(patientId) {
-    const client = await this.getClient();
     try {
       console.log('Getting patient by ID:', patientId);
-      const result = await client.GetPatientAsync({ patientId });
-      return result[0];
+      const result = await this.makeRequest(`patients/${patientId}`);
+      return result.patient;
     } catch (error) {
       console.error('Failed to get patient:', error);
       throw new HttpsError('internal', `Failed to retrieve patient data: ${error.message}`);
@@ -56,62 +114,38 @@ class TebraSoapClient {
   }
 
   async searchPatients(searchCriteria) {
-    const client = await this.getClient();
     try {
       console.log('Searching patients with criteria:', searchCriteria);
-      const result = await client.SearchPatientsAsync(searchCriteria);
-      return result[0]?.patients || [];
+      const result = await this.makeRequest('patients', 'POST', searchCriteria);
+      return result.patients || [];
     } catch (error) {
       console.error('Failed to search patients:', error);
       throw new HttpsError('internal', `Failed to search patients: ${error.message}`);
     }
   }
 
-  async getAppointments(date) {
-    const client = await this.getClient();
+  async getAppointments(fromDate, toDate) {
     try {
-      console.log('Getting appointments for date:', date);
-      const result = await client.GetAppointmentsAsync({ date });
-      return result[0]?.appointments || [];
+      console.log('Getting appointments from', fromDate, 'to', toDate);
+      const result = await this.makeRequest('appointments', 'POST', {
+        fromDate,
+        toDate
+      });
+      return result.appointments || [];
     } catch (error) {
       console.error('Failed to get appointments:', error);
       throw new HttpsError('internal', `Failed to retrieve appointments: ${error.message}`);
     }
   }
 
-  async getProviders() {
-    const client = await this.getClient();
+  async getPractices() {
     try {
-      console.log('Getting providers');
-      const result = await client.GetProvidersAsync({});
-      return result[0]?.providers || [];
+      console.log('Getting practices via PHP proxy');
+      const result = await this.makeRequest('practices');
+      return result.practices || [];
     } catch (error) {
-      console.error('Failed to get providers:', error);
-      throw new HttpsError('internal', `Failed to retrieve providers: ${error.message}`);
-    }
-  }
-
-  async createAppointment(appointmentData) {
-    const client = await this.getClient();
-    try {
-      console.log('Creating appointment:', appointmentData);
-      const result = await client.CreateAppointmentAsync(appointmentData);
-      return result[0];
-    } catch (error) {
-      console.error('Failed to create appointment:', error);
-      throw new HttpsError('internal', `Failed to create appointment: ${error.message}`);
-    }
-  }
-
-  async updateAppointment(appointmentData) {
-    const client = await this.getClient();
-    try {
-      console.log('Updating appointment:', appointmentData);
-      const result = await client.UpdateAppointmentAsync(appointmentData);
-      return result[0];
-    } catch (error) {
-      console.error('Failed to update appointment:', error);
-      throw new HttpsError('internal', `Failed to update appointment: ${error.message}`);
+      console.error('Failed to get practices:', error);
+      throw new HttpsError('internal', `Failed to retrieve practices: ${error.message}`);
     }
   }
 }
@@ -124,8 +158,7 @@ class TebraRateLimiter {
       'SearchPatients': 500,
       'GetAppointments': 1000,
       'GetProviders': 500,
-      'CreateAppointment': 2000,
-      'UpdateAppointment': 2000,
+      'GetPractices': 500,
     };
     this.lastCallTimes = {};
   }
@@ -152,15 +185,15 @@ const rateLimiter = new TebraRateLimiter();
 /**
  * Test Tebra API connection
  */
-exports.tebraTestConnection = onCall(async () => {
+exports.tebraTestConnection = onCall({ invoker: 'public' }, async () => {
   try {
     console.log('Testing Tebra API connection...');
-    const client = new TebraSoapClient();
+    const client = new TebraApiClient();
     await rateLimiter.waitForRateLimit('GetProviders');
-    await client.getProviders();
+    const result = await client.testConnection();
 
     console.log('Tebra API connection test successful');
-    return { success: true, message: 'Tebra API connection successful' };
+    return result;
   } catch (error) {
     console.error('Tebra connection test failed:', error);
     return { success: false, message: error.message };
@@ -178,7 +211,7 @@ exports.tebraGetPatient = onCall(async ({ data }) => {
   }
 
   try {
-    const client = new TebraSoapClient();
+    const client = new TebraApiClient();
     await rateLimiter.waitForRateLimit('GetPatient');
     const patient = await client.getPatientById(patientId);
 
@@ -200,7 +233,7 @@ exports.tebraSearchPatients = onCall(async ({ data }) => {
   }
 
   try {
-    const client = new TebraSoapClient();
+    const client = new TebraApiClient();
     await rateLimiter.waitForRateLimit('SearchPatients');
     const patients = await client.searchPatients(searchCriteria);
 
@@ -222,9 +255,9 @@ exports.tebraGetAppointments = onCall(async ({ data }) => {
   }
 
   try {
-    const client = new TebraSoapClient();
+    const client = new TebraApiClient();
     await rateLimiter.waitForRateLimit('GetAppointments');
-    const appointments = await client.getAppointments(date);
+    const appointments = await client.getAppointments(date, date);
 
     return { success: true, data: appointments };
   } catch (error) {
@@ -238,7 +271,7 @@ exports.tebraGetAppointments = onCall(async ({ data }) => {
  */
 exports.tebraGetProviders = onCall(async () => {
   try {
-    const client = new TebraSoapClient();
+    const client = new TebraApiClient();
     await rateLimiter.waitForRateLimit('GetProviders');
     const providers = await client.getProviders();
 
@@ -250,45 +283,17 @@ exports.tebraGetProviders = onCall(async () => {
 });
 
 /**
- * Create a new appointment
+ * Get practices
  */
-exports.tebraCreateAppointment = onCall(async ({ data }) => {
-  const { appointmentData } = data;
-
-  if (!appointmentData) {
-    throw new HttpsError('invalid-argument', 'Appointment data is required');
-  }
-
+exports.tebraGetPractices = onCall(async () => {
   try {
-    const client = new TebraSoapClient();
-    await rateLimiter.waitForRateLimit('CreateAppointment');
-    const result = await client.createAppointment(appointmentData);
+    const client = new TebraApiClient();
+    await rateLimiter.waitForRateLimit('GetPractices');
+    const practices = await client.getPractices();
 
-    return { success: true, data: result };
+    return { success: true, data: practices };
   } catch (error) {
-    console.error('Failed to create appointment:', error);
-    throw error;
-  }
-});
-
-/**
- * Update an existing appointment
- */
-exports.tebraUpdateAppointment = onCall(async ({ data }) => {
-  const { appointmentData } = data;
-
-  if (!appointmentData) {
-    throw new HttpsError('invalid-argument', 'Appointment data is required');
-  }
-
-  try {
-    const client = new TebraSoapClient();
-    await rateLimiter.waitForRateLimit('UpdateAppointment');
-    const result = await client.updateAppointment(appointmentData);
-
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Failed to update appointment:', error);
+    console.error('Failed to get practices:', error);
     throw error;
   }
 });
@@ -299,13 +304,13 @@ exports.tebraUpdateAppointment = onCall(async ({ data }) => {
 exports.tebraSyncTodaysSchedule = onCall(async () => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const client = new TebraSoapClient();
+    const client = new TebraApiClient();
 
     console.log('Syncing schedule for date:', today);
 
     // Get appointments for today
     await rateLimiter.waitForRateLimit('GetAppointments');
-    const appointments = await client.getAppointments(today);
+    const appointments = await client.getAppointments(today, today);
 
     // Transform appointments to match our Patient interface
     const transformedPatients = appointments.map(apt => ({
@@ -327,7 +332,7 @@ exports.tebraSyncTodaysSchedule = onCall(async () => {
       date: today,
       patients: transformedPatients,
       lastSync: new Date(),
-      source: 'tebra_sync'
+      source: 'tebra_corrected_node_sync'
     });
 
     console.log(`Sync completed: ${transformedPatients.length} appointments`);
@@ -352,10 +357,10 @@ exports.tebraAutoSync = onSchedule('*/15 8-18 * * 1-5', async (_event) => {
 
   try {
     const today = new Date().toISOString().split('T')[0];
-    const client = new TebraSoapClient();
+    const client = new TebraApiClient();
 
     await rateLimiter.waitForRateLimit('GetAppointments');
-    const appointments = await client.getAppointments(today);
+    const appointments = await client.getAppointments(today, today);
 
     const transformedPatients = appointments.map(apt => ({
       id: apt.AppointmentId || apt.Id,
@@ -375,7 +380,7 @@ exports.tebraAutoSync = onSchedule('*/15 8-18 * * 1-5', async (_event) => {
       date: today,
       patients: transformedPatients,
       lastSync: new Date(),
-      source: 'tebra_auto_sync'
+      source: 'tebra_corrected_node_auto_sync'
     });
 
     console.log(`Auto-sync completed: ${transformedPatients.length} appointments`);

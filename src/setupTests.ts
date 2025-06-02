@@ -83,11 +83,13 @@ Object.defineProperty(global, 'import', {
   writable: true,
 });
 
-// Mock window.confirm
-Object.defineProperty(window, 'confirm', {
-  value: jest.fn(() => true),
-  writable: true,
-});
+// Mock window.confirm only if window is available (jsdom environment)
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'confirm', {
+    value: jest.fn(() => true),
+    writable: true,
+  });
+}
 
 // Reduce console noise
 global.console = {

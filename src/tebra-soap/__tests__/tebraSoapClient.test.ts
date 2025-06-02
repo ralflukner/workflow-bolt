@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { tebraSoapClient } from '../tebraSoapClient';
 import soap from 'soap';

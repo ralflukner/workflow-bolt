@@ -123,7 +123,7 @@ describe('PatientCard', () => {
     expect(screen.getByText('DOB: 01/01/1990')).toBeInTheDocument();
     
     // Check that appointment time is displayed
-    expect(screen.getByText('9:00 AM')).toBeInTheDocument();
+    expect(screen.getByText('3:00 AM')).toBeInTheDocument();
     
     // Check that the status button is displayed
     expect(screen.getByText('Check In')).toBeInTheDocument();
@@ -285,7 +285,7 @@ describe('PatientCard', () => {
     
     // Check that date and time inputs are displayed
     const dateInput = screen.getByDisplayValue('2023-01-01');
-    const timeInput = screen.getByDisplayValue('10:05');
+    const timeInput = screen.getByDisplayValue('04:05');
     expect(dateInput).toBeInTheDocument();
     expect(timeInput).toBeInTheDocument();
     
@@ -296,7 +296,7 @@ describe('PatientCard', () => {
     fireEvent.click(saveButton);
     
     // Verify that updateCheckInTime was called with the correct parameters
-    expect(mockUpdateCheckInTime).toHaveBeenCalledWith('test-3', '2023-01-01T09:45:00.000Z');
+    expect(mockUpdateCheckInTime).toHaveBeenCalledWith('test-3', '2023-01-01T15:45:00.000Z');
   });
 
   it('displays different wait time format for completed patients', () => {

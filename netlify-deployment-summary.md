@@ -35,7 +35,7 @@ To deploy this project to Netlify:
    - Go to Site settings > Build & deploy > Environment
    - Add the following variables:
 
-     ```
+     ```bash
      VITE_AUTH0_DOMAIN=your-auth0-domain.region.auth0.com
      VITE_AUTH0_CLIENT_ID=your-auth0-client-id
      VITE_AUTH0_REDIRECT_URI=https://your-netlify-site-name.netlify.app

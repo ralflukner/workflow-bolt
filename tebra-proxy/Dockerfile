@@ -1,9 +1,6 @@
 # Use official PHP image with Apache
 FROM php:8.1-apache
 
-# Security: Run as non-root user
-RUN groupadd -r appgroup && useradd -r -g appgroup appuser
-
 # Install required PHP extensions
 RUN apt-get update && apt-get install -y \
     libxml2-dev \
@@ -21,25 +18,24 @@ RUN echo "ServerTokens Prod" >> /etc/apache2/apache2.conf && \
 COPY apache-security.conf /etc/apache2/conf-available/security.conf
 RUN a2enconf security
 
-# Copy application files
-COPY --chown=appuser:appgroup . /var/www/html/
+# Copy application files and entrypoint script
+COPY --chown=www-data:www-data . /var/www/html/
+COPY docker-entrypoint.sh /usr/local/bin/
 
 # Set secure permissions
 RUN chmod -R 755 /var/www/html && \
-    chown -R appuser:appgroup /var/www/html
+    chown -R www-data:www-data /var/www/html && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Security: Remove sensitive files if they exist
 RUN rm -f /var/www/html/Dockerfile /var/www/html/.env* /var/www/html/*.log
 
-# Switch to non-root user for runtime
-USER appuser
-
 # Health check for monitoring
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost/test || exit 1
+    CMD curl -f http://localhost:${PORT:-8080}/test || exit 1
 
-# Expose port
-EXPOSE 80
+# Expose port (Cloud Run will set PORT env var)
+EXPOSE 8080
 
-# Start Apache
-CMD ["apache2-foreground"] 
+# Use custom entrypoint
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"] 
