@@ -3,9 +3,19 @@ const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const axios = require('axios');
+const { defineString } = require('firebase-functions/params');
 
 // Load environment variables
 require('dotenv').config();
+
+// Define parameters for configuration
+const tebraProxyUrl = defineString('TEBRA_PROXY_URL', {
+  default: 'https://tebra-proxy-623450773640.us-central1.run.app'
+});
+
+const tebraProxyApiKey = defineString('TEBRA_PROXY_API_KEY', {
+  default: 'UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y='
+});
 
 // Initialize Firebase Admin SDK
 initializeApp();
@@ -15,8 +25,8 @@ const db = getFirestore();
 class TebraApiClient {
   constructor(config = {}) {
     this.config = {
-      proxyBaseUrl: config.proxyBaseUrl || process.env.TEBRA_PROXY_URL || 'http://localhost:8080',
-      apiKey: config.apiKey || process.env.TEBRA_PROXY_API_KEY || 'secure-random-key-change-in-production',
+      proxyBaseUrl: config.proxyBaseUrl || tebraProxyUrl.value(),
+      apiKey: config.apiKey || tebraProxyApiKey.value(),
       timeout: config.timeout || 30000, // 30 seconds
     };
 
@@ -298,52 +308,57 @@ exports.tebraGetPractices = onCall({ invoker: 'public' }, async () => {
   }
 });
 
+// Helper to perform daily sync – shared by manual callable and scheduled job
+async function performDailySync(targetDate) {
+  console.log(`Performing daily sync for ${targetDate}`);
+  const client = new TebraApiClient();
+
+  // Get appointments for the day
+  await rateLimiter.waitForRateLimit('GetAppointments');
+  const appointments = await client.getAppointments(targetDate, targetDate);
+
+  // Transform appointments to internal Patient interface
+  const transformedPatients = appointments.map(apt => ({
+    id: apt.AppointmentId || apt.Id,
+    name: `${apt.PatientFirstName || ''} ${apt.PatientLastName || ''}`.trim(),
+    dob: apt.PatientDateOfBirth || apt.PatientDOB || '',
+    appointmentTime: `${apt.AppointmentDate}T${apt.AppointmentTime}:00.000Z`,
+    appointmentType: apt.AppointmentType || 'Office Visit',
+    provider: `${apt.ProviderFirstName || 'Dr.'} ${apt.ProviderLastName || 'Unknown'}`,
+    status: apt.Status?.toLowerCase() || 'scheduled',
+    checkInTime: apt.CheckInTime || undefined,
+    room: apt.Room || undefined,
+    chiefComplaint: apt.ChiefComplaint || 'Follow-Up'
+  }));
+
+  // Persist to Firestore for UI consumption
+  const sessionDoc = db.collection('daily_sessions').doc(targetDate);
+  await sessionDoc.set({
+    date: targetDate,
+    patients: transformedPatients,
+    lastSync: new Date(),
+    source: 'tebra_corrected_node_sync'
+  });
+
+  console.log(`Sync completed for ${targetDate}: ${transformedPatients.length} appointments`);
+  return transformedPatients;
+}
+
 /**
  * Sync today's schedule from Tebra
  */
-exports.tebraSyncTodaysSchedule = onCall({ invoker: 'public' }, async () => {
+exports.tebraSyncTodaysSchedule = onCall({}, async () => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const client = new TebraApiClient();
+    const data = await performDailySync(today);
 
-    console.log('Syncing schedule for date:', today);
-
-    // Get appointments for today
-    await rateLimiter.waitForRateLimit('GetAppointments');
-    const appointments = await client.getAppointments(today, today);
-
-    // Transform appointments to match our Patient interface
-    const transformedPatients = appointments.map(apt => ({
-      id: apt.AppointmentId || apt.Id,
-      name: `${apt.PatientFirstName || ''} ${apt.PatientLastName || ''}`.trim(),
-      dob: apt.PatientDateOfBirth || apt.PatientDOB || '',
-      appointmentTime: `${apt.AppointmentDate}T${apt.AppointmentTime}:00.000Z`,
-      appointmentType: apt.AppointmentType || 'Office Visit',
-      provider: `${apt.ProviderFirstName || 'Dr.'} ${apt.ProviderLastName || 'Unknown'}`,
-      status: apt.Status?.toLowerCase() || 'scheduled',
-      checkInTime: apt.CheckInTime || undefined,
-      room: apt.Room || undefined,
-      chiefComplaint: apt.ChiefComplaint || 'Follow-Up'
-    }));
-
-    // Store in Firebase for caching
-    const sessionDoc = db.collection('daily_sessions').doc(today);
-    await sessionDoc.set({
-      date: today,
-      patients: transformedPatients,
-      lastSync: new Date(),
-      source: 'tebra_corrected_node_sync'
-    });
-
-    console.log(`Sync completed: ${transformedPatients.length} appointments`);
-
-    return { 
-      success: true, 
-      data: transformedPatients,
-      message: `Synced ${transformedPatients.length} appointments for ${today}`
+    return {
+      success: true,
+      data,
+      message: `Synced ${data.length} appointments for ${today}`
     };
   } catch (error) {
-    console.error('Failed to sync schedule:', error);
+    console.error('Failed to sync schedule (callable):', error);
     throw error;
   }
 });
@@ -352,39 +367,12 @@ exports.tebraSyncTodaysSchedule = onCall({ invoker: 'public' }, async () => {
  * Scheduled function to auto-sync Tebra data
  * Runs every 15 minutes during business hours (8 AM - 6 PM, Mon-Fri)
  */
-exports.tebraAutoSync = onSchedule('*/15 8-18 * * 1-5', async (_event) => {
+exports.tebraAutoSync = onSchedule('*/15 8-18 * * 1-5', async () => {
   console.log('Starting auto-sync of Tebra schedule...');
-
   try {
     const today = new Date().toISOString().split('T')[0];
-    const client = new TebraApiClient();
-
-    await rateLimiter.waitForRateLimit('GetAppointments');
-    const appointments = await client.getAppointments(today, today);
-
-    const transformedPatients = appointments.map(apt => ({
-      id: apt.AppointmentId || apt.Id,
-      name: `${apt.PatientFirstName || ''} ${apt.PatientLastName || ''}`.trim(),
-      dob: apt.PatientDateOfBirth || apt.PatientDOB || '',
-      appointmentTime: `${apt.AppointmentDate}T${apt.AppointmentTime}:00.000Z`,
-      appointmentType: apt.AppointmentType || 'Office Visit',
-      provider: `${apt.ProviderFirstName || 'Dr.'} ${apt.ProviderLastName || 'Unknown'}`,
-      status: apt.Status?.toLowerCase() || 'scheduled',
-      checkInTime: apt.CheckInTime || undefined,
-      room: apt.Room || undefined,
-      chiefComplaint: apt.ChiefComplaint || 'Follow-Up'
-    }));
-
-    const sessionDoc = db.collection('daily_sessions').doc(today);
-    await sessionDoc.set({
-      date: today,
-      patients: transformedPatients,
-      lastSync: new Date(),
-      source: 'tebra_corrected_node_auto_sync'
-    });
-
-    console.log(`Auto-sync completed: ${transformedPatients.length} appointments`);
-    return { success: true, count: transformedPatients.length };
+    const data = await performDailySync(today);
+    return { success: true, count: data.length };
   } catch (error) {
     console.error('Auto-sync failed:', error);
     throw error;
