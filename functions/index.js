@@ -20,6 +20,64 @@ const tebraProxyApiKey = defineString('TEBRA_PROXY_API_KEY', {
 // Feature-flag controls
 const syncEnabled = defineBool('SYNC_ENABLED', { default: true });   // set to false to disable all backend auto-syncs
 
+// Rate limiting for manual operations (in-memory, resets on function cold start)
+const userRequestCounts = new Map();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const MAX_IMPORTS_PER_MINUTE = 5;
+const MAX_ADDS_PER_MINUTE = 10;
+
+function checkRateLimit(userId, operation) {
+  const now = Date.now();
+  const userKey = `${userId}_${operation}`;
+  const userRequests = userRequestCounts.get(userKey) || { count: 0, resetTime: now + RATE_LIMIT_WINDOW };
+  
+  if (now > userRequests.resetTime) {
+    userRequests.count = 0;
+    userRequests.resetTime = now + RATE_LIMIT_WINDOW;
+  }
+  
+  const maxRequests = operation === 'import' ? MAX_IMPORTS_PER_MINUTE : MAX_ADDS_PER_MINUTE;
+  if (userRequests.count >= maxRequests) {
+    throw new HttpsError('resource-exhausted', `Rate limit exceeded. Max ${maxRequests} ${operation}s per minute.`);
+  }
+  
+  userRequests.count++;
+  userRequestCounts.set(userKey, userRequests);
+}
+
+function validatePatientObject(patient, index) {
+  const requiredFields = ['id', 'name', 'appointmentTime'];
+  const missingFields = requiredFields.filter(field => !patient[field]);
+  
+  if (missingFields.length > 0) {
+    throw new HttpsError('invalid-argument', `Patient at index ${index} is missing required fields: ${missingFields.join(', ')}`);
+  }
+  
+  // Validate data types
+  if (typeof patient.id !== 'string' || typeof patient.name !== 'string') {
+    throw new HttpsError('invalid-argument', `Patient at index ${index} has invalid data types for id or name`);
+  }
+  
+  // Validate appointment time format
+  const appointmentDate = new Date(patient.appointmentTime);
+  if (isNaN(appointmentDate.getTime())) {
+    throw new HttpsError('invalid-argument', `Patient at index ${index} has invalid appointmentTime format`);
+  }
+}
+
+function validateDateFormat(dateString) {
+  if (!dateString) return true; // Allow empty/null dates
+  
+  // Check ISO date format (YYYY-MM-DD)
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(dateString)) {
+    return false;
+  }
+  
+  const date = new Date(dateString);
+  return !isNaN(date.getTime()) && dateString === date.toISOString().split('T')[0];
+}
+
 // Initialize Firebase Admin SDK
 initializeApp();
 const db = getFirestore();
@@ -311,7 +369,22 @@ exports.tebraGetPractices = onCall({ invoker: 'public' }, async () => {
   }
 });
 
-// Helper to compute next Monday when today is Fri/Sat/Sun
+/**
+ * Helper function to compute target sync date with weekend adjustment.
+ * 
+ * @param {string|null} preferredDate - Optional preferred date in YYYY-MM-DD format
+ * @returns {string} Date string in YYYY-MM-DD format
+ * 
+ * @description
+ * If no preferredDate is provided, this function implements weekend-to-Monday adjustment:
+ * - Friday: Returns the following Monday (adds 3 days)
+ * - Saturday: Returns the following Monday (adds 2 days) 
+ * - Sunday: Returns the following Monday (adds 1 day)
+ * - Monday-Thursday: Returns the current date
+ * 
+ * This ensures schedule syncing always targets business days and provides
+ * consistent behavior for weekend operations.
+ */
 function getTargetSyncDate(preferredDate = null) {
   if (preferredDate) return preferredDate;
   const today = new Date();
@@ -365,8 +438,17 @@ async function performDailySync(targetDate) {
 /**
  * Sync today's schedule from Tebra
  */
-exports.tebraSyncTodaysSchedule = onCall({}, async ({ data }) => {
+exports.tebraSyncTodaysSchedule = onCall({}, async ({ data, auth }) => {
   const { date: customDate, force = false } = data || {};
+
+  // Input validation
+  if (customDate && !validateDateFormat(customDate)) {
+    throw new HttpsError('invalid-argument', 'Invalid date format. Expected YYYY-MM-DD.');
+  }
+  
+  if (force !== undefined && typeof force !== 'boolean') {
+    throw new HttpsError('invalid-argument', 'Force parameter must be a boolean.');
+  }
 
   if (!syncEnabled.value() && !force) {
     return { success: false, message: 'Sync disabled by configuration' };
@@ -403,35 +485,52 @@ exports.tebraAutoSync = onSchedule('*/15 8-18 * * 1-5', async () => {
 /**
  * Manually import a full schedule (array of patients) for a given date.
  * If merge=true we append/merge; otherwise we overwrite the existing doc.
- * The caller (UI or CLI) must already have validated that PHI may be sent.
+ * Requires authentication and validates all patient data.
  */
-exports.manualImportSchedule = onCall({ invoker: 'public' }, async ({ data, auth }) => {
+exports.manualImportSchedule = onCall({}, async ({ data, auth }) => {
+  // Authentication check
+  if (!auth || !auth.uid) {
+    throw new HttpsError('unauthenticated', 'Authentication required for manual import operations.');
+  }
+
+  // Rate limiting
+  checkRateLimit(auth.uid, 'import');
+
   const { date, patients, merge = false } = data || {};
 
+  // Input validation
   if (!Array.isArray(patients) || patients.length === 0) {
     throw new HttpsError('invalid-argument', 'patients array required');
   }
+
+  if (date && !validateDateFormat(date)) {
+    throw new HttpsError('invalid-argument', 'Invalid date format. Expected YYYY-MM-DD.');
+  }
+
+  // Validate each patient object
+  patients.forEach((patient, index) => {
+    validatePatientObject(patient, index);
+  });
+
   const targetDate = date || new Date().toISOString().split('T')[0];
 
   try {
     const docRef = db.collection('daily_sessions').doc(targetDate);
-    if (merge) {
-      await docRef.set({
-        date: targetDate,
-        lastSync: new Date(),
-        source: 'manual_import',
-        patients
-      }, { merge: true });
-    } else {
-      await docRef.set({
-        date: targetDate,
-        lastSync: new Date(),
-        source: 'manual_import',
-        patients
-      });
-    }
+    
+    // Create the document data object once
+    const documentData = {
+      date: targetDate,
+      lastSync: new Date(),
+      source: 'manual_import',
+      importedBy: auth.uid,
+      patients
+    };
+    
+    // Use the merge option conditionally
+    const setOptions = merge ? { merge: true } : {};
+    await docRef.set(documentData, setOptions);
 
-    console.log(`Manual schedule import for ${targetDate}: ${patients.length} patients (merge=${merge})`);
+    console.log(`Manual schedule import for ${targetDate}: ${patients.length} patients (merge=${merge}) by user ${auth.uid}`);
     return { success: true, count: patients.length };
   } catch (err) {
     console.error('Manual import failed:', err);
@@ -441,27 +540,54 @@ exports.manualImportSchedule = onCall({ invoker: 'public' }, async ({ data, auth
 
 /**
  * Manually append a single patient entry to a day's schedule.
+ * Requires authentication and prevents duplicate entries.
  */
-exports.manualAddPatient = onCall({ invoker: 'public' }, async ({ data }) => {
+exports.manualAddPatient = onCall({}, async ({ data, auth }) => {
+  // Authentication check
+  if (!auth || !auth.uid) {
+    throw new HttpsError('unauthenticated', 'Authentication required for manual patient operations.');
+  }
+
+  // Rate limiting
+  checkRateLimit(auth.uid, 'add');
+
   const { date, patient } = data || {};
   if (!patient) {
     throw new HttpsError('invalid-argument', 'patient object required');
   }
+
+  // Validate patient object
+  validatePatientObject(patient, 0);
+
+  if (date && !validateDateFormat(date)) {
+    throw new HttpsError('invalid-argument', 'Invalid date format. Expected YYYY-MM-DD.');
+  }
+
   const targetDate = date || new Date().toISOString().split('T')[0];
   const docRef = db.collection('daily_sessions').doc(targetDate);
+  
   try {
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(docRef);
       const existing = snap.exists ? (snap.data().patients || []) : [];
+      
+      // Check for duplicate patient (by ID)
+      const isDuplicate = existing.some(existingPatient => existingPatient.id === patient.id);
+      if (isDuplicate) {
+        console.log(`Skipping duplicate patient ${patient.id} for ${targetDate}`);
+        return; // Skip adding duplicate
+      }
+      
       tx.set(docRef, {
         date: targetDate,
         lastSync: new Date(),
         source: 'manual_add',
+        addedBy: auth.uid,
         patients: [...existing, patient]
       }, { merge: true });
     });
 
-    console.log(`Added manual patient to ${targetDate}: ${patient.id || patient.name}`);
+    console.log(`Added manual patient to ${targetDate}: ${patient.id || patient.name} by user ${auth.uid}`);
     return { success: true };
   } catch (e) {
     console.error('manualAddPatient failed:', e);

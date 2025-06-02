@@ -162,6 +162,7 @@ const TebraIntegration: React.FC = () => {
           <button
             onClick={handleTestPatientSearch}
             disabled={isLoading || !isConnected}
+            aria-label="Test patient search functionality by searching for test patients in Tebra EHR"
             className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Test Patient Search
@@ -170,6 +171,7 @@ const TebraIntegration: React.FC = () => {
           <button
             onClick={handleGetProviders}
             disabled={isLoading || !isConnected}
+            aria-label="Retrieve and display all healthcare providers from Tebra EHR system"
             className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Get Providers

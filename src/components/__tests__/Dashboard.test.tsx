@@ -154,7 +154,7 @@ jest.mock('../TebraIntegration', () => {
 
 jest.mock('../TebraIntegrationNew', () => {
   return function MockTebraIntegrationNew() {
-    return <div data-testid="tebra-integration">Tebra Integration</div>;
+    return <div data-testid="tebra-integration-new">Tebra Integration</div>;
   };
 });
 
@@ -222,7 +222,7 @@ describe('Dashboard', () => {
     await waitFor(() => {
       expect(screen.getByTestId('metrics-panel')).toBeInTheDocument();
       expect(screen.getByTestId('time-control')).toBeInTheDocument();
-      expect(screen.getByTestId('tebra-integration')).toBeInTheDocument();
+      expect(screen.getByTestId('tebra-integration-new')).toBeInTheDocument();
       expect(screen.getByTestId('auth-nav')).toBeInTheDocument();
     });
   });
