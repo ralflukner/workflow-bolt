@@ -107,6 +107,22 @@ export class TebraIntegrationService {
     return typeof window !== 'undefined';
   }
 
+  /**
+   * Determines the next available weekday (Monday–Thursday) if today is a weekend.
+   * @returns {Date} The next weekday date.
+   */
+  private getNextWeekday(): Date {
+    const today = new Date();
+    const day = today.getDay();
+    const nextWeekday = new Date(today);
+    if (day === 0) { // Sunday
+      nextWeekday.setDate(today.getDate() + 1); // Monday
+    } else if (day === 6) { // Saturday
+      nextWeekday.setDate(today.getDate() + 2); // Monday
+    }
+    return nextWeekday;
+  }
+
   async syncTodaysSchedule(): Promise<SyncResult> {
     const startTime = new Date();
     const errors: string[] = [];
@@ -127,13 +143,13 @@ export class TebraIntegrationService {
         throw new Error('Not connected to Tebra API');
       }
 
-      console.log('Syncing today\'s schedule from Tebra...');
+      console.log('Syncing schedule from Tebra...');
 
-      // Define date range (today + look ahead days)
-      const fromDate = new Date();
+      // Define date range (next weekday + look ahead days)
+      const fromDate = this.getNextWeekday();
       fromDate.setHours(0, 0, 0, 0);
       
-      const toDate = new Date();
+      const toDate = new Date(fromDate);
       toDate.setDate(toDate.getDate() + this.config.lookAheadDays);
       toDate.setHours(23, 59, 59, 999);
 
@@ -198,21 +214,15 @@ export class TebraIntegrationService {
 
       console.log('Schedule sync completed successfully');
       return this.lastSyncResult;
-
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      errors.push(errorMsg);
-      
-      this.lastSyncResult = {
+      console.error('Failed to sync schedule:', error);
+      return {
         success: false,
         patientsFound: 0,
         appointmentsFound: 0,
-        errors,
+        errors: [error instanceof Error ? error.message : String(error)],
         lastSyncTime: startTime,
       };
-
-      console.error('Schedule sync failed:', error);
-      return this.lastSyncResult;
     }
   }
 

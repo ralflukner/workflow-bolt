@@ -1,6 +1,7 @@
 # Environment Variables Setup
 
-This project uses multiple environment files to manage configuration and sensitive credentials.
+This project uses multiple environment files to manage configuration and
+sensitive credentials.
 
 ## File Structure
 
@@ -68,4 +69,5 @@ source .envrc  # Manually load variables
 - Never commit `.env.local` to version control
 - The `.envrc` file automatically loads `.env.local` if it exists
 - All sensitive credentials should be in `.env.local` only
-- The `env-local-template.txt` shows the required format but contains placeholder/example values
+- The `env-local-template.txt` shows the required format but contains
+  placeholder/example values

@@ -103,7 +103,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 
 function MyComponent() {
   const { user, isAuthenticated, isLoading } = useAuth0();
-  
+
   // Use authentication information in your component
 }
 ```
@@ -130,4 +130,3 @@ claims and roles in the user token.
    settings
 3. **CORS Errors**: Verify your Auth0 application's Allowed Web Origins
    includes your development URL
-

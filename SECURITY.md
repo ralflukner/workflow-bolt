@@ -1,6 +1,7 @@
 # Security Policy
 
 ## Supported Versions
+
 Currently, I'm only maintaining and
 supporting the latest version of this
 project. As a solo developer, I focus my
@@ -13,6 +14,7 @@ release.
 | < 1.0   | :X: |
 
 ## Reporting a Vulnerability
+
 Since I'm both the developer and a user
 of this application, I take security
 seriously. If you discover a security
@@ -51,8 +53,10 @@ reasonable time to address the issue
 before any public disclosure.
 
 ## Security Best Practices
+
 As the sole developer and user, I follow
 these security practices:
+
 - Regular dependency updates to patch
 known vulnerabilities
 - Code reviews of my own work before
@@ -65,8 +69,10 @@ development and deployment
 environments
 
 ## Personal Security Measures
+
 Since I use this application myself, I
 implement these additional measures:
+
 - Regular updates to the latest version
 - Secure storage of any sensitive data
 - Regular monitoring of application logs
