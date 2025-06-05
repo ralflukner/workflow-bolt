@@ -47,10 +47,11 @@ app.delete('/test', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({
-    error: 'Something broke!',
-    message: err.message
-  });
+  const payload =
+    process.env.NODE_ENV === 'production'
+      ? { error: 'Internal server error' }
+      : { error: 'Internal server error', message: err.message };
+  res.status(500).json(payload);
 });
 
 // Keep api as 1st Gen
@@ -122,7 +123,7 @@ exports.purgeHealthCheck = functionsV1.pubsub
     console.log(`Running health check at ${now.toISOString()}`);
     
     try {
-      const healthStatus = {
+ const lastPurgeStatus = (await statusDoc.get()).data() ?? {};
         timestamp: now,
         lastPurge: lastPurgeStatus,
         systemStatus: 'healthy',

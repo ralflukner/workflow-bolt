@@ -32,23 +32,22 @@ gcloud config set project $PROJECT_ID
 # Create the secret if it doesn't exist
 if ! gcloud secrets describe "$SECRET_NAME" >/dev/null 2>&1; then
     echo -e "${YELLOW}🔑 Creating new secret: $SECRET_NAME${NC}"
-    gcloud secrets create "$SECRET_NAME" \
-        --replication-policy="automatic" \
-        --labels="environment=production,hipaa-compliant=true,service=firebase"
+gcloud secrets create "$SECRET_NAME" \
+        --replication-policy="user-managed" \
+        --locations="us-central1,us-east1" \
+         --labels="environment=production,hipaa-compliant=true,service=firebase"
 fi
 
 # Create a temporary file for the configuration
 TEMP_FILE=$(mktemp)
-cat > "$TEMP_FILE" << EOF
-{
-    "projectId": "luknerlumina-firebase",
-    "apiKey": "AIzaSyCIMBYxl3lMAPMAWOKzLjwItD_k-5Qbd-c",
-    "authDomain": "luknerlumina-firebase.firebaseapp.com",
-    "storageBucket": "luknerlumina-firebase.firebasestorage.app",
-    "messagingSenderId": "623450773640",
-    "appId": "1:623450773640:web:9afd63d3ccbb1fcb6fe73d"
-}
-EOF
+# Read configuration from environment or config file
+if [ -z "$FIREBASE_CONFIG" ]; then
+    echo -e "${RED}❌ FIREBASE_CONFIG environment variable not set${NC}"
+    echo -e "${YELLOW}Please set FIREBASE_CONFIG with your Firebase configuration JSON${NC}"
+    exit 1
+fi
+
+echo "$FIREBASE_CONFIG" > "$TEMP_FILE"
 
 # Add the new version to the secret
 echo -e "${YELLOW}📤 Adding new version to secret...${NC}"

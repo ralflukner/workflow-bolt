@@ -12,7 +12,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://127.0.0.1:5002/luknerlumina-firebase/us-central1/api/health",
+					"raw": "http://{{host}}:{{port}}/{{projectId}}/{{region}}/api/health",
 					"protocol": "http",
 					"host": ["127", "0", "0", "1"],
 					"port": "5002",

@@ -40,7 +40,7 @@ jest.mock('../../hooks/usePatientContext', () => ({
     tickCounter: 0,
     isLoading: false,
     persistenceEnabled: false,
-    saveCurrentSession: jest.fn().mockResolvedValue(true),
+    saveCurrentSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
     togglePersistence: jest.fn()
   })
 }));
@@ -223,7 +223,7 @@ describe('Dashboard', () => {
     jest.runOnlyPendingTimers();
     jest.clearAllTimers();
   });
-  
+
   it('renders dashboard with metrics panel', async () => {
     render(
       <TestWrapper>
@@ -417,9 +417,9 @@ describe('Dashboard', () => {
     const originalCreateElement = document.createElement;
     document.createElement = jest.fn(() => mockElement as unknown as HTMLAnchorElement);
     const originalAppendChild = document.body.appendChild;
-    document.body.appendChild = jest.fn();
+    document.body.appendChild = jest.fn<(node: Node) => Node>();
     const originalRemoveChild = document.body.removeChild;
-    document.body.removeChild = jest.fn();
+    document.body.removeChild = jest.fn<(child: Node) => Node>();
 
     // Click download button
     fireEvent.click(screen.getByText('Download'));

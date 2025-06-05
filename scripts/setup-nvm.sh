@@ -25,11 +25,14 @@ else
   echo "You may need to install NVM first: https://github.com/nvm-sh/nvm#installing-and-updating"
 fi
 
-# Add the NVM bin directory to PATH if it's not already there
-if [ -d "$HOME/.nvm/versions/node/v22.15.0/bin" ]; then
-  if [[ ":$PATH:" != *":$HOME/.nvm/versions/node/v22.15.0/bin:"* ]]; then
-    export PATH="$HOME/.nvm/versions/node/v22.15.0/bin:$PATH"
-    echo "Added Node.js v22.15.0 bin directory to PATH"
+# Add the current/latest NVM Node.js bin directory to PATH if available
+if [ -n "$NVM_DIR" ] && command -v nvm > /dev/null; then
+  NODE_VERSION=$(nvm current 2>/dev/null || nvm ls --no-colors | grep -E "v[0-9]+" | tail -1 | sed 's/[^v0-9.]//g')
+  if [ -n "$NODE_VERSION" ] && [ -d "$NVM_DIR/versions/node/$NODE_VERSION/bin" ]; then
+    if [[ ":$PATH:" != *":$NVM_DIR/versions/node/$NODE_VERSION/bin:"* ]]; then
+      export PATH="$NVM_DIR/versions/node/$NODE_VERSION/bin:$PATH"
+      echo "Added Node.js $NODE_VERSION bin directory to PATH"
+    fi
   fi
 fi
 

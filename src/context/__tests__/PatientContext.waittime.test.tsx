@@ -125,7 +125,8 @@ describe('PatientContext wait time calculation', () => {
       checkInTime: new Date('2025-06-05T09:30:00').toISOString(),
     };
 
-    render(
+    // Use the destructured rerender function from render
+    const { rerender } = render(
       <TestWrapper>
         <WaitTimeTestComponent patient={testPatient} />
       </TestWrapper>
@@ -139,8 +140,8 @@ describe('PatientContext wait time calculation', () => {
       mockGetCurrentTime.mockImplementation(() => new Date('2025-06-05T10:15:00'));
     });
 
-    // Re-render with the updated time
-    render(
+    // Use rerender instead of render to update the existing component
+    rerender(
       <TestWrapper>
         <WaitTimeTestComponent patient={testPatient} />
       </TestWrapper>

@@ -51,10 +51,14 @@ async function getFirebaseConfig(): Promise<FirebaseConfig> {
  * Initialize Firebase with configuration from Secret Manager
  */
 export async function initializeFirebase(): Promise<void> {
-  if (getApps().length > 0) {
-    console.log('Firebase already initialized');
-    return;
-  }
+if (getApps().length > 0) {
+  const existingApp = getApps()[0];
+  app = existingApp;
+  db = getFirestore(existingApp);
+  auth = getAuth(existingApp);
+  functions = getFunctions(existingApp);
+  return;
+}
 
   try {
     const config = await getFirebaseConfig();

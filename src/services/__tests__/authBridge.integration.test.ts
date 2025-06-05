@@ -1,4 +1,3 @@
-// @ts-nocheck - Disable TypeScript checking for this file
 // The TypeScript errors in this file are false positives related to Jest mocking.
 // These errors occur because the mock objects don't fully implement the expected interfaces,
 // but the tests are working correctly in practice because they're only using the properties
@@ -15,6 +14,37 @@ jest.mock('@auth0/auth0-react');
 jest.mock('../../config/firebase');
 
 const mockUseAuth0 = useAuth0 as jest.MockedFunction<typeof useAuth0>;
+
+// Helper to create a properly typed Firebase User mock
+const createMockUser = (uid: string): User => ({
+  uid,
+  email: 'test@example.com',
+  emailVerified: true,
+  displayName: 'Test User',
+  isAnonymous: false,
+  photoURL: null,
+  phoneNumber: null,
+  tenantId: null,
+  providerId: 'firebase',
+  providerData: [],
+  metadata: {
+    creationTime: '2023-01-01T00:00:00.000Z',
+    lastSignInTime: '2023-01-01T00:00:00.000Z'
+  },
+  refreshToken: 'mock-refresh-token',
+  delete: jest.fn(),
+  getIdToken: jest.fn(),
+  getIdTokenResult: jest.fn(),
+  reload: jest.fn(),
+  toJSON: jest.fn()
+} as unknown as User);
+
+// Helper to create a properly typed Firebase UserCredential mock
+const createMockUserCredential = (uid: string): UserCredential => ({
+  user: createMockUser(uid),
+  providerId: 'custom',
+  operationType: 'signIn'
+} as UserCredential);
 
 // Mock Firebase Auth with more realistic behavior
 const mockFirebaseAuth: {
@@ -79,10 +109,9 @@ describe.skip('AuthBridge Integration Tests', () => {
       } as Response);
 
       // Mock Firebase Auth successful sign-in
-      // @ts-expect-error - Jest mock doesn't need full User implementation
-      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue({
-        user: { uid: 'firebase-user-123' }
-      });
+      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue(
+        createMockUserCredential('firebase-user-123')
+      );
 
       const { result } = renderHook(() => useFirebaseAuth());
 
@@ -97,9 +126,7 @@ describe.skip('AuthBridge Integration Tests', () => {
         method: 'POST',
         body: JSON.stringify({ auth0Token: 'valid-jwt-token' })
       });
-      // @ts-expect-error - Jest mock accepts two arguments even though type definition expects one
       expect(mockFirebaseAuth.signInWithCustomToken).toHaveBeenCalledWith(
-          expect.anything(),
           'firebase-custom-token'
       );
     });
@@ -121,6 +148,7 @@ describe.skip('AuthBridge Integration Tests', () => {
         }
       });
 
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       mockUseAuth0.mockReturnValue({
         isAuthenticated: true,
         getAccessTokenSilently: mockGetAccessTokenSilently,
@@ -136,9 +164,9 @@ describe.skip('AuthBridge Integration Tests', () => {
         })
       } as Response);
 
-      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue({
-        user: { uid: 'firebase-user-123' }
-      });
+      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue(
+        createMockUserCredential('firebase-user-123')
+      );
 
       const { result } = renderHook(() => useFirebaseAuth());
 
@@ -162,7 +190,9 @@ describe.skip('AuthBridge Integration Tests', () => {
     });
 
     it('should handle network failures with retry logic', async () => {
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       const mockGetAccessTokenSilently = jest.fn().mockResolvedValue('valid-jwt-token');
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       mockUseAuth0.mockReturnValue({
         isAuthenticated: true,
         getAccessTokenSilently: mockGetAccessTokenSilently,
@@ -182,9 +212,9 @@ describe.skip('AuthBridge Integration Tests', () => {
             })
           } as Response);
 
-      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue({
-        user: { uid: 'firebase-user-123' }
-      });
+      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue(
+        createMockUserCredential('firebase-user-123')
+      );
 
       const { result } = renderHook(() => useFirebaseAuth());
 
@@ -205,7 +235,9 @@ describe.skip('AuthBridge Integration Tests', () => {
       const payload = btoa(JSON.stringify({ exp: futureTime }));
       const validToken = `header.${payload}.signature`;
 
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       const mockGetAccessTokenSilently = jest.fn().mockResolvedValue(validToken);
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       mockUseAuth0.mockReturnValue({
         isAuthenticated: true,
         getAccessTokenSilently: mockGetAccessTokenSilently,
@@ -221,9 +253,9 @@ describe.skip('AuthBridge Integration Tests', () => {
         })
       } as Response);
 
-      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue({
-        user: { uid: 'firebase-user-123' }
-      });
+      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue(
+        createMockUserCredential('firebase-user-123')
+      );
 
       const { result } = renderHook(() => useFirebaseAuth());
 
@@ -250,7 +282,9 @@ describe.skip('AuthBridge Integration Tests', () => {
 
   describe('Error Handling Integration', () => {
     it('should handle Firebase Functions authentication errors', async () => {
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       const mockGetAccessTokenSilently = jest.fn().mockResolvedValue('invalid-token');
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       mockUseAuth0.mockReturnValue({
         isAuthenticated: true,
         getAccessTokenSilently: mockGetAccessTokenSilently,
@@ -279,7 +313,9 @@ describe.skip('AuthBridge Integration Tests', () => {
     });
 
     it('should handle Firebase Auth sign-in failures', async () => {
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       const mockGetAccessTokenSilently = jest.fn().mockResolvedValue('valid-jwt-token');
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       mockUseAuth0.mockReturnValue({
         isAuthenticated: true,
         getAccessTokenSilently: mockGetAccessTokenSilently,
@@ -311,11 +347,13 @@ describe.skip('AuthBridge Integration Tests', () => {
     });
 
     it('should handle Auth0 popup fallback when silent refresh fails', async () => {
-      const mockGetAccessTokenSilently = jest.fn().mockRejectedValue(
+      const mockGetAccessTokenSilently = jest.fn<() => Promise<string>>().mockRejectedValue(
           new Error('Silent authentication failed')
       );
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       const mockGetAccessTokenWithPopup = jest.fn().mockResolvedValue('popup-token');
 
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       mockUseAuth0.mockReturnValue({
         isAuthenticated: true,
         getAccessTokenSilently: mockGetAccessTokenSilently,
@@ -331,9 +369,9 @@ describe.skip('AuthBridge Integration Tests', () => {
         })
       } as Response);
 
-      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue({
-        user: { uid: 'firebase-user-123' }
-      });
+      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue(
+        createMockUserCredential('firebase-user-123')
+      );
 
       const { result } = renderHook(() => useFirebaseAuth());
 
@@ -345,7 +383,6 @@ describe.skip('AuthBridge Integration Tests', () => {
       expect(mockGetAccessTokenSilently).toHaveBeenCalled();
       expect(mockGetAccessTokenWithPopup).toHaveBeenCalled();
       expect(mockFirebaseAuth.signInWithCustomToken).toHaveBeenCalledWith(
-          expect.anything(),
           'popup-firebase-token'
       );
     });
@@ -353,7 +390,9 @@ describe.skip('AuthBridge Integration Tests', () => {
 
   describe('Utility Functions Integration', () => {
     it('should provide comprehensive debug information', async () => {
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       const mockGetAccessTokenSilently = jest.fn().mockResolvedValue('debug-token');
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       mockUseAuth0.mockReturnValue({
         isAuthenticated: true,
         getAccessTokenSilently: mockGetAccessTokenSilently,
@@ -371,7 +410,9 @@ describe.skip('AuthBridge Integration Tests', () => {
     });
 
     it('should clear token cache effectively', async () => {
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       const mockGetAccessTokenSilently = jest.fn().mockResolvedValue('cache-token');
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       mockUseAuth0.mockReturnValue({
         isAuthenticated: true,
         getAccessTokenSilently: mockGetAccessTokenSilently,
@@ -387,9 +428,9 @@ describe.skip('AuthBridge Integration Tests', () => {
         })
       } as Response);
 
-      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue({
-        user: { uid: 'firebase-user-123' }
-      });
+      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue(
+        createMockUserCredential('firebase-user-123')
+      );
 
       const { result } = renderHook(() => useFirebaseAuth());
 
@@ -415,7 +456,9 @@ describe.skip('AuthBridge Integration Tests', () => {
     });
 
     it('should perform health check with comprehensive status', async () => {
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       const mockGetAccessTokenSilently = jest.fn().mockResolvedValue('health-token');
+      // @ts-expect-error - Jest mock doesn't match exact type but works for testing
       mockUseAuth0.mockReturnValue({
         isAuthenticated: true,
         getAccessTokenSilently: mockGetAccessTokenSilently,
