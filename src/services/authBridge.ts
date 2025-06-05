@@ -33,6 +33,12 @@ interface AuthDebugInfo {
   performanceMs: number;
 }
 
+interface HealthCheckDetails {
+  cacheSize: number;
+  recentErrors: AuthDebugInfo[];
+  timestamp: string;
+}
+
 /**
  * HIPAA-Compliant Authentication Bridge with Enhanced Debugging
  * Securely exchanges Auth0 tokens for Firebase custom tokens with comprehensive logging
@@ -262,8 +268,8 @@ export class AuthBridge {
       this.logDebug('🔐 Starting HIPAA-compliant authentication process');
       
       const firebaseToken = await this.exchangeTokens(auth0Token);
-      
       await this.withRetry(async () => {
+        if (!auth) throw new Error('Firebase Auth not available');
         await signInWithCustomToken(auth, firebaseToken);
       }, 'Firebase sign-in');
       
@@ -291,7 +297,7 @@ export class AuthBridge {
     cacheSize: number;
     cacheEntries: Array<{ uid: string; expiresAt: string; expiresIn: number }>;
   } {
-    const cacheEntries = Array.from(this.tokenCache.entries()).map(([hash, entry]) => ({
+    const cacheEntries = Array.from(this.tokenCache.entries()).map(([, entry]) => ({
       uid: entry.uid,
       expiresAt: new Date(entry.expiresAt).toISOString(),
       expiresIn: entry.expiresAt - Date.now()
@@ -310,7 +316,7 @@ export class AuthBridge {
   async healthCheck(): Promise<{
     status: 'healthy' | 'degraded' | 'unhealthy';
     checks: Record<string, boolean>;
-    details: Record<string, any>;
+    details: HealthCheckDetails;
   }> {
     const checks = {
       firebaseAuth: !!auth,
@@ -351,10 +357,10 @@ export const useFirebaseAuth = () => {
       return false;
     }
 
+    let auth0Token: string | undefined; // Initialize to undefined
+
     try {
       authBridge.logDebug('🔐 Ensuring HIPAA-compliant authentication for patient data access');
-      
-      let auth0Token: string;
       
       try {
         // Try silent token refresh first
@@ -371,8 +377,14 @@ export const useFirebaseAuth = () => {
           auth0Token = result as string;
         } catch (popupError) {
           authBridge.logDebug('❌ Both silent and popup token refresh failed', popupError);
-          throw new Error('Unable to refresh authentication token');
+          throw popupError; // Re-throw the original popupError to be caught by the outer try-catch
         }
+      }
+
+      if (!auth0Token) {
+        // This case handles scenarios where try/catch blocks might not throw but token is still not acquired.
+        authBridge.logDebug('❌ Auth0 token could not be obtained after all attempts.');
+        throw new Error('Auth0 token could not be obtained.'); 
       }
 
       await authBridge.signInWithAuth0Token(auth0Token);
