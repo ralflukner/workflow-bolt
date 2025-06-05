@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { renderHook, act } from '@testing-library/react';
 import { PatientProvider } from '../PatientContext';
@@ -9,29 +9,29 @@ import { Patient, PatientApptStatus, AppointmentType } from '../../types';
 // Mock services
 jest.mock('../../services/firebase/dailySessionService', () => ({
   dailySessionService: {
-    loadTodaysSession: jest.fn().mockResolvedValue([]) as any,
-    saveTodaysSession: jest.fn().mockResolvedValue(undefined) as any,
-    getSessionStats: jest.fn().mockResolvedValue({
+    loadTodaysSession: jest.fn<() => Promise<unknown[]>>().mockResolvedValue([]),
+    saveTodaysSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    getSessionStats: jest.fn<() => Promise<unknown>>().mockResolvedValue({
       backend: 'firebase',
       currentSessionDate: '2024-01-15',
       hasCurrentSession: false,
       totalSessions: 0,
-    }) as any,
-    clearSession: jest.fn().mockResolvedValue(undefined) as any,
+    }),
+    clearSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
   },
 }));
 
 jest.mock('../../services/localStorage/localSessionService', () => ({
   localSessionService: {
-    loadTodaysSession: jest.fn().mockReturnValue([]) as any,
-    saveTodaysSession: jest.fn() as any,
-    getSessionStats: jest.fn().mockReturnValue({
+    loadTodaysSession: jest.fn<() => unknown[]>().mockReturnValue([]),
+    saveTodaysSession: jest.fn<() => void>(),
+    getSessionStats: jest.fn<() => unknown>().mockReturnValue({
       backend: 'localStorage',
       currentSessionDate: '2024-01-15',
       hasCurrentSession: false,
       totalSessions: 0,
-    }) as any,
-    clearSession: jest.fn() as any,
+    }),
+    clearSession: jest.fn<() => void>(),
   },
 }));
 
@@ -43,7 +43,7 @@ jest.mock('../../config/firebase', () => ({
 
 jest.mock('../../services/authBridge', () => ({
   useFirebaseAuth: () => ({
-    ensureFirebaseAuth: jest.fn().mockResolvedValue(true) as any,
+    ensureFirebaseAuth: jest.fn<() => Promise<boolean>>().mockResolvedValue(true),
   }),
 }));
 
