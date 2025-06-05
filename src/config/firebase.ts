@@ -1,64 +1,90 @@
-import { initializeApp, FirebaseApp } from 'firebase/app';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFunctions, Functions } from 'firebase/functions';
 
-// Check if we're in development mode without Firebase config
-const isDevelopment = process.env.NODE_ENV === 'development';
+interface FirebaseConfig {
+  projectId: string;
+  apiKey: string;
+  authDomain: string;
+  storageBucket: string;
+  messagingSenderId: string;
+  appId: string;
+}
 
-// Get Firebase config from environment variables
-const getFirebaseConfig = () => {
-  // In Jest environment, use process.env
-  if (process.env.NODE_ENV === 'test') {
+let app: FirebaseApp | null = null;
+let db: Firestore | null = null;
+let auth: Auth | null = null;
+let functions: Functions | null = null;
+
+/**
+ * Get Firebase configuration from Secret Manager
+ * Falls back to environment variables for development
+ */
+async function getFirebaseConfig(): Promise<FirebaseConfig> {
+  // In development, use environment variables
+  if (process.env.NODE_ENV === 'development') {
     return {
-      projectId: process.env.VITE_FIREBASE_PROJECT_ID || 'demo-project',
-      apiKey: process.env.VITE_FIREBASE_API_KEY || 'demo-api-key',
-      authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || 'demo-project.firebaseapp.com',
-      storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || 'demo-project.appspot.com',
-      messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '123456789',
-      appId: process.env.VITE_FIREBASE_APP_ID || 'demo-app-id',
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID,
     };
   }
-  
-  // In Vite environment, use import.meta.env
-  return {
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo-project',
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key',
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'demo-project.firebaseapp.com',
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'demo-project.appspot.com',
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '123456789',
-    appId: import.meta.env.VITE_FIREBASE_APP_ID || 'demo-app-id',
-  };
+
+  // In production, use Secret Manager
+  try {
+    const response = await fetch('/api/firebase-config');
+    if (!response.ok) {
+      throw new Error('Failed to fetch Firebase configuration');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching Firebase configuration:', error);
+    throw new Error('Firebase configuration not available');
+  }
+}
+
+/**
+ * Initialize Firebase with configuration from Secret Manager
+ */
+export async function initializeFirebase(): Promise<void> {
+  if (getApps().length > 0) {
+    console.log('Firebase already initialized');
+    return;
+  }
+
+  try {
+    const config = await getFirebaseConfig();
+    app = initializeApp(config);
+    db = getFirestore(app);
+    auth = getAuth(app);
+    functions = getFunctions(app);
+    console.log('✅ Firebase initialized successfully');
+  } catch (error) {
+    console.error('❌ Firebase initialization failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if Firebase is configured
+ */
+export const isFirebaseConfigured = (): boolean => {
+  return !!app && !!db && !!auth && !!functions;
 };
 
-const firebaseConfig = getFirebaseConfig();
-const hasFirebaseApiKey = firebaseConfig.apiKey !== 'demo-api-key';
+/**
+ * Get Firebase services
+ */
+export const getFirebaseServices = () => {
+  if (!isFirebaseConfigured()) {
+    throw new Error('Firebase not initialized');
+  }
+  return { app, db, auth, functions };
+};
 
-// Initialize Firebase
-let app: FirebaseApp | undefined;
-let db: Firestore | undefined;
-let auth: Auth | undefined;
-let functions: Functions | undefined;
-let isFirebaseConfigured: boolean;
-
-if (hasFirebaseApiKey) {
-  app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
-  auth = getAuth(app);
-  functions = getFunctions(app);
-  isFirebaseConfigured = true;
-  console.log('🔥 Firebase configured and ready (Firestore, Auth, Functions)');
-} else {
-  console.log('⚠️ Firebase not configured - using mock data or localStorage only');
-  isFirebaseConfigured = false;
-}
-
-// Export flags to check if Firebase is properly configured
-const isLocalDevelopment = isDevelopment && !isFirebaseConfigured;
-
-// Log configuration status
-if (isLocalDevelopment) {
-  console.log('🔧 Running in local development mode - Firebase persistence disabled');
-}
-
-export { db, auth, app, functions, isFirebaseConfigured, isLocalDevelopment }; 
+// Export individual services
+export { db, auth, functions, app };

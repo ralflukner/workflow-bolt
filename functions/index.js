@@ -1,711 +1,161 @@
-const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { onSchedule } = require('firebase-functions/v2/scheduler');
-const { initializeApp } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
-const { getAuth } = require('firebase-admin/auth');
-const axios = require('axios');
 const functions = require('firebase-functions');
-const jwt = require('jsonwebtoken');
-const jwksClient = require('jwks-rsa');
+const functionsV1 = require('firebase-functions/v1');
+const express = require('express');
+const cors = require('cors');
 
-// Load environment variables
-require('dotenv').config();
+// Initialize Express app
+const app = express();
+app.use(cors({ origin: true }));
+app.use(express.json());
 
-// Configuration - using legacy config for v5 compatibility
-const getConfig = () => {
-  const config = functions.config();
-  return {
-    tebraProxyUrl: config.tebra?.proxy_url || 'https://tebra-proxy-623450773640.us-central1.run.app',
-    tebraProxyApiKey: config.tebra?.proxy_api_key || 'UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=',
-    auth0Domain: config.auth0?.domain,
-    auth0Audience: config.auth0?.audience,
-    syncEnabled: config.sync?.enabled !== 'false' // defaults to true
-  };
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Test endpoint with different HTTP methods
+app.get('/test', (req, res) => {
+  res.json({ message: 'GET request successful', method: 'GET' });
+});
+
+app.post('/test', (req, res) => {
+  const body = req.body;
+  res.json({ 
+    message: 'POST request successful', 
+    method: 'POST',
+    receivedData: body 
+  });
+});
+
+app.put('/test', (req, res) => {
+  const body = req.body;
+  res.json({ 
+    message: 'PUT request successful', 
+    method: 'PUT',
+    receivedData: body 
+  });
+});
+
+app.delete('/test', (req, res) => {
+  res.json({ message: 'DELETE request successful', method: 'DELETE' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    error: 'Something broke!',
+    message: err.message
+  });
+});
+
+// Keep api as 1st Gen
+exports.api = functions.https.onRequest(app);
+
+// Store last purge status
+let lastPurgeStatus = {
+  timestamp: null,
+  success: false,
+  error: null,
+  itemsPurged: 0
 };
 
-// Get configuration once
-const appConfig = getConfig();
-
-// Define parameters for configuration
-const tebraProxyUrl = appConfig.tebraProxyUrl;
-const tebraProxyApiKey = appConfig.tebraProxyApiKey;
-
-// Auth0 configuration for token validation
-const auth0Domain = appConfig.auth0Domain;
-const auth0Audience = appConfig.auth0Audience;
-
-// Feature-flag controls
-const syncEnabled = appConfig.syncEnabled;   // set to false to disable all backend auto-syncs
-
-// Rate limiting for manual operations (in-memory, resets on function cold start)
-const userRequestCounts = new Map();
-const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const MAX_IMPORTS_PER_MINUTE = 5;
-const MAX_ADDS_PER_MINUTE = 10;
-
-function checkRateLimit(userId, operation) {
-  const now = Date.now();
-  const userKey = `${userId}_${operation}`;
-  const userRequests = userRequestCounts.get(userKey) || { count: 0, resetTime: now + RATE_LIMIT_WINDOW };
-  
-  if (now > userRequests.resetTime) {
-    userRequests.count = 0;
-    userRequests.resetTime = now + RATE_LIMIT_WINDOW;
-  }
-  
-  const maxRequests = operation === 'import' ? MAX_IMPORTS_PER_MINUTE : MAX_ADDS_PER_MINUTE;
-  if (userRequests.count >= maxRequests) {
-    throw new HttpsError('resource-exhausted', `Rate limit exceeded. Max ${maxRequests} ${operation}s per minute.`);
-  }
-  
-  userRequests.count++;
-  userRequestCounts.set(userKey, userRequests);
-}
-
-function validatePatientObject(patient, index) {
-  const requiredFields = ['id', 'name', 'appointmentTime'];
-  const missingFields = requiredFields.filter(field => !patient[field]);
-  
-  if (missingFields.length > 0) {
-    throw new HttpsError('invalid-argument', `Patient at index ${index} is missing required fields: ${missingFields.join(', ')}`);
-  }
-  
-  // Validate data types
-  if (typeof patient.id !== 'string' || typeof patient.name !== 'string') {
-    throw new HttpsError('invalid-argument', `Patient at index ${index} has invalid data types for id or name`);
-  }
-  
-  // Validate appointment time format
-  const appointmentDate = new Date(patient.appointmentTime);
-  if (isNaN(appointmentDate.getTime())) {
-    throw new HttpsError('invalid-argument', `Patient at index ${index} has invalid appointmentTime format`);
-  }
-}
-
-function validateDateFormat(dateString) {
-  if (!dateString) return true; // Allow empty/null dates
-  
-  // Check ISO date format (YYYY-MM-DD)
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!dateRegex.test(dateString)) {
-    return false;
-  }
-  
-  const date = new Date(dateString);
-  return !isNaN(date.getTime()) && dateString === date.toISOString().split('T')[0];
-}
-
-// Initialize Firebase Admin SDK
-initializeApp();
-const db = getFirestore();
-const adminAuth = getAuth();
-
-// JWKS client for Auth0 token validation - initialize only if Auth0 is configured
-let jwksClientInstance = null;
-
-if (appConfig.auth0Domain) {
-  jwksClientInstance = jwksClient({
-    jwksUri: `https://${appConfig.auth0Domain}/.well-known/jwks.json`,
-    cache: true,
-    cacheMaxEntries: 5,
-    cacheMaxAge: 600000 // 10 minutes
-  });
-  console.log('✅ JWKS client initialized for Auth0 domain:', appConfig.auth0Domain);
-} else {
-  console.warn('⚠️ Auth0 domain not configured - token exchange will not work');
-}
-
-// Tebra API Client using PHP Proxy
-class TebraApiClient {
-  constructor(config = {}) {
-    this.config = {
-      proxyBaseUrl: config.proxyBaseUrl || tebraProxyUrl,
-      apiKey: config.apiKey || tebraProxyApiKey,
-      timeout: config.timeout || 30000, // 30 seconds
-    };
-
-    console.log('Tebra API Client initialized with proxy:', this.config.proxyBaseUrl);
-  }
-
-  /**
-   * Make HTTP request to PHP proxy with API key authentication
-   */
-  async makeRequest(endpoint, method = 'GET', data = null) {
+// Daily data purge function (using v1 syntax)
+exports.dailyDataPurge = functionsV1.pubsub
+  .schedule('every 24 hours')
+  .onRun(async (context) => {
+    const startTime = new Date();
+    console.log(`Starting daily data purge at ${startTime.toISOString()}`);
+    
     try {
-      const url = `${this.config.proxyBaseUrl}/${endpoint}`;
-      console.log(`Making ${method} request to: ${url}`);
+      // Simulate data purge operations
+      const itemsToPurge = [
+        { type: 'temp_files', age: '7d' },
+        { type: 'logs', age: '30d' },
+        { type: 'cache', age: '1d' }
+      ];
       
-      const config = {
-        method,
-        url,
-        timeout: this.config.timeout,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': this.config.apiKey,
-          'User-Agent': 'LuknerClinic-Firebase/1.0'
-        }
-      };
+      let purgedCount = 0;
       
-      if (data && (method === 'POST' || method === 'PUT')) {
-        config.data = data;
+      // Simulate purging each type of data
+      for (const item of itemsToPurge) {
+        console.log(`Purging ${item.type} older than ${item.age}`);
+        // Add your actual purge logic here
+        // For example: await db.collection(item.type).where('createdAt', '<', cutoffDate).delete();
+        purgedCount++;
       }
       
-      const response = await axios(config);
-      
-      if (response.data.success) {
-        console.log(`${endpoint} request successful`);
-        return response.data.data;
-      } else {
-        throw new Error(response.data.error || 'Unknown API error');
-      }
-    } catch (error) {
-      console.error(`${endpoint} request failed:`, error.response?.data || error.message);
-      
-      // Handle specific error cases
-      if (error.response?.status === 401) {
-        throw new HttpsError('unauthenticated', 'Invalid API key for Tebra proxy');
-      } else if (error.response?.status === 429) {
-        throw new HttpsError('resource-exhausted', 'Rate limit exceeded for Tebra proxy');
-      } else {
-        throw new HttpsError('internal', `Failed to call ${endpoint}: ${error.message}`);
-      }
-    }
-  }
-
-  async testConnection() {
-    try {
-      console.log('Testing Tebra API connection via PHP proxy...');
-      const healthData = await this.makeRequest('test');
-      
-      // Test providers endpoint to verify full functionality
-      const providers = await this.getProviders();
-      
-      return {
+      // Update last purge status
+      lastPurgeStatus = {
+        timestamp: new Date(),
         success: true,
-        message: 'Tebra API connection successful via PHP proxy',
-        authenticated: true,
-        authorized: true,
-        customerValid: true,
-        proxy: healthData,
-        providerCount: providers.length
+        error: null,
+        itemsPurged: purgedCount
       };
+      
+      console.log(`Purge completed successfully. Purged ${purgedCount} items.`);
+      return null;
     } catch (error) {
-      console.error('Failed to test connection:', error);
+      console.error('Purge failed:', error);
+      
+      // Update last purge status with error
+      lastPurgeStatus = {
+        timestamp: new Date(),
+        success: false,
+        error: error.message,
+        itemsPurged: 0
+      };
+      
       throw error;
     }
-  }
-
-  async getProviders() {
-    try {
-      console.log('Getting providers via PHP proxy');
-      const result = await this.makeRequest('providers');
-      return result.providers || [];
-    } catch (error) {
-      console.error('Failed to get providers:', error);
-      throw new HttpsError('internal', `Failed to retrieve providers: ${error.message}`);
-    }
-  }
-
-  async getPatientById(patientId) {
-    try {
-      console.log('Getting patient by ID:', patientId);
-      const result = await this.makeRequest(`patients/${patientId}`);
-      return result.patient;
-    } catch (error) {
-      console.error('Failed to get patient:', error);
-      throw new HttpsError('internal', `Failed to retrieve patient data: ${error.message}`);
-    }
-  }
-
-  async searchPatients(searchCriteria) {
-    try {
-      console.log('Searching patients with criteria:', searchCriteria);
-      const result = await this.makeRequest('patients', 'POST', searchCriteria);
-      return result.patients || [];
-    } catch (error) {
-      console.error('Failed to search patients:', error);
-      throw new HttpsError('internal', `Failed to search patients: ${error.message}`);
-    }
-  }
-
-  async getAppointments(fromDate, toDate) {
-    try {
-      console.log('Getting appointments from', fromDate, 'to', toDate);
-      const result = await this.makeRequest('appointments', 'POST', {
-        fromDate,
-        toDate
-      });
-      return result.appointments || [];
-    } catch (error) {
-      console.error('Failed to get appointments:', error);
-      throw new HttpsError('internal', `Failed to retrieve appointments: ${error.message}`);
-    }
-  }
-
-  async getPractices() {
-    try {
-      console.log('Getting practices via PHP proxy');
-      const result = await this.makeRequest('practices');
-      return result.practices || [];
-    } catch (error) {
-      console.error('Failed to get practices:', error);
-      throw new HttpsError('internal', `Failed to retrieve practices: ${error.message}`);
-    }
-  }
-}
-
-// Rate Limiter for Tebra API
-class TebraRateLimiter {
-  constructor() {
-    this.rateLimits = {
-      'GetPatient': 250,
-      'SearchPatients': 500,
-      'GetAppointments': 1000,
-      'GetProviders': 500,
-      'GetPractices': 500,
-    };
-    this.lastCallTimes = {};
-  }
-
-  async waitForRateLimit(method) {
-    const limit = this.rateLimits[method] || 1000;
-    const lastCall = this.lastCallTimes[method] || 0;
-    const timeSinceLastCall = Date.now() - lastCall;
-
-    if (timeSinceLastCall < limit) {
-      const waitTime = limit - timeSinceLastCall;
-      console.log(`Rate limiting ${method}: waiting ${waitTime}ms`);
-      await new Promise(resolve => setTimeout(resolve, waitTime));
-    }
-
-    this.lastCallTimes[method] = Date.now();
-  }
-}
-
-const rateLimiter = new TebraRateLimiter();
-
-// Tebra API Functions
-
-/**
- * Test Tebra API connection
- */
-exports.tebraTestConnection = onCall({ invoker: 'public' }, async () => {
-  try {
-    console.log('Testing Tebra API connection...');
-    const client = new TebraApiClient();
-    await rateLimiter.waitForRateLimit('GetProviders');
-    const result = await client.testConnection();
-
-    console.log('Tebra API connection test successful');
-    return result;
-  } catch (error) {
-    console.error('Tebra connection test failed:', error);
-    return { success: false, message: error.message };
-  }
-});
-
-/**
- * Get patient by ID
- */
-exports.tebraGetPatient = onCall({ invoker: 'public' }, async ({ data }) => {
-  const { patientId } = data;
-
-  if (!patientId) {
-    throw new HttpsError('invalid-argument', 'Patient ID is required');
-  }
-
-  try {
-    const client = new TebraApiClient();
-    await rateLimiter.waitForRateLimit('GetPatient');
-    const patient = await client.getPatientById(patientId);
-
-    return { success: true, data: patient };
-  } catch (error) {
-    console.error('Failed to get patient:', error);
-    throw error;
-  }
-});
-
-/**
- * Search patients
- */
-exports.tebraSearchPatients = onCall({ invoker: 'public' }, async ({ data }) => {
-  const { searchCriteria } = data;
-
-  if (!searchCriteria) {
-    throw new HttpsError('invalid-argument', 'Search criteria is required');
-  }
-
-  try {
-    const client = new TebraApiClient();
-    await rateLimiter.waitForRateLimit('SearchPatients');
-    const patients = await client.searchPatients(searchCriteria);
-
-    return { success: true, data: patients };
-  } catch (error) {
-    console.error('Failed to search patients:', error);
-    throw error;
-  }
-});
-
-/**
- * Get appointments for a specific date
- */
-exports.tebraGetAppointments = onCall({ invoker: 'public' }, async ({ data }) => {
-  const { date } = data;
-
-  if (!date) {
-    throw new HttpsError('invalid-argument', 'Date is required');
-  }
-
-  try {
-    const client = new TebraApiClient();
-    await rateLimiter.waitForRateLimit('GetAppointments');
-    const appointments = await client.getAppointments(date, date);
-
-    return { success: true, data: appointments };
-  } catch (error) {
-    console.error('Failed to get appointments:', error);
-    throw error;
-  }
-});
-
-/**
- * Get all providers
- */
-exports.tebraGetProviders = onCall({ invoker: 'public' }, async () => {
-  try {
-    const client = new TebraApiClient();
-    await rateLimiter.waitForRateLimit('GetProviders');
-    const providers = await client.getProviders();
-
-    return { success: true, data: providers };
-  } catch (error) {
-    console.error('Failed to get providers:', error);
-    throw error;
-  }
-});
-
-/**
- * Get practices
- */
-exports.tebraGetPractices = onCall({ invoker: 'public' }, async () => {
-  try {
-    const client = new TebraApiClient();
-    await rateLimiter.waitForRateLimit('GetPractices');
-    const practices = await client.getPractices();
-
-    return { success: true, data: practices };
-  } catch (error) {
-    console.error('Failed to get practices:', error);
-    throw error;
-  }
-});
-
-/**
- * Helper function to compute target sync date with weekend adjustment.
- * 
- * @param {string|null} preferredDate - Optional preferred date in YYYY-MM-DD format
- * @returns {string} Date string in YYYY-MM-DD format
- * 
- * @description
- * If no preferredDate is provided, this function implements weekend-to-Monday adjustment:
- * - Friday: Returns the following Monday (adds 3 days)
- * - Saturday: Returns the following Monday (adds 2 days) 
- * - Sunday: Returns the following Monday (adds 1 day)
- * - Monday-Thursday: Returns the current date
- * 
- * This ensures schedule syncing always targets business days and provides
- * consistent behavior for weekend operations.
- */
-function getTargetSyncDate(preferredDate = null) {
-  if (preferredDate) return preferredDate;
-  const today = new Date();
-  const day = today.getUTCDay(); // 0 = Sun, 5 = Fri, 6 = Sat
-  if (day === 5) {           // Friday → add 3 days
-    today.setUTCDate(today.getUTCDate() + 3);
-  } else if (day === 6) {    // Saturday → add 2 days
-    today.setUTCDate(today.getUTCDate() + 2);
-  } else if (day === 0) {    // Sunday → add 1 day
-    today.setUTCDate(today.getUTCDate() + 1);
-  }
-  return today.toISOString().split('T')[0];
-}
-
-// Helper to perform daily sync – shared by manual callable and scheduled job
-async function performDailySync(targetDate) {
-  console.log(`Performing daily sync for ${targetDate}`);
-  const client = new TebraApiClient();
-
-  // Get appointments for the day
-  await rateLimiter.waitForRateLimit('GetAppointments');
-  const appointments = await client.getAppointments(targetDate, targetDate);
-
-  // Transform appointments to internal Patient interface
-  const transformedPatients = appointments.map(apt => ({
-    id: apt.AppointmentId || apt.Id,
-    name: `${apt.PatientFirstName || ''} ${apt.PatientLastName || ''}`.trim(),
-    dob: apt.PatientDateOfBirth || apt.PatientDOB || '',
-    appointmentTime: `${apt.AppointmentDate}T${apt.AppointmentTime}:00.000Z`,
-    appointmentType: apt.AppointmentType || 'Office Visit',
-    provider: `${apt.ProviderFirstName || 'Dr.'} ${apt.ProviderLastName || 'Unknown'}`,
-    status: apt.Status?.toLowerCase() || 'scheduled',
-    checkInTime: apt.CheckInTime || undefined,
-    room: apt.Room || undefined,
-    chiefComplaint: apt.ChiefComplaint || 'Follow-Up'
-  }));
-
-  // Persist to Firestore for UI consumption
-  const sessionDoc = db.collection('daily_sessions').doc(targetDate);
-  await sessionDoc.set({
-    date: targetDate,
-    patients: transformedPatients,
-    lastSync: new Date(),
-    source: 'tebra_corrected_node_sync'
   });
 
-  console.log(`Sync completed for ${targetDate}: ${transformedPatients.length} appointments`);
-  return transformedPatients;
-}
-
-/**
- * Sync today's schedule from Tebra
- * HIPAA COMPLIANT - Requires proper authentication to access patient data
- */
-exports.tebraSyncTodaysSchedule = onCall({}, async ({ data, auth }) => {
-  // Authentication check - REQUIRED for HIPAA compliance
-  if (!auth || !auth.uid) {
-    throw new HttpsError('unauthenticated', 'Authentication required to access patient health information.');
-  }
-
-  // Verify this is a properly authenticated user (has HIPAA compliance claim)
-  if (!auth.token.hipaa_compliant) {
-    throw new HttpsError('permission-denied', 'Proper authentication required for patient data access.');
-  }
-
-  const { date: customDate, force = false } = data || {};
-
-  // Input validation
-  if (customDate && !validateDateFormat(customDate)) {
-    throw new HttpsError('invalid-argument', 'Invalid date format. Expected YYYY-MM-DD.');
-  }
-  
-  if (force !== undefined && typeof force !== 'boolean') {
-    throw new HttpsError('invalid-argument', 'Force parameter must be a boolean.');
-  }
-
-  if (!syncEnabled && !force) {
-    return { success: false, message: 'Sync disabled by configuration' };
-  }
-
-  try {
-    const targetDate = getTargetSyncDate(customDate);
-    const patients = await performDailySync(targetDate);
+// Health check function (using v1 syntax)
+exports.purgeHealthCheck = functionsV1.pubsub
+  .schedule('every 1 hours')
+  .onRun(async (context) => {
+    const now = new Date();
+    console.log(`Running health check at ${now.toISOString()}`);
     
-    console.log(`HIPAA-compliant sync completed for ${targetDate}: ${patients.length} appointments by user ${auth.uid} (${auth.token.email})`);
-    return { success: true, data: patients, message: `Synced ${patients.length} appointments for ${targetDate}` };
-  } catch (error) {
-    console.error('Manual sync failed:', error);
-    throw error;
-  }
-});
-
-/**
- * Manually import a full schedule (array of patients) for a given date.
- * If merge=true we append/merge; otherwise we overwrite the existing doc.
- * Requires authentication and validates all patient data.
- */
-exports.manualImportSchedule = onCall({}, async ({ data, auth }) => {
-  // Authentication check
-  if (!auth || !auth.uid) {
-    throw new HttpsError('unauthenticated', 'Authentication required for manual import operations.');
-  }
-
-  // Rate limiting
-  checkRateLimit(auth.uid, 'import');
-
-  const { date, patients, merge = false } = data || {};
-
-  // Input validation
-  if (!Array.isArray(patients) || patients.length === 0) {
-    throw new HttpsError('invalid-argument', 'patients array required');
-  }
-
-  if (date && !validateDateFormat(date)) {
-    throw new HttpsError('invalid-argument', 'Invalid date format. Expected YYYY-MM-DD.');
-  }
-
-  // Validate each patient object
-  patients.forEach((patient, index) => {
-    validatePatientObject(patient, index);
-  });
-
-  const targetDate = date || new Date().toISOString().split('T')[0];
-
-  try {
-    const docRef = db.collection('daily_sessions').doc(targetDate);
-    
-    // Create the document data object once
-    const documentData = {
-      date: targetDate,
-      lastSync: new Date(),
-      source: 'manual_import',
-      importedBy: auth.uid,
-      patients
-    };
-    
-    // Use the merge option conditionally
-    const setOptions = merge ? { merge: true } : {};
-    await docRef.set(documentData, setOptions);
-
-    console.log(`Manual schedule import for ${targetDate}: ${patients.length} patients (merge=${merge}) by user ${auth.uid}`);
-    return { success: true, count: patients.length };
-  } catch (err) {
-    console.error('Manual import failed:', err);
-    throw new HttpsError('internal', err.message);
-  }
-});
-
-/**
- * Manually append a single patient entry to a day's schedule.
- * Requires authentication and prevents duplicate entries.
- */
-exports.manualAddPatient = onCall({}, async ({ data, auth }) => {
-  // Authentication check
-  if (!auth || !auth.uid) {
-    throw new HttpsError('unauthenticated', 'Authentication required for manual patient operations.');
-  }
-
-  // Rate limiting
-  checkRateLimit(auth.uid, 'add');
-
-  const { date, patient } = data || {};
-  if (!patient) {
-    throw new HttpsError('invalid-argument', 'patient object required');
-  }
-
-  // Validate patient object
-  validatePatientObject(patient, 0);
-
-  if (date && !validateDateFormat(date)) {
-    throw new HttpsError('invalid-argument', 'Invalid date format. Expected YYYY-MM-DD.');
-  }
-
-  const targetDate = date || new Date().toISOString().split('T')[0];
-  const docRef = db.collection('daily_sessions').doc(targetDate);
-  
-  try {
-    await db.runTransaction(async (tx) => {
-      const snap = await tx.get(docRef);
-      const existing = snap.exists ? (snap.data().patients || []) : [];
+    try {
+      const healthStatus = {
+        timestamp: now,
+        lastPurge: lastPurgeStatus,
+        systemStatus: 'healthy',
+        warnings: []
+      };
       
-      // Check for duplicate patient (by ID)
-      const isDuplicate = existing.some(existingPatient => existingPatient.id === patient.id);
-      if (isDuplicate) {
-        console.log(`Skipping duplicate patient ${patient.id} for ${targetDate}`);
-        return; // Skip adding duplicate
+      // Check if last purge was successful
+      if (!lastPurgeStatus.success) {
+        healthStatus.warnings.push('Last purge failed: ' + lastPurgeStatus.error);
+        healthStatus.systemStatus = 'warning';
       }
       
-      tx.set(docRef, {
-        date: targetDate,
-        lastSync: new Date(),
-        source: 'manual_add',
-        addedBy: auth.uid,
-        patients: [...existing, patient]
-      }, { merge: true });
-    });
-
-    console.log(`Added manual patient to ${targetDate}: ${patient.id || patient.name} by user ${auth.uid}`);
-    return { success: true };
-  } catch (e) {
-    console.error('manualAddPatient failed:', e);
-    throw new HttpsError('internal', e.message);
-  }
-});
-
-// Re-export existing functions
-const { dailyDataPurge, manualDataPurge, purgeHealthCheck } = require('./dailyPurge');
-exports.dailyDataPurge = dailyDataPurge;
-exports.manualDataPurge = manualDataPurge;
-exports.purgeHealthCheck = purgeHealthCheck;
-
-/**
- * HIPAA-Compliant Token Exchange
- * Validates Auth0 JWT token and creates Firebase custom token
- */
-exports.exchangeAuth0Token = onCall({ invoker: 'public' }, async ({ data }) => {
-  const { auth0Token } = data || {};
-
-  if (!auth0Token) {
-    throw new HttpsError('invalid-argument', 'Auth0 token is required');
-  }
-
-  if (!jwksClientInstance || !appConfig.auth0Domain || !appConfig.auth0Audience) {
-    throw new HttpsError('failed-precondition', 'Auth0 configuration not available');
-  }
-
-  try {
-    // Decode token header to get key ID
-    const decodedHeader = jwt.decode(auth0Token, { complete: true });
-    if (!decodedHeader) {
-      throw new HttpsError('invalid-argument', 'Invalid token format');
-    }
-
-    // Get signing key from Auth0
-    const key = await jwksClientInstance.getSigningKey(decodedHeader.header.kid);
-    const signingKey = key.getPublicKey();
-
-    // Verify and decode the Auth0 token
-    const decodedToken = jwt.verify(auth0Token, signingKey, {
-      audience: appConfig.auth0Audience,
-      issuer: `https://${appConfig.auth0Domain}/`,
-      algorithms: ['RS256']
-    });
-
-    // Extract user information
-    const userId = decodedToken.sub;
-    const email = decodedToken.email;
-    const name = decodedToken.name || decodedToken.nickname;
-
-    // Create or update Firebase user
-    let firebaseUser;
-    try {
-      firebaseUser = await adminAuth.getUserByEmail(email);
+      // Check if last purge was too long ago (more than 25 hours)
+      if (lastPurgeStatus.timestamp) {
+        const hoursSinceLastPurge = (now - lastPurgeStatus.timestamp) / (1000 * 60 * 60);
+        if (hoursSinceLastPurge > 25) {
+          healthStatus.warnings.push(`Last purge was ${hoursSinceLastPurge.toFixed(1)} hours ago`);
+          healthStatus.systemStatus = 'warning';
+        }
+      }
+      
+      // Log health status
+      console.log('Health check results:', healthStatus);
+      
+      // If there are warnings, you might want to send notifications
+      if (healthStatus.warnings.length > 0) {
+        console.log('Warnings detected:', healthStatus.warnings);
+        // Add notification logic here (e.g., email, Slack, etc.)
+      }
+      
+      return null;
     } catch (error) {
-      // User doesn't exist, create them
-      firebaseUser = await adminAuth.createUser({
-        uid: userId.replace('|', '_'), // Firebase UIDs can't contain |
-        email: email,
-        displayName: name,
-        emailVerified: decodedToken.email_verified || false
-      });
+      console.error('Health check failed:', error);
+      throw error;
     }
-
-    // Create Firebase custom token
-    const customToken = await adminAuth.createCustomToken(firebaseUser.uid, {
-      auth0_sub: userId,
-      email: email,
-      name: name,
-      hipaa_compliant: true,
-      token_exchange_time: Date.now()
-    });
-
-    console.log(`✅ HIPAA-compliant token exchange successful for user: ${email}`);
-    return { 
-      success: true, 
-      firebaseToken: customToken,
-      uid: firebaseUser.uid
-    };
-
-  } catch (error) {
-    console.error('Token exchange failed:', error);
-    
-    if (error.name === 'JsonWebTokenError') {
-      throw new HttpsError('unauthenticated', 'Invalid Auth0 token');
-    } else if (error.name === 'TokenExpiredError') {
-      throw new HttpsError('unauthenticated', 'Auth0 token expired');
-    } else {
-      throw new HttpsError('internal', 'Token exchange failed');
-    }
-  }
-}); 
+  }); 

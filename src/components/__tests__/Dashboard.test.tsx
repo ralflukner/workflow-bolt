@@ -97,6 +97,31 @@ jest.mock('../../services/localStorage/localSessionService', () => ({
   }
 }));
 
+// Mock Firebase Auth
+jest.mock('firebase/auth', () => ({
+  onAuthStateChanged: jest.fn(),
+  signInWithCustomToken: jest.fn(),
+}));
+
+// Mock Firebase config
+jest.mock('../../config/firebase', () => ({
+  isFirebaseConfigured: false,
+  auth: null,
+  functions: null,
+  db: null,
+}));
+
+// Mock authBridge
+jest.mock('../../services/authBridge', () => ({
+  useFirebaseAuth: () => ({
+    ensureFirebaseAuth: jest.fn<() => Promise<boolean>>().mockResolvedValue(true),
+    refreshToken: jest.fn<() => Promise<boolean>>().mockResolvedValue(true),
+    getDebugInfo: jest.fn<() => { recentLog: unknown[]; cacheSize: number; cacheEntries: unknown[] }>().mockReturnValue({ recentLog: [], cacheSize: 0, cacheEntries: [] }),
+    clearCache: jest.fn<() => void>(),
+    healthCheck: jest.fn<() => Promise<{ status: string; checks: Record<string, boolean>; details: Record<string, unknown> }>>().mockResolvedValue({ status: 'healthy', checks: {}, details: {} }),
+  }),
+}));
+
 // Mock child components to avoid complex rendering issues
 jest.mock('../MetricsPanel', () => {
   return function MockMetricsPanel() {

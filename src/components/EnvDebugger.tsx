@@ -1,6 +1,13 @@
 import React from 'react';
 
 export const EnvDebugger: React.FC = () => {
+  const maskValue = (val?: string): string => {
+    if (!val) return 'undefined';
+    // Show first 4 and last 4 characters only
+    if (val.length <= 8) return '****';
+    return `${val.slice(0, 4)}…${val.slice(-4)}`;
+  };
+
   const envVars = {
     VITE_FIREBASE_PROJECT_ID: import.meta.env.VITE_FIREBASE_PROJECT_ID,
     VITE_FIREBASE_API_KEY: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -17,7 +24,7 @@ export const EnvDebugger: React.FC = () => {
         {Object.entries(envVars).map(([key, value]) => (
           <div key={key} className={`flex gap-2 ${value ? 'text-green-400' : 'text-red-400'}`}>
             <span className="font-mono">{key}:</span>
-            <span>{value ? `"${value}"` : 'undefined'}</span>
+            <span>{value ? `"${maskValue(value as string)}"` : 'undefined'}</span>
           </div>
         ))}
       </div>

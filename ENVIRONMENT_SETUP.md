@@ -9,6 +9,7 @@ sensitive credentials.
 - **`.env.local`** - Sensitive credentials (gitignored, never commit)
 - **`env-local-template.txt`** - Template for setting up `.env.local`
 - **`.env-example`** - Example of basic environment variables
+- **`scripts/setup-nvm.sh`** - Script to ensure NVM is loaded and node/npm are in PATH
 
 ## Setup Instructions
 
@@ -63,6 +64,38 @@ source .envrc  # Manually load variables
 
 - `REACT_APP_TEBRA_USERNAME` - Tebra EHR username
 - `REACT_APP_TEBRA_PASSWORD` - Tebra EHR password
+
+## Node.js and NVM Setup
+
+This project uses Node.js (v18 or newer recommended) and npm. If you're using NVM (Node Version Manager) to manage Node.js versions, follow these steps to ensure node and npm are available in your terminal:
+
+### 1. Source the setup-nvm.sh script
+
+```bash
+source scripts/setup-nvm.sh
+```
+
+This script will:
+- Check if NVM is installed
+- Load NVM if it's installed
+- Verify if node and npm are available
+- Add the Node.js bin directory to PATH if needed
+
+### 2. Make the setup permanent
+
+To ensure NVM is always loaded in your terminal, add the following to your shell profile (~/.zshrc, ~/.bashrc, or ~/.bash_profile):
+
+```bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+```
+
+Then restart your terminal or run `source ~/.zshrc` (or the appropriate profile file).
+
+### 3. Using direnv (recommended)
+
+If you're using direnv, the `.envrc` file will automatically source the `scripts/setup-nvm.sh` script, ensuring that NVM is loaded and node/npm are in the PATH whenever you enter the project directory.
 
 ## Security Notes
 
