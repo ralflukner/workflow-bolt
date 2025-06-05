@@ -3,6 +3,7 @@ import { useTimeContext } from '../hooks/useTimeContext';
 import { tebraApiService } from '../services/tebraApiService';
 import { TebraConnectionDebugger } from './TebraConnectionDebugger';
 import { doc, onSnapshot, getFirestore } from 'firebase/firestore';
+import { useFirebaseAuth } from '../services/authBridge';
 
 interface SyncResult {
   success: boolean;
@@ -13,6 +14,7 @@ interface SyncResult {
 
 const TebraIntegration: React.FC = () => {
   const { getCurrentTime } = useTimeContext();
+  const { ensureFirebaseAuth } = useFirebaseAuth();
   
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -123,6 +125,45 @@ const TebraIntegration: React.FC = () => {
     }
   };
 
+  const handleManualSync = async () => {
+    if (!isConnected) {
+      setStatusMessage('❌ Cannot sync: Not connected to Tebra API');
+      return;
+    }
+
+    setIsLoading(true);
+    setStatusMessage('Authenticating for HIPAA-compliant access...');
+
+    try {
+      // Ensure Firebase authentication is set up for HIPAA compliance
+      const authenticated = await ensureFirebaseAuth();
+      if (!authenticated) {
+        setStatusMessage('❌ Authentication failed - required for patient data access');
+        return;
+      }
+
+      setStatusMessage('Manually syncing today\'s schedule...');
+      const result = await tebraApiService.syncTodaysSchedule();
+      if (result.success) {
+        const patientCount = result.patients?.length || 0;
+        setStatusMessage(`✅ Manual sync completed. Found ${patientCount} appointments for today.`);
+        setLastSyncResult({
+          success: true,
+          message: 'Manual sync',
+          patientCount,
+          lastSync: new Date()
+        });
+      } else {
+        setStatusMessage(`❌ Manual sync failed: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Manual sync failed:', error);
+      setStatusMessage(`❌ Manual sync failed: ${error}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div data-testid="tebra-integration" className="bg-gray-800 rounded-lg p-6 shadow-lg">
       <div className="flex items-center justify-between mb-4">
@@ -153,6 +194,19 @@ const TebraIntegration: React.FC = () => {
         <div className="mt-2">
           <TebraConnectionDebugger />
         </div>
+      </div>
+
+      {/* Manual Sync */}
+      <div className="border-t border-gray-700 pt-4 mb-4">
+        <h3 className="text-lg font-medium text-white mb-2">Manual Sync</h3>
+        <button
+          onClick={handleManualSync}
+          disabled={isLoading || !isConnected}
+          aria-label="Manually sync today's schedule from Tebra EHR"
+          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? 'Syncing...' : 'Sync Today\'s Schedule'}
+        </button>
       </div>
 
       {/* Test Operations & Last Sync Result */}

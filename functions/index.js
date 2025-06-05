@@ -2,23 +2,40 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
 const axios = require('axios');
-const { defineString, defineBool } = require('firebase-functions/params');
+const functions = require('firebase-functions');
+const jwt = require('jsonwebtoken');
+const jwksClient = require('jwks-rsa');
 
 // Load environment variables
 require('dotenv').config();
 
-// Define parameters for configuration
-const tebraProxyUrl = defineString('TEBRA_PROXY_URL', {
-  default: 'https://tebra-proxy-623450773640.us-central1.run.app'
-});
+// Configuration - using legacy config for v5 compatibility
+const getConfig = () => {
+  const config = functions.config();
+  return {
+    tebraProxyUrl: config.tebra?.proxy_url || 'https://tebra-proxy-623450773640.us-central1.run.app',
+    tebraProxyApiKey: config.tebra?.proxy_api_key || 'UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=',
+    auth0Domain: config.auth0?.domain,
+    auth0Audience: config.auth0?.audience,
+    syncEnabled: config.sync?.enabled !== 'false' // defaults to true
+  };
+};
 
-const tebraProxyApiKey = defineString('TEBRA_PROXY_API_KEY', {
-  default: 'UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y='
-});
+// Get configuration once
+const appConfig = getConfig();
+
+// Define parameters for configuration
+const tebraProxyUrl = appConfig.tebraProxyUrl;
+const tebraProxyApiKey = appConfig.tebraProxyApiKey;
+
+// Auth0 configuration for token validation
+const auth0Domain = appConfig.auth0Domain;
+const auth0Audience = appConfig.auth0Audience;
 
 // Feature-flag controls
-const syncEnabled = defineBool('SYNC_ENABLED', { default: true });   // set to false to disable all backend auto-syncs
+const syncEnabled = appConfig.syncEnabled;   // set to false to disable all backend auto-syncs
 
 // Rate limiting for manual operations (in-memory, resets on function cold start)
 const userRequestCounts = new Map();
@@ -81,13 +98,29 @@ function validateDateFormat(dateString) {
 // Initialize Firebase Admin SDK
 initializeApp();
 const db = getFirestore();
+const adminAuth = getAuth();
+
+// JWKS client for Auth0 token validation - initialize only if Auth0 is configured
+let jwksClientInstance = null;
+
+if (appConfig.auth0Domain) {
+  jwksClientInstance = jwksClient({
+    jwksUri: `https://${appConfig.auth0Domain}/.well-known/jwks.json`,
+    cache: true,
+    cacheMaxEntries: 5,
+    cacheMaxAge: 600000 // 10 minutes
+  });
+  console.log('✅ JWKS client initialized for Auth0 domain:', appConfig.auth0Domain);
+} else {
+  console.warn('⚠️ Auth0 domain not configured - token exchange will not work');
+}
 
 // Tebra API Client using PHP Proxy
 class TebraApiClient {
   constructor(config = {}) {
     this.config = {
-      proxyBaseUrl: config.proxyBaseUrl || tebraProxyUrl.value(),
-      apiKey: config.apiKey || tebraProxyApiKey.value(),
+      proxyBaseUrl: config.proxyBaseUrl || tebraProxyUrl,
+      apiKey: config.apiKey || tebraProxyApiKey,
       timeout: config.timeout || 30000, // 30 seconds
     };
 
@@ -437,8 +470,19 @@ async function performDailySync(targetDate) {
 
 /**
  * Sync today's schedule from Tebra
+ * HIPAA COMPLIANT - Requires proper authentication to access patient data
  */
 exports.tebraSyncTodaysSchedule = onCall({}, async ({ data, auth }) => {
+  // Authentication check - REQUIRED for HIPAA compliance
+  if (!auth || !auth.uid) {
+    throw new HttpsError('unauthenticated', 'Authentication required to access patient health information.');
+  }
+
+  // Verify this is a properly authenticated user (has HIPAA compliance claim)
+  if (!auth.token.hipaa_compliant) {
+    throw new HttpsError('permission-denied', 'Proper authentication required for patient data access.');
+  }
+
   const { date: customDate, force = false } = data || {};
 
   // Input validation
@@ -450,34 +494,18 @@ exports.tebraSyncTodaysSchedule = onCall({}, async ({ data, auth }) => {
     throw new HttpsError('invalid-argument', 'Force parameter must be a boolean.');
   }
 
-  if (!syncEnabled.value() && !force) {
+  if (!syncEnabled && !force) {
     return { success: false, message: 'Sync disabled by configuration' };
   }
+
   try {
     const targetDate = getTargetSyncDate(customDate);
     const patients = await performDailySync(targetDate);
+    
+    console.log(`HIPAA-compliant sync completed for ${targetDate}: ${patients.length} appointments by user ${auth.uid} (${auth.token.email})`);
     return { success: true, data: patients, message: `Synced ${patients.length} appointments for ${targetDate}` };
   } catch (error) {
     console.error('Manual sync failed:', error);
-    throw error;
-  }
-});
-
-/**
- * Scheduled function to auto-sync Tebra data
- * Runs every 15 minutes during business hours (8 AM - 6 PM, Mon-Fri)
- */
-exports.tebraAutoSync = onSchedule('*/15 8-18 * * 1-5', async () => {
-  if (!syncEnabled.value()) {
-    console.log('Auto-sync skipped – disabled by configuration');
-    return { success: false, message: 'Sync disabled' };
-  }
-  try {
-    const targetDate = getTargetSyncDate();
-    const patients = await performDailySync(targetDate);
-    return { success: true, count: patients.length };
-  } catch (error) {
-    console.error('Auto-sync failed:', error);
     throw error;
   }
 });
@@ -599,4 +627,85 @@ exports.manualAddPatient = onCall({}, async ({ data, auth }) => {
 const { dailyDataPurge, manualDataPurge, purgeHealthCheck } = require('./dailyPurge');
 exports.dailyDataPurge = dailyDataPurge;
 exports.manualDataPurge = manualDataPurge;
-exports.purgeHealthCheck = purgeHealthCheck; 
+exports.purgeHealthCheck = purgeHealthCheck;
+
+/**
+ * HIPAA-Compliant Token Exchange
+ * Validates Auth0 JWT token and creates Firebase custom token
+ */
+exports.exchangeAuth0Token = onCall({ invoker: 'public' }, async ({ data }) => {
+  const { auth0Token } = data || {};
+
+  if (!auth0Token) {
+    throw new HttpsError('invalid-argument', 'Auth0 token is required');
+  }
+
+  if (!jwksClientInstance || !appConfig.auth0Domain || !appConfig.auth0Audience) {
+    throw new HttpsError('failed-precondition', 'Auth0 configuration not available');
+  }
+
+  try {
+    // Decode token header to get key ID
+    const decodedHeader = jwt.decode(auth0Token, { complete: true });
+    if (!decodedHeader) {
+      throw new HttpsError('invalid-argument', 'Invalid token format');
+    }
+
+    // Get signing key from Auth0
+    const key = await jwksClientInstance.getSigningKey(decodedHeader.header.kid);
+    const signingKey = key.getPublicKey();
+
+    // Verify and decode the Auth0 token
+    const decodedToken = jwt.verify(auth0Token, signingKey, {
+      audience: appConfig.auth0Audience,
+      issuer: `https://${appConfig.auth0Domain}/`,
+      algorithms: ['RS256']
+    });
+
+    // Extract user information
+    const userId = decodedToken.sub;
+    const email = decodedToken.email;
+    const name = decodedToken.name || decodedToken.nickname;
+
+    // Create or update Firebase user
+    let firebaseUser;
+    try {
+      firebaseUser = await adminAuth.getUserByEmail(email);
+    } catch (error) {
+      // User doesn't exist, create them
+      firebaseUser = await adminAuth.createUser({
+        uid: userId.replace('|', '_'), // Firebase UIDs can't contain |
+        email: email,
+        displayName: name,
+        emailVerified: decodedToken.email_verified || false
+      });
+    }
+
+    // Create Firebase custom token
+    const customToken = await adminAuth.createCustomToken(firebaseUser.uid, {
+      auth0_sub: userId,
+      email: email,
+      name: name,
+      hipaa_compliant: true,
+      token_exchange_time: Date.now()
+    });
+
+    console.log(`✅ HIPAA-compliant token exchange successful for user: ${email}`);
+    return { 
+      success: true, 
+      firebaseToken: customToken,
+      uid: firebaseUser.uid
+    };
+
+  } catch (error) {
+    console.error('Token exchange failed:', error);
+    
+    if (error.name === 'JsonWebTokenError') {
+      throw new HttpsError('unauthenticated', 'Invalid Auth0 token');
+    } else if (error.name === 'TokenExpiredError') {
+      throw new HttpsError('unauthenticated', 'Auth0 token expired');
+    } else {
+      throw new HttpsError('internal', 'Token exchange failed');
+    }
+  }
+}); 

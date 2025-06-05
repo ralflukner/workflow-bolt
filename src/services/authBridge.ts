@@ -1,8 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { signInWithCustomToken } from 'firebase/auth';
-import { auth } from '../config/firebase';
-import { httpsCallable, getFunctions, HttpsCallable } from 'firebase/functions';
-import { app } from '../config/firebase';
+import { auth, functions } from '../config/firebase';
+import { httpsCallable, HttpsCallable } from 'firebase/functions';
 
 interface TokenExchangeRequest {
   auth0Token: string;
@@ -25,9 +24,11 @@ export class AuthBridge {
   
   private constructor() {
     // Initialize the token exchange function
-    if (app) {
-      const functions = getFunctions(app);
+    if (functions) {
       this.exchangeTokenFunction = httpsCallable(functions, 'exchangeAuth0Token');
+      console.log('🔐 Firebase Functions initialized for Auth Bridge');
+    } else {
+      console.warn('⚠️ Firebase Functions not available - Auth Bridge disabled');
     }
   }
   

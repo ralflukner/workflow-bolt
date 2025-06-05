@@ -182,5 +182,4 @@ The application tracks several key timestamps:
 - `withDoctorTime`: When the patient goes in with the doctor
 - `completedTime`: When the patient checks out
 
-These timestamps are used to calculate waiting times and efficiency
-metrics.
+These timestamps are used to calculate waiting times and efficiency metrics. For detailed information about wait time calculations, including algorithms, edge cases, and error prevention, see [Wait Time Calculations](./wait-time-calculations.md).

@@ -230,10 +230,22 @@ export class TebraApiService {
 
   /**
    * Sync today's schedule from Tebra
+   * HIPAA Compliant - Requires proper authentication
    */
   async syncTodaysSchedule(): Promise<SyncResponse> {
     try {
       console.log('Syncing today\'s schedule from Tebra...');
+      
+      // Ensure Firebase Auth is available and user is signed in
+      if (!functionsInstance) {
+        return {
+          success: false,
+          message: 'Firebase Functions not available'
+        };
+      }
+
+      // For HIPAA compliance, we need to ensure the user is authenticated
+      // This will fail with 'unauthenticated' error if user is not properly signed in
       const result = await this.tebraSyncTodaysSchedule();
       const response = result.data as ApiResponse<unknown[]> & { message?: string };
 
@@ -244,6 +256,16 @@ export class TebraApiService {
       };
     } catch (error) {
       console.error('Failed to sync schedule:', error);
+      
+      // Handle authentication errors specifically
+      if (error && typeof error === 'object' && 'code' in error && 
+          (error as { code: string }).code === 'functions/unauthenticated') {
+        return {
+          success: false,
+          message: 'Authentication required to access patient data (HIPAA compliance)'
+        };
+      }
+      
       return {
         success: false,
         message: `Failed to sync schedule: ${error}`

@@ -12,6 +12,8 @@ import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { Patient } from '../types';
 import { EnvDebugger } from './EnvDebugger';
+import { DiagnosticPanel } from './DiagnosticPanel';
+import { WaitTimeDiagnostic } from './WaitTimeDiagnostic';
 
 interface ReportModalProps {
   onClose: () => void;
@@ -441,6 +443,13 @@ const Dashboard: React.FC = () => {
 
       <main>
         <EnvDebugger />
+        
+        {/* Add diagnostic components for troubleshooting */}
+        <div className="mb-6">
+          <DiagnosticPanel />
+          <WaitTimeDiagnostic />
+        </div>
+        
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
             <button 

@@ -1,6 +1,7 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
+import { getFunctions, Functions } from 'firebase/functions';
 
 // Check if we're in development mode without Firebase config
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -37,14 +38,16 @@ const hasFirebaseApiKey = firebaseConfig.apiKey !== 'demo-api-key';
 let app: FirebaseApp | undefined;
 let db: Firestore | undefined;
 let auth: Auth | undefined;
+let functions: Functions | undefined;
 let isFirebaseConfigured: boolean;
 
 if (hasFirebaseApiKey) {
   app = initializeApp(firebaseConfig);
   db = getFirestore(app);
   auth = getAuth(app);
+  functions = getFunctions(app);
   isFirebaseConfigured = true;
-  console.log('🔥 Firebase configured and ready');
+  console.log('🔥 Firebase configured and ready (Firestore, Auth, Functions)');
 } else {
   console.log('⚠️ Firebase not configured - using mock data or localStorage only');
   isFirebaseConfigured = false;
@@ -58,4 +61,4 @@ if (isLocalDevelopment) {
   console.log('🔧 Running in local development mode - Firebase persistence disabled');
 }
 
-export { db, auth, app, isFirebaseConfigured, isLocalDevelopment }; 
+export { db, auth, app, functions, isFirebaseConfigured, isLocalDevelopment }; 
