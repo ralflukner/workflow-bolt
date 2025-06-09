@@ -1,0 +1,39 @@
+version: 1
+
+# Enable or disable CodeRabbit
+enabled: true
+
+# Configure review settings
+review:
+  # Enable automatic reviews
+  auto_review: true
+  
+  # Configure review scope
+  scope:
+    # Review all files
+    all_files: true
+    
+    # Exclude certain directories
+    exclude:
+      - "node_modules/"
+      - "dist/"
+      - ".git/"
+      - ".idea/"
+
+# Configure comment settings
+comments:
+  # Enable inline comments
+  inline: true
+  
+  # Enable summary comments
+  summary: true
+
+# Configure language-specific settings
+languages:
+  typescript:
+    # Enable TypeScript-specific analysis
+    enabled: true
+    
+  javascript:
+    # Enable JavaScript-specific analysis
+    enabled: true 
