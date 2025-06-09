@@ -33,7 +33,24 @@ languages:
   typescript:
     # Enable TypeScript-specific analysis
     enabled: true
+    # Add TypeScript-specific rules
+    rules:
+      - name: "typescript-eslint"
+        enabled: true
     
   javascript:
     # Enable JavaScript-specific analysis
-    enabled: true 
+    enabled: true
+    # Add JavaScript-specific rules
+    rules:
+      - name: "javascript-eslint"
+        enabled: true
+
+# Add security scanning
+security:
+  enabled: true
+  rules:
+    - name: "dependency-check"
+      enabled: true
+    - name: "code-scanning"
+      enabled: true 
