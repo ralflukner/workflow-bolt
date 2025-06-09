@@ -2,7 +2,7 @@
   "extends": "./tsconfig.app.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "types": ["jest", "node"],
+    "types": ["jest", "node", "@testing-library/jest-dom"],
     "esModuleInterop": true
   },
   "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/__tests__/**/*"]

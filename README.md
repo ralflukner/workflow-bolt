@@ -45,6 +45,8 @@ interface for managing patient appointments and flow in a clinical setting.
 - [Node.js](https://nodejs.org/) (v18 or newer recommended)
 - [npm](https://www.npmjs.com/) (comes with Node.js)
 
+> **Note for NVM users**: If you're using NVM (Node Version Manager) and encounter issues with node or npm not being found in your terminal, run `source scripts/setup-nvm.sh` to ensure NVM is properly loaded. See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) for more details.
+
 ### Installation
 
 1. **Clone the repository:**

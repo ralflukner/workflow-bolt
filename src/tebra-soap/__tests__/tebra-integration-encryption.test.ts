@@ -3,21 +3,31 @@ import { TebraSoapClient } from '../tebraSoapClient';
 import { PatientEncryptionService } from '../../services/encryption/patientEncryptionService';
 import { Patient } from '../../types';
 
+type AppointmentType = {
+  patientId: string;
+  date: string;
+  time: string;
+  status: string;
+};
+
+type PatientType = {
+  id: string;
+  name: string;
+  dob: string;
+};
+
+interface MockTebraSoapClient {
+  config: {
+    wsdlUrl: string;
+    username: string;
+    password: string;
+  };
+  getAppointments: jest.Mock;
+  getPatientById: jest.Mock;
+}
+
 jest.mock('../tebraSoapClient', () => {
-  type AppointmentType = {
-    patientId: string;
-    date: string;
-    time: string;
-    status: string;
-  };
-  
-  type PatientType = {
-    id: string;
-    name: string;
-    dob: string;
-  };
-  
-  const TebraSoapClient = jest.fn().mockImplementation(function(this: any) {
+  const TebraSoapClient = jest.fn().mockImplementation(function(this: MockTebraSoapClient) {
     const getEnvVar = (name: string, fallback: string): string => {
       if (process.env.NODE_ENV === 'test') {
         return process.env[name] || fallback;

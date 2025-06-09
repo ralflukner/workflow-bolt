@@ -1,0 +1,55 @@
+const functions = require('firebase-functions');
+const functionsV1 = require('firebase-functions/v1');
+const { onCall } = require('firebase-functions/v2/https');
+const express = require('express');
+const cors = require('cors');
+
+// Initialize Express app
+const app = express();
+app.use(cors({ origin: true }));
+app.use(express.json());
+
+// Your Express routes
+app.get('/', (req, res) => {
+  res.send('Hello from Firebase!');
+});
+
+// Keep api as 1st Gen
+exports.api = functions.https.onRequest(app);
+
+// Example 2nd Gen callable function
+exports.tebraTestConnection = onCall({ cors: true }, async (request) => {
+  // Your Tebra test connection logic
+  return { success: true, message: 'Connection successful' };
+});
+
+// Daily data purge function (using v1 syntax)
+exports.dailyDataPurge = functionsV1.pubsub
+  .schedule('every 24 hours')
+  .onRun(async (context) => {
+    try {
+      console.log('Starting daily data purge...');
+      // Add your purge logic here
+      return null;
+    } catch (error) {
+      console.error('Purge failed:', error);
+      throw error;
+    }
+  });
+
+// Health check function (using v1 syntax)
+exports.purgeHealthCheck = functionsV1.pubsub
+  .schedule('every 1 hours')
+  .onRun(async (context) => {
+    try {
+      console.log('Running health check...');
+      // Add your health check logic here
+      return null;
+    } catch (error) {
+      console.error('Health check failed:', error);
+      throw error;
+    }
+  });
+
+// Add your other functions here without the scheduled ones for now
+// We'll add them back once basic deployment works 

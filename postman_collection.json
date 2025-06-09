@@ -1,0 +1,211 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890",
+		"name": "Firebase Functions Tests",
+		"description": "Collection for testing Firebase Functions endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{host}}:{{port}}/{{projectId}}/{{region}}/api/health",
+					"protocol": "http",
+					"host": ["127", "0", "0", "1"],
+					"port": "5002",
+					"path": ["luknerlumina-firebase", "us-central1", "api", "health"]
+				}
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has required fields\", function () {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response).to.have.property('status');",
+							"    pm.expect(response).to.have.property('timestamp');",
+							"    pm.expect(response).to.have.property('environment');",
+							"    pm.expect(response.status).to.equal('ok');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "Test Endpoints",
+			"item": [
+				{
+					"name": "GET Test",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5002/luknerlumina-firebase/us-central1/api/test",
+							"protocol": "http",
+							"host": ["127", "0", "0", "1"],
+							"port": "5002",
+							"path": ["luknerlumina-firebase", "us-central1", "api", "test"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has correct method\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.method).to.equal('GET');",
+									"    pm.expect(response.message).to.include('successful');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "POST Test",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"test\": true,\n    \"data\": {\n        \"name\": \"test\",\n        \"value\": 123\n    }\n}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:5002/luknerlumina-firebase/us-central1/api/test",
+							"protocol": "http",
+							"host": ["127", "0", "0", "1"],
+							"port": "5002",
+							"path": ["luknerlumina-firebase", "us-central1", "api", "test"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has correct method and data\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.method).to.equal('POST');",
+									"    pm.expect(response.message).to.include('successful');",
+									"    pm.expect(response.receivedData).to.have.property('test');",
+									"    pm.expect(response.receivedData.data).to.have.property('name');",
+									"    pm.expect(response.receivedData.data).to.have.property('value');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "PUT Test",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"test\": true,\n    \"data\": {\n        \"name\": \"test\",\n        \"value\": 123\n    }\n}"
+						},
+						"url": {
+							"raw": "http://127.0.0.1:5002/luknerlumina-firebase/us-central1/api/test",
+							"protocol": "http",
+							"host": ["127", "0", "0", "1"],
+							"port": "5002",
+							"path": ["luknerlumina-firebase", "us-central1", "api", "test"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has correct method and data\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.method).to.equal('PUT');",
+									"    pm.expect(response.message).to.include('successful');",
+									"    pm.expect(response.receivedData).to.have.property('test');",
+									"    pm.expect(response.receivedData.data).to.have.property('name');",
+									"    pm.expect(response.receivedData.data).to.have.property('value');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "DELETE Test",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5002/luknerlumina-firebase/us-central1/api/test",
+							"protocol": "http",
+							"host": ["127", "0", "0", "1"],
+							"port": "5002",
+							"path": ["luknerlumina-firebase", "us-central1", "api", "test"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has correct method\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.method).to.equal('DELETE');",
+									"    pm.expect(response.message).to.include('successful');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+} 

@@ -7,7 +7,7 @@ import ImportSchedule from './ImportSchedule';
 import ImportJSON from './ImportJSON';
 import TebraIntegration from './TebraIntegrationNew';
 import AuthNav from './AuthNav';
-import { PlusCircle, FileDown, ChevronDown, Upload, X, Download } from 'lucide-react';
+import { PlusCircle, FileDown, ChevronDown, Upload, X, Download, Bug } from 'lucide-react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { Patient } from '../types';
@@ -107,6 +107,7 @@ const Dashboard: React.FC = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportContent, setReportContent] = useState('');
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [showDebugPanels, setShowDebugPanels] = useState<boolean>(false);
 
   // Helper function to format patient data
   const formatPatientData = (patient: Patient) => {
@@ -426,6 +427,14 @@ const Dashboard: React.FC = () => {
                 <FileDown size={18} className="mr-1" />
                 Export Schedule
               </button>
+              {/* Debug toggle */}
+              <button 
+                onClick={() => setShowDebugPanels(prev => !prev)}
+                className="flex items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
+              >
+                <Bug size={18} className="mr-1" />
+                {showDebugPanels ? 'Hide' : 'Show'} Debug
+              </button>
             </div>
           </div>
         </div>
@@ -442,13 +451,15 @@ const Dashboard: React.FC = () => {
       </header>
 
       <main>
-        <EnvDebugger />
-        
-        {/* Add diagnostic components for troubleshooting */}
-        <div className="mb-6">
-          <DiagnosticPanel />
-          <WaitTimeDiagnostic />
-        </div>
+        {showDebugPanels && (
+          <>
+            <EnvDebugger />
+            <div className="mb-6">
+              <DiagnosticPanel />
+              <WaitTimeDiagnostic />
+            </div>
+          </>
+        )}
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>

@@ -40,7 +40,7 @@ jest.mock('../../hooks/usePatientContext', () => ({
     tickCounter: 0,
     isLoading: false,
     persistenceEnabled: false,
-    saveCurrentSession: jest.fn().mockResolvedValue(true),
+    saveCurrentSession: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
     togglePersistence: jest.fn()
   })
 }));
@@ -95,6 +95,31 @@ jest.mock('../../services/localStorage/localSessionService', () => ({
     loadTodaysSession: jest.fn(() => Promise.resolve([])),
     saveTodaysSession: jest.fn(() => Promise.resolve()),
   }
+}));
+
+// Mock Firebase Auth
+jest.mock('firebase/auth', () => ({
+  onAuthStateChanged: jest.fn(),
+  signInWithCustomToken: jest.fn(),
+}));
+
+// Mock Firebase config
+jest.mock('../../config/firebase', () => ({
+  isFirebaseConfigured: false,
+  auth: null,
+  functions: null,
+  db: null,
+}));
+
+// Mock authBridge
+jest.mock('../../services/authBridge', () => ({
+  useFirebaseAuth: () => ({
+    ensureFirebaseAuth: jest.fn<() => Promise<boolean>>().mockResolvedValue(true),
+    refreshToken: jest.fn<() => Promise<boolean>>().mockResolvedValue(true),
+    getDebugInfo: jest.fn<() => { recentLog: unknown[]; cacheSize: number; cacheEntries: unknown[] }>().mockReturnValue({ recentLog: [], cacheSize: 0, cacheEntries: [] }),
+    clearCache: jest.fn<() => void>(),
+    healthCheck: jest.fn<() => Promise<{ status: string; checks: Record<string, boolean>; details: Record<string, unknown> }>>().mockResolvedValue({ status: 'healthy', checks: {}, details: {} }),
+  }),
 }));
 
 // Mock child components to avoid complex rendering issues
@@ -198,7 +223,7 @@ describe('Dashboard', () => {
     jest.runOnlyPendingTimers();
     jest.clearAllTimers();
   });
-  
+
   it('renders dashboard with metrics panel', async () => {
     render(
       <TestWrapper>
@@ -392,9 +417,9 @@ describe('Dashboard', () => {
     const originalCreateElement = document.createElement;
     document.createElement = jest.fn(() => mockElement as unknown as HTMLAnchorElement);
     const originalAppendChild = document.body.appendChild;
-    document.body.appendChild = jest.fn();
+    document.body.appendChild = jest.fn<(node: Node) => Node>();
     const originalRemoveChild = document.body.removeChild;
-    document.body.removeChild = jest.fn();
+    document.body.removeChild = jest.fn<(child: Node) => Node>();
 
     // Click download button
     fireEvent.click(screen.getByText('Download'));
