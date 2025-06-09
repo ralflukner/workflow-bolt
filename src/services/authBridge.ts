@@ -3,45 +3,94 @@ import { signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { auth, functions } from '../config/firebase';
 import { httpsCallable, HttpsCallable } from 'firebase/functions';
 
+/**
+ * Request interface for token exchange
+ * @interface TokenExchangeRequest
+ */
 interface TokenExchangeRequest {
+  /** The Auth0 JWT token to exchange */
   auth0Token: string;
 }
 
+/**
+ * Response interface for token exchange
+ * @interface TokenExchangeResponse
+ */
 interface TokenExchangeResponse {
+  /** Whether the token exchange was successful */
   success: boolean;
+  /** The Firebase custom token if exchange was successful */
   firebaseToken?: string;
+  /** The Firebase user ID if exchange was successful */
   uid?: string;
+  /** Error message if exchange failed */
   message?: string;
 }
 
+/**
+ * Cache entry for token exchange
+ * @interface TokenCacheEntry
+ */
 interface TokenCacheEntry {
+  /** The Firebase custom token */
   firebaseToken: string;
+  /** The original Auth0 token */
   auth0Token: string;
+  /** Expiration timestamp in milliseconds */
   expiresAt: number;
+  /** The Firebase user ID */
   uid: string;
 }
 
+/**
+ * Debug information for authentication operations
+ * @interface AuthDebugInfo
+ */
 interface AuthDebugInfo {
+  /** Timestamp of the debug entry */
   timestamp: number;
+  /** Whether an Auth0 token was present */
   auth0TokenPresent: boolean;
+  /** Expiration timestamp of the Auth0 token */
   auth0TokenExpiry?: number;
+  /** Whether a Firebase user was present */
   firebaseUserPresent: boolean;
+  /** The Firebase user ID if present */
   firebaseUid?: string;
+  /** Whether the operation used a cached token */
   cacheHit: boolean;
+  /** Number of retry attempts */
   retryCount: number;
+  /** Detailed error information if any */
   errorDetails?: string;
+  /** Operation duration in milliseconds */
   performanceMs: number;
 }
 
+/**
+ * Health check details
+ * @interface HealthCheckDetails
+ */
 interface HealthCheckDetails {
+  /** Number of entries in the token cache */
   cacheSize: number;
+  /** Recent error entries */
   recentErrors: AuthDebugInfo[];
+  /** Timestamp of the health check */
   timestamp: string;
 }
 
 /**
  * HIPAA-Compliant Authentication Bridge with Enhanced Debugging
  * Securely exchanges Auth0 tokens for Firebase custom tokens with comprehensive logging
+ * 
+ * @class AuthBridge
+ * @description Manages secure token exchange between Auth0 and Firebase, with caching and debugging capabilities
+ * @example
+ * ```typescript
+ * const authBridge = AuthBridge.getInstance();
+ * await authBridge.exchangeTokens(auth0Token);
+ * ```
  */
 export class AuthBridge {
   private static instance: AuthBridge;
@@ -72,6 +121,14 @@ export class AuthBridge {
     }
   }
   
+  /**
+   * Gets the singleton instance of AuthBridge
+   * @returns {AuthBridge} The singleton instance
+   * @example
+   * ```typescript
+   * const authBridge = AuthBridge.getInstance();
+   * ```
+   */
   static getInstance(): AuthBridge {
     if (!AuthBridge.instance) {
       AuthBridge.instance = new AuthBridge();
@@ -81,6 +138,12 @@ export class AuthBridge {
 
   /**
    * Enhanced logging with structured debug information
+   * @param {string} message - The debug message to log
+   * @param {unknown} [data] - Optional additional data to log
+   * @example
+   * ```typescript
+   * authBridge.logDebug('Token exchange started', { tokenId: '123' });
+   * ```
    */
   public logDebug(message: string, data?: unknown): void {
     const timestamp = Date.now();
@@ -186,7 +249,19 @@ export class AuthBridge {
   }
 
   /**
-   * HIPAA-Compliant token exchange with enhanced debugging and caching
+   * Exchanges an Auth0 token for a Firebase custom token
+   * @param {string} auth0Token - The Auth0 JWT token to exchange
+   * @returns {Promise<string>} The Firebase custom token
+   * @throws {Error} If token exchange fails or Firebase Functions are not available
+   * @example
+   * ```typescript
+   * try {
+   *   const firebaseToken = await authBridge.exchangeTokens(auth0Token);
+   *   // Use the Firebase token
+   * } catch (error) {
+   *   console.error('Token exchange failed:', error);
+   * }
+   * ```
    */
   async exchangeTokens(auth0Token: string): Promise<string> {
     const startTime = Date.now();
@@ -257,7 +332,14 @@ export class AuthBridge {
   }
 
   /**
-   * HIPAA-Compliant Firebase authentication with retry and debugging
+   * Signs in to Firebase using an Auth0 token
+   * @param {string} auth0Token - The Auth0 JWT token
+   * @returns {Promise<void>}
+   * @throws {Error} If sign-in fails
+   * @example
+   * ```typescript
+   * await authBridge.signInWithAuth0Token(auth0Token);
+   * ```
    */
   async signInWithAuth0Token(auth0Token: string): Promise<void> {
     if (!auth) {
@@ -281,7 +363,11 @@ export class AuthBridge {
   }
 
   /**
-   * Clear all cached tokens (useful for logout or debugging)
+   * Clears the token cache
+   * @example
+   * ```typescript
+   * authBridge.clearTokenCache();
+   * ```
    */
   clearTokenCache(): void {
     const cacheSize = this.tokenCache.size;
@@ -290,7 +376,16 @@ export class AuthBridge {
   }
 
   /**
-   * Get debug information for troubleshooting
+   * Gets debug information about the AuthBridge state
+   * @returns {Object} Debug information including recent logs and cache status
+   * @property {AuthDebugInfo[]} recentLog - Recent debug log entries
+   * @property {number} cacheSize - Number of cached tokens
+   * @property {Array<{uid: string, expiresAt: string, expiresIn: number}>} cacheEntries - Details of cached tokens
+   * @example
+   * ```typescript
+   * const debugInfo = authBridge.getDebugInfo();
+   * console.log('Cache size:', debugInfo.cacheSize);
+   * ```
    */
   getDebugInfo(): {
     recentLog: AuthDebugInfo[];
@@ -311,7 +406,18 @@ export class AuthBridge {
   }
 
   /**
-   * Health check for the authentication system
+   * Performs a health check of the AuthBridge
+   * @returns {Promise<Object>} Health check results
+   * @property {string} status - 'healthy' | 'degraded' | 'unhealthy'
+   * @property {Record<string, boolean>} checks - Results of individual health checks
+   * @property {HealthCheckDetails} details - Detailed health check information
+   * @example
+   * ```typescript
+   * const health = await authBridge.healthCheck();
+   * if (health.status === 'healthy') {
+   *   console.log('AuthBridge is healthy');
+   * }
+   * ```
    */
   async healthCheck(): Promise<{
     status: 'healthy' | 'degraded' | 'unhealthy';
@@ -345,7 +451,18 @@ export class AuthBridge {
 }
 
 /**
- * Enhanced Hook with token refresh capabilities and debugging
+ * React hook for Firebase authentication
+ * @returns {Object} Firebase auth utilities
+ * @property {Function} ensureFirebaseAuth - Ensures Firebase authentication is active
+ * @property {Function} refreshToken - Refreshes the Firebase token
+ * @property {Function} getDebugInfo - Gets debug information
+ * @property {Function} clearCache - Clears the token cache
+ * @property {Function} healthCheck - Performs a health check
+ * @example
+ * ```typescript
+ * const { ensureFirebaseAuth, refreshToken } = useFirebaseAuth();
+ * await ensureFirebaseAuth();
+ * ```
  */
 export const useFirebaseAuth = () => {
   const { getAccessTokenSilently, isAuthenticated, getAccessTokenWithPopup } = useAuth0();

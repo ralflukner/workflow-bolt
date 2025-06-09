@@ -150,6 +150,15 @@ export const WaitTimeDiagnostic: React.FC = () => {
                 }
               </span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-gray-300">Average Wait:</span>
+              <span className="text-blue-400">
+                {patientsWithWaitTimes.length > 0 
+                  ? Math.round(patientsWithWaitTimes.reduce((sum, p) => sum + p.waitTime, 0) / patientsWithWaitTimes.length) + ' min'
+                  : '0 min'
+                }
+              </span>
+            </div>
           </div>
         </div>
 
@@ -198,6 +207,11 @@ export const WaitTimeDiagnostic: React.FC = () => {
                       </span>
                     </div>
                   )}
+
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Time Call Count:</span>
+                    <span className="text-blue-400">{timeCallCount}</span>
+                  </div>
                 </div>
               ))}
             </div>

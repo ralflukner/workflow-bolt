@@ -80,7 +80,14 @@ describe('WaitTimeDiagnostic Component', () => {
     
     // We should have 3 total patients, 2 with check-in times
     expect(screen.getByText('3')).toBeInTheDocument(); // Total patients
-    expect(screen.getByText('2')).toBeInTheDocument(); // Patients with check-in
+    // Use a more robust query for 'With Check-in:'
+    const withCheckIn = screen.getByText((content, element) => {
+      return (
+        content === '2' &&
+        !!element?.previousSibling?.textContent?.includes('With Check-in:')
+      );
+    });
+    expect(withCheckIn).toBeInTheDocument();
   });
 
   test('calculates wait times correctly', () => {
@@ -130,19 +137,19 @@ describe('WaitTimeDiagnostic Component', () => {
   });
 
   test('refreshes diagnostic information when tickCounter changes', () => {
+    jest.useFakeTimers();
     const { rerender } = render(<WaitTimeDiagnostic />);
-    
     // Initial render
-    const initialRender = screen.getByText(/Time Call Count:/i).nextSibling?.textContent;
-    
+    const initialRender = screen.getAllByText(/Time Call Count:/i)[0].nextSibling?.textContent;
     // Force update via tick counter
     mockTickCounter += 1;
-    
+    // Advance timers to simulate interval
+    jest.advanceTimersByTime(1000);
     // Re-render
     rerender(<WaitTimeDiagnostic />);
-    
     // Time call count should have increased
-    const updatedRender = screen.getByText(/Time Call Count:/i).nextSibling?.textContent;
+    const updatedRender = screen.getAllByText(/Time Call Count:/i)[0].nextSibling?.textContent;
     expect(updatedRender).not.toBe(initialRender);
+    jest.useRealTimers();
   });
 });
