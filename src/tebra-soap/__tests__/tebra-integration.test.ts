@@ -18,53 +18,157 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 import { TebraIntegrationService, createTebraConfig } from '../tebra-integration-service';
 import { TebraApiService } from '../tebra-api-service';
 import { TebraRateLimiter } from '../tebra-rate-limiter';
-import { TebraCredentials, TebraAppointment, TebraPatient, TebraProvider } from '../tebra-api-service.types';
+import { TebraCredentials, TebraAppointment, TebraPatient, TebraDailySession } from '../tebra-api-service.types';
 import { SessionStats } from '../../services/storageService';
 import { TebraSoapClient } from '../tebraSoapClient';
 import { TebraDataTransformer } from '../tebra-data-transformer';
 import { DailySessionService } from '../../services/firebase/dailySessionService';
 
-// Mock the SOAP client to avoid real API calls during testing
-const mockSearchPatients = jest.fn<() => Promise<TebraPatient[]>>().mockResolvedValue([
+// Import SOAP response types
+interface SoapPatientResponse {
+  Id?: string;
+  FirstName?: string;
+  LastName?: string;
+  DOB?: string;
+  PhoneNumber?: string;
+  EmailAddress?: string;
+  Gender?: string;
+}
+
+interface SoapAppointmentResponse {
+  Id?: string;
+  PatientId?: string;
+  ProviderId?: string;
+  Time?: string;
+  Type?: string;
+  Status?: string;
+}
+
+interface SoapProviderResponse {
+  Id?: string;
+  FirstName?: string;
+  LastName?: string;
+  Title?: string;
+}
+
+// Mock the SOAP client to return raw SOAP responses (not final transformed objects)
+const mockSearchPatients = jest.fn<() => Promise<SoapPatientResponse[]>>().mockResolvedValue([
   {
-    PatientId: 'test-patient-1',
+    Id: 'test-patient-1',
     FirstName: 'John',
     LastName: 'Doe',
-    DateOfBirth: '1990-01-01',
-    Phone: '',
-    Email: '',
-    Gender: 'M',
-    Address: {
-      Street: '123 Main St',
-      City: 'Anytown',
-      State: 'CA',
-      ZipCode: '12345',
-      Country: 'USA'
-    },
-    Insurance: {
-      Provider: 'Test Insurance',
-      PolicyNumber: 'POL123',
-      GroupNumber: 'GRP456'
-    },
-    CreatedAt: '2023-01-01T00:00:00Z',
-    UpdatedAt: '2023-01-01T00:00:00Z'
+    DOB: '1990-01-01',
+    PhoneNumber: '',
+    EmailAddress: '',
+    Gender: 'M'
   }
 ]);
-const mockGetAppointments = jest.fn<() => Promise<TebraAppointment[]>>().mockResolvedValue([
+
+const mockGetAppointments = jest.fn<() => Promise<SoapAppointmentResponse[]>>().mockResolvedValue([
   {
-    AppointmentId: 'apt-1',
+    Id: 'apt-1',
     PatientId: 'test-patient-1',
     ProviderId: 'provider-1',
-    StartTime: '2025-01-15T09:00:00Z',
-    EndTime: '2025-01-15T10:00:00Z',
+    Time: '2025-01-15T09:00:00Z',
     Type: 'Office Visit',
-    Status: 'Scheduled',
-    Notes: '',
-    CreatedAt: '2023-01-01T00:00:00Z',
-    UpdatedAt: '2023-01-01T00:00:00Z'
+    Status: 'Scheduled'
   }
 ]);
-const mockGetPatientById = jest.fn<() => Promise<TebraPatient>>().mockResolvedValue({
+
+const mockGetPatientById = jest.fn<(patientId: string) => Promise<SoapPatientResponse>>().mockResolvedValue({
+  Id: 'test-patient-1',
+  FirstName: 'John',
+  LastName: 'Doe',
+  DOB: '1990-01-01',
+  PhoneNumber: '',
+  EmailAddress: '',
+  Gender: 'M'
+});
+
+const mockGetProviders = jest.fn<() => Promise<SoapProviderResponse[]>>().mockResolvedValue([
+  {
+    Id: 'provider-1',
+    FirstName: 'Dr. Jane',
+    LastName: 'Smith',
+    Title: 'MD'
+  }
+]);
+
+const mockGetRateLimiter = jest.fn().mockReturnValue({
+  getAllRateLimits: () => ({
+    'GetAppointments': 1000,
+    'GetProviders': 500,
+    'GetPatient': 250
+  }),
+  canCallImmediately: () => true,
+  getRemainingWaitTime: () => 0
+});
+
+const mockGetAppointmentById = jest.fn<(appointmentId: string) => Promise<SoapAppointmentResponse>>().mockResolvedValue({
+  Id: 'apt-1',
+  PatientId: 'test-patient-1',
+  ProviderId: 'provider-1',
+  Time: '2025-01-15T09:00:00Z',
+  Type: 'Office Visit',
+  Status: 'Scheduled'
+});
+
+const mockGetDailySessionData = jest.fn<(date: Date) => Promise<any>>().mockResolvedValue({
+  Id: 'session-1',
+  Date: '2025-01-15',
+  ProviderId: 'provider-1',
+  Appointments: [
+    {
+      Id: 'apt-1',
+      PatientId: 'test-patient-1',
+      Time: '2025-01-15T09:00:00Z',
+      Type: 'Office Visit',
+      Status: 'Scheduled'
+    }
+  ]
+});
+
+const mockTestConnection = jest.fn<() => Promise<void>>().mockResolvedValue();
+
+// Setup mock implementations
+const mockedTebraSoapClient = TebraSoapClient as jest.MockedClass<typeof TebraSoapClient>;
+mockedTebraSoapClient.mockImplementation(() => ({
+  searchPatients: mockSearchPatients,
+  getAppointments: mockGetAppointments,
+  getPatientById: mockGetPatientById,
+  getProviders: mockGetProviders,
+  getRateLimiter: mockGetRateLimiter,
+  getAppointmentById: mockGetAppointmentById,
+  getDailySessionData: mockGetDailySessionData,
+  testConnection: mockTestConnection,
+  getAllPatients: jest.fn<() => Promise<SoapPatientResponse[]>>().mockResolvedValue([]),
+  createAppointment: jest.fn<(appointmentData: any) => Promise<any>>().mockResolvedValue(true),
+  updateAppointment: jest.fn<(appointmentData: any) => Promise<any>>().mockResolvedValue(true)
+} as any));
+
+// Mock Firebase services
+const mockSaveTodaysSession = jest.fn<() => Promise<void>>().mockResolvedValue();
+const mockLoadTodaysSession = jest.fn<() => Promise<TebraPatient[]>>().mockResolvedValue([]);
+const mockGetSessionStats = jest.fn<() => Promise<SessionStats>>().mockResolvedValue({
+  backend: 'firebase',
+  currentSessionDate: '2025-01-15',
+  hasCurrentSession: false,
+  totalSessions: 0
+});
+
+// Setup DailySessionService mock
+const mockedDailySessionService = DailySessionService as jest.MockedClass<typeof DailySessionService>;
+mockedDailySessionService.mockImplementation(() => ({
+  saveTodaysSession: mockSaveTodaysSession,
+  loadTodaysSession: mockLoadTodaysSession,
+  getSessionStats: mockGetSessionStats
+} as any));
+
+// Mock TebraDataTransformer before any imports
+jest.mock('../tebra-data-transformer');
+
+// Setup data transformer mock
+const mockTransformPatientData = jest.fn().mockReturnValue({
   PatientId: 'test-patient-1',
   FirstName: 'John',
   LastName: 'Doe',
@@ -87,65 +191,37 @@ const mockGetPatientById = jest.fn<() => Promise<TebraPatient>>().mockResolvedVa
   CreatedAt: '2023-01-01T00:00:00Z',
   UpdatedAt: '2023-01-01T00:00:00Z'
 });
-const mockGetProviders = jest.fn<() => Promise<TebraProvider[]>>().mockResolvedValue([
-  {
-    ProviderId: 'provider-1',
-    FirstName: 'Dr. Jane',
-    LastName: 'Smith',
-    Title: 'Dr.'
-  }
-]);
-const mockGetRateLimiter = jest.fn().mockReturnValue({
-  getAllRateLimits: () => ({
-    'GetAppointments': 1000,
-    'GetProviders': 500,
-    'GetPatient': 250
-  }),
-  canCallImmediately: () => true,
-  getRemainingWaitTime: () => 0
-});
-const mockGetAppointmentById = jest.fn();
-const mockGetDailySessionData = jest.fn();
-const mockTestConnection = jest.fn();
 
-// Setup mock implementations
-const mockedTebraSoapClient = TebraSoapClient as jest.MockedClass<typeof TebraSoapClient>;
-mockedTebraSoapClient.mockImplementation(() => ({
-  searchPatients: mockSearchPatients,
-  getAppointments: mockGetAppointments,
-  getPatientById: mockGetPatientById,
-  getProviders: mockGetProviders,
-  getRateLimiter: mockGetRateLimiter,
-  getAppointmentById: mockGetAppointmentById,
-  getDailySessionData: mockGetDailySessionData,
-  testConnection: mockTestConnection,
-  getAllPatients: jest.fn(),
-  createAppointment: jest.fn(),
-  updateAppointment: jest.fn()
-} as any));
-
-// Mock Firebase services
-const mockSaveTodaysSession = jest.fn<() => Promise<void>>().mockResolvedValue();
-const mockLoadTodaysSession = jest.fn<() => Promise<TebraPatient[]>>().mockResolvedValue([]);
-const mockGetSessionStats = jest.fn<() => Promise<SessionStats>>().mockResolvedValue({
-  backend: 'firebase',
-  currentSessionDate: '2025-01-15',
-  hasCurrentSession: false,
-  totalSessions: 0
+const mockTransformAppointmentData = jest.fn().mockReturnValue({
+  AppointmentId: 'apt-1',
+  PatientId: 'test-patient-1',
+  ProviderId: 'provider-1',
+  StartTime: '2025-01-15T09:00:00Z',
+  EndTime: '2025-01-15T10:00:00Z',
+  Type: 'Office Visit',
+  Status: 'Scheduled',
+  Notes: '',
+  CreatedAt: '2023-01-01T00:00:00Z',
+  UpdatedAt: '2023-01-01T00:00:00Z'
 });
 
-// Setup DailySessionService mock
-const mockedDailySessionService = DailySessionService as jest.MockedClass<typeof DailySessionService>;
-mockedDailySessionService.mockImplementation(() => ({
-  saveTodaysSession: mockSaveTodaysSession,
-  loadTodaysSession: mockLoadTodaysSession,
-  getSessionStats: mockGetSessionStats
-} as any));
-
-// Setup data transformer mock
-const mockTransformPatientData = jest.fn();
-const mockTransformAppointmentData = jest.fn();
-const mockTransformDailySessionData = jest.fn();
+const mockTransformDailySessionData = jest.fn().mockReturnValue({
+  SessionId: 'session-1',
+  Date: '2025-01-15',
+  ProviderId: 'provider-1',
+  Appointments: [
+    {
+      AppointmentId: 'apt-1',
+      PatientId: 'test-patient-1',
+      StartTime: '2025-01-15T09:00:00Z',
+      EndTime: '2025-01-15T10:00:00Z',
+      Type: 'Office Visit',
+      Status: 'Scheduled'
+    }
+  ],
+  CreatedAt: '2023-01-01T00:00:00Z',
+  UpdatedAt: '2023-01-01T00:00:00Z'
+});
 
 const mockedTebraDataTransformer = TebraDataTransformer as jest.MockedClass<typeof TebraDataTransformer>;
 mockedTebraDataTransformer.mockImplementation(() => ({
@@ -155,18 +231,46 @@ mockedTebraDataTransformer.mockImplementation(() => ({
 } as any));
 
 // Setup rate limiter mock
-const mockWaitForSlot = jest.fn().mockImplementation(() => Promise.resolve());
+const mockWaitForSlot = jest.fn((_method: string) => Promise.resolve());
+const mockWaitForRateLimit = jest.fn((_method: string) => Promise.resolve());
+const mockGetAllRateLimits = jest.fn(() => ({
+  'GetAppointments': 1000,
+  'GetProviders': 500,
+  'GetPatient': 250
+}));
+const mockCanCallImmediately = jest.fn((_method: string) => true);
+const mockGetRemainingWaitTime = jest.fn((_method: string) => 0);
+const mockGetRequestCount = jest.fn((_method: string) => 0);
+const mockReset = jest.fn((_method: string) => {});
+const mockResetAll = jest.fn(() => {});
+const mockGetRateLimit = jest.fn((_method: string) => 1000);
+
 const mockedTebraRateLimiter = TebraRateLimiter as jest.MockedClass<typeof TebraRateLimiter>;
 mockedTebraRateLimiter.mockImplementation(() => ({
   waitForSlot: mockWaitForSlot,
-  waitForRateLimit: jest.fn().mockImplementation(() => Promise.resolve()),
-  getAllRateLimits: () => ({
+  waitForRateLimit: mockWaitForRateLimit,
+  getAllRateLimits: mockGetAllRateLimits,
+  canCallImmediately: mockCanCallImmediately,
+  getRemainingWaitTime: mockGetRemainingWaitTime,
+  getRequestCount: mockGetRequestCount,
+  reset: mockReset,
+  resetAll: mockResetAll,
+  getRateLimit: mockGetRateLimit,
+  requestCounts: new Map<string, number[]>(),
+  lastCallTimes: new Map<string, number>(),
+  rateLimits: {
     'GetAppointments': 1000,
     'GetProviders': 500,
     'GetPatient': 250
-  }),
-  canCallImmediately: () => true,
-  getRemainingWaitTime: () => 0
+  },
+  getRequestCounts: jest.fn().mockReturnValue(new Map<string, number[]>()),
+  getLastCallTimes: jest.fn().mockReturnValue(new Map<string, number>()),
+  methodLocks: {},
+  sleep: jest.fn((_ms: number) => Promise.resolve()),
+  config: {
+    maxRequests: 100,
+    windowMs: 60000
+  }
 } as any));
 
 describe('Tebra EHR Integration with Rate Limiting', () => {
@@ -181,6 +285,43 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
     jest.clearAllTimers();
     // Use real timers for rate limiting tests
     jest.useRealTimers();
+
+    // Clear all mocks
+    jest.clearAllMocks();
+
+    // Reset mock implementations
+    mockGetPatientById.mockClear();
+    mockGetAppointmentById.mockClear();
+    mockGetDailySessionData.mockClear();
+    mockTestConnection.mockClear();
+    mockTransformPatientData.mockClear();
+    mockTransformAppointmentData.mockClear();
+    mockTransformDailySessionData.mockClear();
+
+    // Set up mock implementations to return raw SOAP responses
+    mockGetPatientById.mockResolvedValue({
+      Id: 'test-patient-1',
+      FirstName: 'John',
+      LastName: 'Doe',
+      DOB: '1990-01-01',
+      Gender: 'Male',
+      EmailAddress: 'john.doe@example.com',
+      PhoneNumber: '123-456-7890'
+    });
+    mockGetAppointmentById.mockResolvedValue({
+      Id: 'apt-1',
+      PatientId: 'test-patient-1',
+      ProviderId: 'provider-1',
+      Time: '2023-01-01T10:00:00',
+      Status: 'Scheduled',
+      Type: 'Regular'
+    });
+    mockGetDailySessionData.mockResolvedValue({
+      Id: 'session-1',
+      Date: '2023-01-01',
+      ProviderId: 'provider-1',
+      Appointments: []
+    });
   });
 
   afterEach(() => {
@@ -258,8 +399,39 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
       mockTransformAppointmentData.mockClear();
       mockTransformDailySessionData.mockClear();
 
-      // Create service instance
-      apiService = new TebraApiService(testCredentials);
+      // Set up mock implementations to return raw SOAP responses
+      mockGetPatientById.mockResolvedValue({
+        Id: 'test-patient-1',
+        FirstName: 'John',
+        LastName: 'Doe',
+        DOB: '1990-01-01',
+        Gender: 'Male',
+        EmailAddress: 'john.doe@example.com',
+        PhoneNumber: '123-456-7890'
+      });
+
+      mockGetAppointmentById.mockResolvedValue({
+        Id: 'apt-1',
+        PatientId: 'test-patient-1',
+        ProviderId: 'provider-1',
+        Time: '2023-01-01T10:00:00',
+        Status: 'Scheduled',
+        Type: 'Regular'
+      });
+
+      mockGetDailySessionData.mockResolvedValue({
+        Id: 'session-1',
+        Date: '2023-01-01',
+        ProviderId: 'provider-1',
+        Appointments: []
+      });
+
+      // Create service instance with injected mock transformer
+      apiService = new TebraApiService(testCredentials, {
+        transformPatientData: mockTransformPatientData as (data: any) => TebraPatient,
+        transformAppointmentData: mockTransformAppointmentData as (data: any) => TebraAppointment,
+        transformDailySessionData: mockTransformDailySessionData as (data: any) => TebraDailySession
+      });
     });
 
     describe('constructor', () => {
@@ -285,20 +457,28 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
     });
 
     it('should get patient data', async () => {
-      const patient = await apiService.getPatientData('test-patient-1');
+      const patient = await apiService.getPatientData('123');
       expect(patient).toBeDefined();
-      expect(patient.PatientId).toBe('test-patient-1');
+      expect(mockWaitForRateLimit).toHaveBeenCalledWith('GetPatient');
+      expect(mockGetPatientById).toHaveBeenCalledWith('123');
+      expect(mockTransformPatientData).toHaveBeenCalled();
     });
 
     it('should get appointment data', async () => {
-      const appointment = await apiService.getAppointmentData('apt-1');
+      const appointment = await apiService.getAppointmentData('456');
       expect(appointment).toBeDefined();
-      expect(appointment.AppointmentId).toBe('apt-1');
+      expect(mockWaitForRateLimit).toHaveBeenCalledWith('GetAppointments');
+      expect(mockGetAppointmentById).toHaveBeenCalledWith('456');
+      expect(mockTransformAppointmentData).toHaveBeenCalled();
     });
 
     it('should get daily session data', async () => {
-      const session = await apiService.getDailySessionData(new Date());
+      const date = new Date('2024-03-20');
+      const session = await apiService.getDailySessionData(date);
       expect(session).toBeDefined();
+      expect(mockWaitForRateLimit).toHaveBeenCalledWith('GetAppointments');
+      expect(mockGetDailySessionData).toHaveBeenCalledWith(date);
+      expect(mockTransformDailySessionData).toHaveBeenCalled();
     });
 
     describe('testConnection', () => {

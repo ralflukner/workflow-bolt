@@ -4,8 +4,10 @@ const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
 
-// Initialize Firebase Admin
-admin.initializeApp();
+// Initialize Firebase Admin (avoid duplicate app error)
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 const db = admin.firestore();
 
 // Initialize Express app
@@ -83,7 +85,10 @@ async function getPurgeStatus() {
       itemsPurged: 0
     };
   }
-  return doc.data();
+  const data = doc.data();
+  if (data.timestamp?.toDate) data.timestamp = data.timestamp.toDate();
+  if (data.updatedAt?.toDate) data.updatedAt = data.updatedAt.toDate();
+  return data;
 }
 
 // Daily data purge function (using v1 syntax)
@@ -162,7 +167,8 @@ exports.purgeHealthCheck = functionsV1.pubsub
       
       // Check if last purge was too long ago (more than 25 hours)
       if (lastPurgeStatus.timestamp) {
-        const hoursSinceLastPurge = (now.getTime() - new Date(lastPurgeStatus.timestamp).getTime()) / (1000 * 60 * 60);
+        const lastPurgeDate = lastPurgeStatus.timestamp;
+const hoursSinceLastPurge = (now.getTime() - lastPurgeDate.getTime()) / (1000 * 60 * 60);
         if (hoursSinceLastPurge > 25) {
           healthStatus.warnings.push(`Last purge was ${hoursSinceLastPurge.toFixed(1)} hours ago`);
           healthStatus.systemStatus = 'warning';

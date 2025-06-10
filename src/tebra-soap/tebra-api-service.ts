@@ -79,9 +79,13 @@ export class TebraApiService {
   /**
    * Creates an instance of TebraApiService
    * @param {Partial<TebraCredentials>} [credentials] - Optional credentials override
+   * @param {TebraDataTransformer} [dataTransformer] - Optional data transformer
    * @throws {Error} If required configuration is missing
    */
-  constructor(credentials?: Partial<TebraCredentials>) {
+  constructor(
+    credentials?: Partial<TebraCredentials>,
+    dataTransformer: TebraDataTransformer = new TebraDataTransformer()
+  ) {
     const config: EnvConfig = {
       wsdlUrl: credentials?.wsdlUrl || getEnvVar('REACT_APP_TEBRA_WSDL_URL', ''),
       username: credentials?.username || getEnvVar('REACT_APP_TEBRA_USERNAME', ''),
@@ -91,7 +95,7 @@ export class TebraApiService {
     this.validateConfig(config);
     this.soapClient = new TebraSoapClient(config);
     this.rateLimiter = new TebraRateLimiter();
-    this.dataTransformer = new TebraDataTransformer();
+    this.dataTransformer = dataTransformer;
   }
 
   /**
