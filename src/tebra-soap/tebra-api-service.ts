@@ -1,5 +1,12 @@
+/**
+ * @fileoverview Tebra API service for handling SOAP API interactions
+ * @module services/tebra/tebra-api-service
+ */
+
 import { TebraCredentials, TebraAppointment, TebraPatient, TebraProvider } from './tebra-api-service.types';
 import { TebraSoapClient } from './tebraSoapClient';
+import { TebraRateLimiter } from './tebra-rate-limiter';
+import { TebraDataTransformer } from './tebra-data-transformer';
 
 // Type definitions for SOAP responses
 interface SoapAppointmentResponse {
@@ -37,29 +44,148 @@ interface SoapPatientResponse {
   EmailAddress?: string;
 }
 
+/**
+ * Environment variable configuration interface
+ * @interface EnvConfig
+ */
+interface EnvConfig {
+  /** Tebra WSDL URL */
+  wsdlUrl: string;
+  /** Tebra username */
+  username: string;
+  /** Tebra password */
+  password: string;
+}
+
+/**
+ * Gets environment variable with fallback
+ * @param {string} name - Environment variable name
+ * @param {string} fallback - Fallback value
+ * @returns {string} Environment variable value or fallback
+ */
+const getEnvVar = (name: string, fallback: string): string => {
+  if (import.meta.env.DEV) {
+    return import.meta.env[name] || fallback;
+  }
+  return process.env[name] || fallback;
+};
+
+/**
+ * Tebra API service class
+ * @class TebraApiService
+ */
 export class TebraApiService {
   private soapClient: TebraSoapClient;
+  private rateLimiter: TebraRateLimiter;
+  private dataTransformer: TebraDataTransformer;
 
-  constructor(credentials: TebraCredentials) {
-    this.soapClient = new TebraSoapClient({
-      wsdlUrl: credentials.wsdlUrl,
-      username: credentials.username,
-      password: credentials.password
+  /**
+   * Creates an instance of TebraApiService
+   * @param {Partial<TebraCredentials>} [credentials] - Optional credentials override
+   * @throws {Error} If required configuration is missing
+   */
+  constructor(credentials?: Partial<TebraCredentials>) {
+    const config: EnvConfig = {
+      wsdlUrl: credentials?.wsdlUrl || getEnvVar('REACT_APP_TEBRA_WSDL_URL', ''),
+      username: credentials?.username || getEnvVar('REACT_APP_TEBRA_USERNAME', ''),
+      password: credentials?.password || getEnvVar('REACT_APP_TEBRA_PASSWORD', '')
+    };
+
+    this.validateConfig(config);
+    this.soapClient = new TebraSoapClient(config);
+    this.rateLimiter = new TebraRateLimiter();
+    this.dataTransformer = new TebraDataTransformer();
+  }
+
+  /**
+   * Validates Tebra configuration
+   * @param {EnvConfig} config - Configuration object
+   * @throws {Error} If configuration is invalid
+   */
+  private validateConfig(config: EnvConfig): void {
+    const missingFields = Object.entries(config)
+      .filter(([_, value]) => !value)
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+      throw new Error(
+        `Invalid Tebra configuration. Missing required fields: ${missingFields.join(', ')}`
+      );
+    }
+  }
+
+  /**
+   * Executes a rate-limited API call
+   * @template T
+   * @param {string} method - API method name
+   * @param {Function} apiCall - API call function
+   * @returns {Promise<T>} API response
+   * @throws {Error} If API call fails
+   */
+  private async executeRateLimitedCall<T>(
+    method: string,
+    apiCall: () => Promise<T>
+  ): Promise<T> {
+    try {
+      await this.rateLimiter.waitForSlot(method);
+      return await apiCall();
+    } catch (error) {
+      console.error(`Failed to execute ${method}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets patient data from Tebra
+   * @param {string} patientId - Patient ID
+   * @returns {Promise<any>} Patient data
+   * @throws {Error} If API call fails
+   */
+  public async getPatientData(patientId: string): Promise<any> {
+    return this.executeRateLimitedCall('getPatientData', async () => {
+      const response = await this.soapClient.getPatientData(patientId);
+      return this.dataTransformer.transformPatientData(response);
     });
   }
 
-  async testConnection(): Promise<boolean> {
+  /**
+   * Gets appointment data from Tebra
+   * @param {string} appointmentId - Appointment ID
+   * @returns {Promise<any>} Appointment data
+   * @throws {Error} If API call fails
+   */
+  public async getAppointmentData(appointmentId: string): Promise<any> {
+    return this.executeRateLimitedCall('getAppointmentData', async () => {
+      const response = await this.soapClient.getAppointmentData(appointmentId);
+      return this.dataTransformer.transformAppointmentData(response);
+    });
+  }
+
+  /**
+   * Gets daily session data from Tebra
+   * @param {Date} date - Date to get session data for
+   * @returns {Promise<any>} Daily session data
+   * @throws {Error} If API call fails
+   */
+  public async getDailySessionData(date: Date): Promise<any> {
+    return this.executeRateLimitedCall('getDailySessionData', async () => {
+      const response = await this.soapClient.getDailySessionData(date);
+      return this.dataTransformer.transformDailySessionData(response);
+    });
+  }
+
+  /**
+   * Tests the Tebra API connection
+   * @returns {Promise<boolean>} True if connection is successful
+   * @throws {Error} If connection test fails
+   */
+  public async testConnection(): Promise<boolean> {
     try {
-      console.log('Testing Tebra API connection...');
-      
-      // Try a simple search to test connection
-      const result = await this.soapClient.searchPatients('test');
-      
-      console.log('Connection test result:', result);
+      await this.soapClient.testConnection();
       return true;
     } catch (error) {
-      console.error('Connection test failed:', error);
-      return false;
+      console.error('Tebra API connection test failed:', error);
+      throw error;
     }
   }
 

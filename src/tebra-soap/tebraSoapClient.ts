@@ -1,181 +1,113 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-let soap: any;
-if (typeof window === 'undefined') {
-  try {
-    const soapModule = require('soap');
-    soap = soapModule.default || soapModule;
-  } catch (e) {
-    console.warn('SOAP client not available in browser environment');
-  }
-}
-import { tebraRateLimiter } from './tebra-rate-limiter';
+/**
+ * @fileoverview SOAP client for Tebra API
+ * @module services/tebra/tebraSoapClient
+ */
 
-export interface TebraConfig {
-  wsdlUrl: string; // WSDL endpoint URL
-  username: string;
-  password: string;
-}
+import { TebraCredentials, TebraPatient, TebraAppointment, TebraDailySession } from './types';
+import { TebraRateLimiter } from './tebra-rate-limiter';
 
+/**
+ * Tebra SOAP client class
+ * @class TebraSoapClient
+ */
 export class TebraSoapClient {
-  private client: any | null = null;
-  private readonly config: TebraConfig;
-  
-  private isBrowserEnvironment(): boolean {
-    return typeof window !== 'undefined';
-  }
+  private client: any;
+  private config: TebraCredentials;
+  private rateLimiter: TebraRateLimiter;
 
-  constructor(config?: Partial<TebraConfig>) {
-    const getEnvVar = (name: string, fallback: string): string => {
-      if (process.env.NODE_ENV === 'test') {
-        return process.env[name] || fallback;
-      }
-      
-      try {
-        return (typeof process !== 'undefined' && process.env?.[name]) || fallback;
-      } catch (e) {
-        return fallback;
-      }
-    };
-
-    this.config = {
-      wsdlUrl: getEnvVar('REACT_APP_TEBRA_WSDL_URL', 'https://example.com/tebra.wsdl'),
-      username: getEnvVar('REACT_APP_TEBRA_USERNAME', 'demo'),
-      password: getEnvVar('REACT_APP_TEBRA_PASSWORD', 'demo'),
-      ...config,
-    } as TebraConfig;
+  /**
+   * Creates an instance of TebraSoapClient
+   * @param {TebraCredentials} config - Tebra credentials
+   */
+  constructor(config: TebraCredentials) {
+    this.config = config;
+    this.rateLimiter = new TebraRateLimiter();
   }
 
   /**
-   * Ensure SOAP client has been created/cached
+   * Tests the connection to the Tebra API
+   * @returns {Promise<boolean>} True if connection is successful
+   * @throws {Error} If connection test fails
+   */
+  public async testConnection(): Promise<boolean> {
+    try {
+      const client = await this.getClient();
+      await client.testConnectionAsync();
+      return true;
+    } catch (error) {
+      console.error('Failed to test connection:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets patient data from Tebra
+   * @param {string} patientId - Patient ID
+   * @returns {Promise<TebraPatient>} Patient data
+   * @throws {Error} If API call fails
+   */
+  public async getPatientData(patientId: string): Promise<TebraPatient> {
+    try {
+      const client = await this.getClient();
+      const result = await client.getPatientDataAsync({ patientId });
+      return result[0];
+    } catch (error) {
+      console.error('Failed to get patient data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets appointment data from Tebra
+   * @param {string} appointmentId - Appointment ID
+   * @returns {Promise<TebraAppointment>} Appointment data
+   * @throws {Error} If API call fails
+   */
+  public async getAppointmentData(appointmentId: string): Promise<TebraAppointment> {
+    try {
+      const client = await this.getClient();
+      const result = await client.getAppointmentDataAsync({ appointmentId });
+      return result[0];
+    } catch (error) {
+      console.error('Failed to get appointment data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets daily session data from Tebra
+   * @param {Date} date - Date to get session data for
+   * @returns {Promise<TebraDailySession>} Daily session data
+   * @throws {Error} If API call fails
+   */
+  public async getDailySessionData(date: Date): Promise<TebraDailySession> {
+    try {
+      const client = await this.getClient();
+      const result = await client.getDailySessionDataAsync({ date: date.toISOString() });
+      return result[0];
+    } catch (error) {
+      console.error('Failed to get daily session data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets the SOAP client instance
+   * @returns {Promise<any>} SOAP client instance
+   * @throws {Error} If client creation fails
    */
   private async getClient(): Promise<any> {
-    if (this.isBrowserEnvironment() || !soap) {
-      throw new Error('SOAP client only available in Node.js environment');
-    }
-    
     if (this.client) return this.client;
-    this.client = await soap.createClientAsync(this.config.wsdlUrl);
 
-    // Basic auth header if required
-    this.client.setSecurity(new soap.BasicAuthSecurity(this.config.username, this.config.password));
-
-    return this.client;
-  }
-
-  /**
-   * Get a patient by ID with rate limiting
-   */
-  async getPatientById(patientId: string): Promise<unknown> {
-    // Apply rate limiting
-    await tebraRateLimiter.waitForRateLimit('GetPatient');
-    
-    const client = await this.getClient();
-    type SoapMethod = (...args: any[]) => Promise<any[]>;
-    const method = client['GetPatientAsync'] as unknown as SoapMethod | undefined;
-    if (!method) throw new Error('GetPatient operation not found in WSDL');
-    const resArray = await method({ patientId });
-    return resArray[0];
-  }
-
-  /**
-   * Search patients by last name with rate limiting
-   */
-  async searchPatients(lastName: string): Promise<unknown[]> {
-    // Apply rate limiting
-    await tebraRateLimiter.waitForRateLimit('SearchPatient');
-    
-    const client = await this.getClient();
-    type SoapMethod = (...args: any[]) => Promise<any[]>;
-    const method = client['SearchPatientsAsync'] as unknown as SoapMethod | undefined;
-    if (!method) throw new Error('SearchPatients operation not found in WSDL');
-    const resArray = await method({ lastName });
-    const first = resArray[0] as any;
-    return first?.patients || [];
-  }
-
-  /**
-   * Get all patients with rate limiting
-   */
-  async getAllPatients(): Promise<unknown[]> {
-    // Apply rate limiting
-    await tebraRateLimiter.waitForRateLimit('GetAllPatients');
-    
-    const client = await this.getClient();
-    type SoapMethod = (...args: any[]) => Promise<any[]>;
-    const method = client['GetAllPatientsAsync'] as unknown as SoapMethod | undefined;
-    if (!method) throw new Error('GetAllPatients operation not found in WSDL');
-    const resArray = await method({});
-    const first = resArray[0] as any;
-    return first?.patients || [];
-  }
-
-  /**
-   * Get appointments within date range with rate limiting
-   */
-  async getAppointments(fromDate: string, toDate: string): Promise<unknown[]> {
-    // Apply rate limiting
-    await tebraRateLimiter.waitForRateLimit('GetAppointments');
-    
-    const client = await this.getClient();
-    type SoapMethod = (...args: any[]) => Promise<any[]>;
-    const method = client['GetAppointmentsAsync'] as unknown as SoapMethod | undefined;
-    if (!method) throw new Error('GetAppointments operation not found in WSDL');
-    const resArray = await method({ fromDate, toDate });
-    const first = resArray[0] as any;
-    return first?.appointments || [];
-  }
-
-  /**
-   * Get providers with rate limiting
-   */
-  async getProviders(): Promise<unknown[]> {
-    // Apply rate limiting
-    await tebraRateLimiter.waitForRateLimit('GetProviders');
-    
-    const client = await this.getClient();
-    type SoapMethod = (...args: any[]) => Promise<any[]>;
-    const method = client['GetProvidersAsync'] as unknown as SoapMethod | undefined;
-    if (!method) throw new Error('GetProviders operation not found in WSDL');
-    const resArray = await method({});
-    const first = resArray[0] as any;
-    return first?.providers || [];
-  }
-
-  /**
-   * Create a new appointment with rate limiting
-   */
-  async createAppointment(appointmentData: unknown): Promise<unknown> {
-    // Apply rate limiting
-    await tebraRateLimiter.waitForRateLimit('CreateAppointment');
-    
-    const client = await this.getClient();
-    type SoapMethod = (...args: any[]) => Promise<any[]>;
-    const method = client['CreateAppointmentAsync'] as unknown as SoapMethod | undefined;
-    if (!method) throw new Error('CreateAppointment operation not found in WSDL');
-    const resArray = await method(appointmentData);
-    return resArray[0];
-  }
-
-  /**
-   * Update an existing appointment with rate limiting
-   */
-  async updateAppointment(appointmentData: unknown): Promise<unknown> {
-    // Apply rate limiting
-    await tebraRateLimiter.waitForRateLimit('UpdateAppointment');
-    
-    const client = await this.getClient();
-    type SoapMethod = (...args: any[]) => Promise<any[]>;
-    const method = client['UpdateAppointmentAsync'] as unknown as SoapMethod | undefined;
-    if (!method) throw new Error('UpdateAppointment operation not found in WSDL');
-    const resArray = await method(appointmentData);
-    return resArray[0];
-  }
-
-  /**
-   * Get the rate limiter instance for monitoring
-   */
-  getRateLimiter() {
-    return tebraRateLimiter;
+    try {
+      const soap = await import('soap');
+      this.client = await soap.createClientAsync(this.config.wsdlUrl);
+      this.client.setSecurity(new soap.BasicAuthSecurity(this.config.username, this.config.password));
+      return this.client;
+    } catch (error) {
+      console.error('Failed to create SOAP client:', error);
+      throw error;
+    }
   }
 }
 

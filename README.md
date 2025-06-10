@@ -1,217 +1,147 @@
-# Patient Flow Management (Vite + React + TypeScript)
+# Tebra EHR Integration
 
-This project is a **Patient Flow Management** dashboard built with
-[Vite](https://vitejs.dev/), [React](https://react.dev/),
-[TypeScript](https://www.typescriptlang.org/), and
-[Tailwind CSS](https://tailwindcss.com/).
-It provides a modern, interactive
-interface for managing patient appointments and flow in a clinical setting.
+A robust and well-documented integration with the Tebra EHR system using SOAP API.
 
 ## Features
 
-- **Secure Authentication**: Auth0-powered login with protected routes
-- **Dashboard**: Visualize and manage patients through various stages
-  (Scheduled, Arrived, Appointment Prep, Ready for MD, With Doctor,
-  Seen by MD, Completed)
-- **Real-time Updates**: Live patient status tracking with configurable
-  time simulation
-- **Metrics Panel**: View key metrics about patient flow and clinic
-  efficiency
-- **Time Control**: Adjust and simulate time for workflow testing and
-  training
-- **Patient Management**: Add new patients and import schedules in bulk
-- **Export Capabilities**: Generate reports in text and CSV formats
-- **Responsive Design**: Optimized for desktop and mobile devices
+- SOAP API integration with Tebra EHR
+- Rate limiting to prevent API abuse
+- Data transformation between Tebra and internal formats
+- Comprehensive error handling
+- Type safety with TypeScript
+- Extensive test coverage
+- Environment variable configuration
+- Firebase integration for data persistence
 
-## Tech Stack
+## Prerequisites
 
-- [Vite 5.0.0](https://vitejs.dev/) (build tool optimized for React
-  compatibility)
-- [React 18.3.1](https://react.dev/) (UI library)
-- [TypeScript 5.5.3](https://www.typescriptlang.org/) (type safety)
-- [Tailwind CSS 3.4.1](https://tailwindcss.com/) (utility-first CSS)
-- [Auth0 2.3.0](https://auth0.com/) (authentication)
-- [Lucide React](https://lucide.dev/) (icons)
+- Node.js 18 or higher
+- npm or yarn
+- Firebase project
+- Tebra EHR credentials
 
-> **Note**: You may see a moderate severity npm audit warning about esbuild.
-> This is a false positive as we're using Vite 5.0.0 which includes a newer,
-> secure version of esbuild.
-> The warning can be safely ignored.
+## Installation
 
-## Getting Started
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (v18 or newer recommended)
-- [npm](https://www.npmjs.com/) (comes with Node.js)
-
-> **Note for NVM users**: If you're using NVM (Node Version Manager) and encounter issues with node or npm not being found in your terminal, run `source scripts/setup-nvm.sh` to ensure NVM is properly loaded. See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) for more details.
-
-### Installation
-
-1. **Clone the repository:**
-
-   ```bash
-   git clone <your-repo-url>
-   cd <repo-directory>
-   ```
-
-2. **Install dependencies:**
-
-   ```bash
-   npm install
-   ```
-
-### Development
-
-To start the development server:
-
+1. Clone the repository:
 ```bash
-npm run dev
+git clone https://github.com/your-org/tebra-integration.git
+cd tebra-integration
 ```
 
-The app will be available at [http://localhost:5173](http://localhost:5173)
-(or as indicated in your terminal).
-
-### Build for Production
-
-To build the app for production:
-
+2. Install dependencies:
 ```bash
-npm run build
+npm install
 ```
 
-The output will be in the `dist` directory.
+3. Create a `.env.local` file with your credentials:
+```env
+# Tebra EHR Integration
+REACT_APP_TEBRA_WSDL_URL="https://api.tebra.com/wsdl"
+REACT_APP_TEBRA_USERNAME="your-username"
+REACT_APP_TEBRA_PASSWORD="your-password"
 
-### Preview Production Build
-
-To preview the production build locally:
-
-```bash
-npm run preview
+# Firebase Configuration
+VITE_FIREBASE_PROJECT_ID="your-project-id"
+VITE_FIREBASE_API_KEY="your-api-key"
+VITE_FIREBASE_AUTH_DOMAIN="your-auth-domain"
+VITE_FIREBASE_STORAGE_BUCKET="your-storage-bucket"
+VITE_FIREBASE_MESSAGING_SENDER_ID="your-messaging-sender-id"
+VITE_FIREBASE_APP_ID="your-app-id"
 ```
 
-### Deploying to Netlify
+## Usage
 
-This project is configured for easy deployment to
-[Netlify](https://www.netlify.com/):
+### Basic Usage
 
-1. **Create a Netlify account** if you don't have one already.
+```typescript
+import { TebraApiService } from './src/tebra-soap/tebra-api-service';
 
-2. **Deploy to Netlify** using one of these methods:
+// Create API service instance
+const apiService = new TebraApiService({
+  wsdlUrl: process.env.REACT_APP_TEBRA_WSDL_URL,
+  username: process.env.REACT_APP_TEBRA_USERNAME,
+  password: process.env.REACT_APP_TEBRA_PASSWORD
+});
 
-   - **Git Integration (Recommended)**: Connect your GitHub/GitLab/Bitbucket
-     repository to Netlify for continuous deployment.
-   - **Manual Deploy**: Run `npm run build` locally and drag-and-drop the
-     `dist` folder to Netlify's manual deploy area.
-   - **Netlify CLI**: Install the Netlify CLI
-     (`npm install -g netlify-cli`) and run `netlify deploy`.
+// Test connection
+const isConnected = await apiService.testConnection();
 
-3. **Configure environment variables** in the Netlify UI:
+// Get patient data
+const patientData = await apiService.getPatientData('patient-id');
 
-   - Go to Site settings > Build & deploy > Environment
-   - Add the following variables:
+// Get appointment data
+const appointmentData = await apiService.getAppointmentData('appointment-id');
 
-     ```env
-     VITE_AUTH0_DOMAIN=your-auth0-domain.region.auth0.com
-     VITE_AUTH0_CLIENT_ID=your-auth0-client-id
-     VITE_AUTH0_REDIRECT_URI=https://your-netlify-site-name.netlify.app
-     VITE_AUTH0_AUDIENCE=https://api.patientflow.com
-     VITE_APP_NAME=Patient Flow Management
-     ```
+// Get daily session data
+const sessionData = await apiService.getDailySessionData(new Date());
+```
 
-   - Replace the placeholders with your actual values:
-     - `your-auth0-domain.region.auth0.com`: Your Auth0 domain from your
-       Auth0 account
-     - `your-auth0-client-id`: Your Auth0 client ID from your Auth0 account
-     - `your-netlify-site-name.netlify.app`: Your actual Netlify domain
+### Error Handling
 
-   > **Important**: You must create your own Auth0 account
-   > and application to get the necessary credentials.
-   > Never use shared or example
-   > credentials in a production environment.
+The integration includes comprehensive error handling:
 
-4. **Update Auth0 configuration**:
+```typescript
+try {
+  const patientData = await apiService.getPatientData('patient-id');
+} catch (error) {
+  if (error instanceof TebraApiError) {
+    console.error('Tebra API error:', error.message);
+  } else {
+    console.error('Unexpected error:', error);
+  }
+}
+```
 
-   - Log in to your [Auth0 Dashboard](https://manage.auth0.com/)
-   - Go to Applications > Your Application > Settings
-   - Add your Netlify domain to "Allowed Callback URLs",
-     "Allowed Logout URLs", and "Allowed Web Origins"
+### Rate Limiting
 
-The project already includes a `netlify.toml` file with the necessary
-build settings and redirect rules for the SPA.
+The integration includes built-in rate limiting to prevent API abuse:
+
+```typescript
+// Rate limiting is handled automatically
+const patientData = await apiService.getPatientData('patient-id');
+```
+
+## Development
+
+### Running Tests
+
+```bash
+npm test
+```
 
 ### Linting
-
-To run ESLint:
 
 ```bash
 npm run lint
 ```
 
-## Project Structure
+### Building
 
-```text
-├── src/
-│   ├── auth/              # Auth0 authentication configuration
-│   ├── components/        # React components (Dashboard, PatientList, etc.)
-│   ├── context/           # React context providers (Time, Patient)
-│   ├── data/              # Static or mock data
-│   ├── hooks/             # Custom React hooks
-│   ├── types/             # TypeScript type definitions
-│   ├── App.tsx            # Main app component
-│   ├── main.tsx           # Entry point
-│   └── index.css          # Tailwind CSS imports
-├── docs/                  # Comprehensive documentation
-├── public/                # Static assets (if any)
-├── index.html             # HTML template
-├── package.json           # Project metadata and scripts
-├── vite.config.ts         # Vite configuration
-├── tailwind.config.js     # Tailwind CSS configuration
-├── postcss.config.js      # PostCSS configuration
-└── tsconfig*.json         # TypeScript configuration
+```bash
+npm run build
 ```
+
+## Architecture
+
+The integration is built with a modular architecture:
+
+- `TebraSoapClient`: Handles direct SOAP API communication
+- `TebraRateLimiter`: Manages API rate limits
+- `TebraDataTransformer`: Transforms data between Tebra and internal formats
+- `TebraApiService`: High-level service for data synchronization
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-Specify your license here (e.g., MIT, Apache-2.0, etc.).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
+## Support
 
-_This project was bootstrapped with [Vite](https://vitejs.dev/)._
-
----
-
-_(Content below was moved from `docs/README.md`)_
-
-## Documentation
-
-This directory contains comprehensive documentation for the Patient Flow
-Management application.
-
-### Documentation Index
-
-- [Project Overview](docs/overview.md) - Introduction to the project and its
-  goals
-- [Architecture](docs/architecture.md) - System architecture and technology
-  choices
-- [Data Model](docs/data-model.md) - Data structures and state management
-- [Component Design](docs/component-design.md) - UI component overview and
-  interaction patterns
-- [Authentication](docs/auth.md) - Auth0 authentication implementation
-- [Recent Changes](docs/recent-changes.md) - Documentation of recent
-  significant changes
-- [Setup Guide](docs/setup-guide.md) - Instructions for setting up the
-  development environment
-
-_Note: Links above have been updated to point to the `docs/` directory._
-
-### Quick Start
-
-For quick setup instructions, refer to the main content in the project root.
-_(Note: This is now part of the main README)._
-
-### Contributing
-
-When making changes to the codebase, please update the relevant documentation
-in the `docs/` directory to keep it current.
+For support, please open an issue in the GitHub repository or contact the maintainers.

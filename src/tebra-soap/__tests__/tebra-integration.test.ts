@@ -1,9 +1,17 @@
+/**
+ * @fileoverview Test suite for Tebra integration
+ * @module services/tebra/__tests__/tebra-integration.test
+ */
+
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { TebraIntegrationService, createTebraConfig } from '../tebra-integration-service';
 import { TebraApiService } from '../tebra-api-service';
 import { TebraRateLimiter } from '../tebra-rate-limiter';
 import { TebraCredentials, TebraAppointment, TebraPatient, TebraProvider } from '../tebra-api-service.types';
 import { SessionStats } from '../../services/storageService';
+import { TebraSoapClient } from '../tebraSoapClient';
+import { TebraDataTransformer } from '../tebra-data-transformer';
+import { TebraDailySession } from '../types';
 
 // Mock the SOAP client to avoid real API calls during testing
 const mockSearchPatients = jest.fn<() => Promise<TebraPatient[]>>().mockResolvedValue([
@@ -150,50 +158,157 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
 
   describe('TebraApiService', () => {
     let apiService: TebraApiService;
+    let mockSoapClient: jest.Mocked<TebraSoapClient>;
+    let mockDataTransformer: jest.Mocked<TebraDataTransformer>;
+    let mockRateLimiter: jest.Mocked<TebraRateLimiter>;
 
     beforeEach(() => {
+      // Clear all mocks
+      jest.clearAllMocks();
+
+      // Initialize mocks
+      mockSoapClient = new TebraSoapClient(testCredentials) as jest.Mocked<TebraSoapClient>;
+      mockDataTransformer = new TebraDataTransformer() as jest.Mocked<TebraDataTransformer>;
+      mockRateLimiter = new TebraRateLimiter() as jest.Mocked<TebraRateLimiter>;
+
+      // Create service instance
       apiService = new TebraApiService(testCredentials);
     });
 
-    it('should successfully test connection', async () => {
-      const result = await apiService.testConnection();
-      expect(result).toBe(true);
-    });
+    describe('constructor', () => {
+      it('should initialize with provided credentials', () => {
+        expect(apiService).toBeInstanceOf(TebraApiService);
+      });
 
-    it('should retrieve appointments with rate limiting', async () => {
-      const fromDate = new Date('2025-01-15');
-      const toDate = new Date('2025-01-15');
-      
-      const appointments = await apiService.getAppointments(fromDate, toDate);
-      
-      expect(appointments).toHaveLength(1);
-      expect(appointments[0]).toMatchObject({
-        AppointmentId: 'apt-1',
-        PatientId: 'test-patient-1'
+      it('should throw error if credentials are missing', () => {
+        expect(() => new TebraApiService({})).toThrow('Invalid Tebra configuration');
       });
     });
 
-    it('should retrieve patients with rate limiting', async () => {
-      const patientIds = ['test-patient-1'];
-      
-      const patients = await apiService.getPatients(patientIds);
-      
-      expect(patients).toHaveLength(1);
-      expect(patients[0]).toMatchObject({
-        PatientId: 'test-patient-1',
-        FirstName: 'John',
-        LastName: 'Doe'
+    describe('getPatientData', () => {
+      const mockPatientId = '123';
+      const mockPatientData: TebraPatient = {
+        id: mockPatientId,
+        firstName: 'John',
+        lastName: 'Doe',
+        dateOfBirth: new Date('1990-01-01'),
+        gender: 'M',
+        email: 'john.doe@example.com',
+        phone: '123-456-7890',
+        address: {
+          street: '123 Main St',
+          city: 'Anytown',
+          state: 'CA',
+          zipCode: '12345'
+        },
+        insurance: {
+          provider: 'Test Insurance',
+          policyNumber: 'POL123',
+          groupNumber: 'GRP456'
+        },
+        medicalHistory: [],
+        allergies: [],
+        medications: []
+      };
+
+      it('should get patient data successfully', async () => {
+        mockSoapClient.getPatientData.mockResolvedValueOnce(mockPatientData);
+        mockDataTransformer.transformPatientData.mockReturnValueOnce(mockPatientData);
+
+        const result = await apiService.getPatientData(mockPatientId);
+
+        expect(result).toEqual(mockPatientData);
+        expect(mockSoapClient.getPatientData).toHaveBeenCalledWith(mockPatientId);
+        expect(mockDataTransformer.transformPatientData).toHaveBeenCalledWith(mockPatientData);
+      });
+
+      it('should handle errors when getting patient data', async () => {
+        const error = new Error('API Error');
+        mockSoapClient.getPatientData.mockRejectedValueOnce(error);
+
+        await expect(apiService.getPatientData(mockPatientId)).rejects.toThrow('API Error');
       });
     });
 
-    it('should retrieve providers with rate limiting', async () => {
-      const providers = await apiService.getProviders();
-      
-      expect(providers).toHaveLength(1);
-      expect(providers[0]).toMatchObject({
-        ProviderId: 'provider-1',
-        FirstName: 'Dr. Jane',
-        LastName: 'Smith'
+    describe('getAppointmentData', () => {
+      const mockAppointmentId = '456';
+      const mockAppointmentData: TebraAppointment = {
+        id: mockAppointmentId,
+        patientId: '123',
+        providerId: '789',
+        startTime: new Date('2024-03-20T10:00:00'),
+        endTime: new Date('2024-03-20T11:00:00'),
+        status: 'scheduled',
+        type: 'follow-up',
+        notes: 'Test appointment',
+        location: 'Main Office',
+        reason: 'Regular checkup'
+      };
+
+      it('should get appointment data successfully', async () => {
+        mockSoapClient.getAppointmentData.mockResolvedValueOnce(mockAppointmentData);
+        mockDataTransformer.transformAppointmentData.mockReturnValueOnce(mockAppointmentData);
+
+        const result = await apiService.getAppointmentData(mockAppointmentId);
+
+        expect(result).toEqual(mockAppointmentData);
+        expect(mockSoapClient.getAppointmentData).toHaveBeenCalledWith(mockAppointmentId);
+        expect(mockDataTransformer.transformAppointmentData).toHaveBeenCalledWith(mockAppointmentData);
+      });
+
+      it('should handle errors when getting appointment data', async () => {
+        const error = new Error('API Error');
+        mockSoapClient.getAppointmentData.mockRejectedValueOnce(error);
+
+        await expect(apiService.getAppointmentData(mockAppointmentId)).rejects.toThrow('API Error');
+      });
+    });
+
+    describe('getDailySessionData', () => {
+      const mockDate = new Date('2024-03-20');
+      const mockSessionData: TebraDailySession = {
+        date: mockDate,
+        providerId: '789',
+        appointments: [],
+        status: 'active',
+        notes: 'Test session',
+        location: 'Main Office'
+      };
+
+      it('should get daily session data successfully', async () => {
+        mockSoapClient.getDailySessionData.mockResolvedValueOnce(mockSessionData);
+        mockDataTransformer.transformDailySessionData.mockReturnValueOnce(mockSessionData);
+
+        const result = await apiService.getDailySessionData(mockDate);
+
+        expect(result).toEqual(mockSessionData);
+        expect(mockSoapClient.getDailySessionData).toHaveBeenCalledWith(mockDate);
+        expect(mockDataTransformer.transformDailySessionData).toHaveBeenCalledWith(mockSessionData);
+      });
+
+      it('should handle errors when getting daily session data', async () => {
+        const error = new Error('API Error');
+        mockSoapClient.getDailySessionData.mockRejectedValueOnce(error);
+
+        await expect(apiService.getDailySessionData(mockDate)).rejects.toThrow('API Error');
+      });
+    });
+
+    describe('testConnection', () => {
+      it('should test connection successfully', async () => {
+        mockSoapClient.testConnection.mockResolvedValueOnce(true);
+
+        const result = await apiService.testConnection();
+
+        expect(result).toBe(true);
+        expect(mockSoapClient.testConnection).toHaveBeenCalled();
+      });
+
+      it('should handle connection test failure', async () => {
+        const error = new Error('Connection failed');
+        mockSoapClient.testConnection.mockRejectedValueOnce(error);
+
+        await expect(apiService.testConnection()).rejects.toThrow('Connection failed');
       });
     });
   });
