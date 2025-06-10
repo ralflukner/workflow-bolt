@@ -2,6 +2,11 @@ const functions = require('firebase-functions');
 const functionsV1 = require('firebase-functions/v1');
 const express = require('express');
 const cors = require('cors');
+const admin = require('firebase-admin');
+
+// Initialize Firebase Admin
+admin.initializeApp();
+const db = admin.firestore();
 
 // Initialize Express app
 const app = express();
@@ -57,13 +62,29 @@ app.use((err, req, res, next) => {
 // Keep api as 1st Gen
 exports.api = functions.https.onRequest(app);
 
-// Store last purge status
-let lastPurgeStatus = {
-  timestamp: null,
-  success: false,
-  error: null,
-  itemsPurged: 0
-};
+// Helper function to update purge status in Firestore
+async function updatePurgeStatus(status) {
+  const statusRef = db.collection('system_status').doc('purge_status');
+  await statusRef.set({
+    ...status,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+}
+
+// Helper function to get purge status from Firestore
+async function getPurgeStatus() {
+  const statusRef = db.collection('system_status').doc('purge_status');
+  const doc = await statusRef.get();
+  if (!doc.exists) {
+    return {
+      timestamp: null,
+      success: false,
+      error: null,
+      itemsPurged: 0
+    };
+  }
+  return doc.data();
+}
 
 // Daily data purge function (using v1 syntax)
 exports.dailyDataPurge = functionsV1.pubsub
@@ -90,26 +111,26 @@ exports.dailyDataPurge = functionsV1.pubsub
         purgedCount++;
       }
       
-      // Update last purge status
-      lastPurgeStatus = {
+      // Update purge status in Firestore
+      await updatePurgeStatus({
         timestamp: new Date(),
         success: true,
         error: null,
         itemsPurged: purgedCount
-      };
+      });
       
       console.log(`Purge completed successfully. Purged ${purgedCount} items.`);
       return null;
     } catch (error) {
       console.error('Purge failed:', error);
       
-      // Update last purge status with error
-      lastPurgeStatus = {
+      // Update purge status in Firestore with error
+      await updatePurgeStatus({
         timestamp: new Date(),
         success: false,
         error: error.message,
         itemsPurged: 0
-      };
+      });
       
       throw error;
     }
@@ -123,6 +144,9 @@ exports.purgeHealthCheck = functionsV1.pubsub
     console.log(`Running health check at ${now.toISOString()}`);
     
     try {
+      // Get purge status from Firestore
+      const lastPurgeStatus = await getPurgeStatus();
+      
       const healthStatus = {
         timestamp: now,
         lastPurge: lastPurgeStatus,

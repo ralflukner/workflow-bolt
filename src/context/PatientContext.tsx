@@ -98,7 +98,7 @@ try {
          setHasRealData(false);
         
         // Only disable persistence for localStorage errors, not Firebase network issues
-        if (!isFirebaseConfigured) {
+        if (!isFirebaseConfigured()) {
           setPersistenceEnabled(false);
           console.warn('localStorage persistence disabled due to data corruption');
         } else {

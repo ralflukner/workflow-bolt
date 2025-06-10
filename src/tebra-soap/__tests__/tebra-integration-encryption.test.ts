@@ -51,7 +51,10 @@ jest.mock('../tebraSoapClient', () => {
 });
 
 describe('Tebra Integration with Encryption', () => {
+  let originalNodeEnv: string | undefined;
+
   beforeEach(() => {
+    originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'test';
     process.env.REACT_APP_TEBRA_USERNAME = 'test-username';
     process.env.REACT_APP_TEBRA_PASSWORD = 'test-password';
@@ -60,7 +63,11 @@ describe('Tebra Integration with Encryption', () => {
   });
 
   afterEach(() => {
-    delete process.env.NODE_ENV;
+    if (originalNodeEnv !== undefined) {
+      process.env.NODE_ENV = originalNodeEnv;
+    } else {
+      delete process.env.NODE_ENV;
+    }
     delete process.env.REACT_APP_TEBRA_USERNAME;
     delete process.env.REACT_APP_TEBRA_PASSWORD;
     delete process.env.REACT_APP_TEBRA_WSDL_URL;

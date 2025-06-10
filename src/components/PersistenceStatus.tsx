@@ -126,12 +126,6 @@ export const PersistenceStatus: React.FC = () => {
     }
   };
 
-  const getStorageType = () => {
-    return isFirebaseConfigured()
-      ? 'Firebase'
-      : 'LocalStorage';
-  };
-
   if (isLoading) {
     return (
       <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4">
@@ -198,7 +192,7 @@ export const PersistenceStatus: React.FC = () => {
           <div className={`px-2 py-1 rounded text-sm ${
             isFirebaseConfigured() ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
           }`}>
-            {getStorageType()}
+            {storageType}
           </div>
         </div>
       </div>
