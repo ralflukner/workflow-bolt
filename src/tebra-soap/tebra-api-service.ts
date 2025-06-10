@@ -204,10 +204,13 @@ export class TebraApiService {
         AppointmentId: apt.AppointmentId || apt.Id || '',
         PatientId: apt.PatientId || '',
         ProviderId: apt.ProviderId || '',
-        AppointmentDate: apt.AppointmentDate || apt.Date || '',
-        AppointmentTime: apt.AppointmentTime || apt.Time || '',
-        AppointmentType: apt.AppointmentType || apt.Type || 'Office Visit',
-        Status: apt.Status || 'Scheduled'
+        StartTime: apt.AppointmentTime || apt.Time || '',
+        EndTime: '',
+        Status: apt.Status || 'Scheduled',
+        Type: apt.AppointmentType || apt.Type || 'Office Visit',
+        Notes: '',
+        CreatedAt: '',
+        UpdatedAt: ''
       }));
       
     } catch (error) {
