@@ -14,16 +14,8 @@ process.env = {
 
 // Mock window.location (only override reload)
 if (typeof window !== 'undefined' && window.location) {
-  // Only stub reload if it is not already mocked
-  if (!('reload' in window.location)) {
-    Object.defineProperty(window.location, 'reload', {
-      configurable: true,
-      value: jest.fn(),
-    });
-  } else {
-    // @ts-ignore: Jest test setup overriding reload
-    window.location.reload = jest.fn();
-  }
+  // @ts-ignore: Jest test setup overriding reload
+  window.location.reload = jest.fn();
 }
 
 // Mock console.error to avoid noise in test output

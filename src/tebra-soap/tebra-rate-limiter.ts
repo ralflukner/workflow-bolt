@@ -23,6 +23,31 @@ const DEFAULT_CONFIG: RateLimiterConfig = {
   windowMs: 60000, // 1 minute
 };
 
+// Simple async lock implementation
+class AsyncLock {
+  private _locked: boolean = false;
+  private _waiting: (() => void)[] = [];
+
+  async acquire(): Promise<void> {
+    if (!this._locked) {
+      this._locked = true;
+      return;
+    }
+    return new Promise(resolve => {
+      this._waiting.push(resolve);
+    });
+  }
+
+  release(): void {
+    if (this._waiting.length > 0) {
+      const next = this._waiting.shift();
+      if (next) next();
+    } else {
+      this._locked = false;
+    }
+  }
+}
+
 /**
  * Rate limiter for Tebra API calls
  * Implements the specific rate limits documented by Tebra
@@ -65,6 +90,8 @@ export class TebraRateLimiter {
     'SearchPatient': 250,        // 1 call every ¼ second
   };
 
+  private methodLocks: Record<string, AsyncLock> = {};
+
   /**
    * Creates an instance of TebraRateLimiter
    * @param {Partial<RateLimiterConfig>} [config] - Optional configuration override
@@ -80,25 +107,32 @@ export class TebraRateLimiter {
    * @returns {Promise<void>} Resolves when a slot is available
    */
   public async waitForSlot(method: string): Promise<void> {
-    const now = Date.now();
-    const windowStart = now - this.config.windowMs;
+    if (!this.methodLocks[method]) this.methodLocks[method] = new AsyncLock();
+    const lock = this.methodLocks[method];
+    await lock.acquire();
+    try {
+      const now = Date.now();
+      const windowStart = now - this.config.windowMs;
 
-    // Get or initialize request timestamps for this method
-    const timestamps = this.requestCounts.get(method) || [];
-    
-    // Remove timestamps outside the current window
-    const validTimestamps = timestamps.filter(timestamp => timestamp > windowStart);
-    
-    // If we're at the limit, wait until the oldest request expires
-    if (validTimestamps.length >= this.config.maxRequests) {
-      const oldestTimestamp = validTimestamps[0];
-      const waitTime = this.config.windowMs - (now - oldestTimestamp);
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      // Get or initialize request timestamps for this method
+      const timestamps = this.requestCounts.get(method) || [];
+      
+      // Remove timestamps outside the current window
+      const validTimestamps = timestamps.filter(timestamp => timestamp > windowStart);
+      
+      // If we're at the limit, wait until the oldest request expires
+      if (validTimestamps.length >= this.config.maxRequests) {
+        const oldestTimestamp = validTimestamps[0];
+        const waitTime = this.config.windowMs - (now - oldestTimestamp);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+
+      // Add current timestamp
+      validTimestamps.push(now);
+      this.requestCounts.set(method, validTimestamps);
+    } finally {
+      lock.release();
     }
-
-    // Add current timestamp
-    validTimestamps.push(now);
-    this.requestCounts.set(method, validTimestamps);
   }
 
   /**

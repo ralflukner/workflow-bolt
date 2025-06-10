@@ -6,20 +6,13 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
-      useESM: true,
-    }],
+    '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.json', useESM: false }],
   },
   setupFiles: ['<rootDir>/jest.setup.js'],
   testMatch: [
     '**/__tests__/**/*.test.[jt]s?(x)',
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.json',
-    },
-  },
   transformIgnorePatterns: [
     '/node_modules/(?!(@tebra|soap)/)',
   ],

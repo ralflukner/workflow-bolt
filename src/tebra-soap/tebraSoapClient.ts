@@ -96,7 +96,9 @@ export class TebraSoapClient {
     await this.rateLimiter.waitForSlot('SearchPatients');
     try {
       const [result] = await this.client.SearchPatientsAsync({ lastName });
-      return result.patients ?? result;
+      if (Array.isArray(result.patients)) return result.patients;
+      if (Array.isArray(result)) return result;
+      return [];
     } catch (error) {
       console.error('Failed to search patients:', error);
       throw new Error('Failed to search patients');
