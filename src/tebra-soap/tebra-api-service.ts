@@ -3,10 +3,10 @@
  * @module services/tebra/tebra-api-service
  */
 
-import { TebraCredentials, TebraAppointment, TebraPatient, TebraProvider } from './tebra-api-service.types';
 import { TebraSoapClient } from './tebraSoapClient';
 import { TebraRateLimiter } from './tebra-rate-limiter';
 import { TebraDataTransformer } from './tebra-data-transformer';
+import { TebraCredentials, TebraPatient, TebraAppointment, TebraDailySession } from './tebra-api-service.types';
 
 // Type definitions for SOAP responses
 interface SoapAppointmentResponse {
@@ -64,10 +64,7 @@ interface EnvConfig {
  * @returns {string} Environment variable value or fallback
  */
 const getEnvVar = (name: string, fallback: string): string => {
-  if (import.meta.env.DEV) {
-    return import.meta.env[name] || fallback;
-  }
-  return process.env[name] || fallback;
+  return process.env[name] ?? fallback;
 };
 
 /**
@@ -138,12 +135,12 @@ export class TebraApiService {
   /**
    * Gets patient data from Tebra
    * @param {string} patientId - Patient ID
-   * @returns {Promise<any>} Patient data
+   * @returns {Promise<TebraPatient>} Patient data
    * @throws {Error} If API call fails
    */
-  public async getPatientData(patientId: string): Promise<any> {
+  public async getPatientData(patientId: string): Promise<TebraPatient> {
     return this.executeRateLimitedCall('getPatientData', async () => {
-      const response = await this.soapClient.getPatientData(patientId);
+      const response = await this.soapClient.getPatientById(patientId);
       return this.dataTransformer.transformPatientData(response);
     });
   }
@@ -151,12 +148,12 @@ export class TebraApiService {
   /**
    * Gets appointment data from Tebra
    * @param {string} appointmentId - Appointment ID
-   * @returns {Promise<any>} Appointment data
+   * @returns {Promise<TebraAppointment>} Appointment data
    * @throws {Error} If API call fails
    */
-  public async getAppointmentData(appointmentId: string): Promise<any> {
+  public async getAppointmentData(appointmentId: string): Promise<TebraAppointment> {
     return this.executeRateLimitedCall('getAppointmentData', async () => {
-      const response = await this.soapClient.getAppointmentData(appointmentId);
+      const response = await this.soapClient.getAppointmentById(appointmentId);
       return this.dataTransformer.transformAppointmentData(response);
     });
   }
@@ -164,10 +161,10 @@ export class TebraApiService {
   /**
    * Gets daily session data from Tebra
    * @param {Date} date - Date to get session data for
-   * @returns {Promise<any>} Daily session data
+   * @returns {Promise<TebraDailySession>} Daily session data
    * @throws {Error} If API call fails
    */
-  public async getDailySessionData(date: Date): Promise<any> {
+  public async getDailySessionData(date: Date): Promise<TebraDailySession> {
     return this.executeRateLimitedCall('getDailySessionData', async () => {
       const response = await this.soapClient.getDailySessionData(date);
       return this.dataTransformer.transformDailySessionData(response);

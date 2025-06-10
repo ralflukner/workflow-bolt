@@ -1,8 +1,35 @@
 /**
+ * @fileoverview Rate limiter for Tebra API calls
+ * @module services/tebra/tebra-rate-limiter
+ */
+
+/**
+ * Rate limiter configuration interface
+ * @interface RateLimiterConfig
+ */
+interface RateLimiterConfig {
+  /** Maximum number of requests per window */
+  maxRequests: number;
+  /** Time window in milliseconds */
+  windowMs: number;
+}
+
+/**
+ * Default rate limiter configuration
+ * @constant
+ */
+const DEFAULT_CONFIG: RateLimiterConfig = {
+  maxRequests: 100,
+  windowMs: 60000, // 1 minute
+};
+
+/**
  * Rate limiter for Tebra API calls
  * Implements the specific rate limits documented by Tebra
  */
 export class TebraRateLimiter {
+  private config: RateLimiterConfig;
+  private requestCounts: Map<string, number[]>;
   private lastCallTimes: Map<string, number> = new Map();
   
   // Rate limits in milliseconds for each API method
@@ -37,6 +64,69 @@ export class TebraRateLimiter {
     // Search operations
     'SearchPatient': 250,        // 1 call every ¼ second
   };
+
+  /**
+   * Creates an instance of TebraRateLimiter
+   * @param {Partial<RateLimiterConfig>} [config] - Optional configuration override
+   */
+  constructor(config?: Partial<RateLimiterConfig>) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
+    this.requestCounts = new Map();
+  }
+
+  /**
+   * Waits for a rate limit slot to become available
+   * @param {string} method - API method name
+   * @returns {Promise<void>} Resolves when a slot is available
+   */
+  public async waitForSlot(method: string): Promise<void> {
+    const now = Date.now();
+    const windowStart = now - this.config.windowMs;
+
+    // Get or initialize request timestamps for this method
+    const timestamps = this.requestCounts.get(method) || [];
+    
+    // Remove timestamps outside the current window
+    const validTimestamps = timestamps.filter(timestamp => timestamp > windowStart);
+    
+    // If we're at the limit, wait until the oldest request expires
+    if (validTimestamps.length >= this.config.maxRequests) {
+      const oldestTimestamp = validTimestamps[0];
+      const waitTime = this.config.windowMs - (now - oldestTimestamp);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+
+    // Add current timestamp
+    validTimestamps.push(now);
+    this.requestCounts.set(method, validTimestamps);
+  }
+
+  /**
+   * Gets the current request count for a method
+   * @param {string} method - API method name
+   * @returns {number} Current request count
+   */
+  public getRequestCount(method: string): number {
+    const now = Date.now();
+    const windowStart = now - this.config.windowMs;
+    const timestamps = this.requestCounts.get(method) || [];
+    return timestamps.filter(timestamp => timestamp > windowStart).length;
+  }
+
+  /**
+   * Resets the rate limiter for a method
+   * @param {string} method - API method name
+   */
+  public reset(method: string): void {
+    this.requestCounts.delete(method);
+  }
+
+  /**
+   * Resets all rate limiters
+   */
+  public resetAll(): void {
+    this.requestCounts.clear();
+  }
 
   /**
    * Wait for the appropriate time before making an API call
@@ -108,21 +198,6 @@ export class TebraRateLimiter {
     const waitTime = rateLimit - timeSinceLastCall;
 
     return Math.max(0, waitTime);
-  }
-
-  /**
-   * Reset rate limits for all methods (useful for testing)
-   */
-  reset(): void {
-    this.lastCallTimes.clear();
-  }
-
-  /**
-   * Reset rate limit for a specific method
-   * @param methodName The Tebra API method name
-   */
-  resetMethod(methodName: string): void {
-    this.lastCallTimes.delete(methodName);
   }
 
   /**

@@ -4,7 +4,7 @@
  */
 
 import { Patient, AppointmentType } from '../types';
-import { TebraAppointment, TebraPatient, TebraProvider } from './tebra-api-service.types';
+import { TebraPatient, TebraAppointment, TebraDailySession } from './tebra-api-service.types';
 
 /**
  * Tebra data transformer class
@@ -12,88 +12,77 @@ import { TebraAppointment, TebraPatient, TebraProvider } from './tebra-api-servi
  */
 export class TebraDataTransformer {
   /**
-   * Transforms patient data from Tebra format to internal format
-   * @param {any} data - Raw patient data from Tebra
+   * Transforms patient data from Tebra format
+   * @param {any} data - Raw patient data
    * @returns {TebraPatient} Transformed patient data
-   * @throws {Error} If data transformation fails
    */
   public transformPatientData(data: any): TebraPatient {
-    try {
-      return {
-        id: data.id,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        dateOfBirth: new Date(data.dateOfBirth),
-        gender: data.gender,
-        email: data.email,
-        phone: data.phone,
-        address: {
-          street: data.address?.street,
-          city: data.address?.city,
-          state: data.address?.state,
-          zipCode: data.address?.zipCode
-        },
-        insurance: {
-          provider: data.insurance?.provider,
-          policyNumber: data.insurance?.policyNumber,
-          groupNumber: data.insurance?.groupNumber
-        },
-        medicalHistory: data.medicalHistory || [],
-        allergies: data.allergies || [],
-        medications: data.medications || []
-      };
-    } catch (error) {
-      console.error('Failed to transform patient data:', error);
-      throw new Error('Failed to transform patient data');
-    }
+    return {
+      PatientId: data.id,
+      FirstName: data.firstName,
+      LastName: data.lastName,
+      DateOfBirth: new Date(data.dateOfBirth),
+      Gender: data.gender,
+      Email: data.email,
+      Phone: data.phone,
+      Address: {
+        Street: data.address?.street,
+        City: data.address?.city,
+        State: data.address?.state,
+        ZipCode: data.address?.zipCode,
+        Country: data.address?.country
+      },
+      Insurance: {
+        Provider: data.insurance?.provider,
+        PolicyNumber: data.insurance?.policyNumber,
+        GroupNumber: data.insurance?.groupNumber
+      },
+      CreatedAt: new Date(data.createdAt),
+      UpdatedAt: new Date(data.updatedAt)
+    };
   }
 
   /**
-   * Transforms appointment data from Tebra format to internal format
-   * @param {any} data - Raw appointment data from Tebra
+   * Transforms appointment data from Tebra format
+   * @param {any} data - Raw appointment data
    * @returns {TebraAppointment} Transformed appointment data
-   * @throws {Error} If data transformation fails
    */
   public transformAppointmentData(data: any): TebraAppointment {
-    try {
-      return {
-        id: data.id,
-        patientId: data.patientId,
-        providerId: data.providerId,
-        startTime: new Date(data.startTime),
-        endTime: new Date(data.endTime),
-        status: data.status,
-        type: data.type,
-        notes: data.notes,
-        location: data.location,
-        reason: data.reason
-      };
-    } catch (error) {
-      console.error('Failed to transform appointment data:', error);
-      throw new Error('Failed to transform appointment data');
-    }
+    return {
+      AppointmentId: data.id,
+      PatientId: data.patientId,
+      ProviderId: data.providerId,
+      StartTime: new Date(data.startTime),
+      EndTime: new Date(data.endTime),
+      Status: data.status,
+      Type: data.type,
+      Notes: data.notes,
+      CreatedAt: new Date(data.createdAt),
+      UpdatedAt: new Date(data.updatedAt)
+    };
   }
 
   /**
-   * Transforms daily session data from Tebra format to internal format
-   * @param {any} data - Raw daily session data from Tebra
+   * Transforms daily session data from Tebra format
+   * @param {any} data - Raw daily session data
    * @returns {TebraDailySession} Transformed daily session data
-   * @throws {Error} If data transformation fails
    */
   public transformDailySessionData(data: any): TebraDailySession {
-    try {
-      return {
-        date: new Date(data.date),
-        providerId: data.providerId,
-        appointments: data.appointments?.map((appt: any) => this.transformAppointmentData(appt)) || [],
-        status: data.status,
-        notes: data.notes,
-        location: data.location
-      };
-    } catch (error) {
-      console.error('Failed to transform daily session data:', error);
-      throw new Error('Failed to transform daily session data');
-    }
+    return {
+      SessionId: data.id,
+      Date: new Date(data.date),
+      ProviderId: data.providerId,
+      Appointments: data.appointments?.map((appointment: any) => ({
+        AppointmentId: appointment.id,
+        PatientId: appointment.patientId,
+        StartTime: new Date(appointment.startTime),
+        EndTime: new Date(appointment.endTime),
+        Status: appointment.status,
+        Type: appointment.type
+      })) || [],
+      CreatedAt: new Date(data.createdAt),
+      UpdatedAt: new Date(data.updatedAt)
+    };
   }
 
   static combineToInternalPatient(
