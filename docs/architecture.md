@@ -1,118 +1,235 @@
-# Architecture Overview
+# System Architecture
 
-## Technology Stack
+This document outlines the architecture of the Tebra EHR Integration system, detailing its components, interactions, and design decisions.
 
-The Patient Flow Management application is built with the following
-modern web technologies:
+## System Overview
 
-### Frontend
+The Tebra EHR Integration is built as a modern web application with a focus on reliability, scalability, and maintainability. The system integrates with Tebra's SOAP API while providing a robust frontend interface for healthcare providers.
 
-- **React 18.3.1**: UI library for building component-based interfaces
-- **TypeScript 5.5.3**: Type-safe JavaScript superset for better
-  developer experience
-- **Tailwind CSS 3.4.1**: Utility-first CSS framework for rapid UI
-  development
-- **Vite 5.0.0**: Modern build tool optimized for React plugin
-  compatibility
-- **Lucide React**: Lightweight icon library
-- **Auth0 2.3.0**: Authentication and authorization platform
+## Architecture Diagram
 
-### Development Tools
-
-- **ESLint**: Code linting with TypeScript-specific rules
-- **PostCSS**: CSS processing for Tailwind integration
-- **TypeScript**: Static type checking
-
-## Application Architecture
-
-### Component Structure
-
-The application follows a component-based architecture with the
-following key sections:
-
-```plaintext
-src/
-├── components/        # UI components
-├── context/           # React context providers for state management
-├── data/              # Mock data and data utilities
-├── types/             # TypeScript type definitions
-└── main.tsx           # Application entry point
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│                 │     │                 │     │                 │
+│  React Frontend │◄────┤  API Gateway    │◄────┤  Tebra SOAP API │
+│                 │     │                 │     │                 │
+└────────┬────────┘     └────────┬────────┘     └─────────────────┘
+         │                       │
+         │                       │
+         ▼                       ▼
+┌─────────────────┐     ┌─────────────────┐
+│                 │     │                 │
+│  Firebase Auth  │     │  Firestore DB   │
+│                 │     │                 │
+└─────────────────┘     └─────────────────┘
 ```
 
-### State Management
+## Core Components
 
-The application uses React Context API for state management:
+### 1. Frontend Layer
 
-- **TimeContext**: Manages real or simulated time with split architecture
-  (TimeContextDef.ts and TimeProvider.tsx)
-- **PatientContext**: Handles patient data and operations with forced
-  re-rendering for real-time updates
+#### React Application
+- Built with React 18 and TypeScript
+- Uses Vite for build tooling
+- Implements responsive design
+- Follows atomic design principles
 
-This approach provides a clean way to share state across components
-without prop drilling or external state libraries. The contexts use
-proper TypeScript interfaces and include comprehensive error handling.
+#### State Management
+- Redux for global state
+- React Query for server state
+- Local storage for persistence
+- Context API for theme/UI state
 
-### UI Component Hierarchy
+### 2. API Layer
 
-```plaintext
-App
-├── AuthProvider (Auth0)
-│   └── TimeProvider
-│       └── PatientProvider
-│           └── ProtectedRoute
-│               └── Dashboard
-│                   ├── AuthNav
-│                   ├── MetricsPanel
-│                   ├── TimeControl
-│                   ├── PatientList (multiple instances)
-│                   │   └── PatientCard (multiple instances)
-│                   ├── NewPatientForm (modal)
-│                   └── ImportSchedule (modal)
-```
+#### TebraApiService
+- Handles SOAP API communication
+- Implements rate limiting
+- Manages data transformation
+- Provides error handling
 
-### Data Flow
+#### Rate Limiter
+- Token bucket algorithm
+- Configurable limits per endpoint
+- Automatic retry mechanism
+- Queue management
 
-1. Auth0Provider handles user authentication and session management
-2. The TimeContext provides the current time (real or simulated) with
-   proper timezone handling
-3. The PatientContext maintains the list of patients and their status
-   with interval-based updates
-4. UI components read from these contexts and dispatch actions to
-   update state
-5. Context changes trigger re-renders with optimized update intervals
-6. Protected routes ensure authenticated access to all patient data
+### 3. Data Layer
 
-## Type System
+#### Firebase Integration
+- Firestore for data storage
+- Real-time updates
+- Offline support
+- Data synchronization
 
-TypeScript provides type safety throughout the application with key
-types including:
+#### Data Models
+- Patient information
+- Appointment scheduling
+- Provider management
+- Session tracking
 
-- **Patient**: Core data structure for patient information
-- **PatientStatus**: Enumeration of possible workflow statuses
-- **AppointmentStatus**: Enumeration of appointment statuses
-- **TimeMode**: Configuration for time simulation
+## Component Interactions
 
-## Styling Approach
+### Authentication Flow
+1. User initiates login
+2. Firebase Auth handles authentication
+3. JWT token generated
+4. Token used for API requests
+5. Session management
 
-The application uses Tailwind CSS with a consistent color scheme:
+### Data Synchronization
+1. Frontend requests data
+2. API service checks cache
+3. SOAP request if needed
+4. Data transformation
+5. State update
+6. UI refresh
 
-- Status colors are consistently applied across components
-- Responsive design works across device sizes
-- Dark mode interface is used throughout
+### Error Handling
+1. Error detection
+2. Error classification
+3. User notification
+4. Error logging
+5. Recovery attempt
 
-## Future Architecture Considerations
+## Design Decisions
 
-1. **API Integration**: Backend API will be added for data persistence
-   and real-time synchronization
-2. **Enhanced Authentication**: Role-based access control and user
-   management features
-3. **Testing Framework**: Comprehensive unit and integration testing
-   with Jest and React Testing Library
-4. **Performance Optimization**: Component memoization, lazy loading,
-   and advanced caching strategies
-5. **Scalability**: Database optimization and microservices architecture
-   for larger deployments
-6. **Real-time Features**: WebSocket integration for live updates across
-   multiple clients
-7. **Mobile Applications**: Native mobile apps using React Native or
-   progressive web app features
+### 1. Technology Choices
+
+#### Frontend
+- React for component-based UI
+- TypeScript for type safety
+- Tailwind CSS for styling
+- Jest for testing
+
+#### Backend
+- Node.js for API service
+- SOAP for Tebra integration
+- Firebase for infrastructure
+- Redis for caching
+
+### 2. Architecture Patterns
+
+#### Microservices
+- API Gateway pattern
+- Service isolation
+- Independent scaling
+- Fault tolerance
+
+#### Data Flow
+- Unidirectional data flow
+- Immutable state
+- Event-driven updates
+- Real-time synchronization
+
+## Performance Considerations
+
+### 1. Optimization Strategies
+- Code splitting
+- Lazy loading
+- Caching
+- Request batching
+
+### 2. Scalability
+- Horizontal scaling
+- Load balancing
+- Database sharding
+- CDN integration
+
+## Security Architecture
+
+### 1. Authentication
+- JWT-based auth
+- Role-based access
+- Session management
+- MFA support
+
+### 2. Data Protection
+- Encryption at rest
+- TLS in transit
+- Input validation
+- XSS prevention
+
+## Monitoring and Logging
+
+### 1. Application Monitoring
+- Performance metrics
+- Error tracking
+- User analytics
+- Health checks
+
+### 2. Logging Strategy
+- Centralized logging
+- Log levels
+- Audit trails
+- Error reporting
+
+## Deployment Architecture
+
+### 1. Infrastructure
+- Cloud hosting
+- Containerization
+- CI/CD pipeline
+- Auto-scaling
+
+### 2. Environments
+- Development
+- Staging
+- Production
+- Testing
+
+## Future Considerations
+
+### 1. Planned Improvements
+- GraphQL migration
+- WebSocket support
+- Mobile app
+- Analytics dashboard
+
+### 2. Scalability Plans
+- Microservices expansion
+- Database optimization
+- Cache improvements
+- CDN integration
+
+## Development Guidelines
+
+### 1. Code Organization
+- Feature-based structure
+- Shared components
+- Utility functions
+- Type definitions
+
+### 2. Testing Strategy
+- Unit tests
+- Integration tests
+- E2E tests
+- Performance tests
+
+## Documentation
+
+### 1. Code Documentation
+- JSDoc comments
+- Type definitions
+- API documentation
+- Component documentation
+
+### 2. System Documentation
+- Architecture diagrams
+- Flow charts
+- Sequence diagrams
+- State diagrams
+
+## Support and Maintenance
+
+### 1. Monitoring
+- Health checks
+- Performance monitoring
+- Error tracking
+- Usage analytics
+
+### 2. Maintenance
+- Regular updates
+- Security patches
+- Performance optimization
+- Bug fixes

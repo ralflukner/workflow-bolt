@@ -1,106 +1,217 @@
-# Environment Variables Setup
+# Environment Setup Guide
 
-This project uses multiple environment files to manage configuration and
-sensitive credentials.
+This guide provides detailed instructions for setting up the development environment for the Tebra EHR Integration.
 
-## File Structure
+## Prerequisites
 
-- **`.envrc`** - Public configuration variables loaded by direnv (safe to commit)
-- **`.env.local`** - Sensitive credentials (gitignored, never commit)
-- **`env-local-template.txt`** - Template for setting up `.env.local`
-- **`.env-example`** - Example of basic environment variables
-- **`scripts/setup-nvm.sh`** - Script to ensure NVM is loaded and node/npm are in PATH
+### Required Software
+- Node.js 18.x or higher
+- npm 9.x or higher
+- Git
+- VS Code (recommended) or your preferred IDE
+- Firebase CLI
+- Postman (for API testing)
 
-## Setup Instructions
+### Required Accounts
+- GitHub account
+- Firebase account
+- Tebra EHR account
+- Auth0 account (for authentication)
 
-### 1. Install direnv (optional but recommended)
+## Installation Steps
 
-```bash
-# macOS
-brew install direnv
-
-# Add to your shell config (~/.zshrc or ~/.bashrc)
-eval "$(direnv hook zsh)"  # for zsh
-eval "$(direnv hook bash)" # for bash
-```
-
-### 2. Set up local environment variables
+### 1. Clone the Repository
 
 ```bash
-# Copy the template to create your local environment file
-cp env-local-template.txt .env.local
-
-# Edit .env.local with your actual credentials
-# Update the Tebra username and password with real values
+git clone https://github.com/your-org/tebra-integration.git
+cd tebra-integration
 ```
 
-### 3. Load environment variables
-
-**With direnv:**
+### 2. Install Dependencies
 
 ```bash
-direnv allow  # This will load .envrc automatically
+npm install
 ```
 
-**Without direnv:**
+### 3. Environment Configuration
+
+1. Copy the environment template:
+```bash
+cp .env-example .env.local
+```
+
+2. Configure the following environment variables:
+
+```env
+# Tebra EHR Integration
+REACT_APP_TEBRA_WSDL_URL="https://api.tebra.com/wsdl"
+REACT_APP_TEBRA_USERNAME="your-username"
+REACT_APP_TEBRA_PASSWORD="your-password"
+
+# Firebase Configuration
+VITE_FIREBASE_PROJECT_ID="your-project-id"
+VITE_FIREBASE_API_KEY="your-api-key"
+VITE_FIREBASE_AUTH_DOMAIN="your-auth-domain"
+VITE_FIREBASE_STORAGE_BUCKET="your-storage-bucket"
+VITE_FIREBASE_MESSAGING_SENDER_ID="your-messaging-sender-id"
+VITE_FIREBASE_APP_ID="your-app-id"
+
+# Auth0 Configuration
+VITE_AUTH0_DOMAIN="your-auth0-domain"
+VITE_AUTH0_CLIENT_ID="your-auth0-client-id"
+VITE_AUTH0_AUDIENCE="your-auth0-audience"
+```
+
+### 4. Firebase Setup
+
+1. Install Firebase CLI:
+```bash
+npm install -g firebase-tools
+```
+
+2. Login to Firebase:
+```bash
+firebase login
+```
+
+3. Initialize Firebase:
+```bash
+firebase init
+```
+
+4. Select the following features:
+   - Firestore
+   - Functions
+   - Hosting
+   - Emulators
+
+### 5. Development Tools Setup
+
+#### VS Code Extensions
+- ESLint
+- Prettier
+- TypeScript and JavaScript Language Features
+- Firebase Explorer
+- GitLens
+
+#### Postman Collection
+1. Import the `postman_collection.json` file
+2. Configure environment variables in Postman
+3. Test the API endpoints
+
+## Development Workflow
+
+### Starting the Development Server
 
 ```bash
-source .envrc  # Manually load variables
+npm run dev
 ```
 
-## Environment Variables
-
-### Public Configuration (in .envrc)
-
-- `VITE_AUTH0_DOMAIN` - Auth0 domain
-- `VITE_AUTH0_CLIENT_ID` - Auth0 client ID
-- `VITE_AUTH0_REDIRECT_URI` - Auth0 redirect URI
-- `VITE_AUTH0_AUDIENCE` - Auth0 API audience
-- `VITE_APP_NAME` - Application name
-- `REACT_APP_TEBRA_CUSTKEY` - Tebra customer key (public)
-- `REACT_APP_TEBRA_WSDL_URL` - Tebra WSDL endpoint URL
-
-### Sensitive Credentials (in .env.local)
-
-- `REACT_APP_TEBRA_USERNAME` - Tebra EHR username
-- `REACT_APP_TEBRA_PASSWORD` - Tebra EHR password
-
-## Node.js and NVM Setup
-
-This project uses Node.js (v18 or newer recommended) and npm. If you're using NVM (Node Version Manager) to manage Node.js versions, follow these steps to ensure node and npm are available in your terminal:
-
-### 1. Source the setup-nvm.sh script
+### Running Tests
 
 ```bash
-source scripts/setup-nvm.sh
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
 ```
 
-This script will:
-- Check if NVM is installed
-- Load NVM if it's installed
-- Verify if node and npm are available
-- Add the Node.js bin directory to PATH if needed
-
-### 2. Make the setup permanent
-
-To ensure NVM is always loaded in your terminal, add the following to your shell profile (~/.zshrc, ~/.bashrc, or ~/.bash_profile):
+### Linting and Formatting
 
 ```bash
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# Run linter
+npm run lint
+
+# Fix linting issues
+npm run lint:fix
+
+# Format code
+npm run format
 ```
 
-Then restart your terminal or run `source ~/.zshrc` (or the appropriate profile file).
+## Troubleshooting
 
-### 3. Using direnv (recommended)
+### Common Issues
 
-If you're using direnv, the `.envrc` file will automatically source the `scripts/setup-nvm.sh` script, ensuring that NVM is loaded and node/npm are in the PATH whenever you enter the project directory.
+1. **Node Version Mismatch**
+   ```bash
+   # Check Node version
+   node --version
+   
+   # Install correct version using nvm
+   nvm install 18
+   nvm use 18
+   ```
 
-## Security Notes
+2. **Firebase Authentication Issues**
+   - Verify Firebase project settings
+   - Check environment variables
+   - Ensure Firebase CLI is logged in
 
-- Never commit `.env.local` to version control
-- The `.envrc` file automatically loads `.env.local` if it exists
-- All sensitive credentials should be in `.env.local` only
-- The `env-local-template.txt` shows the required format but contains
-  placeholder/example values
+3. **Tebra API Connection Issues**
+   - Verify WSDL URL accessibility
+   - Check credentials
+   - Test connection using Postman
+
+4. **Build Failures**
+   ```bash
+   # Clear npm cache
+   npm cache clean --force
+   
+   # Remove node_modules
+   rm -rf node_modules
+   
+   # Reinstall dependencies
+   npm install
+   ```
+
+### Debugging
+
+1. **Enable Debug Logging**
+   ```bash
+   DEBUG=tebra:* npm start
+   ```
+
+2. **Check Logs**
+   - Application logs: `npm run logs`
+   - Firebase logs: `firebase functions:log`
+   - Test logs: `npm run test:debug`
+
+## Best Practices
+
+### Code Organization
+- Follow the established project structure
+- Use TypeScript for type safety
+- Follow the component design guidelines
+- Maintain test coverage
+
+### Git Workflow
+1. Create feature branches
+2. Write meaningful commit messages
+3. Create pull requests for review
+4. Keep branches up to date
+
+### Security
+- Never commit sensitive data
+- Use environment variables
+- Follow security guidelines
+- Regular dependency updates
+
+## Additional Resources
+
+- [TypeScript Documentation](https://www.typescriptlang.org/docs)
+- [Firebase Documentation](https://firebase.google.com/docs)
+- [Tebra API Documentation](https://api.tebra.com/docs)
+- [Auth0 Documentation](https://auth0.com/docs)
+
+## Support
+
+For additional help:
+1. Check the [documentation](docs/overview.md)
+2. Review [recent changes](CHANGES_SUMMARY.md)
+3. Open a GitHub issue
+4. Contact the development team

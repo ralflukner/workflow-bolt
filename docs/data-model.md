@@ -1,185 +1,259 @@
-# Data Model
+# Data Model Documentation
 
-This document details the data structures and state management approach
-used in the Patient Flow Management application.
+This document details the data models used in the Tebra EHR Integration system, including their relationships, constraints, and usage patterns.
 
-## Core Data Types
+## Core Data Models
 
-### Patient
-
-The `Patient` interface is the central data structure for the application:
+### 1. Patient Model
 
 ```typescript
-export interface Patient {
-  id: string;
-  name: string;
-  dob: string;
-  appointmentTime: string;
-  appointmentType?: AppointmentType;
-  chiefComplaint?: string;
-  provider: string;
-  room?: string;
-  status: PatientApptStatus;
-  checkInTime?: string;
-  withDoctorTime?: string;
-  completedTime?: string;
+interface Patient {
+  id: string;                 // Unique identifier
+  name: string;               // Full name
+  dob: string;                // Date of birth (ISO format)
+  appointmentTime: string;    // ISO datetime
+  appointmentType: AppointmentType;
+  provider: string;           // Provider name
+  status: PatientStatus;
+  checkInTime?: string;       // Optional ISO datetime
+  room?: string;              // Optional room assignment
 }
 ```
 
-Key fields:
+#### Relationships
+- One-to-many with Appointments
+- One-to-one with Insurance
+- Many-to-one with Provider
 
-- `id`: Unique identifier for the patient
-- `name`: Patient's full name
-- `dob`: Date of birth in ISO format (YYYY-MM-DD)
-- `appointmentTime`: Scheduled appointment time as ISO string
-- `status`: Current status in the patient flow (using the combined
-  PatientApptStatus type)
-- Timestamps for different stages of the patient visit
-
-### Combined Patient Appointment Status
-
-The `PatientApptStatus` type combines both internal workflow statuses and
-external scheduling statuses:
+### 2. Appointment Model
 
 ```typescript
-export type PatientApptStatus =
-  // Internal workflow statuses (lowercase kebab-case)
-  | "scheduled"
-  | "arrived"
-  | "appt-prep"
-  | "ready-for-md"
-  | "With Doctor"
-  | "seen-by-md"
-  | "completed"
-  // External scheduling statuses (Title Case with spaces)
-  | "Scheduled"
-  | "Reminder Sent"
-  | "Confirmed"
-  | "Arrived"
-  | "Checked In"
-  | "Roomed"
-  | "Appt Prep Started"
-  | "Ready for MD"
-  | "Seen by MD"
-  | "Checked Out"
-  | "No Show"
-  | "Rescheduled"
-  | "Cancelled";
-```
-
-This combined type allows the application to use a single status field
-that can represent both internal workflow states and external scheduling
-states.
-
-### Patient Flow Status (Legacy)
-
-The `PatientStatus` type defines the possible states in the patient
-workflow:
-
-```typescript
-export type PatientStatus =
-  | "scheduled" // Patient is scheduled but not arrived
-  | "arrived" // Patient has arrived at the clinic
-  | "appt-prep" // Patient is being prepared for appointment
-  | "ready-for-md" // Patient is ready to see the doctor
-  | "With Doctor" // Patient is currently with the doctor
-  | "seen-by-md" // Patient has been seen by the doctor
-  | "completed"; // Patient has completed their visit
-```
-
-This represents the internal workflow statuses that are now included in
-the combined `PatientApptStatus` type. This type is maintained for backward
-compatibility.
-
-### Appointment Status (Legacy)
-
-The `AppointmentStatus` type defines the scheduling status of the
-appointment:
-
-```typescript
-export type AppointmentStatus =
-  | "Scheduled"
-  | "Reminder Sent"
-  | "Confirmed"
-  | "Arrived"
-  | "Checked In"
-  | "Roomed"
-  | "Appt Prep Started"
-  | "Ready for MD"
-  | "Seen by MD"
-  | "Checked Out"
-  | "No Show"
-  | "Rescheduled"
-  | "Cancelled";
-```
-
-This represents the external scheduling statuses that are now included in
-the combined `PatientApptStatus` type. This type is maintained for backward
-compatibility.
-
-### Appointment Type
-
-```typescript
-export type AppointmentType = "Office Visit" | "LABS";
-```
-
-### Time Mode
-
-```typescript
-export interface TimeMode {
-  simulated: boolean;
-  currentTime: string; // ISO string
+interface Appointment {
+  id: string;                 // Unique identifier
+  patientId: string;          // Reference to Patient
+  providerId: string;         // Reference to Provider
+  startTime: string;          // ISO datetime
+  endTime: string;            // ISO datetime
+  type: AppointmentType;
+  status: AppointmentStatus;
+  notes?: string;             // Optional notes
+  createdAt: string;          // ISO datetime
+  updatedAt: string;          // ISO datetime
 }
 ```
 
-### Metrics
+#### Relationships
+- Many-to-one with Patient
+- Many-to-one with Provider
+- One-to-one with Session
+
+### 3. Provider Model
 
 ```typescript
-export interface Metrics {
-  totalAppointments: number;
-  waitingCount: number;
-  averageWaitTime: number;
-  maxWaitTime: number;
+interface Provider {
+  id: string;                 // Unique identifier
+  firstName: string;
+  lastName: string;
+  title: string;              // e.g., "Dr.", "NP"
+  specialties: string[];      // Array of specialties
+  schedule: Schedule;         // Weekly schedule
+  createdAt: string;          // ISO datetime
+  updatedAt: string;          // ISO datetime
 }
 ```
 
-## State Management
+#### Relationships
+- One-to-many with Appointments
+- One-to-many with Patients
+- One-to-one with Schedule
 
-### Context Approach
+### 4. Session Model
 
-The application uses React Context API for state management:
+```typescript
+interface Session {
+  id: string;                 // Unique identifier
+  date: string;               // ISO date
+  providerId: string;         // Reference to Provider
+  appointments: Appointment[]; // Array of appointments
+  status: SessionStatus;
+  createdAt: string;          // ISO datetime
+  updatedAt: string;          // ISO datetime
+}
+```
 
-1. **TimeContext**
+#### Relationships
+- One-to-many with Appointments
+- Many-to-one with Provider
 
-   - Manages current time (real or simulated)
-   - Controls time simulation features
-   - Provides time formatting utilities
+## Enums and Types
 
-2. **PatientContext**
-   - Stores the list of all patients
-   - Provides methods to add, update, and filter patients
-   - Tracks patient status transitions and timestamps
-   - Calculates waiting times and other metrics
+### 1. Appointment Types
+```typescript
+enum AppointmentType {
+  OFFICE_VISIT = 'Office Visit',
+  LABS = 'LABS',
+  FOLLOW_UP = 'Follow Up',
+  CONSULTATION = 'Consultation',
+  PROCEDURE = 'Procedure'
+}
+```
 
-### Data Flow
+### 2. Status Types
+```typescript
+enum PatientStatus {
+  SCHEDULED = 'scheduled',
+  CHECKED_IN = 'checked_in',
+  IN_ROOM = 'in_room',
+  WITH_PROVIDER = 'with_provider',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled'
+}
 
-![Data Flow Diagram](https://via.placeholder.com/800x400?text=Patient+Data+Flow+Diagram)
+enum AppointmentStatus {
+  SCHEDULED = 'scheduled',
+  CONFIRMED = 'confirmed',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  NO_SHOW = 'no_show'
+}
 
-1. Patient data is loaded from mock data or imported via the
-   ImportSchedule component
-2. The PatientContext maintains the central state of all patients
-3. UI components read from PatientContext and display filtered subsets
-   based on status
-4. Status changes trigger PatientContext updates, which update timestamps
-5. All components re-render based on context changes
+enum SessionStatus {
+  SCHEDULED = 'scheduled',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled'
+}
+```
 
-### Timestamps and Time Calculations
+## Data Relationships
 
-The application tracks several key timestamps:
+### 1. Patient Flow
+```mermaid
+graph TD
+    A[Patient] --> B[Appointment]
+    B --> C[Session]
+    C --> D[Provider]
+    B --> E[Status]
+    E --> F[Check In]
+    E --> G[Room Assignment]
+    E --> H[Provider Visit]
+    E --> I[Completion]
+```
 
-- `appointmentTime`: When the patient is scheduled
-- `checkInTime`: When the patient arrives/checks in
-- `withDoctorTime`: When the patient goes in with the doctor
-- `completedTime`: When the patient checks out
+### 2. Provider Schedule
+```mermaid
+graph TD
+    A[Provider] --> B[Schedule]
+    B --> C[Session]
+    C --> D[Appointments]
+    D --> E[Patients]
+```
 
-These timestamps are used to calculate waiting times and efficiency metrics. For detailed information about wait time calculations, including algorithms, edge cases, and error prevention, see [Wait Time Calculations](./wait-time-calculations.md).
+## Data Validation Rules
+
+### 1. Patient Validation
+- Name: Required, max 100 characters
+- DOB: Required, valid date, not in future
+- Appointment Time: Required, valid datetime
+- Status: Must be valid PatientStatus enum value
+
+### 2. Appointment Validation
+- Patient ID: Required, must exist
+- Provider ID: Required, must exist
+- Start Time: Required, valid datetime
+- End Time: Required, valid datetime, after start time
+- Type: Must be valid AppointmentType enum value
+- Status: Must be valid AppointmentStatus enum value
+
+### 3. Provider Validation
+- First Name: Required, max 50 characters
+- Last Name: Required, max 50 characters
+- Title: Required, valid title
+- Specialties: Array of valid specialties
+- Schedule: Valid schedule object
+
+## Data Operations
+
+### 1. CRUD Operations
+```typescript
+// Create
+async function createPatient(patient: Patient): Promise<Patient>
+async function createAppointment(appointment: Appointment): Promise<Appointment>
+async function createProvider(provider: Provider): Promise<Provider>
+async function createSession(session: Session): Promise<Session>
+
+// Read
+async function getPatient(id: string): Promise<Patient>
+async function getAppointment(id: string): Promise<Appointment>
+async function getProvider(id: string): Promise<Provider>
+async function getSession(id: string): Promise<Session>
+
+// Update
+async function updatePatient(id: string, patient: Partial<Patient>): Promise<Patient>
+async function updateAppointment(id: string, appointment: Partial<Appointment>): Promise<Appointment>
+async function updateProvider(id: string, provider: Partial<Provider>): Promise<Provider>
+async function updateSession(id: string, session: Partial<Session>): Promise<Session>
+
+// Delete
+async function deletePatient(id: string): Promise<void>
+async function deleteAppointment(id: string): Promise<void>
+async function deleteProvider(id: string): Promise<void>
+async function deleteSession(id: string): Promise<void>
+```
+
+### 2. Query Operations
+```typescript
+// Find by criteria
+async function findPatients(criteria: PatientCriteria): Promise<Patient[]>
+async function findAppointments(criteria: AppointmentCriteria): Promise<Appointment[]>
+async function findProviders(criteria: ProviderCriteria): Promise<Provider[]>
+async function findSessions(criteria: SessionCriteria): Promise<Session[]>
+
+// Get related data
+async function getPatientAppointments(patientId: string): Promise<Appointment[]>
+async function getProviderAppointments(providerId: string): Promise<Appointment[]>
+async function getSessionAppointments(sessionId: string): Promise<Appointment[]>
+```
+
+## Data Migration
+
+### 1. Version Control
+- Each model version is tracked
+- Migration scripts are provided
+- Rollback procedures documented
+- Data validation on migration
+
+### 2. Backup Strategy
+- Regular automated backups
+- Point-in-time recovery
+- Data integrity checks
+- Backup verification
+
+## Performance Considerations
+
+### 1. Indexing Strategy
+- Primary keys on all models
+- Foreign key indexes
+- Composite indexes for common queries
+- Text search indexes
+
+### 2. Caching Strategy
+- In-memory caching
+- Query result caching
+- Cache invalidation rules
+- Cache size limits
+
+## Security Considerations
+
+### 1. Data Access Control
+- Role-based access
+- Field-level security
+- Audit logging
+- Data encryption
+
+### 2. Data Privacy
+- PHI handling
+- Data masking
+- Retention policies
+- Compliance requirements

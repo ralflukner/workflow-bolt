@@ -1,59 +1,54 @@
-# Patient Flow Management: Project Overview
+# Tebra EHR Integration Documentation
 
-## Introduction
+Welcome to the Tebra EHR Integration documentation. This guide provides a comprehensive overview of the integration system, its architecture, and how to use it effectively.
 
-Patient Flow Management is a web application designed to help medical
-practices efficiently track and manage patient appointments and flow
-throughout the clinic. It provides a real-time dashboard for staff to
-monitor patient status, manage room assignments, and track waiting times.
+## Documentation Structure
 
-## Project Goals
+### Getting Started
+- [Setup Guide](setup-guide.md) - Complete setup instructions
+- [Environment Setup](ENVIRONMENT_SETUP.md) - Environment configuration
+- [Firebase Setup](FIREBASE_SETUP.md) - Firebase integration setup
 
-1. **Improve Patient Experience**
+### Core Concepts
+- [Architecture Overview](architecture.md) - System architecture and design
+- [Data Model](data-model.md) - Data structures and relationships
+- [Authentication](auth.md) - Authentication system
+- [Component Design](component-design.md) - UI component architecture
 
-   - Reduce waiting times
-   - Provide clear status tracking
-   - Streamline check-in and check-out processes
+### Features
+- [EHR Authentication & Data Retrieval](feature-ehr-auth-data-retrieval.md) - EHR integration details
+- [Wait Time Calculations](wait-time-calculations.md) - Wait time estimation system
+- [State Management](state-management-improvements.md) - Application state handling
 
-2. **Enhance Staff Efficiency**
+### Implementation Details
+- [Firebase Persistence](firebase-persistence-plan.md) - Data persistence strategy
+- [Persistence Implementation](PERSISTENCE_IMPLEMENTATION.md) - Implementation details
+- [Recent Changes](recent-changes.md) - Latest updates and modifications
 
-   - Visualize patient flow in real-time
-   - Track room utilization
-   - Identify bottlenecks in the patient journey
+### Security
+- [Security Guidelines](SECURITY.md) - Security best practices and guidelines
 
-3. **Optimize Clinic Operations**
-   - Monitor key metrics (waiting times, total appointments, etc.)
-   - Support schedule imports and management
-   - Enable data-driven workflow improvements
+## Quick Links
 
-## Key Features
+### Development
+- [Testing Expansion Plan](testing-expansion-plan.md) - Testing strategy and coverage
+- [Changes Summary](CHANGES_SUMMARY.md) - Recent changes and updates
 
-- **Interactive Dashboard**: Real-time visualization of all patients
-  and their current status
-- **Status Management**: Track patients through various stages of their visit
-- **Time Simulation**: Test workflows by simulating different times
-- **Room Assignment**: Manage room allocations efficiently
-- **Import Schedule**: Bulk import patient schedules
-- **Add New Patients**: Register walk-ins or new appointments on the fly
-- **Metrics Panel**: View key performance indicators
+### Support
+- [Tebra Support](tebra-support-ticket-revised.md) - Support ticket information
+- [Recommendations](recommendation.md) - System recommendations
 
-## Target Users
+## Contributing
 
-- **Medical Office Staff**: Front desk and administrative personnel
-- **Clinical Staff**: Nurses, medical assistants, providers
-- **Practice Managers**: For monitoring operations and efficiency
+Please refer to the [README.md](../README.md) for contribution guidelines and development setup instructions.
 
-## Current Status
+## Support
 
-The application is currently at version 0.1.0-alpha.5 and includes:
+For support issues:
+1. Check the [Tebra Support](tebra-support-ticket-revised.md) documentation
+2. Review the [Recent Changes](recent-changes.md) for known issues
+3. Open a GitHub issue if the problem persists
 
-- Full frontend interface with React components
-- Auth0 authentication integration
-- Real-time and simulated time handling
-- Mock data for testing and demonstration
-- Complete appointment status tracking
-- Time simulation capabilities
-- Responsive design for desktop and mobile use
+## License
 
-Further development will focus on backend integration, data persistence,
-and reporting capabilities.
+This project is licensed under the MIT License. See the [LICENSE](../LICENSE) file for details.

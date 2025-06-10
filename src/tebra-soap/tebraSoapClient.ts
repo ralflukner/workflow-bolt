@@ -42,11 +42,6 @@ interface SoapPatientResponse {
   EmailAddress?: string;
 }
 
-interface SoapAppointmentRequest {
-  fromDate: string;
-  toDate: string;
-}
-
 interface SoapAppointmentData {
   appointment: {
     AppointmentId?: string;
