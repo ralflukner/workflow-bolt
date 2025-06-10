@@ -6,7 +6,7 @@
 import { TebraSoapClient } from './tebraSoapClient';
 import { TebraRateLimiter } from './tebra-rate-limiter';
 import { TebraDataTransformer } from './tebra-data-transformer';
-import { TebraCredentials, TebraPatient, TebraAppointment, TebraDailySession } from './tebra-api-service.types';
+import { TebraCredentials, TebraPatient, TebraAppointment, TebraDailySession, TebraProvider } from './tebra-api-service.types';
 
 // Type definitions for SOAP responses
 interface SoapAppointmentResponse {
