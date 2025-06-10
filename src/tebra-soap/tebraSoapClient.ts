@@ -158,6 +158,68 @@ export class TebraSoapClient {
       throw new Error('Failed to test connection');
     }
   }
+
+  async getAppointments(fromDate: string, toDate: string): Promise<any> {
+    try {
+      await this.rateLimiter.waitForSlot('getAppointments');
+      const result = await this.client.GetAppointmentsAsync({
+        fromDate,
+        toDate
+      });
+      return result[0].GetAppointmentsResult;
+    } catch (error) {
+      console.error('Failed to get appointments:', error);
+      throw error;
+    }
+  }
+
+  async getProviders(): Promise<any> {
+    try {
+      await this.rateLimiter.waitForSlot('getProviders');
+      const result = await this.client.GetProvidersAsync({});
+      return result[0].GetProvidersResult;
+    } catch (error) {
+      console.error('Failed to get providers:', error);
+      throw error;
+    }
+  }
+
+  async getAllPatients(): Promise<any> {
+    try {
+      await this.rateLimiter.waitForSlot('getAllPatients');
+      const result = await this.client.GetAllPatientsAsync({});
+      return result[0].GetAllPatientsResult;
+    } catch (error) {
+      console.error('Failed to get all patients:', error);
+      throw error;
+    }
+  }
+
+  async createAppointment(appointmentData: any): Promise<any> {
+    try {
+      await this.rateLimiter.waitForSlot('createAppointment');
+      const result = await this.client.CreateAppointmentAsync({
+        appointment: appointmentData
+      });
+      return result[0].CreateAppointmentResult;
+    } catch (error) {
+      console.error('Failed to create appointment:', error);
+      throw error;
+    }
+  }
+
+  async updateAppointment(appointmentData: any): Promise<any> {
+    try {
+      await this.rateLimiter.waitForSlot('updateAppointment');
+      const result = await this.client.UpdateAppointmentAsync({
+        appointment: appointmentData
+      });
+      return result[0].UpdateAppointmentResult;
+    } catch (error) {
+      console.error('Failed to update appointment:', error);
+      throw error;
+    }
+  }
 }
 
 // Create a singleton instance with environment variables

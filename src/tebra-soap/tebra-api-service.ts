@@ -100,9 +100,8 @@ export class TebraApiService {
    * @throws {Error} If configuration is invalid
    */
   private validateConfig(config: EnvConfig): void {
-    const missingFields = Object.entries(config)
-      .filter(([_, value]) => !value)
-      .map(([key]) => key);
+    const requiredFields: (keyof EnvConfig)[] = ['wsdlUrl', 'username', 'password'];
+    const missingFields = requiredFields.filter(field => !config[field]);
 
     if (missingFields.length > 0) {
       throw new Error(

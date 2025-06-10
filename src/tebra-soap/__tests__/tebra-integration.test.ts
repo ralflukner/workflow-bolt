@@ -181,7 +181,19 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
       });
 
       it('should throw error if credentials are missing', () => {
-        expect(() => new TebraApiService({})).toThrow('Invalid Tebra configuration');
+        // Clear any environment variables that might interfere
+        const originalEnv = process.env;
+        process.env = { ...originalEnv };
+        delete process.env.REACT_APP_TEBRA_WSDL_URL;
+        delete process.env.REACT_APP_TEBRA_USERNAME;
+        delete process.env.REACT_APP_TEBRA_PASSWORD;
+        
+        try {
+          expect(() => new TebraApiService({})).toThrow('Invalid Tebra configuration. Missing required fields: wsdlUrl, username, password');
+        } finally {
+          // Restore original environment
+          process.env = originalEnv;
+        }
       });
     });
 
