@@ -4,7 +4,7 @@
  */
 
 import { Patient, AppointmentType } from '../types';
-import { TebraPatient, TebraAppointment, TebraDailySession } from './tebra-api-service.types';
+import { TebraPatient, TebraAppointment, TebraDailySession, TebraProvider } from './tebra-api-service.types';
 
 /**
  * Tebra data transformer class
@@ -17,28 +17,39 @@ export class TebraDataTransformer {
    * @returns {TebraPatient} Transformed patient data
    */
   public transformPatientData(data: any): TebraPatient {
+    // Ensure date is in string format
+    let dateOfBirth: string = '';
+    const rawDate = data.DateOfBirth || data.DOB;
+    if (rawDate) {
+      if (rawDate instanceof Date) {
+        dateOfBirth = rawDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+      } else {
+        dateOfBirth = String(rawDate);
+      }
+    }
+
     return {
-      PatientId: data.id,
-      FirstName: data.firstName,
-      LastName: data.lastName,
-      DateOfBirth: new Date(data.dateOfBirth),
-      Gender: data.gender,
-      Email: data.email,
-      Phone: data.phone,
+      PatientId: data.PatientId || data.Id || '',
+      FirstName: data.FirstName || '',
+      LastName: data.LastName || '',
+      DateOfBirth: dateOfBirth,
+      Gender: data.Gender || '',
+      Email: data.Email || data.EmailAddress || '',
+      Phone: data.Phone || data.PhoneNumber || '',
       Address: {
-        Street: data.address?.street,
-        City: data.address?.city,
-        State: data.address?.state,
-        ZipCode: data.address?.zipCode,
-        Country: data.address?.country
+        Street: data.Address?.Street || '',
+        City: data.Address?.City || '',
+        State: data.Address?.State || '',
+        ZipCode: data.Address?.ZipCode || data.Address?.Zip || '',
+        Country: data.Address?.Country || 'USA'
       },
       Insurance: {
-        Provider: data.insurance?.provider,
-        PolicyNumber: data.insurance?.policyNumber,
-        GroupNumber: data.insurance?.groupNumber
+        Provider: data.Insurance?.Provider || '',
+        PolicyNumber: data.Insurance?.PolicyNumber || '',
+        GroupNumber: data.Insurance?.GroupNumber || ''
       },
-      CreatedAt: new Date(data.createdAt),
-      UpdatedAt: new Date(data.updatedAt)
+      CreatedAt: data.CreatedAt || new Date().toISOString(),
+      UpdatedAt: data.UpdatedAt || new Date().toISOString()
     };
   }
 
@@ -49,16 +60,16 @@ export class TebraDataTransformer {
    */
   public transformAppointmentData(data: any): TebraAppointment {
     return {
-      AppointmentId: data.id,
-      PatientId: data.patientId,
-      ProviderId: data.providerId,
-      StartTime: new Date(data.startTime),
-      EndTime: new Date(data.endTime),
-      Status: data.status,
-      Type: data.type,
-      Notes: data.notes,
-      CreatedAt: new Date(data.createdAt),
-      UpdatedAt: new Date(data.updatedAt)
+      AppointmentId: data.AppointmentId || data.Id || '',
+      PatientId: data.PatientId || '',
+      ProviderId: data.ProviderId || '',
+      StartTime: data.StartTime || data.AppointmentTime || data.Time || '',
+      EndTime: data.EndTime || '',
+      Status: data.Status || 'Scheduled',
+      Type: data.Type || data.AppointmentType || 'Office Visit',
+      Notes: data.Notes || '',
+      CreatedAt: data.CreatedAt || new Date().toISOString(),
+      UpdatedAt: data.UpdatedAt || new Date().toISOString()
     };
   }
 
@@ -69,19 +80,19 @@ export class TebraDataTransformer {
    */
   public transformDailySessionData(data: any): TebraDailySession {
     return {
-      SessionId: data.id,
-      Date: new Date(data.date),
-      ProviderId: data.providerId,
-      Appointments: data.appointments?.map((appointment: any) => ({
-        AppointmentId: appointment.id,
-        PatientId: appointment.patientId,
-        StartTime: new Date(appointment.startTime),
-        EndTime: new Date(appointment.endTime),
-        Status: appointment.status,
-        Type: appointment.type
+      SessionId: data.SessionId || data.Id || '',
+      Date: data.Date || new Date().toISOString(),
+      ProviderId: data.ProviderId || '',
+      Appointments: data.Appointments?.map((appointment: any) => ({
+        AppointmentId: appointment.AppointmentId || appointment.Id || '',
+        PatientId: appointment.PatientId || '',
+        StartTime: appointment.StartTime || appointment.AppointmentTime || '',
+        EndTime: appointment.EndTime || '',
+        Status: appointment.Status || 'Scheduled',
+        Type: appointment.Type || appointment.AppointmentType || 'Office Visit'
       })) || [],
-      CreatedAt: new Date(data.createdAt),
-      UpdatedAt: new Date(data.updatedAt)
+      CreatedAt: data.CreatedAt || new Date().toISOString(),
+      UpdatedAt: data.UpdatedAt || new Date().toISOString()
     };
   }
 
@@ -93,16 +104,24 @@ export class TebraDataTransformer {
     const provider = providers.find(p => p.ProviderId === appointment.ProviderId);
     
     // Map appointment type to internal AppointmentType
-    const appointmentType: AppointmentType | undefined = 
-      appointment.AppointmentType === 'Office Visit' || appointment.AppointmentType === 'LABS' 
-        ? appointment.AppointmentType as AppointmentType
+    const appointmentType: AppointmentType = 
+      appointment.Type === 'Office Visit' || appointment.Type === 'LABS' 
+        ? appointment.Type as AppointmentType
         : 'Office Visit'; // Default fallback
+    
+    // Parse appointment time - handle various formats
+    let appointmentTime = appointment.StartTime;
+    if (!appointmentTime.includes('T')) {
+      // If it's just a time, use today's date
+      const today = new Date().toISOString().split('T')[0];
+      appointmentTime = `${today}T${appointment.StartTime}`;
+    }
     
     return {
       id: patient.PatientId,
       name: `${patient.FirstName} ${patient.LastName}`,
       dob: patient.DateOfBirth,
-      appointmentTime: `${appointment.AppointmentDate}T${appointment.AppointmentTime}`,
+      appointmentTime,
       appointmentType,
       provider: provider ? `${provider.Title} ${provider.FirstName} ${provider.LastName}` : 'Unknown Provider',
       status: 'scheduled',

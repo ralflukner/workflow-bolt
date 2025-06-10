@@ -239,7 +239,22 @@ export class TebraApiService {
               LastName: (patientData.LastName || '') as string,
               DateOfBirth: (patientData.DateOfBirth || patientData.DOB || '') as string,
               Phone: (patientData.Phone || patientData.PhoneNumber || '') as string,
-              Email: (patientData.Email || patientData.EmailAddress || '') as string
+              Email: (patientData.Email || patientData.EmailAddress || '') as string,
+              Gender: (patientData.Gender || '') as string,
+              Address: {
+                Street: '',
+                City: '',
+                State: '',
+                ZipCode: '',
+                Country: ''
+              },
+              Insurance: {
+                Provider: '',
+                PolicyNumber: '',
+                GroupNumber: ''
+              },
+              CreatedAt: new Date().toISOString(),
+              UpdatedAt: new Date().toISOString()
             });
           }
         } catch (error) {
@@ -300,7 +315,22 @@ export class TebraApiService {
         LastName: patient.LastName || '',
         DateOfBirth: patient.DateOfBirth || patient.DOB || '',
         Phone: patient.Phone || patient.PhoneNumber || '',
-        Email: patient.Email || patient.EmailAddress || ''
+        Email: patient.Email || patient.EmailAddress || '',
+        Gender: (patient as any).Gender || '',
+        Address: {
+          Street: '',
+          City: '',
+          State: '',
+          ZipCode: '',
+          Country: ''
+        },
+        Insurance: {
+          Provider: '',
+          PolicyNumber: '',
+          GroupNumber: ''
+        },
+        CreatedAt: new Date().toISOString(),
+        UpdatedAt: new Date().toISOString()
       }));
       
     } catch (error) {

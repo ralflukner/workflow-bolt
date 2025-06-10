@@ -7,6 +7,59 @@ import * as soap from 'soap';
 import { TebraCredentials } from './tebra-api-service.types';
 import { TebraRateLimiter } from './tebra-rate-limiter';
 
+interface SoapAppointmentResponse {
+  AppointmentId?: string;
+  Id?: string;
+  PatientId?: string;
+  ProviderId?: string;
+  AppointmentDate?: string;
+  Date?: string;
+  AppointmentTime?: string;
+  Time?: string;
+  AppointmentType?: string;
+  Type?: string;
+  Status?: string;
+}
+
+interface SoapProviderResponse {
+  ProviderId?: string;
+  Id?: string;
+  FirstName?: string;
+  LastName?: string;
+  Title?: string;
+}
+
+interface SoapPatientResponse {
+  PatientId?: string;
+  Id?: string;
+  FirstName?: string;
+  LastName?: string;
+  DateOfBirth?: string;
+  DOB?: string;
+  Phone?: string;
+  PhoneNumber?: string;
+  Email?: string;
+  EmailAddress?: string;
+}
+
+interface SoapAppointmentRequest {
+  fromDate: string;
+  toDate: string;
+}
+
+interface SoapAppointmentData {
+  appointment: {
+    AppointmentId?: string;
+    PatientId: string;
+    ProviderId: string;
+    StartTime: string;
+    EndTime: string;
+    Status: string;
+    Type: string;
+    Notes?: string;
+  };
+}
+
 /**
  * Tebra SOAP client class
  * @class TebraSoapClient
@@ -159,7 +212,14 @@ export class TebraSoapClient {
     }
   }
 
-  async getAppointments(fromDate: string, toDate: string): Promise<any> {
+  async getAppointments(fromDate: string, toDate: string): Promise<SoapAppointmentResponse[]> {
+    if (!fromDate || !toDate) {
+      throw new Error('fromDate and toDate are required');
+    }
+    if (!this.isValidDateFormat(fromDate) || !this.isValidDateFormat(toDate)) {
+      throw new Error('Invalid date format. Expected YYYY-MM-DD');
+    }
+
     try {
       await this.rateLimiter.waitForSlot('getAppointments');
       const result = await this.client.GetAppointmentsAsync({
@@ -173,7 +233,7 @@ export class TebraSoapClient {
     }
   }
 
-  async getProviders(): Promise<any> {
+  async getProviders(): Promise<SoapProviderResponse[]> {
     try {
       await this.rateLimiter.waitForSlot('getProviders');
       const result = await this.client.GetProvidersAsync({});
@@ -184,7 +244,7 @@ export class TebraSoapClient {
     }
   }
 
-  async getAllPatients(): Promise<any> {
+  async getAllPatients(): Promise<SoapPatientResponse[]> {
     try {
       await this.rateLimiter.waitForSlot('getAllPatients');
       const result = await this.client.GetAllPatientsAsync({});
@@ -195,7 +255,14 @@ export class TebraSoapClient {
     }
   }
 
-  async createAppointment(appointmentData: any): Promise<any> {
+  async createAppointment(appointmentData: Partial<SoapAppointmentData['appointment']>): Promise<any> {
+    if (!appointmentData.PatientId || !appointmentData.ProviderId) {
+      throw new Error('PatientId and ProviderId are required');
+    }
+    if (!appointmentData.StartTime || !appointmentData.EndTime) {
+      throw new Error('StartTime and EndTime are required');
+    }
+
     try {
       await this.rateLimiter.waitForSlot('createAppointment');
       const result = await this.client.CreateAppointmentAsync({
@@ -208,7 +275,11 @@ export class TebraSoapClient {
     }
   }
 
-  async updateAppointment(appointmentData: any): Promise<any> {
+  async updateAppointment(appointmentData: Partial<SoapAppointmentData['appointment']>): Promise<any> {
+    if (!appointmentData.AppointmentId) {
+      throw new Error('AppointmentId is required for updates');
+    }
+
     try {
       await this.rateLimiter.waitForSlot('updateAppointment');
       const result = await this.client.UpdateAppointmentAsync({
@@ -219,6 +290,11 @@ export class TebraSoapClient {
       console.error('Failed to update appointment:', error);
       throw error;
     }
+  }
+
+  private isValidDateFormat(date: string): boolean {
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    return regex.test(date);
   }
 }
 

@@ -1,21 +1,24 @@
-name: CodeRabbit
+# CodeRabbit is now integrated via GitHub App, not GitHub Actions
+# This workflow file is kept for reference but is no longer needed
+# 
+# To use CodeRabbit:
+# 1. Install the CodeRabbit GitHub App from https://github.com/apps/coderabbitai
+# 2. Configure it in your repository settings
+# 3. CodeRabbit will automatically review PRs without needing this workflow
+#
+# You can safely delete this file once CodeRabbit App is installed
+
+name: CodeRabbit (Legacy - No Longer Needed)
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-  push:
-    branches:
-      - main
-      - master
+  workflow_dispatch: # Only run manually
 
 jobs:
-  coderabbit:
+  info:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: CodeRabbit Review
-        uses: coderabbitai/action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CODERABBIT_TOKEN: ${{ secrets.CODERABBIT_TOKEN }} 
+      - name: Migration Notice
+        run: |
+          echo "This workflow is no longer needed!"
+          echo "CodeRabbit now works via GitHub App integration."
+          echo "Visit https://github.com/apps/coderabbitai to install the app." 
