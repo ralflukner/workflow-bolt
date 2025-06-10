@@ -65,8 +65,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   const { getCurrentTime, timeMode } = useTimeContext();
 
   // Determine which storage service to use
-  const storageService = isFirebaseConfigured ? dailySessionService : localSessionService;
-  const storageType = isFirebaseConfigured ? 'Firebase' : 'LocalStorage';
+  const storageService = isFirebaseConfigured() ? dailySessionService : localSessionService;
+  const storageType = isFirebaseConfigured() ? 'Firebase' : 'LocalStorage';
 
   // Load today's session data on mount
   useEffect(() => {
@@ -144,7 +144,7 @@ try {
         
         // Handle both sync (localStorage) and async (Firebase) saves
         try {
-          if (isFirebaseConfigured) {
+          if (isFirebaseConfigured()) {
             // Firebase service returns a Promise
             (saveResult as Promise<void>).catch((error: unknown) => {
               console.error(`Periodic save to ${storageType} failed:`, error);

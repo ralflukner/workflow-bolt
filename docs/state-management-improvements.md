@@ -332,7 +332,7 @@ interface TimeUpdateContextValue {
 
 ### Performance Patterns
 
-```typescript
+```tsx
 // Example: Optimized component
 const PatientCard: React.FC<PatientCardProps> = memo(({ patient }) => {
   const { state, handlers } = usePatientCard(patient);
@@ -394,4 +394,4 @@ const PatientCard: React.FC<PatientCardProps> = memo(({ patient }) => {
 2. Create test cases for wait time calculations
 3. Document current wait time calculation patterns
 4. Set up performance monitoring
-5. Create PR template for state management changes 
+5. Create PR template for state management changes

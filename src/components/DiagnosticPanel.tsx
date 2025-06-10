@@ -36,7 +36,7 @@ export const DiagnosticPanel: React.FC = () => {
       }
     };
 
-    if (isFirebaseConfigured) {
+    if (isFirebaseConfigured()) {
       checkAuth();
     } else {
       setAuthStatus('authenticated'); // localStorage doesn't need auth
@@ -47,7 +47,7 @@ export const DiagnosticPanel: React.FC = () => {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const service = isFirebaseConfigured ? dailySessionService : localSessionService;
+        const service = isFirebaseConfigured() ? dailySessionService : localSessionService;
         const stats = await service.getSessionStats();
         setStorageStats(stats);
       } catch (error) {
@@ -80,7 +80,7 @@ export const DiagnosticPanel: React.FC = () => {
     setLastLoadAttempt(`Attempting at ${timestamp}`);
 
     try {
-      const service = isFirebaseConfigured ? dailySessionService : localSessionService;
+      const service = isFirebaseConfigured() ? dailySessionService : localSessionService;
       const patients = await service.loadTodaysSession();
       setLastLoadAttempt(`Success at ${timestamp} - Found ${patients.length} patients`);
     } catch (error) {
@@ -115,14 +115,14 @@ export const DiagnosticPanel: React.FC = () => {
           <div className="space-y-1">
             <div className="flex justify-between">
               <span className="text-gray-300">Firebase Configured:</span>
-              <span className={getStatusColor(isFirebaseConfigured.toString())}>
-                {isFirebaseConfigured.toString()}
+              <span className={getStatusColor(isFirebaseConfigured().toString())}>
+                {isFirebaseConfigured().toString()}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-300">Storage Service:</span>
               <span className="text-blue-400">
-                {isFirebaseConfigured ? 'Firebase' : 'LocalStorage'}
+                {isFirebaseConfigured() ? 'Firebase' : 'LocalStorage'}
               </span>
             </div>
             <div className="flex justify-between">

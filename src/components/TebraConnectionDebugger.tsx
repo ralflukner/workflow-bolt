@@ -45,7 +45,7 @@ export const TebraConnectionDebugger: React.FC = () => {
 
       setDebugInfo(prev => ({
         ...prev,
-        firebaseConfigured: isFirebaseConfigured,
+        firebaseConfigured: isFirebaseConfigured(),
         firebaseApp: !!app,
         functionsInstance,
         envVarsLoaded: loaded,
@@ -156,7 +156,7 @@ export const TebraConnectionDebugger: React.FC = () => {
           >
             {debugInfo.connectionTest.status === 'pending' ? 'Testing...' : 'Test Now'}
           </button>
-          
+
           <div className="space-y-1">
             <div className={`flex items-center gap-2 ${
               debugInfo.connectionTest.status === 'success' ? 'text-green-400' :

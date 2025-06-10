@@ -4,7 +4,7 @@ import { app, isFirebaseConfigured } from '../config/firebase';
 // Gracefully handle environments where Firebase Functions are unavailable (e.g., unit tests)
 let functionsInstance: ReturnType<typeof getFunctions> | undefined;
 
-if (isFirebaseConfigured && app) {
+if (isFirebaseConfigured() && app) {
   try {
     functionsInstance = getFunctions(app);
   } catch (error) {
@@ -235,7 +235,7 @@ export class TebraApiService {
   async syncTodaysSchedule(): Promise<SyncResponse> {
     try {
       console.log('Syncing today\'s schedule from Tebra...');
-      
+
       // Ensure Firebase Auth is available and user is signed in
       if (!functionsInstance) {
         return {
@@ -256,7 +256,7 @@ export class TebraApiService {
       };
     } catch (error) {
       console.error('Failed to sync schedule:', error);
-      
+
       // Handle authentication errors specifically
       if (error && typeof error === 'object' && 'code' in error && 
           (error as { code: string }).code === 'functions/unauthenticated') {
@@ -265,7 +265,7 @@ export class TebraApiService {
           message: 'Authentication required to access patient data (HIPAA compliance)'
         };
       }
-      
+
       return {
         success: false,
         message: `Failed to sync schedule: ${error}`

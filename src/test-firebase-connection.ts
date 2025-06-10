@@ -26,13 +26,13 @@ try {
   console.log('✅ Firebase App initialized');
 
   console.log('\n🔧 Testing Firebase Services...');
-  const db = getFirestore(app);
+  getFirestore(app);
   console.log('✅ Firestore initialized');
 
-  const auth = getAuth(app);
+  getAuth(app);
   console.log('✅ Auth initialized');
 
-  const functions = getFunctions(app);
+  getFunctions(app);
   console.log('✅ Functions initialized');
 
   console.log('\n🎉 All Firebase services initialized successfully!');

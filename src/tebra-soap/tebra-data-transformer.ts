@@ -3,7 +3,7 @@
  * @module services/tebra/tebra-data-transformer
  */
 
-import { Patient, AppointmentType } from '../types';
+import type { Patient, AppointmentType } from '../types';
 import { TebraPatient, TebraAppointment, TebraDailySession, TebraProvider } from './tebra-api-service.types';
 
 /**
@@ -115,13 +115,13 @@ export class TebraDataTransformer {
     providers: TebraProvider[]
   ): Patient {
     const provider = providers.find(p => p.ProviderId === appointment.ProviderId);
-    
+
     // Map appointment type to internal AppointmentType
     const appointmentType: AppointmentType | undefined = 
       appointment.Type === 'Office Visit' || appointment.Type === 'LABS' 
         ? appointment.Type as AppointmentType
         : 'Office Visit'; // Default fallback
-    
+
     return {
       id: patient.PatientId,
       name: `${patient.FirstName} ${patient.LastName}`,

@@ -35,7 +35,7 @@ export const PersistenceStatus: React.FC = () => {
 
   // Determine which storage service to use (stable ref)
   const { storageService, storageType } = React.useMemo(() => {
-    return isFirebaseConfigured
+    return isFirebaseConfigured()
       ? { storageService: dailySessionService as StorageService, storageType: 'Firebase' as const }
       : { storageService: localSessionService as StorageService, storageType: 'LocalStorage' as const };
    
@@ -126,6 +126,12 @@ export const PersistenceStatus: React.FC = () => {
     }
   };
 
+  const getStorageType = () => {
+    return isFirebaseConfigured()
+      ? 'Firebase'
+      : 'LocalStorage';
+  };
+
   if (isLoading) {
     return (
       <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4">
@@ -138,7 +144,7 @@ export const PersistenceStatus: React.FC = () => {
   }
 
   return (
-    <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4">
+    <div className="bg-gray-800 rounded-lg p-4 shadow-lg mb-4">
       {/* Toast Notification */}
       {showToast && (
         <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border max-w-sm ${
@@ -189,11 +195,11 @@ export const PersistenceStatus: React.FC = () => {
           }`}>
             {persistenceEnabled ? 'Enabled' : 'Disabled'}
           </span>
-          <span className={`px-2 py-1 rounded text-xs font-medium ${
-            isFirebaseConfigured ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
+          <div className={`px-2 py-1 rounded text-sm ${
+            isFirebaseConfigured() ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
           }`}>
-            {storageType}
-          </span>
+            {getStorageType()}
+          </div>
         </div>
       </div>
 
@@ -279,7 +285,7 @@ export const PersistenceStatus: React.FC = () => {
       )}
 
       <div className="text-xs text-gray-500 space-y-1">
-        {isFirebaseConfigured ? (
+        {isFirebaseConfigured() ? (
           <>
             <p>• Using Firebase for cloud data persistence</p>
             <p>• Data is shared across devices and auto-purged daily</p>
@@ -294,6 +300,16 @@ export const PersistenceStatus: React.FC = () => {
         )}
         <p>• Only real patient data is auto-saved (not mock data)</p>
       </div>
+
+      {isFirebaseConfigured() ? (
+        <div className="mt-4">
+          {/* Firebase specific content */}
+        </div>
+      ) : (
+        <div className="mt-4">
+          {/* LocalStorage specific content */}
+        </div>
+      )}
     </div>
   );
 }; 

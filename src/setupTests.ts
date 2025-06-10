@@ -1,10 +1,6 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import matchers from '@testing-library/jest-dom/matchers';
 import { afterEach, afterAll, jest, beforeEach } from '@jest/globals';
-
-// Extend Jest's expect with the matchers from jest-dom
-expect.extend(matchers);
 
 // Mock timers globally to prevent hanging
 jest.useFakeTimers();

@@ -9,12 +9,14 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
 ## Authentication & Authorization
 
 ### API Authentication
+
 - All API requests must use HTTPS
 - API credentials are stored in environment variables
 - Credentials are never committed to version control
 - Regular credential rotation is enforced
 
 ### User Authentication
+
 - Firebase Authentication for user management
 - Multi-factor authentication support
 - Session management with secure tokens
@@ -23,12 +25,14 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
 ## Data Protection
 
 ### Data in Transit
+
 - All API communications use TLS 1.2 or higher
 - SOAP messages are encrypted
 - WebSocket connections are secured
 - Certificate pinning for API endpoints
 
 ### Data at Rest
+
 - Firebase Firestore encryption
 - Secure storage of sensitive data
 - Regular security audits
@@ -37,12 +41,14 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
 ## HIPAA Compliance
 
 ### Protected Health Information (PHI)
+
 - PHI is encrypted at rest and in transit
 - Access to PHI is logged and audited
 - Minimum necessary data principle
 - Data retention policies
 
 ### Audit Trail
+
 - All PHI access is logged
 - Regular audit log reviews
 - Automated anomaly detection
@@ -51,6 +57,7 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
 ## Security Best Practices
 
 ### Development
+
 1. **Code Security**
    - Regular dependency updates
    - Security-focused code reviews
@@ -70,6 +77,7 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
    - Deployment verification
 
 ### Operational Security
+
 1. **Monitoring**
    - Real-time security monitoring
    - Intrusion detection
@@ -85,6 +93,7 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
 ## Security Checklist
 
 ### Development
+
 - [ ] Use environment variables for secrets
 - [ ] Implement input validation
 - [ ] Use parameterized queries
@@ -94,6 +103,7 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
 - [ ] Use secure dependencies
 
 ### Deployment
+
 - [ ] Enable HTTPS
 - [ ] Configure security headers
 - [ ] Set up monitoring
@@ -119,6 +129,7 @@ If you discover a security vulnerability, please:
 ## Regular Updates
 
 This security documentation is reviewed and updated:
+
 - Monthly for technical content
 - Quarterly for compliance requirements
 - Annually for comprehensive review
@@ -126,6 +137,7 @@ This security documentation is reviewed and updated:
 ## Compliance
 
 The system is designed to comply with:
+
 - HIPAA
 - HITECH
 - GDPR

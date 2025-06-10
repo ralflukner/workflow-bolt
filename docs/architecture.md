@@ -29,12 +29,14 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ### 1. Frontend Layer
 
 #### React Application
+
 - Built with React 18 and TypeScript
 - Uses Vite for build tooling
 - Implements responsive design
 - Follows atomic design principles
 
 #### State Management
+
 - Redux for global state
 - React Query for server state
 - Local storage for persistence
@@ -43,12 +45,14 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ### 2. API Layer
 
 #### TebraApiService
+
 - Handles SOAP API communication
 - Implements rate limiting
 - Manages data transformation
 - Provides error handling
 
 #### Rate Limiter
+
 - Token bucket algorithm
 - Configurable limits per endpoint
 - Automatic retry mechanism
@@ -57,12 +61,14 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ### 3. Data Layer
 
 #### Firebase Integration
+
 - Firestore for data storage
 - Real-time updates
 - Offline support
 - Data synchronization
 
 #### Data Models
+
 - Patient information
 - Appointment scheduling
 - Provider management
@@ -71,6 +77,7 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ## Component Interactions
 
 ### Authentication Flow
+
 1. User initiates login
 2. Firebase Auth handles authentication
 3. JWT token generated
@@ -78,6 +85,7 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 5. Session management
 
 ### Data Synchronization
+
 1. Frontend requests data
 2. API service checks cache
 3. SOAP request if needed
@@ -86,6 +94,7 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 6. UI refresh
 
 ### Error Handling
+
 1. Error detection
 2. Error classification
 3. User notification
@@ -97,12 +106,14 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ### 1. Technology Choices
 
 #### Frontend
+
 - React for component-based UI
 - TypeScript for type safety
 - Tailwind CSS for styling
 - Jest for testing
 
 #### Backend
+
 - Node.js for API service
 - SOAP for Tebra integration
 - Firebase for infrastructure
@@ -111,12 +122,14 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ### 2. Architecture Patterns
 
 #### Microservices
+
 - API Gateway pattern
 - Service isolation
 - Independent scaling
 - Fault tolerance
 
 #### Data Flow
+
 - Unidirectional data flow
 - Immutable state
 - Event-driven updates
@@ -125,12 +138,14 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ## Performance Considerations
 
 ### 1. Optimization Strategies
+
 - Code splitting
 - Lazy loading
 - Caching
 - Request batching
 
 ### 2. Scalability
+
 - Horizontal scaling
 - Load balancing
 - Database sharding
@@ -139,12 +154,14 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ## Security Architecture
 
 ### 1. Authentication
+
 - JWT-based auth
 - Role-based access
 - Session management
 - MFA support
 
 ### 2. Data Protection
+
 - Encryption at rest
 - TLS in transit
 - Input validation
@@ -153,12 +170,14 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ## Monitoring and Logging
 
 ### 1. Application Monitoring
+
 - Performance metrics
 - Error tracking
 - User analytics
 - Health checks
 
 ### 2. Logging Strategy
+
 - Centralized logging
 - Log levels
 - Audit trails
@@ -167,12 +186,14 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ## Deployment Architecture
 
 ### 1. Infrastructure
+
 - Cloud hosting
 - Containerization
 - CI/CD pipeline
 - Auto-scaling
 
 ### 2. Environments
+
 - Development
 - Staging
 - Production
@@ -181,12 +202,14 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ## Future Considerations
 
 ### 1. Planned Improvements
+
 - GraphQL migration
 - WebSocket support
 - Mobile app
 - Analytics dashboard
 
 ### 2. Scalability Plans
+
 - Microservices expansion
 - Database optimization
 - Cache improvements
@@ -195,12 +218,14 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ## Development Guidelines
 
 ### 1. Code Organization
+
 - Feature-based structure
 - Shared components
 - Utility functions
 - Type definitions
 
 ### 2. Testing Strategy
+
 - Unit tests
 - Integration tests
 - E2E tests
@@ -209,12 +234,14 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ## Documentation
 
 ### 1. Code Documentation
+
 - JSDoc comments
 - Type definitions
 - API documentation
 - Component documentation
 
 ### 2. System Documentation
+
 - Architecture diagrams
 - Flow charts
 - Sequence diagrams
@@ -223,12 +250,14 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 ## Support and Maintenance
 
 ### 1. Monitoring
+
 - Health checks
 - Performance monitoring
 - Error tracking
 - Usage analytics
 
 ### 2. Maintenance
+
 - Regular updates
 - Security patches
 - Performance optimization

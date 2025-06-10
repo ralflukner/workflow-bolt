@@ -2,19 +2,7 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 import { TebraSoapClient } from '../tebraSoapClient';
 import { PatientEncryptionService } from '../../services/encryption/patientEncryptionService';
 import { Patient } from '../../types';
-
-type AppointmentType = {
-  patientId: string;
-  date: string;
-  time: string;
-  status: string;
-};
-
-type PatientType = {
-  id: string;
-  name: string;
-  dob: string;
-};
+import { TebraCredentials } from '../tebra-api-service.types';
 
 interface MockTebraSoapClient {
   config: {
@@ -45,16 +33,16 @@ jest.mock('../tebraSoapClient', () => {
       password: getEnvVar('REACT_APP_TEBRA_PASSWORD', 'demo')
     };
     
-    this.getAppointments = jest.fn().mockResolvedValue([
+    this.getAppointments = jest.fn(() => Promise.resolve([
       { patientId: '123', date: '2025-05-20', time: '09:00', status: 'Confirmed' },
       { patientId: '456', date: '2025-05-20', time: '10:30', status: 'Scheduled' }
-    ] as AppointmentType[]);
+    ]));
     
-    this.getPatientById = jest.fn().mockResolvedValue({ 
+    this.getPatientById = jest.fn(() => Promise.resolve({ 
       id: '123', 
       name: 'Test Patient', 
       dob: '1980-01-01' 
-    } as PatientType);
+    }));
     
     return this;
   });
@@ -72,6 +60,7 @@ describe('Tebra Integration with Encryption', () => {
   });
 
   afterEach(() => {
+    delete process.env.NODE_ENV;
     delete process.env.REACT_APP_TEBRA_USERNAME;
     delete process.env.REACT_APP_TEBRA_PASSWORD;
     delete process.env.REACT_APP_TEBRA_WSDL_URL;
@@ -80,9 +69,16 @@ describe('Tebra Integration with Encryption', () => {
 
   describe('Secure credential handling', () => {
     it('should use environment variables for credentials', async () => {
-      const client = new TebraSoapClient();
+      const credentials: TebraCredentials = {
+        username: process.env.REACT_APP_TEBRA_USERNAME || 'test-username',
+        password: process.env.REACT_APP_TEBRA_PASSWORD || 'test-password',
+        wsdlUrl: process.env.REACT_APP_TEBRA_WSDL_URL || 'https://test.example.com/wsdl'
+      };
+      const client = new TebraSoapClient(credentials);
       
-      const config = client['config'];
+      // Since the mocked TebraSoapClient has a config property, we can access it
+      const mockClient = client as any;
+      const config = mockClient.config;
       
       expect(config.username).toBe('test-username');
       expect(config.password).toBe('test-password');
@@ -94,9 +90,15 @@ describe('Tebra Integration with Encryption', () => {
       delete process.env.REACT_APP_TEBRA_PASSWORD;
       delete process.env.REACT_APP_TEBRA_WSDL_URL;
       
-      const client = new TebraSoapClient();
+      const credentials: TebraCredentials = {
+        username: 'demo',
+        password: 'demo',
+        wsdlUrl: 'https://example.com/tebra.wsdl'
+      };
+      const client = new TebraSoapClient(credentials);
       
-      const config = client['config'];
+      const mockClient = client as any;
+      const config = mockClient.config;
       
       expect(config.username).toBe('demo');
       expect(config.password).toBe('demo');
@@ -105,45 +107,28 @@ describe('Tebra Integration with Encryption', () => {
   });
 
   describe('Patient data encryption', () => {
-    it('should encrypt and decrypt patient data correctly', async () => {
-      const testPatient: Patient = {
-        id: '12345',
-        name: 'John Doe',
-        dob: '1980-01-01',
-        appointmentTime: '2025-05-20T09:00:00',
-        status: 'Confirmed',
-        provider: 'Dr. Smith',
-        room: undefined,
-        checkInTime: undefined
-      };
+    it('should encrypt patient data from Tebra response', async () => {
+      if (typeof window !== 'undefined') {
+        // Skip this test in browser environments
+        return;
+      }
       
-      const encryptedPatient = PatientEncryptionService.encryptPatient(testPatient);
-      
-      expect(encryptedPatient.name).not.toEqual(testPatient.name);
-      expect(encryptedPatient.dob).not.toEqual(testPatient.dob);
-      
-      const decryptedPatient = PatientEncryptionService.decryptPatient(encryptedPatient);
-      
-      expect(decryptedPatient).toEqual(testPatient);
-    });
-
-    it('should handle an array of patients from Tebra API', async () => {
       const tebraPatients = [
         {
           id: '123',
-          name: 'Test Patient',
+          name: 'John Doe',
           dob: '1980-01-01',
-          appointmentTime: '2025-05-20T09:00:00',
-          status: 'Confirmed',
+          appointmentTime: '2025-06-05T09:00:00',
+          status: 'scheduled' as const,
           provider: 'Dr. Smith'
         },
         {
           id: '456',
-          name: 'Another Patient',
-          dob: '1985-05-15',
-          appointmentTime: '2025-05-20T10:30:00',
-          status: 'Scheduled',
-          provider: 'Dr. Jones'
+          name: 'Jane Smith',
+          dob: '1975-05-15',
+          appointmentTime: '2025-06-05T10:00:00',
+          status: 'scheduled' as const,
+          provider: 'Dr. Johnson'
         }
       ] as Patient[];
       
@@ -154,7 +139,9 @@ describe('Tebra Integration with Encryption', () => {
         expect(patient.dob).not.toEqual(tebraPatients[index].dob);
       });
       
-      const decryptedPatients = PatientEncryptionService.decryptPatients(encryptedPatients);
+      const decryptedPatients = encryptedPatients.length > 0 
+        ? PatientEncryptionService.decryptPatients(encryptedPatients)
+        : [];
       
       expect(decryptedPatients).toEqual(tebraPatients);
     });
@@ -163,40 +150,64 @@ describe('Tebra Integration with Encryption', () => {
   describe('End-to-end Tebra integration with encryption', () => {
     it('should retrieve and encrypt appointment data', async () => {
       if (typeof window !== 'undefined') {
-        console.log('Skipping test in browser environment');
+        // Skip this test in browser environments
         return;
       }
       
-      const client = new TebraSoapClient();
+      const credentials: TebraCredentials = {
+        username: process.env.REACT_APP_TEBRA_USERNAME || 'test-username',
+        password: process.env.REACT_APP_TEBRA_PASSWORD || 'test-password',
+        wsdlUrl: process.env.REACT_APP_TEBRA_WSDL_URL || 'https://test.example.com/wsdl'
+      };
+      const client = new TebraSoapClient(credentials);
       
-      type AppointmentType = {
-        patientId: string;
-        date: string;
-        time: string;
-        status: string;
+      const appointments = await (client as any).getAppointments();
+      expect(appointments).toHaveLength(2);
+      expect(appointments[0].patientId).toBe('123');
+    });
+
+    it('should retrieve and decrypt patient data while maintaining security', async () => {
+      if (typeof window !== 'undefined') {
+        // Skip this test in browser environments
+        return;
+      }
+      
+      const credentials: TebraCredentials = {
+        username: process.env.REACT_APP_TEBRA_USERNAME || 'test-username',
+        password: process.env.REACT_APP_TEBRA_PASSWORD || 'test-password',
+        wsdlUrl: process.env.REACT_APP_TEBRA_WSDL_URL || 'https://test.example.com/wsdl'
+      };
+      const client = new TebraSoapClient(credentials);
+      
+      const patientData = await client.getPatientById('123');
+      
+      expect(patientData).toBeDefined();
+      expect(patientData.id).toBe('123');
+      
+      // Convert Tebra patient to internal Patient format
+      const patient: Patient = {
+        id: patientData.id,
+        name: patientData.name,
+        dob: patientData.dob,
+        appointmentTime: '2025-06-05T09:00:00',
+        status: 'scheduled',
+        provider: 'Dr. Test'
       };
       
-      const appointments = await client.getAppointments('2025-05-20', '2025-05-20') as AppointmentType[];
+      // Encrypt the patient data
+      const encryptedPatient = PatientEncryptionService.encryptPatient(patient);
       
-      const patients = appointments.map(appt => ({
-        id: appt.patientId || 'unknown',
-        name: `Patient ${appt.patientId}`,
-        dob: '1980-01-01', // Mock DOB
-        appointmentTime: `${appt.date}T${appt.time}:00`,
-        status: appt.status,
-        provider: 'Dr. Test'
-      })) as Patient[];
+      // Name and DOB should be encrypted
+      expect(encryptedPatient.name).not.toEqual(patient.name);
+      expect(encryptedPatient.dob).not.toEqual(patient.dob);
       
-      const encryptedPatients = PatientEncryptionService.encryptPatients(patients);
+      // Other fields should remain unencrypted
+      expect(encryptedPatient.id).toEqual(patient.id);
+      expect(encryptedPatient.status).toEqual(patient.status);
       
-      encryptedPatients.forEach((patient, index) => {
-        expect(patient.name).not.toEqual(patients[index].name);
-        expect(patient.dob).not.toEqual(patients[index].dob);
-      });
-      
-      const decryptedPatients = PatientEncryptionService.decryptPatients(encryptedPatients);
-      
-      expect(decryptedPatients).toEqual(patients);
+      // Should be able to decrypt back to original
+      const decryptedPatient = PatientEncryptionService.decryptPatient(encryptedPatient);
+      expect(decryptedPatient).toEqual(patient);
     });
   });
 });

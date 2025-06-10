@@ -8,7 +8,8 @@ import {
   deleteDoc,
   query,
   where,
-  Timestamp
+  Timestamp,
+  Firestore
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 
@@ -25,10 +26,18 @@ export interface Patient {
 
 const COLLECTION_NAME = 'patients';
 
+// Helper function to ensure db is not null
+const ensureDb = (): Firestore => {
+  if (!db) {
+    throw new Error('Firestore database is not initialized');
+  }
+  return db;
+};
+
 export const patientService = {
   // Get all patients
   async getAllPatients() {
-    const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
+    const querySnapshot = await getDocs(collection(ensureDb(), COLLECTION_NAME));
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -37,7 +46,7 @@ export const patientService = {
 
   // Get a single patient by ID
   async getPatientById(id: string) {
-    const docRef = doc(db, COLLECTION_NAME, id);
+    const docRef = doc(ensureDb(), COLLECTION_NAME, id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() };
@@ -54,13 +63,13 @@ export const patientService = {
       updatedAt: now
     };
     
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), patientWithTimestamps);
+    const docRef = await addDoc(collection(ensureDb(), COLLECTION_NAME), patientWithTimestamps);
     return { id: docRef.id, ...patientWithTimestamps };
   },
 
   // Update a patient
   async updatePatient(id: string, patientData: Partial<Patient>) {
-    const docRef = doc(db, COLLECTION_NAME, id);
+    const docRef = doc(ensureDb(), COLLECTION_NAME, id);
     const updateData = {
       ...patientData,
       updatedAt: Timestamp.now()
@@ -71,7 +80,7 @@ export const patientService = {
 
   // Delete a patient
   async deletePatient(id: string) {
-    const docRef = doc(db, COLLECTION_NAME, id);
+    const docRef = doc(ensureDb(), COLLECTION_NAME, id);
     await deleteDoc(docRef);
     return id;
   },
@@ -79,7 +88,7 @@ export const patientService = {
   // Search patients by name
   async searchPatientsByName(searchTerm: string) {
     const q = query(
-      collection(db, COLLECTION_NAME),
+      collection(ensureDb(), COLLECTION_NAME),
       where('firstName', '>=', searchTerm),
       where('firstName', '<=', searchTerm + '\uf8ff')
     );

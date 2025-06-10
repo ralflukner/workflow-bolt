@@ -5,5 +5,11 @@
     "types": ["jest", "node", "@testing-library/jest-dom"],
     "esModuleInterop": true
   },
-  "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/__tests__/**/*"]
+  "include": [
+    "src/**/*.test.ts", 
+    "src/**/*.test.tsx", 
+    "src/**/__tests__/**/*",
+    "src/types/jest-dom.d.ts",
+    "src/setupTests.ts"
+  ]
 } 

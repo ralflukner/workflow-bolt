@@ -22,7 +22,6 @@ import { TebraCredentials, TebraAppointment, TebraPatient, TebraProvider } from 
 import { SessionStats } from '../../services/storageService';
 import { TebraSoapClient } from '../tebraSoapClient';
 import { TebraDataTransformer } from '../tebra-data-transformer';
-import { TebraDailySession } from '../types';
 import { DailySessionService } from '../../services/firebase/dailySessionService';
 
 // Mock the SOAP client to avoid real API calls during testing
@@ -33,7 +32,22 @@ const mockSearchPatients = jest.fn<() => Promise<TebraPatient[]>>().mockResolved
     LastName: 'Doe',
     DateOfBirth: '1990-01-01',
     Phone: '',
-    Email: ''
+    Email: '',
+    Gender: 'M',
+    Address: {
+      Street: '123 Main St',
+      City: 'Anytown',
+      State: 'CA',
+      ZipCode: '12345',
+      Country: 'USA'
+    },
+    Insurance: {
+      Provider: 'Test Insurance',
+      PolicyNumber: 'POL123',
+      GroupNumber: 'GRP456'
+    },
+    CreatedAt: '2023-01-01T00:00:00Z',
+    UpdatedAt: '2023-01-01T00:00:00Z'
   }
 ]);
 const mockGetAppointments = jest.fn<() => Promise<TebraAppointment[]>>().mockResolvedValue([
@@ -41,10 +55,13 @@ const mockGetAppointments = jest.fn<() => Promise<TebraAppointment[]>>().mockRes
     AppointmentId: 'apt-1',
     PatientId: 'test-patient-1',
     ProviderId: 'provider-1',
-    AppointmentDate: '2025-01-15',
-    AppointmentTime: '09:00',
-    AppointmentType: 'Office Visit',
-    Status: 'Scheduled'
+    StartTime: '2025-01-15T09:00:00Z',
+    EndTime: '2025-01-15T10:00:00Z',
+    Type: 'Office Visit',
+    Status: 'Scheduled',
+    Notes: '',
+    CreatedAt: '2023-01-01T00:00:00Z',
+    UpdatedAt: '2023-01-01T00:00:00Z'
   }
 ]);
 const mockGetPatientById = jest.fn<() => Promise<TebraPatient>>().mockResolvedValue({
@@ -53,7 +70,22 @@ const mockGetPatientById = jest.fn<() => Promise<TebraPatient>>().mockResolvedVa
   LastName: 'Doe',
   DateOfBirth: '1990-01-01',
   Phone: '',
-  Email: ''
+  Email: '',
+  Gender: 'M',
+  Address: {
+    Street: '123 Main St',
+    City: 'Anytown',
+    State: 'CA',
+    ZipCode: '12345',
+    Country: 'USA'
+  },
+  Insurance: {
+    Provider: 'Test Insurance',
+    PolicyNumber: 'POL123',
+    GroupNumber: 'GRP456'
+  },
+  CreatedAt: '2023-01-01T00:00:00Z',
+  UpdatedAt: '2023-01-01T00:00:00Z'
 });
 const mockGetProviders = jest.fn<() => Promise<TebraProvider[]>>().mockResolvedValue([
   {
@@ -123,11 +155,11 @@ mockedTebraDataTransformer.mockImplementation(() => ({
 } as any));
 
 // Setup rate limiter mock
-const mockWaitForSlot = jest.fn().mockResolvedValue(undefined);
+const mockWaitForSlot = jest.fn().mockImplementation(() => Promise.resolve());
 const mockedTebraRateLimiter = TebraRateLimiter as jest.MockedClass<typeof TebraRateLimiter>;
 mockedTebraRateLimiter.mockImplementation(() => ({
   waitForSlot: mockWaitForSlot,
-  waitForRateLimit: jest.fn().mockResolvedValue(undefined),
+  waitForRateLimit: jest.fn().mockImplementation(() => Promise.resolve()),
   getAllRateLimits: () => ({
     'GetAppointments': 1000,
     'GetProviders': 500,
@@ -164,7 +196,7 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
       const { TebraRateLimiter: ActualTebraRateLimiter } = jest.requireActual('../tebra-rate-limiter') as { TebraRateLimiter: typeof TebraRateLimiter };
       rateLimiter = new ActualTebraRateLimiter();
     });
-    
+
     afterEach(() => {
       // Restore mocks after these tests
       jest.restoreAllMocks();
@@ -172,11 +204,11 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
 
     it('should enforce rate limits for different API methods', async () => {
       const startTime = Date.now();
-      
+
       // Test rate limiting for GetPatient (250ms limit)
       await rateLimiter.waitForRateLimit('GetPatient');
       await rateLimiter.waitForRateLimit('GetPatient');
-      
+
       const elapsed = Date.now() - startTime;
       // Should have waited at least 250ms for the second call
       expect(elapsed).toBeGreaterThanOrEqual(250);
@@ -202,9 +234,9 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
 
     it('should warn about unknown methods', async () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-      
+
       await rateLimiter.waitForRateLimit('UnknownMethod');
-      
+
       expect(consoleSpy).toHaveBeenCalledWith('No rate limit defined for method: UnknownMethod');
       consoleSpy.mockRestore();
     });
@@ -212,14 +244,11 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
 
   describe('TebraApiService', () => {
     let apiService: TebraApiService;
-    let mockSoapClient: jest.Mocked<TebraSoapClient>;
-    let mockDataTransformer: jest.Mocked<TebraDataTransformer>;
-    let mockRateLimiter: jest.Mocked<TebraRateLimiter>;
 
     beforeEach(() => {
       // Clear all mocks
       jest.clearAllMocks();
-      
+
       // Reset mock implementations
       mockGetPatientById.mockClear();
       mockGetAppointmentById.mockClear();
@@ -245,7 +274,7 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
         delete process.env.REACT_APP_TEBRA_WSDL_URL;
         delete process.env.REACT_APP_TEBRA_USERNAME;
         delete process.env.REACT_APP_TEBRA_PASSWORD;
-        
+
         try {
           expect(() => new TebraApiService({})).toThrow('Invalid Tebra configuration. Missing required fields: wsdlUrl, username, password');
         } finally {
@@ -255,112 +284,28 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
       });
     });
 
-    describe('getPatientData', () => {
-      const mockPatientId = '123';
-      const mockPatientData: TebraPatient = {
-        PatientId: mockPatientId,
-        FirstName: 'John',
-        LastName: 'Doe',
-        DateOfBirth: '1990-01-01',
-        Gender: 'M',
-        Email: 'john.doe@example.com',
-        Phone: '123-456-7890',
-        Address: {
-          Street: '123 Main St',
-          City: 'Anytown',
-          State: 'CA',
-          ZipCode: '12345',
-          Country: 'USA'
-        },
-        Insurance: {
-          Provider: 'Test Insurance',
-          PolicyNumber: 'POL123',
-          GroupNumber: 'GRP456'
-        },
-        CreatedAt: new Date().toISOString(),
-        UpdatedAt: new Date().toISOString()
-      };
-
-      it('should get patient data successfully', async () => {
-        // Since we can't easily mock the internal dependencies, let's just verify
-        // that the method exists and returns a promise
-        expect(apiService.getPatientData).toBeDefined();
-        expect(typeof apiService.getPatientData).toBe('function');
-        
-        // Test would normally verify actual data, but mocking is complex
-        // For now, just ensure the method can be called
-        const promise = apiService.getPatientData(mockPatientId);
-        expect(promise).toBeInstanceOf(Promise);
-      });
-
-      it('should handle errors when getting patient data', async () => {
-        // Test would normally verify error handling
-        // For now, just ensure the method can be called with invalid data
-        const promise = apiService.getPatientData('invalid-id');
-        expect(promise).toBeInstanceOf(Promise);
-      });
+    it('should get patient data', async () => {
+      const patient = await apiService.getPatientData('test-patient-1');
+      expect(patient).toBeDefined();
+      expect(patient.PatientId).toBe('test-patient-1');
     });
 
-    describe('getAppointmentData', () => {
-      const mockAppointmentId = '456';
-      const mockAppointmentData: TebraAppointment = {
-        AppointmentId: mockAppointmentId,
-        PatientId: '123',
-        ProviderId: '789',
-        StartTime: '2024-03-20T10:00:00',
-        EndTime: '2024-03-20T11:00:00',
-        Status: 'scheduled',
-        Type: 'follow-up',
-        Notes: 'Test appointment',
-        CreatedAt: new Date().toISOString(),
-        UpdatedAt: new Date().toISOString()
-      };
-
-      it('should get appointment data successfully', async () => {
-        // Verify the method exists and returns a promise
-        expect(apiService.getAppointmentData).toBeDefined();
-        expect(typeof apiService.getAppointmentData).toBe('function');
-        
-        const promise = apiService.getAppointmentData(mockAppointmentId);
-        expect(promise).toBeInstanceOf(Promise);
-      });
-
-      it('should handle errors when getting appointment data', async () => {
-        const promise = apiService.getAppointmentData('invalid-id');
-        expect(promise).toBeInstanceOf(Promise);
-      });
+    it('should get appointment data', async () => {
+      const appointment = await apiService.getAppointmentData('apt-1');
+      expect(appointment).toBeDefined();
+      expect(appointment.AppointmentId).toBe('apt-1');
     });
 
-    describe('getDailySessionData', () => {
-      const mockDate = new Date('2024-03-20');
-      const mockSessionData: TebraDailySession = {
-        SessionId: '123',
-        Date: mockDate.toISOString(),
-        ProviderId: '789',
-        Appointments: [],
-        CreatedAt: new Date().toISOString(),
-        UpdatedAt: new Date().toISOString()
-      };
-
-      it('should get daily session data successfully', async () => {
-        expect(apiService.getDailySessionData).toBeDefined();
-        expect(typeof apiService.getDailySessionData).toBe('function');
-        
-        const promise = apiService.getDailySessionData(mockDate);
-        expect(promise).toBeInstanceOf(Promise);
-      });
-
-      it('should handle errors when getting daily session data', async () => {
-        const promise = apiService.getDailySessionData(new Date());
-        expect(promise).toBeInstanceOf(Promise);
-      });
+    it('should get daily session data', async () => {
+      const session = await apiService.getDailySessionData(new Date());
+      expect(session).toBeDefined();
     });
 
     describe('testConnection', () => {
       it('should test connection successfully', async () => {
         expect(apiService.testConnection).toBeDefined();
         expect(typeof apiService.testConnection).toBe('function');
-        
+
         const promise = apiService.testConnection();
         expect(promise).toBeInstanceOf(Promise);
       });
@@ -382,7 +327,7 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
         autoSync: false,
         fallbackToMockData: true
       });
-      
+
       integrationService = new TebraIntegrationService(config);
       await integrationService.initialize();
     });
@@ -410,7 +355,7 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
 
     it('should update configuration', () => {
       integrationService.updateConfig({ syncInterval: 5 });
-      
+
       // The service should accept the new configuration
       // (We can't easily test the internal config change without exposing it)
       expect(() => integrationService.updateConfig({ syncInterval: 5 })).not.toThrow();
@@ -424,12 +369,12 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
   describe('Rate Limiting Integration', () => {
     it('should apply rate limits across multiple API calls', async () => {
       const apiService = new TebraApiService(testCredentials);
-      
+
       // Verify rate limiter methods exist
       expect(apiService.getRateLimiterStats).toBeDefined();
       expect(apiService.canCallMethodImmediately).toBeDefined();
       expect(apiService.getRemainingWaitTime).toBeDefined();
-      
+
       // These methods should be callable
       expect(typeof apiService.getRateLimiterStats).toBe('function');
       expect(typeof apiService.canCallMethodImmediately).toBe('function');
@@ -440,7 +385,7 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
   describe('Configuration Validation', () => {
     it('should create valid Tebra config', () => {
       const config = createTebraConfig(testCredentials);
-      
+
       expect(config.credentials).toEqual(testCredentials);
       expect(config.syncInterval).toBe(15); // default
       expect(config.lookAheadDays).toBe(1); // default
@@ -455,7 +400,7 @@ describe('Tebra EHR Integration with Rate Limiting', () => {
         autoSync: false,
         fallbackToMockData: false
       });
-      
+
       expect(config.syncInterval).toBe(30);
       expect(config.lookAheadDays).toBe(7);
       expect(config.autoSync).toBe(false);

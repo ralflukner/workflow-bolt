@@ -21,6 +21,7 @@ interface Patient {
 ```
 
 #### Relationships
+
 - One-to-many with Appointments
 - One-to-one with Insurance
 - Many-to-one with Provider
@@ -43,6 +44,7 @@ interface Appointment {
 ```
 
 #### Relationships
+
 - Many-to-one with Patient
 - Many-to-one with Provider
 - One-to-one with Session
@@ -63,6 +65,7 @@ interface Provider {
 ```
 
 #### Relationships
+
 - One-to-many with Appointments
 - One-to-many with Patients
 - One-to-one with Schedule
@@ -82,12 +85,14 @@ interface Session {
 ```
 
 #### Relationships
+
 - One-to-many with Appointments
 - Many-to-one with Provider
 
 ## Enums and Types
 
 ### 1. Appointment Types
+
 ```typescript
 enum AppointmentType {
   OFFICE_VISIT = 'Office Visit',
@@ -99,6 +104,7 @@ enum AppointmentType {
 ```
 
 ### 2. Status Types
+
 ```typescript
 enum PatientStatus {
   SCHEDULED = 'scheduled',
@@ -129,6 +135,7 @@ enum SessionStatus {
 ## Data Relationships
 
 ### 1. Patient Flow
+
 ```mermaid
 graph TD
     A[Patient] --> B[Appointment]
@@ -142,6 +149,7 @@ graph TD
 ```
 
 ### 2. Provider Schedule
+
 ```mermaid
 graph TD
     A[Provider] --> B[Schedule]
@@ -153,12 +161,14 @@ graph TD
 ## Data Validation Rules
 
 ### 1. Patient Validation
+
 - Name: Required, max 100 characters
 - DOB: Required, valid date, not in future
 - Appointment Time: Required, valid datetime
 - Status: Must be valid PatientStatus enum value
 
 ### 2. Appointment Validation
+
 - Patient ID: Required, must exist
 - Provider ID: Required, must exist
 - Start Time: Required, valid datetime
@@ -167,6 +177,7 @@ graph TD
 - Status: Must be valid AppointmentStatus enum value
 
 ### 3. Provider Validation
+
 - First Name: Required, max 50 characters
 - Last Name: Required, max 50 characters
 - Title: Required, valid title
@@ -176,55 +187,63 @@ graph TD
 ## Data Operations
 
 ### 1. CRUD Operations
+
 ```typescript
-// Create
-async function createPatient(patient: Patient): Promise<Patient>
-async function createAppointment(appointment: Appointment): Promise<Appointment>
-async function createProvider(provider: Provider): Promise<Provider>
-async function createSession(session: Session): Promise<Session>
+interface DataOperations {
+  // Create
+  createPatient(patient: Patient): Promise<Patient>;
+  createAppointment(appointment: Appointment): Promise<Appointment>;
+  createProvider(provider: Provider): Promise<Provider>;
+  createSession(session: Session): Promise<Session>;
 
-// Read
-async function getPatient(id: string): Promise<Patient>
-async function getAppointment(id: string): Promise<Appointment>
-async function getProvider(id: string): Promise<Provider>
-async function getSession(id: string): Promise<Session>
+  // Read
+  getPatient(id: string): Promise<Patient>;
+  getAppointment(id: string): Promise<Appointment>;
+  getProvider(id: string): Promise<Provider>;
+  getSession(id: string): Promise<Session>;
 
-// Update
-async function updatePatient(id: string, patient: Partial<Patient>): Promise<Patient>
-async function updateAppointment(id: string, appointment: Partial<Appointment>): Promise<Appointment>
-async function updateProvider(id: string, provider: Partial<Provider>): Promise<Provider>
-async function updateSession(id: string, session: Partial<Session>): Promise<Session>
+  // Update
+  updatePatient(id: string, patient: Partial<Patient>): Promise<Patient>;
+  updateAppointment(id: string, appointment: Partial<Appointment>): Promise<Appointment>;
+  updateProvider(id: string, provider: Partial<Provider>): Promise<Provider>;
+  updateSession(id: string, session: Partial<Session>): Promise<Session>;
 
-// Delete
-async function deletePatient(id: string): Promise<void>
-async function deleteAppointment(id: string): Promise<void>
-async function deleteProvider(id: string): Promise<void>
-async function deleteSession(id: string): Promise<void>
+  // Delete
+  deletePatient(id: string): Promise<void>;
+  deleteAppointment(id: string): Promise<void>;
+  deleteProvider(id: string): Promise<void>;
+  deleteSession(id: string): Promise<void>;
+}
 ```
 
 ### 2. Query Operations
-```typescript
-// Find by criteria
-async function findPatients(criteria: PatientCriteria): Promise<Patient[]>
-async function findAppointments(criteria: AppointmentCriteria): Promise<Appointment[]>
-async function findProviders(criteria: ProviderCriteria): Promise<Provider[]>
-async function findSessions(criteria: SessionCriteria): Promise<Session[]>
 
-// Get related data
-async function getPatientAppointments(patientId: string): Promise<Appointment[]>
-async function getProviderAppointments(providerId: string): Promise<Appointment[]>
-async function getSessionAppointments(sessionId: string): Promise<Appointment[]>
+```typescript
+interface QueryOperations {
+  // Find by criteria
+  findPatients(criteria: PatientCriteria): Promise<Patient[]>;
+  findAppointments(criteria: AppointmentCriteria): Promise<Appointment[]>;
+  findProviders(criteria: ProviderCriteria): Promise<Provider[]>;
+  findSessions(criteria: SessionCriteria): Promise<Session[]>;
+
+  // Get related data
+  getPatientAppointments(patientId: string): Promise<Appointment[]>;
+  getProviderAppointments(providerId: string): Promise<Appointment[]>;
+  getSessionAppointments(sessionId: string): Promise<Appointment[]>;
+}
 ```
 
 ## Data Migration
 
 ### 1. Version Control
+
 - Each model version is tracked
 - Migration scripts are provided
 - Rollback procedures documented
 - Data validation on migration
 
 ### 2. Backup Strategy
+
 - Regular automated backups
 - Point-in-time recovery
 - Data integrity checks
@@ -233,12 +252,14 @@ async function getSessionAppointments(sessionId: string): Promise<Appointment[]>
 ## Performance Considerations
 
 ### 1. Indexing Strategy
+
 - Primary keys on all models
 - Foreign key indexes
 - Composite indexes for common queries
 - Text search indexes
 
 ### 2. Caching Strategy
+
 - In-memory caching
 - Query result caching
 - Cache invalidation rules
@@ -247,12 +268,14 @@ async function getSessionAppointments(sessionId: string): Promise<Appointment[]>
 ## Security Considerations
 
 ### 1. Data Access Control
+
 - Role-based access
 - Field-level security
 - Audit logging
 - Data encryption
 
 ### 2. Data Privacy
+
 - PHI handling
 - Data masking
 - Retention policies

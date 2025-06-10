@@ -4,13 +4,12 @@
 import '@testing-library/jest-dom';
 
 // Mock EnvDebugger BEFORE importing Dashboard to avoid import.meta parsing issues
-jest.mock('../EnvDebugger', () => {
-  return {
-    EnvDebugger: () => null,
-  };
-});
+jest.mock('../EnvDebugger', () => ({
+  __esModule: true,
+  default: () => null
+}));
 
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, jest, beforeEach, afterEach } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Dashboard from '../Dashboard';
 import { TestProviders } from '../../test/testHelpers';
@@ -72,11 +71,9 @@ jest.mock('../../utils/formatters', () => ({
     return '1/1/2023';
   },
   formatDOB: (dob: string) => {
-    if (typeof dob === 'string') {
-      const parts = dob.split('-');
-      if (parts.length === 3) {
-        return `${parts[1]}/${parts[2]}/${parts[0]}`;
-      }
+    const parts = dob.split('-');
+    if (parts.length === 3) {
+      return `${parts[1]}/${parts[2]}/${parts[0]}`;
     }
     return dob;
   }
@@ -417,9 +414,9 @@ describe('Dashboard', () => {
     const originalCreateElement = document.createElement;
     document.createElement = jest.fn(() => mockElement as unknown as HTMLAnchorElement);
     const originalAppendChild = document.body.appendChild;
-    document.body.appendChild = jest.fn<(node: Node) => Node>();
+    document.body.appendChild = jest.fn() as any;
     const originalRemoveChild = document.body.removeChild;
-    document.body.removeChild = jest.fn<(child: Node) => Node>();
+    document.body.removeChild = jest.fn() as any;
 
     // Click download button
     fireEvent.click(screen.getByText('Download'));

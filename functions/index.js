@@ -123,7 +123,7 @@ exports.purgeHealthCheck = functionsV1.pubsub
     console.log(`Running health check at ${now.toISOString()}`);
     
     try {
- const lastPurgeStatus = (await statusDoc.get()).data() ?? {};
+      const healthStatus = {
         timestamp: now,
         lastPurge: lastPurgeStatus,
         systemStatus: 'healthy',
@@ -138,7 +138,7 @@ exports.purgeHealthCheck = functionsV1.pubsub
       
       // Check if last purge was too long ago (more than 25 hours)
       if (lastPurgeStatus.timestamp) {
-        const hoursSinceLastPurge = (now - lastPurgeStatus.timestamp) / (1000 * 60 * 60);
+        const hoursSinceLastPurge = (now.getTime() - new Date(lastPurgeStatus.timestamp).getTime()) / (1000 * 60 * 60);
         if (hoursSinceLastPurge > 25) {
           healthStatus.warnings.push(`Last purge was ${hoursSinceLastPurge.toFixed(1)} hours ago`);
           healthStatus.systemStatus = 'warning';

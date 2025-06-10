@@ -131,6 +131,7 @@ try {
 ### Data Types
 
 #### TebraPatient
+
 ```typescript
 interface TebraPatient {
   PatientId: string;
@@ -151,13 +152,19 @@ interface TebraPatient {
     Provider: string;
     PolicyNumber: string;
     GroupNumber: string;
+
+
+
+
   };
   CreatedAt: string;
   UpdatedAt: string;
 }
+
 ```
 
 #### TebraAppointment
+
 ```typescript
 interface TebraAppointment {
   AppointmentId: string;
@@ -205,18 +212,21 @@ The integration is built with a modular architecture:
 ### Component Details
 
 #### TebraSoapClient
+
 - Handles SOAP API communication
 - Manages authentication
 - Implements retry logic
 - Handles SOAP envelope creation and parsing
 
 #### TebraRateLimiter
+
 - Implements token bucket algorithm
 - Configurable rate limits per method
 - Thread-safe implementation
 - Provides status monitoring
 
 #### TebraDataTransformer
+
 - Converts between SOAP and internal data formats
 - Handles date/time conversions
 - Validates data integrity
@@ -244,6 +254,7 @@ The integration is built with a modular architecture:
 ### Debugging
 
 Enable debug logging by setting the environment variable:
+
 ```bash
 DEBUG=tebra:* npm start
 ```

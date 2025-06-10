@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { WaitTimeDiagnostic } from '../WaitTimeDiagnostic';
 import { Patient, PatientApptStatus } from '../../types';
@@ -59,7 +58,12 @@ jest.mock('../../hooks/useTimeContext', () => ({
   })
 }));
 
-describe('WaitTimeDiagnostic Component', () => {
+describe('WaitTimeDiagnostic', () => {
+  it('renders without crashing', () => {
+    render(<WaitTimeDiagnostic />);
+    expect(screen.getByText('Wait Time Diagnostic')).toBeInTheDocument();
+  });
+
   beforeEach(() => {
     // Reset mocks before each test
     mockCurrentTime = new Date('2025-06-05T10:00:00');

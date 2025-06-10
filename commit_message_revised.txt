@@ -1,0 +1,25 @@
+feat: integrate Tebra EHR, enhance Auth0-Firebase bridge, and fix TypeScript errors
+
+This commit includes three major improvements and several bug fixes:
+
+1. Tebra EHR Integration with Firebase Functions
+   - Implemented server-side SOAP API communication with rate limiting
+   - Created client-side TebraApiService with graceful fallbacks
+   - Added scheduled synchronization for patient data
+   - Configured proper security measures for HIPAA compliance
+
+2. Auth0-Firebase Authentication Bridge Enhancements
+   - Added comprehensive testing for authentication flows
+   - Implemented token caching with expiration handling
+   - Added retry logic with exponential backoff
+   - Improved error handling and debugging capabilities
+
+3. Repository Maintenance
+   - Removed vendor directory from Git tracking (2,212 PHP files)
+   - Fixed TypeScript errors in Tebra integration tests
+   - Corrected function calls in TebraConnectionDebugger
+   - Fixed unused variables in test-firebase-connection.ts
+   - Added proper formatting to markdown documentation files
+
+These changes improve security, reliability, and maintainability while ensuring
+proper TypeScript type checking throughout the codebase.
