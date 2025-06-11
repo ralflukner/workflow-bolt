@@ -267,7 +267,10 @@ export class TebraApiService {
 
       // For HIPAA compliance, we need to ensure the user is authenticated
       // This will fail with 'unauthenticated' error if user is not properly signed in
-      const result = await this.tebraSyncTodaysSchedule({ date: syncDate });
+      // Use the specified date or today
+      const result = await this.tebraSyncTodaysSchedule({ 
+        date: syncDate
+      });
       const response = result.data as ApiResponse<unknown[]> & { message?: string };
 
       return {

@@ -160,28 +160,11 @@ exports.tebraGetAppointments = onCall({ cors: true }, async (request) => {
     // Get appointments from Tebra
     const appointments = await tebraProxyClient.getAppointments(targetDate, targetDate);
     
-    // Transform the results
-    const transformedAppointments = appointments.map(appointment => ({
-      AppointmentId: appointment.AppointmentId || appointment.Id || '',
-      PatientId: appointment.PatientId || appointment.patientId || '',
-      ProviderId: appointment.ProviderId || appointment.providerId || '',
-      AppointmentDate: appointment.Date || appointment.AppointmentDate || targetDate,
-      AppointmentTime: appointment.Time || appointment.AppointmentTime || '',
-      AppointmentType: appointment.Type || appointment.AppointmentType || 'Office Visit',
-      Status: appointment.Status || appointment.status || 'Scheduled'
-    }));
-    
-    return {
-      success: true,
-      data: transformedAppointments
-    };
+    // Return the appointments array directly
+    return appointments;
   } catch (error) {
     console.error('Failed to get appointments:', error);
-    return {
-      success: false,
-      message: error.message || 'Failed to get appointments',
-      data: []
-    };
+    throw new functions.https.HttpsError('internal', error.message || 'Failed to get appointments');
   }
 });
 
@@ -228,16 +211,17 @@ exports.tebraTestAppointments = onCall({ cors: true }, async (request) => {
   console.log('Testing Tebra appointments endpoint...');
   
   try {
-    const { date } = request.data || {};
-    const targetDate = date || '2025-06-11';
+    const { fromDate, toDate, date } = request.data || {};
+    const startDate = fromDate || date || '2025-06-10';
+    const endDate = toDate || date || '2025-06-11';
     
-    console.log('Fetching raw appointments for:', targetDate);
-    const response = await tebraProxyClient.getAppointments(targetDate, targetDate);
+    console.log(`Fetching raw appointments from ${startDate} to ${endDate}`);
+    const response = await tebraProxyClient.getAppointments(startDate, endDate);
     
     return {
       success: true,
       data: response,
-      message: `Raw Tebra response for ${targetDate}`
+      message: `Raw Tebra response for ${startDate} to ${endDate}`
     };
   } catch (error) {
     console.error('Test failed:', error);

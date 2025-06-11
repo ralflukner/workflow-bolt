@@ -6,6 +6,7 @@ import NewPatientForm from './NewPatientForm';
 import ImportSchedule from './ImportSchedule';
 import ImportJSON from './ImportJSON';
 import TebraIntegration from './TebraIntegrationNew';
+import MonitoringStatus from './MonitoringStatus';
 import AuthNav from './AuthNav';
 import { PlusCircle, FileDown, ChevronDown, Upload, X, Download, Bug } from 'lucide-react';
 import { usePatientContext } from '../hooks/usePatientContext';
@@ -446,6 +447,9 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="mt-4">
             <TebraIntegration />
+          </div>
+          <div className="mt-4">
+            <MonitoringStatus />
           </div>
         </div>
       </header>

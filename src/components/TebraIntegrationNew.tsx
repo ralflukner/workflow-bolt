@@ -125,6 +125,31 @@ const TebraIntegration: React.FC = () => {
     }
   };
 
+  const handleTestAppointments = async (date: string) => {
+    if (!isConnected) {
+      setStatusMessage('❌ Cannot test: Not connected to Tebra API');
+      return;
+    }
+
+    setIsLoading(true);
+    setStatusMessage(`Testing raw appointments for ${date}...`);
+
+    try {
+      const result = await tebraApiService.testAppointments(date);
+      console.log('Raw Tebra response:', result);
+      setStatusMessage(`✅ Test complete. Check console for raw data.`);
+      if (result.data && result.data.appointments) {
+        console.log('Appointments found:', result.data.appointments.length);
+        console.log('First appointment:', result.data.appointments[0]);
+      }
+    } catch (error) {
+      console.error('Test failed:', error);
+      setStatusMessage(`❌ Test failed: ${error}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleManualSync = async (specificDate?: string) => {
     if (!isConnected) {
       setStatusMessage('❌ Cannot sync: Not connected to Tebra API');
@@ -207,15 +232,19 @@ const TebraIntegration: React.FC = () => {
             aria-label="Manually sync today's schedule from Tebra EHR"
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Syncing...' : 'Sync Today (June 10)'}
+            {isLoading ? 'Syncing...' : `Sync Today (${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })})`}
           </button>
           <button
-            onClick={() => handleManualSync('2025-06-11')}
+            onClick={() => {
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              handleManualSync(tomorrow.toISOString().split('T')[0]);
+            }}
             disabled={isLoading || !isConnected}
             aria-label="Manually sync tomorrow's schedule from Tebra EHR"
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Syncing...' : 'Sync Tomorrow (June 11)'}
+            {isLoading ? 'Syncing...' : `Sync Tomorrow (${new Date(new Date().setDate(new Date().getDate() + 1)).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })})`}
           </button>
         </div>
       </div>
@@ -240,6 +269,15 @@ const TebraIntegration: React.FC = () => {
             className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Get Providers
+          </button>
+
+          <button
+            onClick={() => handleTestAppointments('2025-06-11')}
+            disabled={isLoading || !isConnected}
+            aria-label="Test raw appointment data for June 11"
+            className="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Test June 11 Raw Data
           </button>
         </div>
 

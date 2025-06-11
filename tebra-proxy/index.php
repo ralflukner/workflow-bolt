@@ -28,8 +28,10 @@ header('X-XSS-Protection: 1; mode=block');
 $allowed_origins = [
     'https://us-central1-luknerlumina-firebase.cloudfunctions.net',
     'https://luknerlumina-firebase.web.app',
-    'http://localhost:5001', // For development
-    'http://127.0.0.1:5001'  // For development
+    'http://localhost:5001', // For development (Firebase Functions)
+    'http://127.0.0.1:5001',  // For development (Firebase Functions)
+    'http://localhost:3000', // For development (Vite dev server)
+    'http://127.0.0.1:3000'  // For development (Vite dev server)
 ];
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -141,109 +143,217 @@ function checkRateLimit()
     file_put_contents($rate_limit_file, json_encode($data));
 }
 
+function getCacheKey($type, $params) {
+    return $type . '_' . md5(json_encode($params));
+}
+
+function getCachedData($cacheKey, $ttl = 300) {
+    $cacheFile = '/tmp/' . $cacheKey . '.cache';
+    if (file_exists($cacheFile)) {
+        $data = json_decode(file_get_contents($cacheFile), true);
+        if ($data && isset($data['timestamp']) && (time() - $data['timestamp']) < $ttl) {
+            return $data['data'];
+        }
+    }
+    return null;
+}
+
+function setCachedData($cacheKey, $data) {
+    $cacheFile = '/tmp/' . $cacheKey . '.cache';
+    $cacheData = [
+        'timestamp' => time(),
+        'data' => $data
+    ];
+    file_put_contents($cacheFile, json_encode($cacheData));
+}
+
+function getAppointmentsWithCache($request, $client, $fromDate, $toDate) {
+    $cacheKey = getCacheKey('appointments', ['fromDate' => $fromDate, 'toDate' => $toDate]);
+    
+    // Try to get from cache first
+    $cachedData = getCachedData($cacheKey, 300); // 5 minute cache
+    if ($cachedData !== null) {
+        logRequest('CACHE_HIT', "Serving appointments from cache for $fromDate to $toDate");
+        return [
+            'appointments' => $cachedData['appointments'],
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'security' => $cachedData['security'] ?? null,
+            'cached' => true,
+            'cache_timestamp' => $cachedData['cache_timestamp'] ?? null
+        ];
+    }
+    
+    // Cache miss - fetch from Tebra API
+    logRequest('CACHE_MISS', "Fetching appointments from Tebra API for $fromDate to $toDate");
+    
+    try {
+        $params = array('request' => $request);
+        $response = $client->GetAppointments($params);
+        
+        // Extract appointment data
+        $appointments = array();
+        if (isset($response->GetAppointmentsResult->Appointments->AppointmentData)) {
+            $appointmentData = $response->GetAppointmentsResult->Appointments->AppointmentData;
+            $appointments = is_array($appointmentData) ? $appointmentData : array($appointmentData);
+        }
+        
+        $result = [
+            'appointments' => $appointments,
+            'security' => $response->GetAppointmentsResult->SecurityResponse ?? null,
+            'cache_timestamp' => date('c')
+        ];
+        
+        // Cache the result
+        setCachedData($cacheKey, $result);
+        
+        return [
+            'appointments' => $appointments,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'security' => $result['security'],
+            'cached' => false,
+            'cache_timestamp' => $result['cache_timestamp']
+        ];
+        
+    } catch (Exception $e) {
+        logRequest('ERROR', 'Tebra API call failed: ' . $e->getMessage());
+        throw $e;
+    }
+}
+
 // Start request processing
 $start_time = microtime(true);
 
 // Apply security checks
-checkRateLimit();
-validateApiKey();
-
-// Configuration from environment variables
-$TEBRA_USERNAME = getenv('TEBRA_SOAP_USERNAME') ?: 'work-flow@luknerclinic.com';
-$TEBRA_PASSWORD = getenv('TEBRA_SOAP_PASSWORD') ?: 'Y2ISY-x@mf1B4renpKHV3w49';
-$TEBRA_CUSTKEY = getenv('TEBRA_SOAP_CUSTKEY') ?: 'j57wt68dc39q';
-$TEBRA_WSDL = getenv('TEBRA_SOAP_WSDL') ?: 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl';
-
-/**
- * Create Tebra SOAP client with proper authentication
- */
-function createTebraClient($wsdl, $username, $password, $customerKey)
-{
-    try {
-        $client = new SoapClient($wsdl, array(
-            'trace' => 1,
-            'exceptions' => true,
-            'cache_wsdl' => WSDL_CACHE_NONE,
-            'connection_timeout' => 30,
-            'user_agent' => 'LuknerClinic-TebraProxy/1.0 (HIPAA-Compliant)'
-        ));
-        return $client;
-    } catch (Exception $e) {
-        logRequest('ERROR', 'SOAP client creation failed: ' . $e->getMessage());
-        return array('error' => 'Failed to create SOAP client: ' . $e->getMessage());
-    }
-}
-
-/**
- * Create request header for Tebra API
- */
-function createRequestHeader($username, $password, $customerKey)
-{
-    return array(
-        'RequestHeader' => array(
-            'User' => $username,
-            'Password' => $password,
-            'CustomerKey' => $customerKey
-        )
-    );
-}
-
-/**
- * Send error response
- */
-function sendError($message, $code = 500)
-{
-    http_response_code($code);
-    $response = array(
-        'success' => false,
-        'error' => $message,
-        'timestamp' => date('c')
-    );
-    echo json_encode($response);
-    logRequest('ERROR', $message);
-    exit();
-}
-
-/**
- * Send success response
- */
-function sendSuccess($data)
-{
-    $response = array(
-        'success' => true,
-        'data' => $data,
-        'timestamp' => date('c')
-    );
-    echo json_encode($response);
-    logRequest('SUCCESS', 'Request completed');
-    exit();
-}
-
-// Parse request
-$method = $_SERVER['REQUEST_METHOD'];
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$pathParts = explode('/', trim($path, '/'));
-
-// Get the endpoint
-$endpoint = $pathParts[0] ?? '';
-
-// Handle different endpoints
 try {
-    $client = createTebraClient($TEBRA_WSDL, $TEBRA_USERNAME, $TEBRA_PASSWORD, $TEBRA_CUSTKEY);
-
-    if (is_array($client) && isset($client['error'])) {
-        sendError($client['error']);
-    }
-
+    // Validate API key
+    validateApiKey();
+    
+    // Check rate limit
+    checkRateLimit();
+    
+    // Get endpoint from URL
+    $pathParts = explode('/', trim($_SERVER['PATH_INFO'] ?? '', '/'));
+    $endpoint = $pathParts[0] ?? '';
+    $method = $_SERVER['REQUEST_METHOD'];
+    
+    // Create Tebra client
+    $client = createTebraClient(
+        $TEBRA_WSDL,
+        $TEBRA_USERNAME,
+        $TEBRA_PASSWORD,
+        $TEBRA_CUSTKEY
+    );
+    
+    // Route to appropriate endpoint
     switch ($endpoint) {
-        case 'test':
         case 'health':
-            // Health check endpoint
+            // Health check endpoint with environment diagnostics
+            $diagnostics = array(
+                'php_version' => PHP_VERSION,
+                'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown',
+                'server_name' => $_SERVER['SERVER_NAME'] ?? 'unknown',
+                'request_time' => $_SERVER['REQUEST_TIME'] ?? time(),
+                'memory_usage' => memory_get_usage(true),
+                'curl_version' => curl_version()['version'] ?? 'unknown'
+            );
+
+            // Add cache status to health check
+            $cacheStatus = array();
+            $today = date('Y-m-d');
+            $tomorrow = date('Y-m-d', strtotime('+1 day'));
+            
+            $todayCache = getCacheKey('appointments', ['fromDate' => $today, 'toDate' => $today]);
+            $tomorrowCache = getCacheKey('appointments', ['fromDate' => $tomorrow, 'toDate' => $tomorrow]);
+            
+            $cacheStatus['today_cached'] = getCachedData($todayCache) !== null;
+            $cacheStatus['tomorrow_cached'] = getCachedData($tomorrowCache) !== null;
+            
             sendSuccess(array(
                 'status' => 'healthy',
                 'message' => 'Tebra SOAP Proxy is running (HIPAA Compliant)',
                 'timestamp' => date('c'),
-                'version' => '1.0.0'
+                'version' => '1.0.0',
+                'cache_status' => $cacheStatus,
+                'diagnostics' => $diagnostics
+            ));
+            break;
+
+        case 'warm-cache':
+            // Warm cache for today and tomorrow - runs in background
+            if ($method !== 'POST') {
+                sendError('POST method required for cache warming', 405);
+            }
+            
+            $today = date('Y-m-d');
+            $tomorrow = date('Y-m-d', strtotime('+1 day'));
+            $warmed = array();
+            
+            // Warm today's cache
+            try {
+                $request = array(
+                    'RequestHeader' => array(
+                        'User' => $TEBRA_USERNAME,
+                        'Password' => $TEBRA_PASSWORD,
+                        'CustomerKey' => $TEBRA_CUSTKEY
+                    ),
+                    'Filter' => array(
+                        'StartDate' => date('n/j/Y', strtotime($today)) . ' 12:00:00 AM',
+                        'EndDate' => date('n/j/Y', strtotime($today)) . ' 11:59:59 PM',
+                        'PracticeID' => '1',
+                        'TimeZoneOffsetFromGMT' => '-6'
+                    ),
+                    'Fields' => array('ID' => true, 'PatientFullName' => true, 'StartDate' => true)
+                );
+                
+                $result = getAppointmentsWithCache($request, $client, $today, $today);
+                $warmed['today'] = count($result['appointments']);
+            } catch (Exception $e) {
+                $warmed['today_error'] = $e->getMessage();
+            }
+            
+            // Warm tomorrow's cache
+            try {
+                $request['Filter']['StartDate'] = date('n/j/Y', strtotime($tomorrow)) . ' 12:00:00 AM';
+                $request['Filter']['EndDate'] = date('n/j/Y', strtotime($tomorrow)) . ' 11:59:59 PM';
+                
+                $result = getAppointmentsWithCache($request, $client, $tomorrow, $tomorrow);
+                $warmed['tomorrow'] = count($result['appointments']);
+            } catch (Exception $e) {
+                $warmed['tomorrow_error'] = $e->getMessage();
+            }
+            
+            sendSuccess(array(
+                'message' => 'Cache warming completed',
+                'warmed' => $warmed,
+                'today' => $today,
+                'tomorrow' => $tomorrow
+            ));
+            break;
+
+        case 'ping':
+            // Test basic connectivity to Tebra WSDL endpoint
+            $ch = curl_init('https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl');
+            curl_setopt($ch, CURLOPT_NOBODY, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            $result = curl_exec($ch);
+            $err = curl_error($ch);
+            $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $info = curl_getinfo($ch);
+            curl_close($ch);
+
+            sendSuccess(array(
+                'curl_ok' => $result !== false,
+                'http_status' => $status,
+                'error' => $err,
+                'connect_time' => $info['connect_time'] ?? 0,
+                'total_time' => $info['total_time'] ?? 0,
+                'ssl_verify_result' => $info['ssl_verify_result'] ?? 'unknown',
+                'php_version' => phpversion(),
+                'openssl_version' => OPENSSL_VERSION_TEXT
             ));
             break;
 
@@ -276,13 +386,81 @@ try {
             $input = json_decode(file_get_contents('php://input'), true);
             $fromDate = validateInput($input['fromDate'] ?? date('Y-m-d'), 'date');
             $toDate = validateInput($input['toDate'] ?? date('Y-m-d'), 'date');
+            
+            // Validate 60-day limit for Tebra API
+            $daysDiff = abs((strtotime($toDate) - strtotime($fromDate)) / (60 * 60 * 24));
+            if ($daysDiff > 60) {
+                sendError('Date range cannot exceed 60 days (Tebra API limitation)', 400);
+            }
 
-            $request = createRequestHeader($TEBRA_USERNAME, $TEBRA_PASSWORD, $TEBRA_CUSTKEY);
-            $request['FromDate'] = $fromDate;
-            $request['ToDate'] = $toDate;
+            $request = array(
+                'RequestHeader' => array(
+                    'User' => $TEBRA_USERNAME,
+                    'Password' => $TEBRA_PASSWORD,
+                    'CustomerKey' => $TEBRA_CUSTKEY
+                ),
+                'Filter' => array(
+                    'StartDate' => date('n/j/Y', strtotime($fromDate)) . ' 12:00:00 AM',
+                    'EndDate' => date('n/j/Y', strtotime($toDate)) . ' 11:55:00 PM'
+                ),
+                'Fields' => array(
+                    'ID' => true,
+                    'CreatedDate' => true,
+                    'LastModifiedDate' => true,
+                    'PracticeName' => true,
+                    'Type' => true,
+                    'PatientID' => true,
+                    'PatientFullName' => true,
+                    'StartDate' => true,
+                    'EndDate' => true,
+                    'AppointmentReason1' => true,
+                    'Notes' => true,
+                    'PracticeID' => true,
+                    'ServiceLocationName' => true,
+                    'ResourceName1' => true,
+                    'ConfirmationStatus' => true,
+                    'AllDay' => true,
+                    'Recurring' => true
+                )
+            );
 
             $params = array('request' => $request);
-            $response = $client->GetAppointments($params);
+            
+            // Production logging (reduced verbosity)
+            $isDebugMode = (getenv('LOG_LEVEL') === 'debug');
+            
+            if ($isDebugMode) {
+                error_log('TEBRA_DEBUG: Request params: ' . json_encode($request));
+            }
+            
+            try {
+                $response = $client->GetAppointments($params);
+                
+                if ($isDebugMode) {
+                    // Capture raw SOAP XML for debugging (only in debug mode)
+                    $lastRequestXML = $client->__getLastRequest();
+                    $lastResponseXML = $client->__getLastResponse();
+                    
+                    error_log('TEBRA_DEBUG: Raw SOAP Request XML: ' . $lastRequestXML);
+                    error_log('TEBRA_DEBUG: Raw SOAP Response XML (first 500 chars): ' . substr($lastResponseXML, 0, 500));
+                }
+                
+                if ($response && isset($response->GetAppointmentsResult)) {
+                    if (isset($response->GetAppointmentsResult->ErrorResponse) && 
+                        $response->GetAppointmentsResult->ErrorResponse->IsError) {
+                        error_log('TEBRA_ERROR: ' . $response->GetAppointmentsResult->ErrorResponse->ErrorMessage);
+                    }
+                }
+                
+            } catch (SoapFault $fault) {
+                error_log('SOAP FAULT: ' . $fault->faultstring);
+                error_log('SOAP FAULT CODE: ' . $fault->faultcode);
+                error_log('SOAP FAULT DETAIL: ' . print_r($fault->detail, true));
+                sendError('SOAP Fault: ' . $fault->faultstring);
+            } catch (Exception $e) {
+                error_log('SOAP EXCEPTION: ' . $e->getMessage());
+                sendError('SOAP Exception: ' . $e->getMessage());
+            }
 
             // Extract appointment data
             $appointments = array();

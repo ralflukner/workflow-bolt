@@ -1,3 +1,5 @@
+const pLimit = require('p-limit');
+
 const tebraStatusToInternal = (raw) => {
   const key = raw.trim().toLowerCase();
   switch (key) {
@@ -31,19 +33,69 @@ const syncSchedule = async (
   dateOverride,
   uid = 'system',
 ) => {
-  const today = dateOverride ||
-    new Date(now().toLocaleString('en-US', { timeZone: timezone }))
+  // Support date ranges or single dates
+  let fromDate, toDate;
+  if (dateOverride) {
+    if (typeof dateOverride === 'object' && dateOverride.fromDate && dateOverride.toDate) {
+      fromDate = dateOverride.fromDate;
+      toDate = dateOverride.toDate;
+    } else if (typeof dateOverride === 'string') {
+      fromDate = toDate = dateOverride;
+    }
+  } else {
+    // Default to today
+    const today = new Date(now().toLocaleString('en-US', { timeZone: timezone }))
       .toISOString().split('T')[0];
+    fromDate = toDate = today;
+  }
 
-  logger.info('🔍 Syncing appointments for', today);
+  logger.info('🔍 Syncing appointments for date range:', { fromDate, toDate });
 
-  const appointments = await tebra.getAppointments(today, today);
-  logger.info('📋 Fetched appointments:', appointments.length);
+  // Add detailed debugging for the Tebra API call
+  logger.info('📞 Calling tebra.getAppointments with dates:', { fromDate, toDate });
+  const appointments = await tebra.getAppointments(fromDate, toDate);
+  
+  // Log the raw response details
+  logger.info('📋 Raw appointments response type:', typeof appointments);
+  logger.info('📋 Raw appointments response:', JSON.stringify(appointments, null, 2));
+  logger.info('📊 Array check - isArray:', Array.isArray(appointments));
+  logger.info('📊 Length/count:', appointments?.length || 'no length property');
 
-  if (!appointments.length) {
-    logger.warn('⚠️ No appointments found', { date: today });
+  // Handle different response structures
+  let appointmentsArray = appointments;
+  if (!Array.isArray(appointments)) {
+    logger.error('❌ Expected array but got:', typeof appointments);
+    logger.error('❌ Response content:', appointments);
+    
+    // Try to extract appointments from different possible structures
+    if (appointments && appointments.appointments) {
+      appointmentsArray = appointments.appointments;
+      logger.info('🔧 Found appointments in .appointments property');
+    } else if (appointments && appointments.data) {
+      appointmentsArray = appointments.data;
+      logger.info('🔧 Found appointments in .data property');
+    } else {
+      logger.error('❌ Cannot find appointments array in response');
+      return 0;
+    }
+  }
+  
+  if (!Array.isArray(appointmentsArray)) {
+    logger.error('❌ Still not an array after extraction:', typeof appointmentsArray);
     return 0;
   }
+
+  if (!appointmentsArray.length) {
+    logger.warn('⚠️ No appointments found in array', { 
+      fromDate, 
+      toDate,
+      arrayLength: appointmentsArray.length,
+      firstFewItems: appointmentsArray.slice(0, 3)
+    });
+    return 0;
+  }
+
+  logger.info('✅ Found appointments to process:', appointmentsArray.length);
 
   const providers = await tebra.getProviders();
   const providerMap = new Map(providers.map(p => [
@@ -52,10 +104,9 @@ const syncSchedule = async (
   logger.info('👥 Loaded providers:', providers.length);
 
   // Use bounded concurrency to avoid overwhelming the API
-  const pLimit = require('p-limit');
   const limit = pLimit(10); // limit concurrency to 10
 
-  const patientPromises = appointments.map(appt =>
+  const patientPromises = appointmentsArray.map(appt =>
     limit(async () => {
       try {
         const patientId = appt.PatientId || appt.patientId;
@@ -83,8 +134,8 @@ const syncSchedule = async (
   const patientResults = await Promise.all(patientPromises);
   const patients = patientResults.filter(Boolean);
 
-  await repo.save(today, patients, uid);
-  logger.info(`✅ Saved ${patients.length} patients for ${today}`);
+  await repo.save(fromDate, patients, uid);
+  logger.info(`✅ Saved ${patients.length} patients for ${fromDate} to ${toDate}`);
 
   return patients.length;
 };

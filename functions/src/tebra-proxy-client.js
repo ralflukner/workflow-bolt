@@ -51,22 +51,27 @@ if (this.proxyUrl) {
     }
 
     try {
-      console.log(`Making request to Tebra proxy: ${method} ${url}`);
+      console.log(`[TebraProxy] 🌐 Making request to Tebra proxy: ${method} ${url}`);
       if (data) {
-        console.log('Request data:', JSON.stringify(data));
+        console.log('[TebraProxy] 📤 Request data:', JSON.stringify(data));
       }
       const response = await fetch(url, options);
+      console.log(`[TebraProxy] 📡 HTTP Response status: ${response.status} ${response.statusText}`);
+      
       const result = await response.json();
-      console.log('Proxy response:', JSON.stringify(result, null, 2));
+      console.log('[TebraProxy] 📥 Full proxy response:', JSON.stringify(result, null, 2));
 
       if (!response.ok) {
+        console.error(`[TebraProxy] ❌ HTTP Error: ${response.status}`, result);
         throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       if (!result.success) {
+        console.error('[TebraProxy] ❌ Proxy reported failure:', result);
         throw new Error(result.error || 'Request failed');
       }
 
+      console.log('[TebraProxy] ✅ Returning result.data:', JSON.stringify(result.data, null, 2));
       return result.data;
 } catch (error) {
   console.error('Tebra proxy request failed:', error.message);
@@ -93,8 +98,15 @@ async getAppointments(fromDate, toDate) {
   if (new Date(fromDate) > new Date(toDate)) {
     throw new Error('fromDate must be before or equal to toDate');
   }
-   return this.makeRequest('appointments', 'POST', { fromDate, toDate });
- }
+  
+  console.log(`[TebraProxy] 🔍 Getting appointments for ${fromDate} to ${toDate}`);
+  const result = await this.makeRequest('appointments', 'POST', { fromDate, toDate });
+  console.log(`[TebraProxy] 📋 getAppointments result type:`, typeof result);
+  console.log(`[TebraProxy] 📋 getAppointments result:`, JSON.stringify(result, null, 2));
+  
+  // Return the appointments array directly since result is already the data object
+  return result.appointments || [];
+}
 
 async getPatientById(patientId) {
   if (!patientId) {

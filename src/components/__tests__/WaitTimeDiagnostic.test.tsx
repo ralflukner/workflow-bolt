@@ -61,7 +61,7 @@ jest.mock('../../hooks/useTimeContext', () => ({
 describe('WaitTimeDiagnostic', () => {
   it('renders without crashing', () => {
     render(<WaitTimeDiagnostic />);
-    expect(screen.getByText('Wait Time Diagnostic')).toBeInTheDocument();
+    expect(screen.getByText('⏱️ Wait Time Diagnostics')).toBeInTheDocument();
   });
 
   beforeEach(() => {

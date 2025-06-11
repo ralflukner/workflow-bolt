@@ -8,17 +8,29 @@ const tebraSyncTodaysSchedule = onCall({ cors: true }, async (req) => {
   try {
     if (!req.auth) throw new HttpsError('unauthenticated', 'Authentication required');
 
-    // Date validation
-    const date = req.data?.date;
-    if (date !== undefined) {
-      // Only allow YYYY-MM-DD (ISO-8601 date, no time)
-      const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (typeof date !== 'string' || !isoDateRegex.test(date)) {
+    // Date validation - support both single date and date range
+    const { date, fromDate, toDate } = req.data || {};
+    const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    
+    let dateParam;
+    if (fromDate && toDate) {
+      // Date range mode
+      if (!isoDateRegex.test(fromDate) || !isoDateRegex.test(toDate)) {
         throw new HttpsError(
           'invalid-argument',
-          "If provided, 'date' must be a string in YYYY-MM-DD (ISO-8601) format, e.g. '2024-06-12'."
+          "Both 'fromDate' and 'toDate' must be strings in YYYY-MM-DD format."
         );
       }
+      dateParam = { fromDate, toDate };
+    } else if (date) {
+      // Single date mode
+      if (!isoDateRegex.test(date)) {
+        throw new HttpsError(
+          'invalid-argument',
+          "'date' must be a string in YYYY-MM-DD format."
+        );
+      }
+      dateParam = date;
     }
 
     const count = await syncSchedule(
@@ -29,7 +41,7 @@ const tebraSyncTodaysSchedule = onCall({ cors: true }, async (req) => {
         now: () => new Date(),
         timezone: 'America/Chicago',
       },
-      date,
+      dateParam,
       req.auth.uid,
     );
     return { success: true, imported: count, message: `Successfully synced ${count} appointments` };
