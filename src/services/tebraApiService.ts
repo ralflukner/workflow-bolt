@@ -57,6 +57,7 @@ const callableWrapper = {
   tebraCreateAppointment: createCallable('tebraCreateAppointment'),
   tebraUpdateAppointment: createCallable('tebraUpdateAppointment'),
   tebraSyncTodaysSchedule: createCallable('tebraSyncTodaysSchedule'),
+  tebraTestAppointments: createCallable('tebraTestAppointments'),
 };
 
 // Define types for Tebra data
@@ -120,6 +121,7 @@ export class TebraApiService {
   private tebraCreateAppointment = callableWrapper.tebraCreateAppointment;
   private tebraUpdateAppointment = callableWrapper.tebraUpdateAppointment;
   private tebraSyncTodaysSchedule = callableWrapper.tebraSyncTodaysSchedule;
+  private tebraTestAppointments = callableWrapper.tebraTestAppointments;
 
   /**
    * Test connection to Tebra API
@@ -247,12 +249,13 @@ export class TebraApiService {
   }
 
   /**
-   * Sync today's schedule from Tebra
+   * Sync schedule from Tebra for a specific date or today
    * HIPAA Compliant - Requires proper authentication
    */
-  async syncTodaysSchedule(): Promise<SyncResponse> {
+  async syncTodaysSchedule(date?: string): Promise<SyncResponse> {
     try {
-      console.log('Syncing today\'s schedule from Tebra...');
+      const syncDate = date || new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format
+      console.log(`Syncing schedule from Tebra for date: ${syncDate}`);
 
       // Ensure Firebase Auth is available and user is signed in
       if (!functionsInstance) {
@@ -264,7 +267,7 @@ export class TebraApiService {
 
       // For HIPAA compliance, we need to ensure the user is authenticated
       // This will fail with 'unauthenticated' error if user is not properly signed in
-      const result = await this.tebraSyncTodaysSchedule();
+      const result = await this.tebraSyncTodaysSchedule({ date: syncDate });
       const response = result.data as ApiResponse<unknown[]> & { message?: string };
 
       return {

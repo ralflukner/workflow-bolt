@@ -218,6 +218,31 @@ exports.tebraGetProviders = onCall({ cors: true }, async (request) => {
   }
 });
 
+// Test Tebra appointments endpoint
+exports.tebraTestAppointments = onCall({ cors: true }, async (request) => {
+  console.log('Testing Tebra appointments endpoint...');
+  
+  try {
+    const { date } = request.data || {};
+    const targetDate = date || '2025-06-11';
+    
+    console.log('Fetching raw appointments for:', targetDate);
+    const response = await tebraProxyClient.getAppointments(targetDate, targetDate);
+    
+    return {
+      success: true,
+      data: response,
+      message: `Raw Tebra response for ${targetDate}`
+    };
+  } catch (error) {
+    console.error('Test failed:', error);
+    return {
+      success: false,
+      message: error.message || 'Test failed'
+    };
+  }
+});
+
 // Create appointment
 exports.tebraCreateAppointment = onCall({ cors: true }, async (request) => {
   console.log('Creating appointment:', request.data);
@@ -272,7 +297,7 @@ exports.tebraUpdateAppointment = onCall({ cors: true }, async (request) => {
 
 // Sync today's schedule
 exports.tebraSyncTodaysSchedule = onCall({ cors: true }, async (request) => {
-  console.log('Syncing today\'s schedule...');
+  console.log('Syncing schedule...');
   
   try {
     // Verify user is authenticated for HIPAA compliance
@@ -280,28 +305,46 @@ exports.tebraSyncTodaysSchedule = onCall({ cors: true }, async (request) => {
       throw new Error('Authentication required for patient data access');
     }
     
-    const today = new Date().toISOString().split('T')[0];
-    console.log('Fetching appointments for date:', today);
+    // Check if a specific date was provided, otherwise use today in Central Time
+    let targetDate;
+    if (request.data && request.data.date) {
+      targetDate = request.data.date;
+      console.log('Syncing appointments for specific date:', targetDate);
+    } else {
+      // Get current date in Central Time (Texas)
+      const now = new Date();
+      const centralTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Chicago"}));
+      targetDate = centralTime.toISOString().split('T')[0];
+      console.log('Current time in CT:', centralTime.toLocaleString());
+      console.log('Syncing today\'s appointments for date:', targetDate);
+    }
+    
+    const today = targetDate;
     
     // Get appointments from Tebra
-    const appointmentsResponse = await tebraProxyClient.getAppointments(today, today);
-    const appointments = appointmentsResponse.appointments || [];
+    console.log(`🔍 Fetching appointments for date: ${today}`);
+    const appointments = await tebraProxyClient.getAppointments(today, today);
+    console.log('📋 Raw appointments response type:', typeof appointments);
+    console.log('📋 Raw appointments response:', JSON.stringify(appointments, null, 2));
+    console.log(`📊 Found ${Array.isArray(appointments) ? appointments.length : 'non-array'} appointments for ${today}`);
     
     // Get providers to enrich appointment data
-    const providersResponse = await tebraProxyClient.getProviders();
-    const providers = providersResponse.providers || [];
+    const providers = await tebraProxyClient.getProviders();
+    console.log('Raw providers response:', JSON.stringify(providers, null, 2));
+    console.log(`Found ${providers.length} providers`);
     const providerMap = new Map(providers.map(p => [
-      p.ProviderId || p.Id, 
+      p.ProviderId || p.ID || p.Id, 
       { 
-        name: `${p.Title || 'Dr.'} ${p.FirstName} ${p.LastName}`,
+        name: `${p.Degree || p.Title || 'Dr.'} ${p.FirstName} ${p.LastName}`,
         firstName: p.FirstName,
         lastName: p.LastName,
-        title: p.Title || 'Dr.'
+        title: p.Degree || p.Title || 'Dr.'
       }
     ]));
     
     // Transform appointments to Patient format for the dashboard
     const transformedPatients = [];
+    console.log(`🔄 Starting transformation of ${Array.isArray(appointments) ? appointments.length : 0} appointments`);
     
     for (const appointment of appointments) {
       try {
@@ -367,7 +410,8 @@ exports.tebraSyncTodaysSchedule = onCall({ cors: true }, async (request) => {
       syncedBy: request.auth.uid
     }, { merge: true });
     
-    console.log(`Successfully synced ${transformedPatients.length} patients for ${today}`);
+    console.log(`✅ Successfully synced ${transformedPatients.length} patients for ${today}`);
+    console.log('📋 Final transformed patients:', JSON.stringify(transformedPatients, null, 2));
     
     return {
       success: true,

@@ -125,7 +125,7 @@ const TebraIntegration: React.FC = () => {
     }
   };
 
-  const handleManualSync = async () => {
+  const handleManualSync = async (specificDate?: string) => {
     if (!isConnected) {
       setStatusMessage('❌ Cannot sync: Not connected to Tebra API');
       return;
@@ -142,19 +142,20 @@ const TebraIntegration: React.FC = () => {
         return;
       }
 
-      setStatusMessage('Manually syncing today\'s schedule...');
-      const result = await tebraApiService.syncTodaysSchedule();
+      const dateToSync = specificDate || new Date().toLocaleDateString('en-CA');
+      setStatusMessage(`Syncing schedule for ${dateToSync}...`);
+      const result = await tebraApiService.syncTodaysSchedule(specificDate);
       if (result.success) {
         const patientCount = result.patients?.length || 0;
-        setStatusMessage(`✅ Manual sync completed. Found ${patientCount} appointments for today.`);
+        setStatusMessage(`✅ Sync completed. Found ${patientCount} appointments for ${dateToSync}.`);
         setLastSyncResult({
           success: true,
-          message: 'Manual sync',
+          message: `Synced ${dateToSync}`,
           patientCount,
           lastSync: new Date()
         });
       } else {
-        setStatusMessage(`❌ Manual sync failed: ${result.message}`);
+        setStatusMessage(`❌ Sync failed: ${result.message}`);
       }
     } catch (error) {
       console.error('Manual sync failed:', error);
@@ -199,14 +200,24 @@ const TebraIntegration: React.FC = () => {
       {/* Manual Sync */}
       <div className="border-t border-gray-700 pt-4 mb-4">
         <h3 className="text-lg font-medium text-white mb-2">Manual Sync</h3>
-        <button
-          onClick={handleManualSync}
-          disabled={isLoading || !isConnected}
-          aria-label="Manually sync today's schedule from Tebra EHR"
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? 'Syncing...' : 'Sync Today\'s Schedule'}
-        </button>
+        <div className="flex space-x-2 flex-wrap gap-2">
+          <button
+            onClick={() => handleManualSync()}
+            disabled={isLoading || !isConnected}
+            aria-label="Manually sync today's schedule from Tebra EHR"
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Syncing...' : 'Sync Today (June 10)'}
+          </button>
+          <button
+            onClick={() => handleManualSync('2025-06-11')}
+            disabled={isLoading || !isConnected}
+            aria-label="Manually sync tomorrow's schedule from Tebra EHR"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Syncing...' : 'Sync Tomorrow (June 11)'}
+          </button>
+        </div>
       </div>
 
       {/* Test Operations & Last Sync Result */}

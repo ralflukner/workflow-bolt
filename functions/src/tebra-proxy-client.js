@@ -10,9 +10,21 @@ class TebraProxyClient {
   async initialize() {
     if (this.initialized) return;
 
-    // Use environment variables for Firebase Functions v2
-    this.proxyUrl = process.env.TEBRA_PROXY_URL;
-    this.proxyApiKey = process.env.TEBRA_PROXY_API_KEY;
+// Use environment variables for Firebase Functions v2
+ this.proxyUrl = process.env.TEBRA_PROXY_URL;
+ this.proxyApiKey = process.env.TEBRA_PROXY_API_KEY;
+
+// Validate proxy URL
+if (this.proxyUrl) {
+  try {
+    const url = new URL(this.proxyUrl);
+    if (url.protocol !== 'https:') {
+      throw new Error('Tebra proxy URL must use HTTPS');
+    }
+  } catch (error) {
+    throw new Error('Invalid Tebra proxy URL format');
+  }
+}
 
     if (!this.proxyUrl || !this.proxyApiKey) {
       throw new Error('Missing Tebra proxy configuration in environment variables');
@@ -40,8 +52,12 @@ class TebraProxyClient {
 
     try {
       console.log(`Making request to Tebra proxy: ${method} ${url}`);
+      if (data) {
+        console.log('Request data:', JSON.stringify(data));
+      }
       const response = await fetch(url, options);
       const result = await response.json();
+      console.log('Proxy response:', JSON.stringify(result, null, 2));
 
       if (!response.ok) {
         throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
@@ -52,10 +68,11 @@ class TebraProxyClient {
       }
 
       return result.data;
-    } catch (error) {
-      console.error('Tebra proxy request failed:', error);
-      throw error;
-    }
+} catch (error) {
+  console.error('Tebra proxy request failed:', error.message);
+  // Throw a sanitized error to prevent information leakage
+  throw new Error(`Tebra API request failed: ${error.message}`);
+ }
   }
 
   async testConnection() {
@@ -68,14 +85,26 @@ class TebraProxyClient {
     }
   }
 
-  async getAppointments(fromDate, toDate) {
-    return this.makeRequest('appointments', 'POST', { fromDate, toDate });
+async getAppointments(fromDate, toDate) {
+  // Validate date parameters
+  if (!fromDate || !toDate) {
+    throw new Error('Both fromDate and toDate are required');
   }
+  if (new Date(fromDate) > new Date(toDate)) {
+    throw new Error('fromDate must be before or equal to toDate');
+  }
+   return this.makeRequest('appointments', 'POST', { fromDate, toDate });
+ }
 
-  async getPatientById(patientId) {
-    const result = await this.makeRequest(`patients/${patientId}`);
-    return result.patient;
+async getPatientById(patientId) {
+  if (!patientId) {
+    throw new Error('Patient ID is required');
   }
+  // Sanitize patientId to prevent injection
+  const sanitizedId = String(patientId).replace(/[^a-zA-Z0-9-]/g, '');
+  const result = await this.makeRequest(`patients/${sanitizedId}`);
+   return result.patient;
+ }
 
   async searchPatients(searchCriteria) {
     const result = await this.makeRequest('patients', 'POST', searchCriteria);
