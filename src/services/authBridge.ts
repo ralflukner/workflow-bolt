@@ -350,6 +350,7 @@ export class AuthBridge {
       this.logDebug('🔐 Starting HIPAA-compliant authentication process');
       
       const firebaseToken = await this.exchangeTokens(auth0Token);
+      
       await this.withRetry(async () => {
         if (!auth) throw new Error('Firebase Auth not available');
         await signInWithCustomToken(auth, firebaseToken);

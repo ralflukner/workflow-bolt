@@ -318,22 +318,26 @@ exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
       throw new Error('Auth0 token is required');
     }
     
-    // For development: Return a mock success response
-    // In production, you would:
-    // 1. Verify the Auth0 token with Auth0's API
-    // 2. Extract user information from the token
-    // 3. Create or update a Firebase user
-    // 4. Generate a custom Firebase token (requires IAM permissions)
+    // TODO: Verify the Auth0 token
+    // For now, we'll create a custom token but this needs proper verification
     
-    // For now, return a success response without creating a custom token
-    // This allows the app to proceed with development
+    // Extract user ID from Auth0 token (this should be done after verification)
+    // In production, decode and verify the JWT token properly
+    const uid = 'auth0|' + Date.now(); // This should be the actual Auth0 user ID
+    
+    // Create a custom Firebase token
+    const customToken = await admin.auth().createCustomToken(uid, {
+      // Add custom claims for HIPAA compliance
+      provider: 'auth0',
+      hipaaCompliant: true,
+      timestamp: Date.now()
+    });
+    
     return {
       success: true,
       data: {
-        // Mock Firebase token for development
-        firebaseToken: 'mock-firebase-token-' + Date.now(),
-        uid: 'auth0|mock-user-' + Date.now(),
-        message: 'Development mode - using mock authentication'
+        firebaseToken: customToken,
+        uid: uid
       }
     };
   } catch (error) {

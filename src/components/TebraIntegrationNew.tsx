@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { tebraApiService } from '../services/tebraApiService';
-import { TebraConnectionDebugger } from './TebraConnectionDebugger';
+import { TebraConnectionDebuggerSimple } from './TebraConnectionDebuggerSimple';
 import { doc, onSnapshot, getFirestore } from 'firebase/firestore';
 import { useFirebaseAuth } from '../services/authBridge';
 
@@ -192,7 +192,7 @@ const TebraIntegration: React.FC = () => {
         </button>
 
         <div className="mt-2">
-          <TebraConnectionDebugger />
+          <TebraConnectionDebuggerSimple />
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { tebraApiService } from '../services/tebraApiService';
 import { app, isFirebaseConfigured } from '../config/firebase';
 import { getFunctions } from 'firebase/functions';
@@ -24,10 +24,18 @@ export const TebraConnectionDebugger: React.FC = () => {
     functionsInstance: false,
     envVarsLoaded: [],
     missingEnvVars: [],
-    connectionTest: { status: 'pending' }
+    connectionTest: { status: 'pending' as const }  // Note: this should be 'idle' or undefined initially
   });
 
   const [showDebug, setShowDebug] = useState(false);
+
+  // Debug effect to monitor state changes
+  useEffect(() => {
+    console.log('TebraConnectionDebugger state updated:', {
+      connectionTestStatus: debugInfo.connectionTest.status,
+      fullDebugInfo: debugInfo
+    });
+  }, [debugInfo]);
 
   useEffect(() => {
     const checkEnvironment = () => {
@@ -57,34 +65,52 @@ export const TebraConnectionDebugger: React.FC = () => {
   }, []);
 
   const testConnection = async () => {
+    console.log('TebraConnectionDebugger: Starting test connection');
+    
+    // First, let's test if state updates work at all
     setDebugInfo(prev => ({
       ...prev,
       connectionTest: { status: 'pending' }
     }));
 
+    // Add a small delay to ensure the pending state renders
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     const startTime = Date.now();
     try {
       const result = await tebraApiService.testConnection();
       const duration = Date.now() - startTime;
+      console.log('TebraConnectionDebugger: Test result:', result, 'Duration:', duration);
 
-      setDebugInfo(prev => ({
-        ...prev,
-        connectionTest: {
-          status: result ? 'success' : 'failed',
-          duration,
-          error: result ? undefined : 'Connection returned false'
-        }
-      }));
+      // Force a complete new object to ensure React detects the change
+      setDebugInfo(prev => {
+        const newState = {
+          ...prev,
+          connectionTest: {
+            status: result ? 'success' : 'failed',
+            duration,
+            error: result ? undefined : 'Connection returned false'
+          }
+        };
+        console.log('Setting new state:', newState);
+        return newState;
+      });
     } catch (error) {
       const duration = Date.now() - startTime;
-      setDebugInfo(prev => ({
-        ...prev,
-        connectionTest: {
-          status: 'failed',
-          duration,
-          error: error instanceof Error ? error.message : String(error)
-        }
-      }));
+      console.error('TebraConnectionDebugger: Test failed:', error);
+      
+      setDebugInfo(prev => {
+        const newState = {
+          ...prev,
+          connectionTest: {
+            status: 'failed',
+            duration,
+            error: error instanceof Error ? error.message : String(error)
+          }
+        };
+        console.log('Setting error state:', newState);
+        return newState;
+      });
     }
   };
 
@@ -158,6 +184,7 @@ export const TebraConnectionDebugger: React.FC = () => {
           </button>
 
           <div className="space-y-1">
+            {console.log('Rendering connection test status:', debugInfo.connectionTest)}
             <div className={`flex items-center gap-2 ${
               debugInfo.connectionTest.status === 'success' ? 'text-green-400' :
               debugInfo.connectionTest.status === 'failed' ? 'text-red-400' :
