@@ -4,6 +4,7 @@ const { onCall } = require('firebase-functions/v2/https');
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
+const { tebraProxyClient } = require('./src/tebra-proxy-client');
 
 // Initialize Firebase Admin (avoid duplicate app error)
 if (!admin.apps.length) {
@@ -59,11 +60,12 @@ exports.tebraTestConnection = onCall({ cors: true }, async (request) => {
   console.log('Testing Tebra connection...');
   
   try {
-    // For now, return a simple success response
-    // In production, this would actually test the Tebra API connection
+    // Test actual Tebra API connection
+    const connected = await tebraProxyClient.testConnection();
+    
     return { 
-      success: true, 
-      message: 'Tebra API connection test successful',
+      success: connected, 
+      message: connected ? 'Tebra API connection test successful' : 'Tebra API connection failed',
       timestamp: new Date().toISOString()
     };
   } catch (error) {
@@ -83,17 +85,26 @@ exports.tebraGetPatient = onCall({ cors: true }, async (request) => {
   try {
     const { patientId } = request.data;
     
-    // Mock response for now
-    // In production, this would call the actual Tebra API
+    // Get actual patient data from Tebra
+    const patientData = await tebraProxyClient.getPatientById(patientId);
+    
+    if (!patientData) {
+      return {
+        success: false,
+        message: 'Patient not found'
+      };
+    }
+    
+    // Transform the data to our expected format
     return {
       success: true,
       data: {
-        PatientId: patientId,
-        FirstName: 'Test',
-        LastName: 'Patient',
-        DateOfBirth: '1990-01-01',
-        Phone: '555-0123',
-        Email: 'test@example.com'
+        PatientId: patientData.PatientId || patientData.Id || patientId,
+        FirstName: patientData.FirstName || '',
+        LastName: patientData.LastName || '',
+        DateOfBirth: patientData.DateOfBirth || patientData.DOB || '',
+        Phone: patientData.Phone || patientData.PhoneNumber || '',
+        Email: patientData.Email || patientData.EmailAddress || ''
       }
     };
   } catch (error) {
@@ -112,28 +123,22 @@ exports.tebraSearchPatients = onCall({ cors: true }, async (request) => {
   try {
     const { searchCriteria } = request.data;
     
-    // Mock response for now
-    // In production, this would call the actual Tebra API
+    // Search for patients using Tebra API
+    const patients = await tebraProxyClient.searchPatients(searchCriteria.lastName || '');
+    
+    // Transform the results
+    const transformedPatients = patients.map(patient => ({
+      PatientId: patient.PatientId || patient.Id || '',
+      FirstName: patient.FirstName || '',
+      LastName: patient.LastName || '',
+      DateOfBirth: patient.DateOfBirth || patient.DOB || '',
+      Phone: patient.Phone || patient.PhoneNumber || '',
+      Email: patient.Email || patient.EmailAddress || ''
+    }));
+    
     return {
       success: true,
-      data: [
-        {
-          PatientId: '123',
-          FirstName: 'John',
-          LastName: searchCriteria.lastName || 'Doe',
-          DateOfBirth: '1985-05-15',
-          Phone: '555-0123',
-          Email: 'john.doe@example.com'
-        },
-        {
-          PatientId: '124',
-          FirstName: 'Jane',
-          LastName: searchCriteria.lastName || 'Doe',
-          DateOfBirth: '1990-08-22',
-          Phone: '555-0124',
-          Email: 'jane.doe@example.com'
-        }
-      ]
+      data: transformedPatients
     };
   } catch (error) {
     console.error('Failed to search patients:', error);
@@ -150,24 +155,26 @@ exports.tebraGetAppointments = onCall({ cors: true }, async (request) => {
   console.log('Getting appointments:', request.data);
   
   try {
-    const { providerId, locationId, startDate, endDate } = request.data;
+    const { date } = request.data;
+    const targetDate = date || new Date().toISOString().split('T')[0];
     
-    // Mock response for now
-    // In production, this would call the actual Tebra API
+    // Get appointments from Tebra
+    const appointments = await tebraProxyClient.getAppointments(targetDate, targetDate);
+    
+    // Transform the results
+    const transformedAppointments = appointments.map(appointment => ({
+      AppointmentId: appointment.AppointmentId || appointment.Id || '',
+      PatientId: appointment.PatientId || appointment.patientId || '',
+      ProviderId: appointment.ProviderId || appointment.providerId || '',
+      AppointmentDate: appointment.Date || appointment.AppointmentDate || targetDate,
+      AppointmentTime: appointment.Time || appointment.AppointmentTime || '',
+      AppointmentType: appointment.Type || appointment.AppointmentType || 'Office Visit',
+      Status: appointment.Status || appointment.status || 'Scheduled'
+    }));
+    
     return {
       success: true,
-      data: [
-        {
-          AppointmentId: 'APT001',
-          PatientId: '123',
-          ProviderId: providerId,
-          LocationId: locationId,
-          StartDateTime: startDate || new Date().toISOString(),
-          EndDateTime: endDate || new Date().toISOString(),
-          Status: 'Scheduled',
-          Type: 'Follow-up'
-        }
-      ]
+      data: transformedAppointments
     };
   } catch (error) {
     console.error('Failed to get appointments:', error);
@@ -184,26 +191,22 @@ exports.tebraGetProviders = onCall({ cors: true }, async (request) => {
   console.log('Getting providers...');
   
   try {
-    // Mock response for now
-    // In production, this would call the actual Tebra API
+    // Get actual providers from Tebra
+    const providers = await tebraProxyClient.getProviders();
+    
+    // Transform the results
+    const transformedProviders = providers.map(provider => ({
+      ProviderId: provider.ProviderId || provider.Id || '',
+      FirstName: provider.FirstName || '',
+      LastName: provider.LastName || '',
+      Title: provider.Title || 'Dr.',
+      Specialty: provider.Specialty || '',
+      Email: provider.Email || ''
+    }));
+    
     return {
       success: true,
-      data: [
-        {
-          ProviderId: 'PROV001',
-          FirstName: 'Dr. Sarah',
-          LastName: 'Johnson',
-          Specialty: 'General Practice',
-          Email: 'sarah.johnson@clinic.com'
-        },
-        {
-          ProviderId: 'PROV002',
-          FirstName: 'Dr. Michael',
-          LastName: 'Chen',
-          Specialty: 'Cardiology',
-          Email: 'michael.chen@clinic.com'
-        }
-      ]
+      data: transformedProviders
     };
   } catch (error) {
     console.error('Failed to get providers:', error);
@@ -272,34 +275,104 @@ exports.tebraSyncTodaysSchedule = onCall({ cors: true }, async (request) => {
   console.log('Syncing today\'s schedule...');
   
   try {
-    // Mock response for now
-    // In production, this would call the actual Tebra API
+    // Verify user is authenticated for HIPAA compliance
+    if (!request.auth) {
+      throw new Error('Authentication required for patient data access');
+    }
+    
     const today = new Date().toISOString().split('T')[0];
+    console.log('Fetching appointments for date:', today);
+    
+    // Get appointments from Tebra
+    const appointmentsResponse = await tebraProxyClient.getAppointments(today, today);
+    const appointments = appointmentsResponse.appointments || [];
+    
+    // Get providers to enrich appointment data
+    const providersResponse = await tebraProxyClient.getProviders();
+    const providers = providersResponse.providers || [];
+    const providerMap = new Map(providers.map(p => [
+      p.ProviderId || p.Id, 
+      { 
+        name: `${p.Title || 'Dr.'} ${p.FirstName} ${p.LastName}`,
+        firstName: p.FirstName,
+        lastName: p.LastName,
+        title: p.Title || 'Dr.'
+      }
+    ]));
+    
+    // Transform appointments to Patient format for the dashboard
+    const transformedPatients = [];
+    
+    for (const appointment of appointments) {
+      try {
+        // Get patient details
+        const patientId = appointment.PatientId || appointment.patientId;
+        if (!patientId) continue;
+        
+        const patientData = await tebraProxyClient.getPatientById(patientId);
+        if (!patientData) continue;
+        
+        // Parse appointment time
+        const appointmentDateTime = appointment.StartTime || 
+                                  appointment.AppointmentTime || 
+                                  `${appointment.Date || appointment.AppointmentDate} ${appointment.Time || ''}`;
+        
+        // Get provider info
+        const providerId = appointment.ProviderId || appointment.providerId;
+        const provider = providerMap.get(providerId);
+        
+        // Map Tebra status to our internal status
+        let status = 'scheduled';
+        const tebraStatus = (appointment.Status || appointment.status || '').toLowerCase();
+        if (tebraStatus === 'confirmed') {
+          status = 'Confirmed';
+        } else if (tebraStatus === 'cancelled') {
+          status = 'Cancelled';
+        } else if (tebraStatus === 'rescheduled') {
+          status = 'Rescheduled';
+        } else if (tebraStatus === 'no show') {
+          status = 'No Show';
+        }
+        
+        // Create patient object
+        const patient = {
+          id: patientData.PatientId || patientData.Id || patientId,
+          name: `${patientData.FirstName || ''} ${patientData.LastName || ''}`.trim(),
+          dob: patientData.DateOfBirth || patientData.DOB || '',
+          appointmentTime: appointmentDateTime,
+          appointmentType: appointment.Type || appointment.AppointmentType || 'Office Visit',
+          provider: provider ? provider.name : 'Unknown Provider',
+          status: status,
+          checkInTime: undefined,
+          room: undefined,
+          // Additional fields for dashboard
+          phone: patientData.Phone || patientData.PhoneNumber || '',
+          email: patientData.Email || patientData.EmailAddress || ''
+        };
+        
+        transformedPatients.push(patient);
+        
+      } catch (patientError) {
+        console.error('Error processing patient:', patientError);
+        // Continue with other patients
+      }
+    }
+    
+    // Store in Firestore for persistence
+    const sessionRef = db.collection('daily_sessions').doc(today);
+    await sessionRef.set({
+      date: today,
+      patients: transformedPatients,
+      lastSync: admin.firestore.FieldValue.serverTimestamp(),
+      syncedBy: request.auth.uid
+    }, { merge: true });
+    
+    console.log(`Successfully synced ${transformedPatients.length} patients for ${today}`);
     
     return {
       success: true,
-      data: {
-        date: today,
-        appointments: [
-          {
-            AppointmentId: 'APT001',
-            PatientId: '123',
-            PatientName: 'John Doe',
-            Time: '09:00 AM',
-            Type: 'Check-up',
-            Status: 'Scheduled'
-          },
-          {
-            AppointmentId: 'APT002',
-            PatientId: '124',
-            PatientName: 'Jane Doe',
-            Time: '10:30 AM',
-            Type: 'Follow-up',
-            Status: 'Scheduled'
-          }
-        ],
-        syncedAt: new Date().toISOString()
-      }
+      data: transformedPatients,
+      message: `Successfully synced ${transformedPatients.length} appointments`
     };
   } catch (error) {
     console.error('Failed to sync schedule:', error);

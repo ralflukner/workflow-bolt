@@ -1,0 +1,1230 @@
+FHIR API User Guide
+Version 1.0
+
+
+
+Table of Contents
+Table of Contents
+
+General
+
+Getting Started
+   Terms & Conditions
+   Fees
+
+Registration
+   Patients
+   Developer
+       Creating an appSphere account
+       Creating a developer account
+       Registering an App
+
+Technical Documentation
+   System Requirements
+   Authentication
+              Patient User Access
+              Clinician User Access
+              System or Bulk Data Access
+   Function Names & Resources
+   API Information
+       Patient
+       AllergyIntolerance
+       CarePlan
+       CareTeam
+       Condition
+       Diagnostic Report for Lab Results
+       Diagnostic Report for Report and Note
+       DocumentReference
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+       Encounter
+       Goal
+       Immunization
+       Implantable Device
+       Laboratory Result Observation
+       Location
+       Medication
+       MedicationRequest
+       Observation
+       Organization
+       Practitioner
+       PractitionerRole
+       Procedure
+       Provenance
+   Common Error Codes
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+General
+
+This guide is written for patients who wish to access their Electronic Health Information
+(“EHI”) using an application of their choosing. This guide is also written for third party
+developers who are developing software applications for patients, providers and/or systems
+that wish to access identified EHI.
+
+
+Tebra Technologies, d/b/a Kareo, Inc, provides FHIR APIs designed to satisfy the United States
+Core Data for Interoperability (USCDI, version 1) requirements set forth by the Office of the
+National Coordinator (ONC). The FHIR APIs are based on the HL7 FHIR US Core
+Implementation Guide STU3 Release 3.1.1 which conform to the FHIR Version R4. Kareo’s
+implementation of R4 version is ongoing and new resources will be added.
+
+
+Kareo has elected to partner with SmileCDR, a third party provider of FHIR services. At the
+time of registration, you will be required to accept SmileCDR’s terms and conditions.
+
+
+
+
+Getting Started
+
+Terms & Conditions
+
+Acceptance of Terms
+
+
+You must accept this Kareo Terms of Use (“Agreement”) in order to use the Kareo Fast
+Healthcare Interoperability Resource Application Programming Interface (“FHIR API”). This
+Agreement describes your rights and your obligations if you use the Kareo FHIR API. It is
+important that you read the Agreement carefully because you will be legally bound to these
+terms and your use of the Kareo FHIR API is subject to this Agreement. By accepting this
+Agreement or by accessing or using the Kareo FHIR API, you agree to be bound by this
+Agreement.
+
+
+If you are entering into this Agreement on behalf of a company or other legal entity (“Entity”),
+you represent that you have the authority to bind such Entity to this Agreement. In that case,
+the terms “you” or “your” shall also refer to such Entity. If you do not have such authority, or if
+the Entity does not agree to be bound by this Agreement, the Entity and you may not use the
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+Kareo FHIR API. You acknowledge that this Agreement is a contract between you and Kareo,
+even though it is electronic and is not physically signed by you and Kareo.
+
+
+API Definitions
+
+
+   a) Application: Any software application, website, or product you create, or service you
+      offer, using the Kareo FHIR API;
+   b) API Documentation: The documentation, data and information that Kareo provides
+      regarding use of the Kareo FHIR API through the Developer Site;
+   c) Developer Site: Kareo’s MACRA information and tools for developers is found at
+      www.kareo.com/macra;
+   d) Kareo FHIR API: The publicly available Kareo Fast Healthcare Interoperability
+      Resource Application Programming Interface (“FHIR API”) as well as the related FHIR
+      API Documentation;
+   e) Kareo Brand: The Kareo brand and brand assets, including names, logos, trade names
+      and trademarks.
+
+
+FHIR API License
+
+
+Kareo hereby grants you a revocable, limited, personal, non-sublicensable, non-exclusive, and
+non-transferable license to use the FHIR API to develop, test, and support your Application,
+and to integrate the Kareo FHIR API with your Application. Your license is subject to the
+limitations set forth in Section 4 and Section 9 below.
+
+
+Use of FHIR APIs and Kareo Data
+
+
+4.1    You may not use the Kareo FHIR API in a manner that accesses or uses any information
+beyond what Kareo allows under this Agreement or the FHIR API Documentation; that
+changes, breaks or circumvents any of Kareo’s technical, administrative, process or security
+measures; that disrupts or degrees the performance of the Kareo FHIR API; or that tests the
+vulnerability of Kareo’s systems or networks.
+
+
+4.2    You may not transmit any viruses or other computer programming that may damage,
+detrimentally interfere with, surreptitiously intercept, or expropriate any system or data.
+
+
+4.3    You may not attempt to reverse engineer or otherwise derive source code, trade
+secrets, or know-how in the Kareo FHIR API or any portion thereof.
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+4.4    You may not use the Kareo FHIR API to replicate or compete with core products or
+services offered by Kareo. You acknowledge and agree that Kareo has or may in the future offer
+products or services that are similar to your Application, and nothing will prevent Kareo from
+doing so.
+
+
+4.5     You may charge for your Application, unless that application provides access for
+individual patients to their health information. All patients shall have direct access via the FHIR
+API to their health information, as outlined in the 21st Century Cures Act. However, you may not
+sell, rent, lease, sublicense, redistribute, or syndicate access to the Kareo FHIR API.
+
+
+4.6    You may place advertisements on and around your Application. However, you may not:
+
+
+        a) place any advertisements that resemble or are reasonably likely to confuse users as
+being a message from Kareo; or
+
+
+       b) use any content from Kareo in any advertisements or for purposes of targeting
+advertisements, in your Application or elsewhere.
+
+
+4.7    You will not attempt to exceed or circumvent limitations on access, calls and use of the
+Kareo FHIR API, or otherwise use the Kareo FHIR API in a manner that exceeds reasonable
+request volume, constitutes excessive or abusive usage, or otherwise fails to comply or is
+inconsistent with any part of this Agreement or the Documentation.
+
+
+4.8   You may not use the Kareo FHIR API in any Application that includes adult content,
+promotes gambling, involves the sale of tobacco or alcohol to persons under 21 years of age, or
+otherwise violates any applicable law or regulation.
+
+
+4.9    You may not distribute or allow access to the Kareo FHIR API to anyone other than, if
+applicable, the Entity on whose behalf you entered into this Agreement.
+
+
+Security Measures
+
+
+5.1    The network, operating system and software of your web servers, databases, and
+computer systems (collectively, “Your Systems”) must be properly configured to securely
+operate your Application. Your Application must use reasonable security measures to protect
+your users’ information. You must not architect or select Your Systems in a manner to avoid the
+foregoing obligation.
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+5.2    You must promptly report any security deficiencies in, or intrusions to, your Systems to
+Kareo in writing via email to security@kareo.com or subsequent contact information posted on
+the Developer Site. You will work with Kareo to immediately correct any security deficiency,
+and will immediately disconnect any intrusions or intruders. In the event of any security
+deficiency or intrusion involving the Application, or the Kareo FHIR API you will make no public
+statements regarding such deficiencies or intrusions (e.g. press, blogs, social media, bulletin
+boards, etc.) without prior written and express permission from Kareo in each instance.
+
+
+Ownership
+
+
+As between you and Kareo, Kareo owns all right, title, and interest, including all intellectual
+property rights, in and to, the Kareo FHIR API, Documentation, and all elements and
+components thereof (collectively, the “Kareo Materials”). Except for the express license
+granted in this Agreement, Kareo does not grant you any right, title, or interest in or to the
+Kareo Materials. If you provide any feedback (“Feedback” is defined as any recommendations,
+enhancements, requests, suggestions or other similar activity) to Kareo regarding the Kareo
+FHIR API or Documentation, you hereby agree that Kareo will own any such Feedback and you
+hereby grant Kareo a perpetual, irrevocable, world-wide, and royalty-free license to use the
+Feedback for the purpose of improving and creating derivative works of Kareo’s FHIR API and
+Documentation.
+
+
+Term and Termination
+
+
+7.1    This Agreement will go into effect on the date upon which you agree to them, by
+accessing or using the Kareo FHIR API, and will continue until terminated as set forth herein.
+
+
+7.2    You may terminate this Agreement by discontinuing use of the Kareo FHIR API.
+
+
+7.3    Upon termination of this Agreement
+
+
+       7.3.1 All rights and licenses granted to you will terminate immediately.
+
+
+       7.3.2 You will promptly destroy Documentation and any other Kareo information in
+your possession or control that was received under this Agreement.
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+Modifications to this Agreement
+
+
+Kareo may change, add to or delete any portion of this Agreement in its sole discretion. If
+Kareo does so, it will provide you with reasonable notice prior to the changes either by emailing
+the email address associated with your account or by posting a notice on the Developer Site.
+Your continued access or use of the Kareo FHIR API will mean that you agree to the changes.
+
+
+Disclaimer of Warranties; Limitation of Liability; Indemnity
+
+
+9.1    NO WARRANTIES. THE KAREO FHIR API AND ALL RELATED COMPONENTS ARE
+PROVIDED ON AN “AS IS'' AND “AS AVAILABLE” BASIS WITHOUT ANY WARRANTIES OF ANY
+KIND, AND KAREO EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES, WHETHER EXPRESS
+OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, TITLE, FITNESS FOR A PARTICULAR PURPOSE, AND NON
+INFRINGEMENT.
+
+
+YOU ACKNOWLEDGE THAT KAREO DOES NOT WARRANT THAT THE KAREO FHIR API WILL BE
+UNINTERRUPTED, TIMELY, SECURE, ERROR-FREE OR VIRUS-FREE, NOR DOES IT MAKE ANY
+WARRANTY AS TO THE RESULTS THAT MAY BE OBTAINED FROM USE OF THE KAREO FHIR
+API, AND NO INFORMATION, ADVICE OR SERVICES OBTAINED BY YOU FROM KAREO OR
+THROUGH THE DEVELOPER SITE SHALL CREATE ANY WARRANTY NOT EXPRESSLY STATED IN
+THIS AGREEMENT.
+
+
+9.2   LIMITATION ON LIABILITY. UNDER NO CIRCUMSTANCES AND UNDER NO LEGAL
+THEORY (WHETHER IN CONTRACT, TORT, OR OTHERWISE) SHALL KAREO BE LIABLE TO YOU
+OR ANY THIRD PARTY FOR (A) ANY INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+CONSEQUENTIAL OR PUNITIVE DAMAGES, INCLUDING LOST PROFITS, LOST SALES OR
+BUSINESS, OR LOST DATA, OR (B) ANY MATTER BEYOND KAREO’s REASONABLE CONTROL.
+THE PROVISIONS OF THIS SECTION ALLOCATE THE RISKS UNDER THIS AGREEMENT
+BETWEEN THE PARTIES, AND THE PARTIES HAVE RELIED ON THESE LIMITATIONS IN
+DETERMINING WHETHER TO ENTER INTO THIS AGREEMENT. SOME JURISDICTIONS DO NOT
+ALLOW THE EXCLUSION OF IMPLIED WARRANTIES OR LIMITATION OF LIABILITY FOR
+INCIDENTAL OR CONSEQUENTIAL DAMAGES, WHICH MEANS THAT SOME OF THE ABOVE
+LIMITATIONS MAY NOT APPLY TO YOU. IN THESE JURISDICTIONS, KAREO’S LIABILITY WILL
+BE LIMITED TO THE GREATEST EXTENT PERMITTED BY LAW.
+
+
+9.3    Indemnity. You agree to defend, hold harmless and indemnify Kareo, and its
+subsidiaries, affiliates, officers, agents, employees, and suppliers, from and against any third
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+party claim arising from or in any way related to your or your users’ use of the Application or
+the Kareo FHIR API, or any violation of this Agreement, including any liability or expense
+arising from all claims, losses, damages (actual and consequential), suits, judgments, litigation
+costs and attorneys’ fees, of every kind and nature. In such a case, we will provide you with
+written notice of such claim, suit, or action.
+
+
+Dispute Resolution
+
+
+Any claim, cause of action or dispute (“Claim”) arising out of or related to this Agreement shall
+be governed by the laws of the state of California, United States, regardless of your country of
+origin or where you access the Kareo FHIR API, and notwithstanding any conflicts of law
+principles and the United Nations Convention for the International Sale of Goods. You and
+Kareo agree that all Claims arising out of or related to this Agreement must be resolved
+exclusively in the courts located in the county of Orange, California or the U.S. District Court for
+the Central District of California. You and Kareo agree to submit to the personal jurisdiction of
+the courts located within the county of Orange, California or the Central District of California,
+and agree to waive any and all objections to the exercise of jurisdiction over the parties by such
+courts and to venue in such courts for the purpose of litigating all such Claims. Notwithstanding
+the above, you agree that Kareo shall still be allowed to apply for injunctive remedies in any
+jurisdiction.
+
+
+General Legal Terms
+
+
+11.1 If any provision of this Agreement is found to be illegal, void, or unenforceable, the
+unenforceable provision will be modified so as to render it enforceable to the maximum extent
+possible in order to effect the intention of the provision; if a term cannot be so modified, it will
+be severed and the remaining provisions of this Agreement will not be affected in any way.
+
+
+11.2 You will comply with all applicable law, regulations and third-party rights (including,
+without limitation, HIPAA regulations and privacy laws).
+
+
+11.3 Notice and Service of Process. We may notify you via postings on the Developer Site or
+via the email address associated with your Application. Kareo accepts service of process by
+mail or courier at the physical address set forth in Section 11.6 below. Any notices that you
+provide without compliance with this section shall have no legal effect.
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+11.4 This Agreement and the FHIR API Documentation, constitute the entire agreement
+between you and Kareo regarding the Kareo FHIR API and supersedes all prior agreements and
+understandings, whether written or oral, or whether established by custom, practice, policy or
+precedent, with respect to the subject matter of this Agreement.
+
+
+11.5 Our failure to act with respect to a breach of this Agreement by you or others does not
+waive our right to act with respect to that breach or subsequent similar or other breaches.
+
+
+Fees
+There is no requirement for contracting with Kareo, Inc for the API read (GET) for USCDIv1
+data for Patient APIs. There are not fees for patients accessing their health data through FHIR
+APIs. There is no charge for usage of the read (GET) routes for USCDIv1 data for Patient APIs.
+
+Clinician-focused and system bulk export applications will need to be registered with their
+practice site and sign necessary business engagement documents and contracts. These
+applications also require additional fees to enable workflow and system integration. Please
+contact Kareo for further details.
+
+
+Registration
+
+Patients
+Patients can access their health information by using a patient application that follows
+the API specifications outlined elsewhere in this document and has been approved by
+Kareo. Patients are encouraged to consider due diligence when selecting an application.
+All applications are owned by third party developers and Kareo does not control their
+design. However, Kareo does encourage all developers to review and implement in
+accordance with ONC’s 2019 Model Privacy Notice guidelines.
+
+Patients must have access to their provider’s patient portal in order to register to use
+any patient app. Contact your physician’s office for details on how to obtain a portal
+account.
+
+Once a patient has access to their patient portal, the patient will need to consent to
+sharing their clinical data with the mobile application. Detailed instructions are
+available at Kareo’s Help Center (https://helpme.kareo.com/). All currently approved
+apps will be shared after consent.
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+Patients will establish their FHIR login credentials through their portal account. After
+they have elected to opt-in, they will then see a link in their patient portal to the Kareo
+AppSphere site where they can select any registered and approved FHIR application.
+
+
+Developer
+Kareo FHIR APIs are only available to registered developers. Developers may request
+access for their applications through our AppSphere registration page:
+https://fhir.prd.cloud.tebra.com/appsphere/portal/#/login. From there, the developer
+will select the “Sign Up” to request a developer account.
+
+After creating a developer account, the developer can log into the AppSphere to register
+the FHIR application. Upon selecting the “Register” button, the developer will be led
+through a series of questions and data fields regarding the application that they must
+complete.
+
+After completing and submitting the registration, it will be reviewed by Kareo FHIR
+solutions team.
+
+In the developer account, developers can also access and use a FHIR My Sandbox to
+conduct testing of their application.
+
+
+
+Creating an appSphere account
+Step 1: Log onto https://fhir.prd.cloud.tebra.com/appsphere.      Then select the “Developer
+Portal” module option.
+
+
+
+
+Step 2: Click Get Started on Smile appSphere welcome page.
+
+Step 3: To create an account, click Sign Up.
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+       On the next page, complete the following fields. Once completed click Sign Up.
+          ● Username
+          ● Password
+          ● Family Name
+          ● Given Name
+          ● Email Address (must be a valid email address as this is used for communication)
+
+Step 4: You will receive notice that your account has been created and you can click Login to
+return to the original sign-on page. Using your newly created username and password, login
+your account.
+
+
+
+
+Creating a developer account
+
+Step 1: After logging into your appSphere account, you will need to indicate whether you are
+an individual or a registered business. Depending on your selection, there will be an additional
+1-3 fields to complete, before clicking Next.
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+                                           OR
+
+
+Step 2: The next form will ask for additional information. Once completed, click Submit to
+enter the Developer Portal.
+           ● Address
+           ● City
+           ● State
+           ● Zip
+           ● Country
+           ● Work Phone
+           ● Cell Phone
+           ● Website, if applicable.
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+Registering an App
+
+
+
+
+From the Developer Portal, you will be able to register an App. There are a total of eight (8)
+steps to the process, and you will be guided through this with easy to read instructions. The
+asterisk (*) indicates a required field.
+
+
+Step 1: Enter the Name* of the App.
+
+Step 2: Enter the following:
+   ● Supported Operating System* - Web, iOS, Android
+   ● App Homepage URL*
+   ● URL to the App’s Privacy Policy*
+   ● URL to the App’s Terms of Service*
+   ● Default OAuth Redirect URL*
+   ● Additional OAuth Redirect URLs
+   ● Web App Launch URL* (if Supported Operating System = Web)
+
+Step 3: Enter App Descriptions
+   ● Upload App Icon*
+   ● Short App Description*
+   ● Long App Description*
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+Step 4: App Details
+   ● Audience Category* - payer, provider, pharma, patient, developer
+   ● App Use Category* - Health and Therapy Management; Provider Care Coordination;
+       Clinical Applications; Research; Data Monitoring Analysis
+   ● FHIR Versions Supported* - DSTU1, DSTU2,STU3, R4
+   ● Privacy and Security Compliance - HIPAA, GDPR, Carin Code of Conduct, ONC Model
+       Privacy Notice
+   ● Authentication* - Public, Confidential, Confidential with JWKS, Confidential with URL for
+       JWKS (recommended)
+
+Step 5: Bulk Transfer Permissions
+   ● Request All - if this is part of your configuration
+
+Step 6: Request Scopes*
+   ● Developer must type in all the scopes that are required for their application
+
+Step 7: Review Notes
+   ● Please enter notes for the reviewer to help them evaluate this submission. If this is a
+       re-submission, please summarize the changes made.
+
+Step 8: Legal Attestation
+   ● Developers must accept the Legal Attestation in order for their application to proceed
+       to review.
+   ● Following is a printed version of the attestation for your reference.
+   ● Click Submit once accepted.
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+Step 9: Once submitted, your application will show on the developer portal with a Status “In
+Review”. Kareo’s staff will review your application and notify you of acceptance.
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+Technical Documentation
+
+System Requirements
+Apps using the Kareo FHIR API must be able to:
+
+   ●   Support SMART on FHIR authentication framework
+   ●   Connect via HTTPS with TLS 1.2 and 1.3
+   ●   Store the client_id and client_secret for authentication
+   ●   Process JSON response files
+
+
+Authentication
+Kareo FHIR Server uses the SMART Application Launch Framework Implementation
+Guide (http://hl7.org/fhir/smart-app-launch/1.0.0/) and provides an OAuth 2.0
+compliant authorization server to enable patients and providers secure authentication
+access to their health data. As described by the specification itself, SMART on FHIR:
+
+“Connects third-party applications to Electronic Health Record data, allowing apps to
+launch from inside or outside the user interface of an EHR system. The framework
+supports apps for use by clinicians, patients, and others via PHR or Patient Portal or any
+FHIR system where a user can give permissions to launch an app. It provides a reliable,
+secure authorization protocol for a variety of app architectures, including apps that run
+on an end-user’s device as well as apps that run on a secure server.”
+
+Patient User Access
+
+Through their selected application, patients will be prompted for their FHIR login and
+credentials which they established in their patient portal accounts. SMART on FHIR
+enables the user to authenticate themselves with our Kareo FHIR Authorization Server
+and choose the scope of their patient data which they intend to access and share with
+their application. This decision provides an access token to their application of choice,
+and applications which are compliant with SMART on FHIR can then use this access
+token to access their health data stored on the Kareo FHIR Server. These applications
+will continue to have access to the patient data until the patient revokes their access
+permission.
+
+Clinician User Access
+
+Clinician users of Kareo EHR can also use approved SMART on FHIR applications to
+access patient data in the system. These clinician-focused applications will need to sign
+the necessary business agreements with the practices to integrate with their provider
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+accounts. Once approved and integrated within their practice, clinician users will create
+or be assigned FHIR login credentials and then be able to use these SMART on FHIR
+applications to access their Kareo EHR systems.
+
+System or Bulk Data Access
+
+Kareo FHIR Server also supports the FHIR Bulk Data Access framework
+(http://hl7.org/fhir/uv/bulkdata/STU1/) for system-level access of large volumes of
+data over FHIR. Like with clinician-focused applications, developers of FHIR Bulk clients
+must sign any necessary business agreements and do additional integration steps to
+make the application available to the practice’s patient accounts.
+
+Bulk FHIR uses a JSON Web Token (JWT) to enable application authentication and
+access between the application and the FHIR server. This will be established in the
+initial setup and registration of the product.
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+Function Names & Resources
+
+  USCDI Data Classes/Elements                US Core Profiles                     FHIR Resources             Scope
+
+
+ Allergies and Intolerances:        US Core AllergyIntolerance Profile     AllergyIntolerance      Search, Read
+  ● Substance (Medication)
+  ● Substance (Drug Class)
+  ● Reaction
+
+ Assessment and Plan of Treatment   US Core CarePlan Profile               CarePlan                Search, Read
+
+ Care Team Members                  US Core CareTeam Profile               CareTeam                Search, Read
+
+ Clinical Notes:                    US Core DocumentReference Profile      DocumentReference       Search, Read
+  ● Consultation Note
+  ● Discharge
+  ● Summary Note
+  ● History & Physical
+  ● Progress Note
+  ● Consultation Note
+
+
+ Clinical Notes:                    US Core Document Reference Profile     DocumentReference       Search, Read
+  ● Imaging Narrative                                                      Diagnostic Report
+  ● Laboratory Report Narrative     US Core DiagnosticReport Profile for
+  ● Pathology Report Narrative      Report and Note Exchange
+  ● Procedure Note
+
+ Goals:                             US Core Goal Profile                   Goal                    Search, Read
+  ● Patient Goals
+
+ Goals:                             US Core Condition Profile              Condition               Search, Read
+  ● Health Concerns
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+ Immunizations                     US Core Immunizations Profile          Immunization             Search, Read
+
+ Laboratory:                       US Core Laboratory Result              Observation              Search, Read
+  ● Tests                          Observation Profile                    Diagnostic Report
+  ● Values/Results
+                                   US Core DiagnosticReport Profile for
+                                   Report and Note Exchange
+
+ Medications                       US Core Medication Profile             Medication               Search, Read
+                                                                          Medication Request
+                                   US Core Medication Request Profile
+
+ Patient Demographics:             US Core Patient Profile                                         Search, Read
+  ● First Name                                                            Patient.name.given
+  ● Last Name                                                             Patient.name.family
+  ● Previous Name                                                         Patient.name
+  ● Middle Name/Initial                                                   Patient.name.given
+  ● Suffix                                                                Patient name.suffix
+  ● Birth Sex                                                             US Core Birth Sex Ext.
+  ● Date of Birth                                                         Patient.birthDate
+  ● Race                                                                  US Core Race Extension
+  ● Ethnicity                                                             US Core Ethnicity Ext
+  ● Preferred Language                                                    Patient.communication
+  ● Address                                                               Patient.address
+  ● Phone Number                                                          Patient.telecom
+
+ Problems                          US Core Condition Profile              Condition                Search, Read
+
+ Procedures                        US Core Procedure Profile              Procedure                Search, Read
+
+ Provenance:                       US Core Provenance Profile             Provenance               Search, Read
+  ● Author Time Stamp                                                     Provenance.recorded
+  ● Author Organization                                                   Provenance.agent
+
+ Smoking Status                    US Core Smoking Status Observation     Observation              Search, Read
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+                                   Profile
+
+ Implantable Device                US Core Implantable Device Profile    Device        Search, Read
+
+ Vitals:                                                                               Search, Read
+  ● Diastolic blood pressure       B/P systolic and diastolic            Observation
+  ● Systolic blood pressure        B/P systolic and diastolic
+  ● Body height                    Body Height
+  ● Body weight                    Body Weight
+  ● Heart rate                     Heart Rate
+  ● Respiratory rate               Respiratory Rate
+  ● Body temperature               Body Temperature
+  ● Pulse oximetry                 US Core Pulse Oximetry Profile
+  ● Inhaled oxygen concentration   US Core Pulse Oximetry Profile
+  ● BMI Percentile (ages 2-20)     US Core Pediatric BMI for Age
+  ● Weight-for-length (0-36mos)    US Core Pediatric Weight for Height
+  ● Occipital-frontal Head         US Core Pediatric Head
+      Circumference (0-36mos)      Circumference
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+API Information
+Supported Product:           Kareo EHR version 5.0
+Production Base URL:         https://fhir.prd.cloud.tebra.com/
+Authorization Endpoint:      https://fhir.prd.cloud.tebra.com/smartauth/
+FHIR Base URL:               https://fhir.prd.cloud.tebra.com/fhir-request
+
+
+Patient
+
+
+ Patient               Retrieves a patient
+
+ Request               https://fhir.prd.cloud.tebra.com/fhir-request/patient
+
+ Method                GET
+
+ Parameters                             Description                            Required
+
+           id          The id of the patient                                     Yes
+
+      identifier       Identifier such as a MPI                                  No
+
+        name           Match any part of the name                                No
+
+  birthdate + name     Specified birthdate and name                              No
+
+   gender + name       Specified gender and name                                 No
+
+
+AllergyIntolerance
+
+
+ AllergyIntolerance    Retrieves allergies/adverse reactions for a patient
+
+ Request               https://fhir.prd.cloud.tebra.com/fhir-request/AllergyIntolerance
+
+ Method                GET
+
+ Parameters                             Description                            Required
+
+       patient         All allergy and intolerances for a patient                Yes
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+CarePlan
+
+
+ CarePlan              Retrieves assessment and plan of treatment for a patient
+
+ Request               https://fhir.prd.cloud.tebra.com/fhir-request/CarePlan
+
+ Method                GET
+
+ Parameters                             Description                          Required
+
+  Patient + category   All CarePlan resources by category                         Yes
+
+
+CareTeam
+
+
+ CareTeam              Retrieves persons who participate in patient’s care
+
+ Request               https://fhir.prd.cloud.tebra.com/fhir-request/CareTeam
+
+ Method                GET
+
+ Parameters                             Description                          Required
+
+   Patient + status    All member of care team for patients of an                 Yes
+                       identified status (i.e active)
+
+
+Condition
+
+
+ Condition             Retrieves problems, health concerns and encounter diagnosis
+
+ Request               https://fhir.prd.cloud.tebra.com/fhir-request/condition
+
+ Method                GET
+
+ Parameters                             Description                          Required
+
+       patient         All conditions resources for a patient                     Yes
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+Diagnostic Report for Lab Results
+
+
+ DiagnosticReport       Retrieves lab tests and results for a patient
+
+ Request                https://fhir.prd.cloud.tebra.com/fhir-request/DiagnosticReport
+
+ Method                 GET
+
+ Parameters                             Description                          Required
+
+       patient          All DiagnosticReport results                            Yes
+
+  patient + category    All DiagnosticReport results from a                     No
+                        particular category (i.e. lab)
+
+    patient + code      All DiagnosticReport results and a specific             No
+                        code
+
+ patient + category +   All DiagnosticReport results within a                   No
+         date           particular category and for a specific date
+
+
+
+
+Diagnostic Report for Report and Note
+
+
+ DiagnosticReport       Retrieves DiagnosticReport results
+
+ Request                https://fhir.prd.cloud.tebra.com/fhir-request/DiagnosticReport
+
+ Method                 GET
+
+ Parameters                              Description                         Required
+
+       patient          All DiagnosticReport resources                          Yes
+
+  patient + category    All DiagnosticReport resources identified by            No
+                        a category code (i.e. LP29684-5 for all
+                        radiology reports)
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+    patient + code       All DiagnosticReport resources identified by              No
+                         a category code (i.e. 24323-8 for all CMP)
+
+ patient + category +    All DiagnosticReport resources within a                   No
+         date            category and having a specific code
+
+
+DocumentReference
+
+
+ DocumentReference         Retrieves patient documents, including clinical notes
+
+ Request                   https://fhir.prd.cloud.tebra.com/fhir-request/DocumentReference
+
+ Method                    GET
+
+ Parameters                               Description                          Required
+
+            id             The id of a single document                             No
+
+        patient            All documents for a specific patient                    Yes
+
+   patient + category      All documents identified by a category                  No
+                           code (i.e. clinical-note)
+
+  Patient + category +     All documents within a category and for a               No
+          date             specific date
+
+     Patient + type        All documents for a specific patient and                No
+                           type (i.e. 18842-5 for a discharge
+                           summary)
+
+
+Encounter
+
+
+ Encounter               Retrieves basic encounter information for a patient
+
+ Request                 https://fhir.prd.cloud.tebra.com/fhir-request/encounter
+
+ Method                  GET
+
+ Parameters                              Description                           Required
+
+           id            All encounter information for a specific                  No
+                         patient
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+        patient        All encounter information for a specific                 Yes
+                       patient
+
+    date + patient     All encounter information for a specific                  No
+                       patient on a specific date
+
+
+Goal
+
+
+ Goal                  Retrieves all goal information for a patient
+
+ Request               https://fhir.prd.cloud.tebra.com/fhir-request/goal
+
+ Method                GET
+
+ Parameters                             Description                           Required
+
+        patient        All goal information for a specific patient              Yes
+
+
+Immunization
+
+
+ Immunization          Retrieves immunization history for a patient
+
+ Request               https://fhir.prd.cloud.tebra.com/fhir-request/immunization
+
+ Method                GET
+
+ Parameters                             Description                           Required
+
+        patient        All immunization history for a patient                   Yes
+
+
+Implantable Device
+
+
+ Device                Retrieves all Implantable Device information for a patient
+
+ Request               https://fhir.prd.cloud.tebra.com/fhir-request/device
+
+ Method                GET
+
+ Parameters                             Description                           Required
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+       patient          All UDI information for a specific patient                 Yes
+
+
+Laboratory Result Observation
+
+
+ Observation |          Retrieves all results for a patient under the laboratory category
+ Laboratory
+
+ Request                https://fhir.prd.cloud.tebra.com/fhir-request/observation
+
+ Method                 GET
+
+ Parameters                              Description                             Required
+
+  patient + category    All lab results identified by laboratory                   Yes
+                        category
+
+ Patient + category +   All lab results within laboratory category                  No
+         date           and for a specific date
+
+    Patient + code      All lab results for a specific observation                  No
+                        code (i.e. ketones)
+
+
+Location
+
+
+ Location               Retrieves a location associated with a patient
+
+ Request                https://fhir.prd.cloud.tebra.com/fhir-request/location
+
+ Method                 GET
+
+ Parameters                              Description                             Required
+
+        name            All location resources that match a name                   Yes
+
+       address          All location resources that match the                       no
+                        address
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+Medication
+
+
+ MedicationRequest     Retrieves medication, in conjunction with MedicationRequest query
+
+ Request               https://fhir.prd.cloud.tebra.com/fhir-request/medicationRequest
+
+ Method                GET
+
+ Parameters                               Description                                          Required
+
+          N/A          N/A                                                                         N/A
+
+
+MedicationRequest
+
+
+ MedicationRequest     Retrieves medication history for a patient
+
+ Request               https://fhir.prd.cloud.tebra.com/fhir-request/medicationRequest
+
+ Method                GET
+
+ Parameters                               Description                                          Required
+
+   patient + intent    All medications with a specific intent code                                 Yes
+                       (i.e. order)
+
+  patient + intent +   All medications with a specific intent code                                  No
+       status          and status code (i.e. active)
+
+
+Observation
+
+
+ Observation           Retrieves observations for a specific patient; may include any of the
+                       following:
+                           ●   Diastolic Blood Pressure - Blood pressure systolic and diastolic (FHIR Core Profile)
+                           ●   Systolic Blood Pressure - Blood pressure systolic and diastolic (FHIR Core Profile)
+                           ●   Body Height - Body height (FHIR Core Profile)
+                           ●   Body Weight - Body weight (FHIR Core Profile)
+                           ●   Heart Rate - Heart rate (FHIR Core Profile)
+                           ●   Respiratory Rate - Body temperature (FHIR Core Profile)
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+                           ●   Body Temperature - Body temperature (FHIR Core Profile)
+                           ●   Pulse Oximetry - US Core Pulse Oximetry Profile (Builds on FHIR Core Profile)
+                           ●   Inhaled Oxygen Concentration - US Core Pulse Oximetry Profile (Builds on FHIR Core
+                               Profile)
+                           ●   BMI Percentile (2-20 years old) - US Core Pediatric BMI for Age Observation Profile
+                               (Builds on FHIR Core Profile)
+                           ●   Weight-for-Length Percentile (Birth-36 months) - US Core Pediatric Weight for Height
+                               Observation Profile (Builds on FHIR Core Profile)
+                           ●   Occipital-frontal Head Circumference Percentile (Birth-36 months) - US Core Pediatric
+                               Head Occipital Frontal Circumference Observation Profile (Builds on FHIR Core Profile)
+                           ●   Smoking Status
+
+
+
+ Request                https://fhir.prd.cloud.tebra.com/fhir-request/observation
+
+ Method                 GET
+
+ Parameters                                Description                                        Required
+
+       patient          All observations for a specific patient                                   Yes
+
+    patient + code      All observations for a specific patient with a                             No
+                        specific code (85354-9 for blood pressure)
+
+  patient + category    All observation for a specific patient within a                            No
+                        specific category (i.e. vital signs)
+
+ patient + category +   All observation for a specific patient within a                            No
+         date           specific category (i.e. vital signs) and a
+                        specific date
+
+
+Organization
+
+
+ Organization           Retrieves organization associated with a patient or a provider
+
+ Request                https://fhir.prd.cloud.tebra.com/fhir-request/organization
+
+ Method                 GET
+
+ Parameters                               Description                                        Required
+
+        name            All organization resources matched to an                                 Yes
+                        organization’s name
+
+       address          All organization resources matched to an                                  No
+                        organization’s address
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+Practitioner
+
+
+ Practitioner          Retrieves basic demographics about a practitioner
+
+ Request               https://fhir.prd.cloud.tebra.com/fhir-request/practitioner
+
+ Method                GET
+
+ Parameters                             Description                          Required
+
+        name           All demographics for a practitioner                       Yes
+                       identified by name
+
+      identifier       All demographics for a practitioner                          No
+                       identified by an identified (i.e. NPI)
+
+
+PractitionerRole
+
+
+ PractitionerRole      Retrieves the role of a practitioner
+
+ Request               https://fhir.prd.cloud.tebra.com/fhir-request/PractitionerRole
+
+ Method                GET
+
+ Parameters                             Description                          Required
+
+      specialty        Practitioner identified by specialty                         No
+
+     practitioner      Practitioner identified by any part of a                     No
+                       name
+
+
+Procedure
+
+
+ Procedure             Retrieves procedures associated with a patient
+
+ Request               https://fhir.prd.cloud.tebra.com/fhir-request/procedure
+
+ Method                GET
+
+ Parameters                             Description                           Required
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+         patient         All procedures for a specific patient                   Yes
+
+    patient + date       All procedures for a specific patient and a                No
+                         specific date
+
+
+Provenance
+
+
+ Provenance              Retrieves author and date information for elements of a patient’s EHI
+
+ Request                 https://fhir.prd.cloud.tebra.com/fhir-request/provenance
+
+ Method                  GET
+
+ Parameters                              Description                          Required
+
+         patient +       Retrieves resources for a specific patient              Yes
+       revinclude=
+       Provenance
+
+   id + revinclude=      Retrieves resources for a specific US Core                 No
+      Provenance         Profile resource type
+
+
+
+
+Common Error Codes
+
+Kareo makes every effort to ensure the FHI API works correctly. If there is an issue, the FHIR
+API will return standard HTTP error messages. The most common are listed below.
+
+
+Client Errors
+
+ Code
+
+ 400         Bad Request                 The server cannot process the request due to an
+                                         apparent client error.
+
+ 401         Unauthorized                The required authentication failed or was not
+                                         provided.
+
+ 403         Forbidden                   A valid request was received, but refused by the
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+                                         server. Typically, this is due to the user not having the
+                                         necessary permissions for the specified resource.
+
+ 404        Not Found                    The requested resource could not be found.
+
+ 408        Request Timeout              The server timed out waiting for the request.
+
+ 429        Too Many Requests            Too many requests have been sent in a given time
+                                         period.
+
+
+   ●    Check your API request for misspellings and other incorrect syntax.
+   ●    Make sure the request has a valid token and matches the request.
+   ●    Compare the request with the list of supported FHIR resources and scopes.
+
+
+Server Errors
+
+ Code
+
+ 500        Internal Server Error        A generic error message for an unexpected condition
+
+ 502        Bad Gateway                  The gateway proxy server received an invalid
+                                         response from the upstream server
+
+ 503        Service Unavailable          The server cannot handle the request, typically
+                                         because it is overloaded or down for maintenance.
+
+ 504        Gateway Timeout              The gateway/proxy server did not receive a timely
+                                         response from the upstream server.
+
+
+   ●    In case of a server error, first wait a few minutes before sending another request
+
+
+
+
+_____
+© 2023 Tebra Technologies, Inc d/b/a Kareo, Inc. All rights reserved
+
