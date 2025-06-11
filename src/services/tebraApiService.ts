@@ -1,32 +1,50 @@
 import { httpsCallable, getFunctions } from 'firebase/functions';
-import { app, isFirebaseConfigured } from '../config/firebase';
+import { app, isFirebaseConfigured, functions } from '../config/firebase';
 
-// Gracefully handle environments where Firebase Functions are unavailable (e.g., unit tests)
+// Lazy initialization of functions instance
 let functionsInstance: ReturnType<typeof getFunctions> | undefined;
 
-if (isFirebaseConfigured() && app) {
-  try {
-    functionsInstance = getFunctions(app);
-  } catch (error) {
-    console.warn('⚠️  Unable to initialize Firebase Functions instance:', error);
+const getFunctionsInstance = () => {
+  if (functionsInstance) {
+    return functionsInstance;
   }
-} else {
-  console.info('ℹ️  Firebase not configured – Tebra API service will use stubbed functions.');
-}
+  
+  // Try to use the exported functions instance first
+  if (functions) {
+    functionsInstance = functions;
+    return functionsInstance;
+  }
+  
+  // Fallback to creating a new instance
+  if (isFirebaseConfigured() && app) {
+    try {
+      functionsInstance = getFunctions(app);
+      return functionsInstance;
+    } catch (error) {
+      console.warn('⚠️  Unable to initialize Firebase Functions instance:', error);
+    }
+  }
+  
+  return undefined;
+};
 
 // Utility to create a callable or a fallback stub
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const createCallable = (name: string): any => {
-  if (functionsInstance) {
-    return httpsCallable(functionsInstance, name);
-  }
-  // Return a stub that mimics httpsCallable interface
-  return async () => ({
-    data: {
-      success: false,
-      message: `Firebase Functions unavailable – attempted to call ${name}`,
-    },
-  });
+  return async (...args: any[]) => {
+    const instance = getFunctionsInstance();
+    if (instance) {
+      const callable = httpsCallable(instance, name);
+      return callable(...args);
+    }
+    // Return a stub that mimics httpsCallable interface
+    return {
+      data: {
+        success: false,
+        message: `Firebase Functions unavailable – attempted to call ${name}`,
+      },
+    };
+  };
 };
 
 // Create a unified object containing either real or stubbed callables

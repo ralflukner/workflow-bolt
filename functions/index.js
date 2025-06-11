@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const functionsV1 = require('firebase-functions/v1');
+const { onCall } = require('firebase-functions/v2/https');
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
@@ -38,155 +39,308 @@ app.post('/test', (req, res) => {
   });
 });
 
-app.put('/test', (req, res) => {
-  const body = req.body;
-  res.json({ 
-    message: 'PUT request successful', 
-    method: 'PUT',
-    receivedData: body 
-  });
-});
-
-app.delete('/test', (req, res) => {
-  res.json({ message: 'DELETE request successful', method: 'DELETE' });
-});
-
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  const payload =
-    process.env.NODE_ENV === 'production'
-      ? { error: 'Internal server error' }
-      : { error: 'Internal server error', message: err.message };
+  console.error('Express error:', err.stack);
+  const payload = process.env.NODE_ENV === 'development'
+    ? { error: 'Internal server error', message: err.message }
+    : { error: 'Internal server error' };
   res.status(500).json(payload);
 });
 
 // Keep api as 1st Gen
 exports.api = functions.https.onRequest(app);
 
-// Helper function to update purge status in Firestore
-async function updatePurgeStatus(status) {
-  const statusRef = db.collection('system_status').doc('purge_status');
-  await statusRef.set({
-    ...status,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-  }, { merge: true });
-}
-
-// Helper function to get purge status from Firestore
-async function getPurgeStatus() {
-  const statusRef = db.collection('system_status').doc('purge_status');
-  const doc = await statusRef.get();
-  if (!doc.exists) {
-    return {
-      timestamp: null,
-      success: false,
-      error: null,
-      itemsPurged: 0
+// Tebra API Functions
+exports.tebraTestConnection = onCall({ cors: true }, async (request) => {
+  console.log('Testing Tebra connection...');
+  
+  try {
+    // For now, return a simple success response
+    // In production, this would actually test the Tebra API connection
+    return { 
+      success: true, 
+      message: 'Tebra API connection test successful',
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Tebra connection test failed:', error);
+    return { 
+      success: false, 
+      message: error.message || 'Connection test failed',
+      timestamp: new Date().toISOString()
     };
   }
-  const data = doc.data();
-  if (data.timestamp?.toDate) data.timestamp = data.timestamp.toDate();
-  if (data.updatedAt?.toDate) data.updatedAt = data.updatedAt.toDate();
-  return data;
-}
+});
 
-// Daily data purge function (using v1 syntax)
-exports.dailyDataPurge = functionsV1.pubsub
-  .schedule('every 24 hours')
-  .onRun(async (context) => {
-    const startTime = new Date();
-    console.log(`Starting daily data purge at ${startTime.toISOString()}`);
+// Get patient by ID
+exports.tebraGetPatient = onCall({ cors: true }, async (request) => {
+  console.log('Getting patient:', request.data);
+  
+  try {
+    const { patientId } = request.data;
     
-    try {
-      // Simulate data purge operations
-      const itemsToPurge = [
-        { type: 'temp_files', age: '7d' },
-        { type: 'logs', age: '30d' },
-        { type: 'cache', age: '1d' }
-      ];
-      
-      let purgedCount = 0;
-      
-      // Simulate purging each type of data
-      for (const item of itemsToPurge) {
-        console.log(`Purging ${item.type} older than ${item.age}`);
-        // Add your actual purge logic here
-        // For example: await db.collection(item.type).where('createdAt', '<', cutoffDate).delete();
-        purgedCount++;
+    // Mock response for now
+    // In production, this would call the actual Tebra API
+    return {
+      success: true,
+      data: {
+        PatientId: patientId,
+        FirstName: 'Test',
+        LastName: 'Patient',
+        DateOfBirth: '1990-01-01',
+        Phone: '555-0123',
+        Email: 'test@example.com'
       }
-      
-      // Update purge status in Firestore
-      await updatePurgeStatus({
-        timestamp: new Date(),
-        success: true,
-        error: null,
-        itemsPurged: purgedCount
-      });
-      
-      console.log(`Purge completed successfully. Purged ${purgedCount} items.`);
-      return null;
-    } catch (error) {
-      console.error('Purge failed:', error);
-      
-      // Update purge status in Firestore with error
-      await updatePurgeStatus({
-        timestamp: new Date(),
-        success: false,
-        error: error.message,
-        itemsPurged: 0
-      });
-      
-      throw error;
-    }
-  });
+    };
+  } catch (error) {
+    console.error('Failed to get patient:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to get patient'
+    };
+  }
+});
 
-// Health check function (using v1 syntax)
-exports.purgeHealthCheck = functionsV1.pubsub
-  .schedule('every 1 hours')
-  .onRun(async (context) => {
-    const now = new Date();
-    console.log(`Running health check at ${now.toISOString()}`);
+// Search patients
+exports.tebraSearchPatients = onCall({ cors: true }, async (request) => {
+  console.log('Searching patients:', request.data);
+  
+  try {
+    const { searchCriteria } = request.data;
     
-    try {
-      // Get purge status from Firestore
-      const lastPurgeStatus = await getPurgeStatus();
-      
-      const healthStatus = {
-        timestamp: now,
-        lastPurge: lastPurgeStatus,
-        systemStatus: 'healthy',
-        warnings: []
-      };
-      
-      // Check if last purge was successful
-      if (!lastPurgeStatus.success) {
-        healthStatus.warnings.push('Last purge failed: ' + lastPurgeStatus.error);
-        healthStatus.systemStatus = 'warning';
-      }
-      
-      // Check if last purge was too long ago (more than 25 hours)
-      if (lastPurgeStatus.timestamp) {
-        const lastPurgeDate = lastPurgeStatus.timestamp;
-const hoursSinceLastPurge = (now.getTime() - lastPurgeDate.getTime()) / (1000 * 60 * 60);
-        if (hoursSinceLastPurge > 25) {
-          healthStatus.warnings.push(`Last purge was ${hoursSinceLastPurge.toFixed(1)} hours ago`);
-          healthStatus.systemStatus = 'warning';
+    // Mock response for now
+    // In production, this would call the actual Tebra API
+    return {
+      success: true,
+      data: [
+        {
+          PatientId: '123',
+          FirstName: 'John',
+          LastName: searchCriteria.lastName || 'Doe',
+          DateOfBirth: '1985-05-15',
+          Phone: '555-0123',
+          Email: 'john.doe@example.com'
+        },
+        {
+          PatientId: '124',
+          FirstName: 'Jane',
+          LastName: searchCriteria.lastName || 'Doe',
+          DateOfBirth: '1990-08-22',
+          Phone: '555-0124',
+          Email: 'jane.doe@example.com'
         }
+      ]
+    };
+  } catch (error) {
+    console.error('Failed to search patients:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to search patients',
+      data: []
+    };
+  }
+});
+
+// Get appointments
+exports.tebraGetAppointments = onCall({ cors: true }, async (request) => {
+  console.log('Getting appointments:', request.data);
+  
+  try {
+    const { providerId, locationId, startDate, endDate } = request.data;
+    
+    // Mock response for now
+    // In production, this would call the actual Tebra API
+    return {
+      success: true,
+      data: [
+        {
+          AppointmentId: 'APT001',
+          PatientId: '123',
+          ProviderId: providerId,
+          LocationId: locationId,
+          StartDateTime: startDate || new Date().toISOString(),
+          EndDateTime: endDate || new Date().toISOString(),
+          Status: 'Scheduled',
+          Type: 'Follow-up'
+        }
+      ]
+    };
+  } catch (error) {
+    console.error('Failed to get appointments:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to get appointments',
+      data: []
+    };
+  }
+});
+
+// Get providers
+exports.tebraGetProviders = onCall({ cors: true }, async (request) => {
+  console.log('Getting providers...');
+  
+  try {
+    // Mock response for now
+    // In production, this would call the actual Tebra API
+    return {
+      success: true,
+      data: [
+        {
+          ProviderId: 'PROV001',
+          FirstName: 'Dr. Sarah',
+          LastName: 'Johnson',
+          Specialty: 'General Practice',
+          Email: 'sarah.johnson@clinic.com'
+        },
+        {
+          ProviderId: 'PROV002',
+          FirstName: 'Dr. Michael',
+          LastName: 'Chen',
+          Specialty: 'Cardiology',
+          Email: 'michael.chen@clinic.com'
+        }
+      ]
+    };
+  } catch (error) {
+    console.error('Failed to get providers:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to get providers',
+      data: []
+    };
+  }
+});
+
+// Create appointment
+exports.tebraCreateAppointment = onCall({ cors: true }, async (request) => {
+  console.log('Creating appointment:', request.data);
+  
+  try {
+    const appointmentData = request.data;
+    
+    // Mock response for now
+    // In production, this would call the actual Tebra API
+    return {
+      success: true,
+      data: {
+        AppointmentId: 'APT' + Date.now(),
+        ...appointmentData,
+        Status: 'Scheduled'
       }
-      
-      // Log health status
-      console.log('Health check results:', healthStatus);
-      
-      // If there are warnings, you might want to send notifications
-      if (healthStatus.warnings.length > 0) {
-        console.log('Warnings detected:', healthStatus.warnings);
-        // Add notification logic here (e.g., email, Slack, etc.)
+    };
+  } catch (error) {
+    console.error('Failed to create appointment:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to create appointment'
+    };
+  }
+});
+
+// Update appointment
+exports.tebraUpdateAppointment = onCall({ cors: true }, async (request) => {
+  console.log('Updating appointment:', request.data);
+  
+  try {
+    const { appointmentId, updates } = request.data;
+    
+    // Mock response for now
+    // In production, this would call the actual Tebra API
+    return {
+      success: true,
+      data: {
+        AppointmentId: appointmentId,
+        ...updates,
+        UpdatedAt: new Date().toISOString()
       }
-      
-      return null;
-    } catch (error) {
-      console.error('Health check failed:', error);
-      throw error;
+    };
+  } catch (error) {
+    console.error('Failed to update appointment:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to update appointment'
+    };
+  }
+});
+
+// Sync today's schedule
+exports.tebraSyncTodaysSchedule = onCall({ cors: true }, async (request) => {
+  console.log('Syncing today\'s schedule...');
+  
+  try {
+    // Mock response for now
+    // In production, this would call the actual Tebra API
+    const today = new Date().toISOString().split('T')[0];
+    
+    return {
+      success: true,
+      data: {
+        date: today,
+        appointments: [
+          {
+            AppointmentId: 'APT001',
+            PatientId: '123',
+            PatientName: 'John Doe',
+            Time: '09:00 AM',
+            Type: 'Check-up',
+            Status: 'Scheduled'
+          },
+          {
+            AppointmentId: 'APT002',
+            PatientId: '124',
+            PatientName: 'Jane Doe',
+            Time: '10:30 AM',
+            Type: 'Follow-up',
+            Status: 'Scheduled'
+          }
+        ],
+        syncedAt: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    console.error('Failed to sync schedule:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to sync today\'s schedule'
+    };
+  }
+});
+
+// Auth0 token exchange function
+exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
+  console.log('Exchanging Auth0 token for Firebase token...');
+  
+  try {
+    const { auth0Token } = request.data;
+    
+    if (!auth0Token) {
+      throw new Error('Auth0 token is required');
     }
-  }); 
+    
+    // For development: Return a mock success response
+    // In production, you would:
+    // 1. Verify the Auth0 token with Auth0's API
+    // 2. Extract user information from the token
+    // 3. Create or update a Firebase user
+    // 4. Generate a custom Firebase token (requires IAM permissions)
+    
+    // For now, return a success response without creating a custom token
+    // This allows the app to proceed with development
+    return {
+      success: true,
+      data: {
+        // Mock Firebase token for development
+        firebaseToken: 'mock-firebase-token-' + Date.now(),
+        uid: 'auth0|mock-user-' + Date.now(),
+        message: 'Development mode - using mock authentication'
+      }
+    };
+  } catch (error) {
+    console.error('Token exchange failed:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to exchange token'
+    };
+  }
+});

@@ -59,6 +59,7 @@ const validateFirebaseConfig = (config: FirebaseConfig): boolean => {
  * @throws {Error} If required environment variables are missing
  */
 const getFirebaseConfig = (): FirebaseConfig => {
+  // Use process.env for compatibility with Jest
   const config: FirebaseConfig = {
     projectId: process.env.VITE_FIREBASE_PROJECT_ID || '',
     apiKey: process.env.VITE_FIREBASE_API_KEY || '',

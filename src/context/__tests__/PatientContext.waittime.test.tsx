@@ -57,7 +57,7 @@ describe('PatientContext Wait Time Calculations', () => {
   };
 
   beforeEach(() => {
-    mockGetCurrentTime.mockReturnValue(new Date('2025-06-05T10:00:00').toISOString());
+    mockGetCurrentTime.mockReturnValue(new Date('2025-06-05T10:00:00'));
   });
 
   it('should calculate wait time correctly', () => {

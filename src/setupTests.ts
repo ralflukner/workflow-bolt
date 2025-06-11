@@ -58,7 +58,11 @@ jest.mock('./config/firebase', () => ({
   db: {},
   auth: {},
   app: {},
-  isFirebaseConfigured: false,
+  functions: {},
+  analytics: {},
+  isFirebaseConfigured: jest.fn(() => false),
+  initializeFirebase: jest.fn(),
+  getFirebaseServices: jest.fn(),
   isLocalDevelopment: true,
 }));
 

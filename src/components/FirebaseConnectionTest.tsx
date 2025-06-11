@@ -3,15 +3,8 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getFunctions } from 'firebase/functions';
-
-const firebaseConfig = {
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
+import { getAnalytics } from 'firebase/analytics';
+import { firebaseConfig } from '../config/firebase-config';
 
 export const FirebaseConnectionTest: React.FC = () => {
   const [status, setStatus] = useState<{
@@ -21,6 +14,7 @@ export const FirebaseConnectionTest: React.FC = () => {
       firestore: boolean;
       auth: boolean;
       functions: boolean;
+      analytics: boolean;
     };
   }>({
     initialized: false,
@@ -28,6 +22,7 @@ export const FirebaseConnectionTest: React.FC = () => {
       firestore: false,
       auth: false,
       functions: false,
+      analytics: false,
     },
   });
 
@@ -41,6 +36,7 @@ export const FirebaseConnectionTest: React.FC = () => {
         console.log('Storage Bucket:', firebaseConfig.storageBucket);
         console.log('Messaging Sender ID:', firebaseConfig.messagingSenderId);
         console.log('App ID:', firebaseConfig.appId);
+        console.log('Measurement ID:', firebaseConfig.measurementId);
 
         console.log('\n🚀 Initializing Firebase...');
         const app = initializeApp(firebaseConfig);
@@ -56,12 +52,16 @@ export const FirebaseConnectionTest: React.FC = () => {
         getFunctions(app);
         console.log('✅ Functions initialized');
 
+        getAnalytics(app);
+        console.log('✅ Analytics initialized');
+
         setStatus({
           initialized: true,
           services: {
             firestore: true,
             auth: true,
             functions: true,
+            analytics: true,
           },
         });
 
@@ -75,6 +75,7 @@ export const FirebaseConnectionTest: React.FC = () => {
             firestore: false,
             auth: false,
             functions: false,
+            analytics: false,
           },
         });
       }
@@ -122,6 +123,12 @@ export const FirebaseConnectionTest: React.FC = () => {
               </span>
               <span>Functions: {status.services.functions ? 'Connected' : 'Not Connected'}</span>
             </div>
+            <div className="flex items-center gap-2">
+              <span className={status.services.analytics ? 'text-green-400' : 'text-red-400'}>
+                {status.services.analytics ? '✅' : '❌'}
+              </span>
+              <span>Analytics: {status.services.analytics ? 'Connected' : 'Not Connected'}</span>
+            </div>
           </div>
         </div>
 
@@ -131,6 +138,7 @@ export const FirebaseConnectionTest: React.FC = () => {
           <div>Storage Bucket: {firebaseConfig.storageBucket}</div>
           <div>Messaging Sender ID: {firebaseConfig.messagingSenderId}</div>
           <div>App ID: {firebaseConfig.appId}</div>
+          <div>Measurement ID: {firebaseConfig.measurementId}</div>
         </div>
       </div>
     </div>

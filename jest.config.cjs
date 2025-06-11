@@ -4,11 +4,13 @@ module.exports = {
   testEnvironment: 'jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^.*/envUtils$': '<rootDir>/src/utils/__mocks__/envUtils.ts',
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.json', useESM: false }],
   },
   setupFiles: ['<rootDir>/jest.setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   testMatch: [
     '**/__tests__/**/*.test.[jt]s?(x)',
   ],

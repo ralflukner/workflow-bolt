@@ -23,21 +23,27 @@ export const getEnvVar = (name: string): string | undefined => {
     }
   }
 
+  // In Vite environment, use import.meta.env directly
+  try {
+    // @ts-ignore - import.meta.env is provided by Vite
+    if (import.meta && import.meta.env) {
+      // @ts-ignore
+      const value = import.meta.env[name];
+      console.log(`getEnvVar(${name}):`, value); // Debug logging
+      return value;
+    }
+  } catch (error) {
+    // Fallback for environments where import.meta is not available
+    console.log(`Could not access import.meta.env for ${name}:`, error);
+  }
+
   // In browser environment, try various methods to get environment variables
   if (typeof window !== 'undefined') {
     try {
       // Try to access via globalThis extensions
       const globalThisTyped = globalThis as GlobalThis;
       
-      // First try: import.meta.env (if available in browser)
-      const importMeta = globalThisTyped.import?.meta;
-      if (importMeta?.env) {
-        const value = importMeta.env[name];
-        console.log(`getEnvVar(${name}):`, value); // Debug logging
-        return value;
-      }
-      
-      // Second try: custom Vite env object
+      // Try custom Vite env object
       const viteEnv = globalThisTyped.__VITE_ENV__;
       if (viteEnv) {
         return viteEnv[name];
