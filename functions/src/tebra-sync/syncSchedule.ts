@@ -31,20 +31,23 @@ export const syncSchedule = async (
   }
 
   const providers = await tebra.getProviders();
-  const providerMap = new Map(providers.map(p => [p.ProviderId, p]));
+  const providerMap = new Map(providers.map(p => [
+    p.ProviderId || p.ID || p.Id, p
+  ]));
 
   const patients: Array<ReturnType<typeof toDashboardPatient>> = [];
 
   for (const appt of appointments) {
     try {
-      const patientId = appt.PatientId;
+      const patientId = appt.PatientId || appt.patientId;
       if (!patientId) throw new Error('Missing PatientId');
 
       const patient = await tebra.getPatientById(patientId);
       if (!patient) throw new Error(`Patient ${patientId} not found`);
 
+      const providerId = appt.ProviderId || appt.providerId;
       patients.push(
-        toDashboardPatient(appt, patient, providerMap.get(appt.ProviderId)),
+        toDashboardPatient(appt, patient, providerMap.get(providerId)),
       );
     } catch (err) {
       logger.error('Failed to process appointment', { appt, err });

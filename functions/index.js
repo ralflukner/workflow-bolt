@@ -13,7 +13,6 @@ if (!admin.apps.length) {
     projectId: 'luknerlumina-firebase'
   });
 }
-const db = admin.firestore();
 
 // Initialize Express app
 const app = express();
@@ -220,6 +219,12 @@ exports.tebraGetProviders = onCall({ cors: true }, async (request) => {
 
 // Test Tebra appointments endpoint
 exports.tebraTestAppointments = onCall({ cors: true }, async (request) => {
+  if (!request.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Authentication required'
+    );
+  }
   console.log('Testing Tebra appointments endpoint...');
   
   try {
@@ -295,137 +300,9 @@ exports.tebraUpdateAppointment = onCall({ cors: true }, async (request) => {
   }
 });
 
-// Sync today's schedule
-exports.tebraSyncTodaysSchedule = onCall({ cors: true }, async (request) => {
-  console.log('Syncing schedule...');
-  
-  try {
-    // Verify user is authenticated for HIPAA compliance
-    if (!request.auth) {
-      throw new Error('Authentication required for patient data access');
-    }
-    
-    // Check if a specific date was provided, otherwise use today in Central Time
-    let targetDate;
-    if (request.data && request.data.date) {
-      targetDate = request.data.date;
-      console.log('Syncing appointments for specific date:', targetDate);
-    } else {
-      // Get current date in Central Time (Texas)
-      const now = new Date();
-      const centralTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Chicago"}));
-      targetDate = centralTime.toISOString().split('T')[0];
-      console.log('Current time in CT:', centralTime.toLocaleString());
-      console.log('Syncing today\'s appointments for date:', targetDate);
-    }
-    
-    const today = targetDate;
-    
-    // Get appointments from Tebra
-    console.log(`🔍 Fetching appointments for date: ${today}`);
-    const appointments = await tebraProxyClient.getAppointments(today, today);
-    console.log('📋 Raw appointments response type:', typeof appointments);
-    console.log('📋 Raw appointments response:', JSON.stringify(appointments, null, 2));
-    console.log(`📊 Found ${Array.isArray(appointments) ? appointments.length : 'non-array'} appointments for ${today}`);
-    
-    // Get providers to enrich appointment data
-    const providers = await tebraProxyClient.getProviders();
-    console.log('Raw providers response:', JSON.stringify(providers, null, 2));
-    console.log(`Found ${providers.length} providers`);
-    const providerMap = new Map(providers.map(p => [
-      p.ProviderId || p.ID || p.Id, 
-      { 
-        name: `${p.Degree || p.Title || 'Dr.'} ${p.FirstName} ${p.LastName}`,
-        firstName: p.FirstName,
-        lastName: p.LastName,
-        title: p.Degree || p.Title || 'Dr.'
-      }
-    ]));
-    
-    // Transform appointments to Patient format for the dashboard
-    const transformedPatients = [];
-    console.log(`🔄 Starting transformation of ${Array.isArray(appointments) ? appointments.length : 0} appointments`);
-    
-    for (const appointment of appointments) {
-      try {
-        // Get patient details
-        const patientId = appointment.PatientId || appointment.patientId;
-        if (!patientId) continue;
-        
-        const patientData = await tebraProxyClient.getPatientById(patientId);
-        if (!patientData) continue;
-        
-        // Parse appointment time
-        const appointmentDateTime = appointment.StartTime || 
-                                  appointment.AppointmentTime || 
-                                  `${appointment.Date || appointment.AppointmentDate} ${appointment.Time || ''}`;
-        
-        // Get provider info
-        const providerId = appointment.ProviderId || appointment.providerId;
-        const provider = providerMap.get(providerId);
-        
-        // Map Tebra status to our internal status
-        let status = 'scheduled';
-        const tebraStatus = (appointment.Status || appointment.status || '').toLowerCase();
-        if (tebraStatus === 'confirmed') {
-          status = 'Confirmed';
-        } else if (tebraStatus === 'cancelled') {
-          status = 'Cancelled';
-        } else if (tebraStatus === 'rescheduled') {
-          status = 'Rescheduled';
-        } else if (tebraStatus === 'no show') {
-          status = 'No Show';
-        }
-        
-        // Create patient object
-        const patient = {
-          id: patientData.PatientId || patientData.Id || patientId,
-          name: `${patientData.FirstName || ''} ${patientData.LastName || ''}`.trim(),
-          dob: patientData.DateOfBirth || patientData.DOB || '',
-          appointmentTime: appointmentDateTime,
-          appointmentType: appointment.Type || appointment.AppointmentType || 'Office Visit',
-          provider: provider ? provider.name : 'Unknown Provider',
-          status: status,
-          checkInTime: undefined,
-          room: undefined,
-          // Additional fields for dashboard
-          phone: patientData.Phone || patientData.PhoneNumber || '',
-          email: patientData.Email || patientData.EmailAddress || ''
-        };
-        
-        transformedPatients.push(patient);
-        
-      } catch (patientError) {
-        console.error('Error processing patient:', patientError);
-        // Continue with other patients
-      }
-    }
-    
-    // Store in Firestore for persistence
-    const sessionRef = db.collection('daily_sessions').doc(today);
-    await sessionRef.set({
-      date: today,
-      patients: transformedPatients,
-      lastSync: admin.firestore.FieldValue.serverTimestamp(),
-      syncedBy: request.auth.uid
-    }, { merge: true });
-    
-    console.log(`✅ Successfully synced ${transformedPatients.length} patients for ${today}`);
-    console.log('📋 Final transformed patients:', JSON.stringify(transformedPatients, null, 2));
-    
-    return {
-      success: true,
-      data: transformedPatients,
-      message: `Successfully synced ${transformedPatients.length} appointments`
-    };
-  } catch (error) {
-    console.error('Failed to sync schedule:', error);
-    return {
-      success: false,
-      message: error.message || 'Failed to sync today\'s schedule'
-    };
-  }
-});
+// Import the new refactored sync function
+const { tebraSyncTodaysSchedule } = require('./src/tebra-sync/index');
+exports.tebraSyncTodaysSchedule = tebraSyncTodaysSchedule;
 
 // Auth0 token exchange function
 exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {

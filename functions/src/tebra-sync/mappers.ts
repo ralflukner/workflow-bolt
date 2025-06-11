@@ -18,17 +18,18 @@ export const toDashboardPatient = (
   patient: TebraPatient,
   provider: TebraProvider | undefined,
 ): DashboardPatient => ({
-  id: patient.PatientId,
+  id: patient.PatientId || patient.Id || '',
   name: `${patient.FirstName} ${patient.LastName}`.trim(),
-  dob: patient.DateOfBirth,
+  dob: patient.DateOfBirth || patient.DOB || '',
   appointmentTime:
     appointment.StartTime ??
-    `${appointment.Date} ${appointment.Time ?? ''}`.trim(),
-  appointmentType: appointment.Type ?? 'Office Visit',
+    appointment.AppointmentTime ??
+    `${appointment.Date || appointment.AppointmentDate || ''} ${appointment.Time || ''}`.trim(),
+  appointmentType: appointment.Type || appointment.AppointmentType || 'Office Visit',
   provider: provider
-    ? `${provider.Title ?? 'Dr.'} ${provider.FirstName} ${provider.LastName}`
+    ? `${provider.Title || provider.Degree || 'Dr.'} ${provider.FirstName} ${provider.LastName}`
     : 'Unknown Provider',
-  status: tebraStatusToInternal(appointment.Status ?? ''),
-  phone: patient.Phone,
-  email: patient.Email,
+  status: tebraStatusToInternal(appointment.Status || appointment.status || ''),
+  phone: patient.Phone || patient.PhoneNumber,
+  email: patient.Email || patient.EmailAddress,
 }); 

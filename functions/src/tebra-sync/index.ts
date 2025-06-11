@@ -4,7 +4,7 @@ import { firestoreDailySessionRepo } from '../services/firestoreDailySession';
 import { tebraProxyClient } from '../tebra-proxy-client';
 import { syncSchedule } from './syncSchedule';
 
-exports.tebraSyncTodaysSchedule = onCall({ cors: true }, async (req) => {
+export const tebraSyncTodaysSchedule = onCall({ cors: true }, async (req) => {
   try {
     if (!req.auth) throw new Error('Authentication required');
     const count = await syncSchedule(

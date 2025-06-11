@@ -10,10 +10,25 @@ export const firestoreDailySessionRepo: DailySessionRepo = {
     const db = admin.firestore();
     const batch = db.batch();
     const root = db.collection('daily_sessions').doc(date);
-    batch.set(root, { date, lastSync: admin.firestore.FieldValue.serverTimestamp(), syncedBy: uid }, { merge: true });
-    patients.forEach((p) => {
-      batch.set(root.collection('patients').doc(p.id), p, { merge: true });
-    });
+    
+    // Store metadata and patients array (for backward compatibility)
+    batch.set(root, { 
+      date, 
+      patients,
+      lastSync: admin.firestore.FieldValue.serverTimestamp(), 
+      syncedBy: uid 
+    }, { merge: true });
+    
+    // Also store each patient in subcollection (for scalability)
+ let ops = 0;
+ for (const p of patients) {
+   batch.set(root.collection('patients').doc(p.id), p, { merge: true });
+   if (++ops === 499) {  // 499 + root = 500
+     await batch.commit();
+     ops = 0;
+   }
+ }
+ if (ops) await batch.commit();
     await batch.commit();
   },
 }; 
