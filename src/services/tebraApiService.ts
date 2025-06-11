@@ -296,6 +296,23 @@ export class TebraApiService {
       };
     }
   }
+
+  /**
+   * Test appointments endpoint with raw data
+   */
+  async testAppointments(date: string): Promise<ApiResponse<unknown>> {
+    try {
+      console.log('Testing appointments endpoint for date:', date);
+      const result = await this.tebraTestAppointments({ date });
+      return result.data as ApiResponse<unknown>;
+    } catch (error) {
+      console.error('Test appointments failed:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Test failed'
+      };
+    }
+  }
 }
 
 // Export a singleton instance
