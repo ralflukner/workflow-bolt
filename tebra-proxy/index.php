@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Security: API Key authentication
 function validateApiKey()
 {
-    $api_key = getenv('API_KEY') ?: 'secure-random-key-change-in-production';
+    $api_key = getenv('API_KEY') ?: 'UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=';
     $provided_key = $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? '';
 
     if (empty($provided_key) || !hash_equals($api_key, $provided_key)) {
