@@ -4,7 +4,7 @@
  */
 
 import type { Patient, AppointmentType } from '../types';
-import { TebraPatient, TebraAppointment, TebraDailySession, TebraProvider } from './tebra-api-service.types';
+import type { TebraPatient, TebraAppointment, TebraDailySession, TebraProvider } from './tebra-api-service.types';
 
 /**
  * Tebra data transformer class
@@ -134,4 +134,4 @@ export class TebraDataTransformer {
       room: undefined
     };
   }
-} 
+}

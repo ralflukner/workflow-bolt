@@ -53,49 +53,59 @@ const syncSchedule = async (
 
   // Add detailed debugging for the Tebra API call
   logger.info('📞 Calling tebra.getAppointments with dates:', { fromDate, toDate });
-  const appointments = await tebra.getAppointments(fromDate, toDate);
-  
-  // Log the raw response details
-  logger.info('📋 Raw appointments response type:', typeof appointments);
-  logger.info('📋 Raw appointments response:', JSON.stringify(appointments, null, 2));
-  logger.info('📊 Array check - isArray:', Array.isArray(appointments));
-  logger.info('📊 Length/count:', appointments?.length || 'no length property');
-
-  // Handle different response structures
-  let appointmentsArray = appointments;
-  if (!Array.isArray(appointments)) {
-    logger.error('❌ Expected array but got:', typeof appointments);
-    logger.error('❌ Response content:', appointments);
+  try {
+    const appointments = await tebra.getAppointments(fromDate, toDate);
     
-    // Try to extract appointments from different possible structures
-    if (appointments && appointments.appointments) {
-      appointmentsArray = appointments.appointments;
-      logger.info('🔧 Found appointments in .appointments property');
-    } else if (appointments && appointments.data) {
-      appointmentsArray = appointments.data;
-      logger.info('🔧 Found appointments in .data property');
-    } else {
-      logger.error('❌ Cannot find appointments array in response');
+    // Log the raw response details
+    logger.info('📋 Raw appointments response type:', typeof appointments);
+    logger.info('📋 Raw appointments response:', JSON.stringify(appointments, null, 2));
+    logger.info('📊 Array check - isArray:', Array.isArray(appointments));
+    logger.info('📊 Length/count:', appointments?.length || 'no length property');
+
+    // Handle different response structures
+    let appointmentsArray = appointments;
+    if (!Array.isArray(appointments)) {
+      logger.error('❌ Expected array but got:', typeof appointments);
+      logger.error('❌ Response content:', appointments);
+      
+      // Try to extract appointments from different possible structures
+      if (appointments && appointments.appointments) {
+        appointmentsArray = appointments.appointments;
+        logger.info('🔧 Found appointments in .appointments property');
+      } else if (appointments && appointments.data) {
+        appointmentsArray = appointments.data;
+        logger.info('🔧 Found appointments in .data property');
+      } else {
+        logger.error('❌ Cannot find appointments array in response');
+        return 0;
+      }
+    }
+    
+    if (!Array.isArray(appointmentsArray)) {
+      logger.error('❌ Still not an array after extraction:', typeof appointmentsArray);
       return 0;
     }
-  }
-  
-  if (!Array.isArray(appointmentsArray)) {
-    logger.error('❌ Still not an array after extraction:', typeof appointmentsArray);
-    return 0;
-  }
 
-  if (!appointmentsArray.length) {
-    logger.warn('⚠️ No appointments found in array', { 
-      fromDate, 
-      toDate,
-      arrayLength: appointmentsArray.length,
-      firstFewItems: appointmentsArray.slice(0, 3)
+    if (!appointmentsArray.length) {
+      logger.warn('⚠️ No appointments found in array', { 
+        fromDate, 
+        toDate,
+        arrayLength: appointmentsArray.length,
+        firstFewItems: appointmentsArray.slice(0, 3)
+      });
+      return 0;
+    }
+
+    logger.info('✅ Found appointments to process:', appointmentsArray.length);
+  } catch (error) {
+    logger.error('❌ Failed to get appointments:', error);
+    logger.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
     });
     return 0;
   }
-
-  logger.info('✅ Found appointments to process:', appointmentsArray.length);
 
   const providers = await tebra.getProviders();
   const providerMap = new Map(providers.map(p => [

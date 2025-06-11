@@ -103,6 +103,9 @@ async getAppointments(fromDate, toDate) {
   const result = await this.makeRequest('appointments', 'POST', { fromDate, toDate });
   console.log(`[TebraProxy] 📋 getAppointments result type:`, typeof result);
   console.log(`[TebraProxy] 📋 getAppointments result:`, JSON.stringify(result, null, 2));
+  console.log(`[TebraProxy] 📋 getAppointments result.appointments:`, result.appointments);
+  console.log(`[TebraProxy] 📋 getAppointments result.appointments type:`, typeof result.appointments);
+  console.log(`[TebraProxy] 📋 getAppointments result.appointments length:`, result.appointments?.length);
   
   // Return the appointments array directly since result is already the data object
   return result.appointments || [];
