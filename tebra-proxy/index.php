@@ -238,6 +238,12 @@ try {
     $endpoint = $pathParts[0] ?? '';
     $method = $_SERVER['REQUEST_METHOD'];
     
+    // Configuration from environment variables
+    $TEBRA_USERNAME = getenv('TEBRA_SOAP_USERNAME') ?: 'work-flow@luknerclinic.com';
+    $TEBRA_PASSWORD = getenv('TEBRA_SOAP_PASSWORD') ?: 'Y2ISY-x@mf1B4renpKHV3w49';
+    $TEBRA_CUSTKEY = getenv('TEBRA_SOAP_CUSTKEY') ?: 'j57wt68dc39q';
+    $TEBRA_WSDL = getenv('TEBRA_SOAP_WSDL') ?: 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl';
+
     // Create Tebra client
     $client = createTebraClient(
         $TEBRA_WSDL,
@@ -301,7 +307,7 @@ try {
                     'Filter' => array(
                         'StartDate' => date('n/j/Y', strtotime($today)) . ' 12:00:00 AM',
                         'EndDate' => date('n/j/Y', strtotime($today)) . ' 11:59:59 PM',
-                        'PracticeID' => '1',
+                        'PracticeID' => '67149',
                         'TimeZoneOffsetFromGMT' => '-6'
                     ),
                     'Fields' => array('ID' => true, 'PatientFullName' => true, 'StartDate' => true)
