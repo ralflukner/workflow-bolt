@@ -7,7 +7,10 @@ const admin = require('firebase-admin');
 
 // Initialize Firebase Admin (avoid duplicate app error)
 if (!admin.apps.length) {
-  admin.initializeApp();
+  // Initialize with default credentials and explicit project ID
+  admin.initializeApp({
+    projectId: 'luknerlumina-firebase'
+  });
 }
 const db = admin.firestore();
 
@@ -324,6 +327,10 @@ exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
     // Extract user ID from Auth0 token (this should be done after verification)
     // In production, decode and verify the JWT token properly
     const uid = 'auth0|' + Date.now(); // This should be the actual Auth0 user ID
+    
+    // Log the service account being used
+    console.log('Service account:', process.env.GOOGLE_APPLICATION_CREDENTIALS || 'Using default credentials');
+    console.log('Function service account:', process.env.K_SERVICE || 'Unknown');
     
     // Create a custom Firebase token
     const customToken = await admin.auth().createCustomToken(uid, {
