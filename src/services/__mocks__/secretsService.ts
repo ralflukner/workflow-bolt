@@ -2,7 +2,7 @@
 
 export class SecretsService {
   private static instance: SecretsService;
-  private static cache: Record<string, any> = {};
+  // Cache removed as it was unused
 
   public static getInstance(): SecretsService {
     if (!SecretsService.instance) {
@@ -45,13 +45,13 @@ export class SecretsService {
    * Mock clear cache
    */
   public clearCache(): void {
-    SecretsService.cache = {};
+    // Cache functionality removed - mock implementation
   }
 
   /**
    * Mock store secret
    */
-  public async storeSecret(secretName: string, secretValue: string): Promise<void> {
+  public async storeSecret(_secretName: string, _secretValue: string): Promise<void> {
     // Mock implementation - do nothing
   }
 }

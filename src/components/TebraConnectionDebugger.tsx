@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { tebraApiService } from '../services/tebraApiService';
 import { app, isFirebaseConfigured } from '../config/firebase';
 import { getFunctions } from 'firebase/functions';
@@ -184,7 +184,7 @@ export const TebraConnectionDebugger: React.FC = () => {
           </button>
 
           <div className="space-y-1">
-            {console.log('Rendering connection test status:', debugInfo.connectionTest)}
+            {/* Debug log removed for production */}
             <div className={`flex items-center gap-2 ${
               debugInfo.connectionTest.status === 'success' ? 'text-green-400' :
               debugInfo.connectionTest.status === 'failed' ? 'text-red-400' :

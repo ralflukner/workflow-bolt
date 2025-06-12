@@ -12,7 +12,7 @@ jest.mock('../../config/firebase', () => ({
 
 jest.mock('../../services/firebase/dailySessionService');
 
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { describe, it, expect, jest } from '@jest/globals';
 import { TebraApiService } from '../tebra-api-service';
 import { createTebraConfig } from '../tebra-integration-service';
 import { TebraCredentials } from '../tebra-api-service.types';
