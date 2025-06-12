@@ -72,7 +72,7 @@ module.exports = {
     {
       displayName: 'integration',
       preset: 'ts-jest',
-      testEnvironment: 'jsdom',
+      testEnvironment: 'node',
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {

@@ -1,0 +1,3 @@
+export TEBRA_USERNAME="ZEp7U8-VeHuza@luknerclinic.com"
+export TEBRA_PASSWORD="8<O{*a3SF297i]CDFW5mmZ&asx519M"
+export TEBRA_CUSTOMERKEY="j57wt68dc39q"
