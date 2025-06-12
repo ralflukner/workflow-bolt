@@ -306,19 +306,19 @@ export class AuthBridge {
 
       const response = result.data;
 
-      if (!response.success || !response.data?.firebaseToken) {
+      if (!response.success || !response.firebaseToken) {
         throw new Error(response.message || 'Token exchange failed');
       }
 
       // Cache the successful result
-      if (response.data.uid) {
-        this.cacheToken(tokenHash, response.data.firebaseToken, auth0Token, response.data.uid);
-        debugInfo.firebaseUid = response.data.uid;
+      if (response.uid) {
+        this.cacheToken(tokenHash, response.firebaseToken, auth0Token, response.uid);
+        debugInfo.firebaseUid = response.uid;
       }
 
       debugInfo.firebaseUserPresent = true;
-      this.logDebug('✅ Secure token exchange successful', { uid: response.data.uid });
-      return response.data.firebaseToken;
+      this.logDebug('✅ Secure token exchange successful', { uid: response.uid });
+      return response.firebaseToken;
 
     } catch (error) {
       debugInfo.errorDetails = error instanceof Error ? error.message : String(error);
