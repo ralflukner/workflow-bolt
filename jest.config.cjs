@@ -6,7 +6,8 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: 'tsconfig.json'
-    }]
+    }],
+    '^.+\\.(js|jsx)$': 'babel-jest'
   },
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
@@ -22,6 +23,12 @@ module.exports = {
     '/dist/',
     '/build/'
   ],
+  // Add globals to mock import.meta for Jest
+  globals: {
+    'import.meta': {
+      env: {}
+    }
+  },
   // Separate test runners for different test types
   projects: [
     {
@@ -32,7 +39,8 @@ module.exports = {
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
           tsconfig: 'tsconfig.json'
-        }]
+        }],
+        '^.+\\.(js|jsx)$': 'babel-jest'
       },
       moduleNameMapper: {
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
@@ -49,7 +57,13 @@ module.exports = {
         '.integration.test.',
         '.e2e.test.',
         'real-api'
-      ]
+      ],
+      // Add globals to mock import.meta for Jest
+      globals: {
+        'import.meta': {
+          env: {}
+        }
+      }
     },
     {
       displayName: 'integration',
@@ -59,7 +73,8 @@ module.exports = {
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
           tsconfig: 'tsconfig.json'
-        }]
+        }],
+        '^.+\\.(js|jsx)$': 'babel-jest'
       },
       moduleNameMapper: {
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
@@ -71,7 +86,12 @@ module.exports = {
         '<rootDir>/src/**/__tests__/**/integration/**/*.test.(ts|tsx)'
       ],
       // Only run integration tests when environment variable is set
-      testRunner: process.env.RUN_INTEGRATION_TESTS ? undefined : '<rootDir>/src/test/skipRunner.js'
+      testRunner: process.env.RUN_INTEGRATION_TESTS ? undefined : '<rootDir>/src/test/skipRunner.js',
+      globals: {
+        'import.meta': {
+          env: {}
+        }
+      }
     },
     {
       displayName: 'real-api',
@@ -81,7 +101,8 @@ module.exports = {
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
           tsconfig: 'tsconfig.json'
-        }]
+        }],
+        '^.+\\.(js|jsx)$': 'babel-jest'
       },
       moduleNameMapper: {
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
@@ -92,7 +113,12 @@ module.exports = {
         '<rootDir>/src/**/__tests__/**/real-api/**/*.test.(ts|tsx)'
       ],
       // Only run real API tests when explicitly enabled
-      testRunner: process.env.RUN_REAL_API_TESTS ? undefined : '<rootDir>/src/test/skipRunner.js'
+      testRunner: process.env.RUN_REAL_API_TESTS ? undefined : '<rootDir>/src/test/skipRunner.js',
+      globals: {
+        'import.meta': {
+          env: {}
+        }
+      }
     }
   ],
   collectCoverageFrom: [
