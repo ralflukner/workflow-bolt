@@ -30,8 +30,8 @@ describe('Frontend-Safe Redaction Utility', () => {
 
     it('should handle empty or invalid input', () => {
       expect(redactSecrets('')).toBe('');
-      expect(redactSecrets(null as any)).toBe(null);
-      expect(redactSecrets(undefined as any)).toBe(undefined);
+      expect(redactSecrets(null as unknown as string)).toBe(null);
+      expect(redactSecrets(undefined as unknown as string)).toBe(undefined);
     });
   });
 
