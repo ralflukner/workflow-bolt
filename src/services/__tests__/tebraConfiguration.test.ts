@@ -1,15 +1,29 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { TebraApiService } from '../tebraApiService';
-import { SecretsService } from '../secretsService';
 
-// Mock the secrets service
-jest.mock('../secretsService');
+// Mock the entire secrets service module
+jest.mock('../secretsService', () => ({
+  SecretsService: jest.fn().mockImplementation(() => ({
+    getSecret: jest.fn()
+  }))
+}));
 
 describe('Tebra Configuration Diagnostics', () => {
-  let mockSecretsService: jest.Mocked<SecretsService>;
+  let mockGetSecret: jest.MockedFunction<(secretKey: string) => Promise<string | null>>;
+  let originalFetch: typeof global.fetch;
 
   beforeEach(() => {
-    mockSecretsService = new SecretsService() as jest.Mocked<SecretsService>;
+    // Save original fetch
+    originalFetch = global.fetch;
+    
+    // Create mock for getSecret that can return null
+    mockGetSecret = jest.fn() as jest.MockedFunction<(secretKey: string) => Promise<string | null>>;
+    
+    // Mock the TebraApiService to use our mock
+    jest.spyOn(require('../secretsService'), 'SecretsService').mockImplementation(() => ({
+      getSecret: mockGetSecret
+    }));
+    
     jest.clearAllMocks();
   });
 
