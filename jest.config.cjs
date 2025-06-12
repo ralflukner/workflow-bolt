@@ -31,8 +31,7 @@ module.exports = {
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
-          tsconfig: 'tsconfig.json',
-          isolatedModules: true
+          tsconfig: 'tsconfig.json'
         }]
       },
       moduleNameMapper: {
@@ -59,8 +58,7 @@ module.exports = {
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
-          tsconfig: 'tsconfig.json',
-          isolatedModules: true
+          tsconfig: 'tsconfig.json'
         }]
       },
       moduleNameMapper: {
@@ -82,8 +80,7 @@ module.exports = {
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
-          tsconfig: 'tsconfig.json',
-          isolatedModules: true
+          tsconfig: 'tsconfig.json'
         }]
       },
       moduleNameMapper: {
