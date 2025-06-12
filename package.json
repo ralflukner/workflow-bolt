@@ -11,6 +11,10 @@
     "test": "jest --config jest.config.cjs",
     "test:watch": "jest --config jest.config.cjs --watch",
     "test:coverage": "jest --config jest.config.cjs --coverage",
+    "test:unit": "jest --config jest.config.cjs --selectProjects unit",
+    "test:integration": "RUN_INTEGRATION_TESTS=true jest --config jest.config.cjs --selectProjects integration",
+    "test:real-api": "RUN_REAL_API_TESTS=true jest --config jest.config.cjs --selectProjects real-api",
+    "test:all": "RUN_INTEGRATION_TESTS=true RUN_REAL_API_TESTS=true jest --config jest.config.cjs",
     "test:jest": "jest --forceExit --detectOpenHandles --verbose --bail --testTimeout=10000",
     "diagnose": "node scripts/tebra-diagnose.mjs"
   },
