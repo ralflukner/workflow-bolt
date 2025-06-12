@@ -113,10 +113,14 @@ exports.tebraGetPatient = onCall({ cors: true }, async (request) => {
       }
     };
   } catch (error) {
-    console.error('Failed to get patient:', error);
+    // HIPAA Compliance: Log errors without PHI
+    console.error(`Patient data access failed for user: ${request.auth?.uid}`, { 
+      errorType: error.name,
+      timestamp: new Date().toISOString()
+    });
     return {
       success: false,
-      message: error.message || 'Failed to get patient'
+      message: 'Failed to retrieve patient data' // Generic message to prevent PHI leakage
     };
   }
 });
@@ -284,7 +288,13 @@ exports.tebraCreateAppointment = onCall({ cors: true }, async (request) => {
 
 // Update appointment
 exports.tebraUpdateAppointment = onCall({ cors: true }, async (request) => {
-  console.log('Updating appointment:', request.data);
+  // HIPAA Compliance: Require authentication for PHI operations
+  if (!request.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required for appointment updates');
+  }
+  
+  // Audit log for HIPAA compliance (no PHI logged)
+  console.log(`Appointment update requested by user: ${request.auth.uid}`);
   
   try {
     const { appointmentId, updates } = request.data;
