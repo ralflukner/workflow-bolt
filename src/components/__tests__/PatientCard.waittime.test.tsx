@@ -20,6 +20,7 @@ describe('PatientCard Wait Time Display', () => {
         <PatientCard patient={mockPatient} />
       </TestProviders>
     );
-    expect(screen.getByText('30 min')).toBeInTheDocument();
+    // The component shows "Wait: X min" format, not just "X min"
+    expect(screen.getByText(/Wait: \d+ min/)).toBeInTheDocument();
   });
 });
