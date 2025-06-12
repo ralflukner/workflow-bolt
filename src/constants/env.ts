@@ -4,14 +4,26 @@
 // Helper function to safely access environment variables
 export const getEnvVar = (key: string, fallback: string = ''): string => {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const importMeta = (globalThis as any).import?.meta || import.meta;
-    if (importMeta?.env) {
-      return importMeta.env[key] || fallback;
+    // In test environment, use process.env if available
+    if (typeof process !== 'undefined' && process.env) {
+      return process.env[key] || fallback;
     }
-  } catch {
-    // Silently fall back in case import.meta is not available (e.g., in tests)
+    
+    // In browser environment with Vite, try to access import.meta.env
+    if (typeof globalThis !== 'undefined' && (globalThis as any).import?.meta?.env) {
+      return (globalThis as any).import.meta.env[key] || fallback;
+    }
+    
+    // Fallback for environments where import.meta is available directly (Vite dev)
+    if (typeof window !== 'undefined' && (window as any).import?.meta?.env) {
+      return (window as any).import.meta.env[key] || fallback;
+    }
+    
+  } catch (error) {
+    // Silently fall back in case of any errors
+    console.debug('Environment variable access failed:', error);
   }
+  
   return fallback;
 };
 
