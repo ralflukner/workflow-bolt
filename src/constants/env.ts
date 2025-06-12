@@ -10,12 +10,16 @@ export const getEnvVar = (key: string, fallback: string = ''): string => {
     }
     
     // In browser environment with Vite, try to access import.meta.env
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof globalThis !== 'undefined' && (globalThis as any).import?.meta?.env) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (globalThis as any).import.meta.env[key] || fallback;
     }
     
     // Fallback for environments where import.meta is available directly (Vite dev)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof window !== 'undefined' && (window as any).import?.meta?.env) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (window as any).import.meta.env[key] || fallback;
     }
     
