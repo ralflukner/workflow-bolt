@@ -189,6 +189,7 @@ const TebraIntegration: React.FC = () => {
       const authenticated = await ensureFirebaseAuth();
       if (!authenticated) {
         setStatusMessage('❌ Authentication failed - required for patient data access');
+        setIsLoading(false); // Ensure the loading spinner is cleared
         return;
       }
 

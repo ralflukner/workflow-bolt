@@ -6,10 +6,9 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: 'tsconfig.json',
-      useESM: true
+      isolatedModules: true
     }]
   },
-  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '^@/(.*)$': '<rootDir>/src/$1'
@@ -19,10 +18,29 @@ module.exports = {
     '**/__tests__/**/*.(ts|tsx|js)',
     '**/*.(test|spec).(ts|tsx|js)'
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',
+    '/build/'
+  ],
   // Separate test runners for different test types
   projects: [
     {
       displayName: 'unit',
+      preset: 'ts-jest',
+      testEnvironment: 'jsdom',
+      moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
+      transform: {
+        '^.+\\.(ts|tsx)$': ['ts-jest', {
+          tsconfig: 'tsconfig.json',
+          isolatedModules: true
+        }]
+      },
+      moduleNameMapper: {
+        '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+        '^@/(.*)$': '<rootDir>/src/$1'
+      },
+      setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
       testMatch: [
         '<rootDir>/src/**/__tests__/**/*.test.(ts|tsx)',
         '<rootDir>/src/**/*.test.(ts|tsx)'
@@ -31,25 +49,54 @@ module.exports = {
         '/integration/',
         '/e2e/',
         '.integration.test.',
-        '.e2e.test.'
+        '.e2e.test.',
+        'real-api'
       ]
     },
     {
       displayName: 'integration',
+      preset: 'ts-jest',
+      testEnvironment: 'jsdom',
+      moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
+      transform: {
+        '^.+\\.(ts|tsx)$': ['ts-jest', {
+          tsconfig: 'tsconfig.json',
+          isolatedModules: true
+        }]
+      },
+      moduleNameMapper: {
+        '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+        '^@/(.*)$': '<rootDir>/src/$1'
+      },
+      setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
       testMatch: [
         '<rootDir>/src/**/*.integration.test.(ts|tsx)',
         '<rootDir>/src/**/__tests__/**/integration/**/*.test.(ts|tsx)'
       ],
-             // Only run integration tests when environment variable is set
-       testRunner: process.env.RUN_INTEGRATION_TESTS ? undefined : '<rootDir>/src/test/skipRunner.js'
+      // Only run integration tests when environment variable is set
+      testRunner: process.env.RUN_INTEGRATION_TESTS ? undefined : '<rootDir>/src/test/skipRunner.js'
     },
     {
       displayName: 'real-api',
+      preset: 'ts-jest',
+      testEnvironment: 'jsdom',
+      moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
+      transform: {
+        '^.+\\.(ts|tsx)$': ['ts-jest', {
+          tsconfig: 'tsconfig.json',
+          isolatedModules: true
+        }]
+      },
+      moduleNameMapper: {
+        '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+        '^@/(.*)$': '<rootDir>/src/$1'
+      },
+      setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
       testMatch: [
-        '<rootDir>/src/**/__tests__/**/*Configuration.test.(ts|tsx)'
+        '<rootDir>/src/**/__tests__/**/real-api/**/*.test.(ts|tsx)'
       ],
-             // Only run real API tests when explicitly enabled
-       testRunner: process.env.RUN_REAL_API_TESTS ? undefined : '<rootDir>/src/test/skipRunner.js'
+      // Only run real API tests when explicitly enabled
+      testRunner: process.env.RUN_REAL_API_TESTS ? undefined : '<rootDir>/src/test/skipRunner.js'
     }
   ],
   collectCoverageFrom: [
@@ -60,10 +107,5 @@ module.exports = {
     '!src/**/*.test.*'
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
-  globals: {
-    'ts-jest': {
-      useESM: true
-    }
-  }
+  coverageReporters: ['text', 'lcov', 'html']
 }; 
