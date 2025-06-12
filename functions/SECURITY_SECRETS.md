@@ -7,6 +7,7 @@ This document outlines our security-first approach to managing secrets in Fireba
 ## 📋 Secret Inventory
 
 ### Production Secrets (Google Secret Manager)
+
 - `auth0-domain` - Auth0 tenant domain for JWT verification
 - `auth0-audience` - Auth0 API audience for token validation
 - `tebra-username` - Tebra API username (future)
@@ -14,6 +15,7 @@ This document outlines our security-first approach to managing secrets in Fireba
 - `tebra-api-url` - Tebra API endpoint URL (future)
 
 ### Local Development
+
 - Encrypted `.env` files for local development only
 - Never commit plaintext `.env` files to version control
 

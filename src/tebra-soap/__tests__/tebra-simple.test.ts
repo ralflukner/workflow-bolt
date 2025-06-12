@@ -31,20 +31,19 @@ describe('Tebra Integration - Simplified Tests', () => {
     });
 
     it('should throw error for invalid credentials', () => {
- // Clear environment variables to ensure test isolation
- const originalEnv = { ...process.env };
- Object.keys(process.env).forEach(key => delete (process as any).env[key]);
-
-// Mock the secrets service…
-try {
-  expect(() => new TebraApiService({})).toThrow(
-    'Invalid Tebra configuration. Missing required fields: wsdlUrl, username, password'
-  );
-} finally {
-  Object.assign(process.env, originalEnv);
-}
-        mockGetSecretSync.mockRestore();
-      }
+      // Test with empty credentials object
+      expect(() => new TebraApiService({} as TebraCredentials)).toThrow(
+        'Invalid Tebra credentials. All fields are required.'
+      );
+      
+      // Test with partial credentials
+      expect(() => new TebraApiService({ 
+        username: 'test', 
+        password: '', 
+        wsdlUrl: '' 
+      } as TebraCredentials)).toThrow(
+        'Invalid Tebra credentials. All fields are required.'
+      );
     });
 
     it('should have required methods available', () => {
