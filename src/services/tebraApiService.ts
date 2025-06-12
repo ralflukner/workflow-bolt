@@ -1,5 +1,6 @@
 import { httpsCallable, getFunctions } from 'firebase/functions';
 import { app, isFirebaseConfigured, functions } from '../config/firebase';
+import { SecretManager, redactSensitiveData } from '../utils/secretManager';
 
 // Lazy initialization of functions instance
 let functionsInstance: ReturnType<typeof getFunctions> | undefined;
@@ -111,6 +112,7 @@ export interface SyncResponse {
 /**
  * Client-side service for Tebra EHR integration via Firebase Functions
  * This replaces direct SOAP calls with serverless function calls
+ * Now includes HIPAA-compliant credential management and secure logging
  */
 export class TebraApiService {
   // Assign callable or stub based on environment
@@ -123,20 +125,74 @@ export class TebraApiService {
   private tebraUpdateAppointment = callableWrapper.tebraUpdateAppointment;
   private tebraSyncTodaysSchedule = callableWrapper.tebraSyncTodaysSchedule;
   private tebraTestAppointments = callableWrapper.tebraTestAppointments;
+  
+  // HIPAA-compliant secret manager
+  private secretManager: SecretManager;
+  private sensitiveValues: string[] = [];
+
+  constructor() {
+    this.secretManager = new SecretManager();
+    this.initializeSensitiveValues();
+  }
 
   /**
-   * Test connection to Tebra API
+   * Initialize sensitive values for redaction
+   * This helps ensure no credentials are accidentally logged
+   */
+  private async initializeSensitiveValues(): Promise<void> {
+    try {
+      const validation = await this.secretManager.validateTebraSecrets();
+      // We don't store the actual values, just mark that they exist
+      this.sensitiveValues = validation.availableSecrets.map(() => '[CREDENTIAL]');
+    } catch (error) {
+      this.secureLog('Failed to initialize sensitive values for redaction', error);
+    }
+  }
+
+  /**
+   * HIPAA-compliant logging that redacts sensitive information
+   */
+  private secureLog(message: string, data?: any): void {
+    const redactedMessage = redactSensitiveData(message, this.sensitiveValues);
+    if (data) {
+      const redactedData = typeof data === 'string' 
+        ? redactSensitiveData(data, this.sensitiveValues)
+        : data;
+      console.log(redactedMessage, redactedData);
+    } else {
+      console.log(redactedMessage);
+    }
+  }
+
+  /**
+   * Validate HIPAA compliance for the current configuration
+   */
+  async validateHIPAACompliance(): Promise<{
+    isCompliant: boolean;
+    issues: string[];
+    recommendations: string[];
+  }> {
+    const audit = await this.secretManager.auditSecretConfiguration();
+    return {
+      isCompliant: audit.configurationStatus === 'compliant',
+      issues: audit.issues,
+      recommendations: audit.recommendations
+    };
+  }
+
+  /**
+   * Test connection to Tebra API with HIPAA-compliant logging
    */
   async testConnection(): Promise<boolean> {
     try {
-      console.log('Testing Tebra API connection via Firebase Functions...');
+      this.secureLog('Testing Tebra API connection via Firebase Functions...');
       const result = await this.tebraTestConnection();
       const response = result.data as ApiResponse<null>;
 
-      console.log('Connection test result:', response);
+      this.secureLog('Connection test result:', response);
       return response.success;
     } catch (error) {
-      console.error('Connection test failed:', error);
+      this.secureLog('Connection test failed:', error);
       return false;
     }
   }

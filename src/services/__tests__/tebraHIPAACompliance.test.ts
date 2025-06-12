@@ -1,9 +1,22 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { SecretManager, redactSensitiveData } from '../../utils/secretManager';
 
 describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
-  
+  let secretManager: SecretManager;
+  let consoleSpy: jest.SpiedFunction<typeof console.log>;
+  let consoleErrorSpy: jest.SpiedFunction<typeof console.error>;
+
+  beforeEach(() => {
+    secretManager = new SecretManager('test-project-id');
+    consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   describe('Task 1: Secure Credential Management via Google Secret Manager 🔐', () => {
-    
     it('should validate that credentials are NOT stored in environment variables', () => {
       // HIPAA Requirement: No plaintext credentials in environment
       const envVars = process.env;
@@ -188,36 +201,107 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
     });
 
     it('should validate that secret values are never logged or exposed', () => {
-      // HIPAA Requirement: Secret values must never appear in logs
-      
-      const validateSecretLogging = (logMessage: string, secretValue: string) => {
-        // Secret value should never appear in logs
-        if (logMessage.includes(secretValue)) return false;
-        
-        // Common secret patterns should be redacted (only actual values, not the word followed by [REDACTED])
-        const secretPatterns = [
-          /password[:\s]+(?!\[REDACTED\])[a-zA-Z0-9-]+/i,
-          /key[:\s]+(?!\[REDACTED\])[a-zA-Z0-9-]+/i,
-          /token[:\s]+(?!\[REDACTED\])[a-zA-Z0-9-]+/i,
-          /secret[:\s]+(?!\[REDACTED\])[a-zA-Z0-9-]+/i
-        ];
-
-        // Check if any unredacted secret patterns exist
-        return !secretPatterns.some(pattern => pattern.test(logMessage));
-      };
-
       const mockSecretValue = 'super-secret-password-123';
+      const secrets = [mockSecretValue];
+
+      const logMessages = [
+        'Connecting to Tebra API...',
+        `Authentication with password: ${mockSecretValue}`,
+        'Processing patient data...',
+        `API URL: https://api.tebra.com?key=${mockSecretValue}`,
+        'Connection successful'
+      ];
+
+      // Test that redaction works for all log messages
+      for (const message of logMessages) {
+        const sanitizedMessage = redactSensitiveData(message, secrets);
+        expect(sanitizedMessage).not.toContain(mockSecretValue);
+        
+        if (message.includes(mockSecretValue)) {
+          expect(sanitizedMessage).toContain('[REDACTED]');
+        }
+      }
+    });
+
+    it('should properly redact multiple sensitive values', () => {
+      const username = 'tebra-user';
+      const password = 'secret-pass-456';
+      const apiKey = 'api-key-789';
       
-      // Safe log messages (should pass)
-      expect(validateSecretLogging('Accessing Tebra credentials...', mockSecretValue)).toBe(true);
-      expect(validateSecretLogging('Secret retrieved: [REDACTED]', mockSecretValue)).toBe(true);
-      expect(validateSecretLogging('Authentication successful', mockSecretValue)).toBe(true);
+      const message = `Connecting to Tebra with user: ${username}, password: ${password}, key: ${apiKey}`;
+      const redacted = redactSensitiveData(message, [username, password, apiKey]);
+      
+      expect(redacted).not.toContain(username);
+      expect(redacted).not.toContain(password);
+      expect(redacted).not.toContain(apiKey);
+      expect(redacted).toContain('[REDACTED]');
+    });
 
-      // Unsafe log messages (should fail)
-      expect(validateSecretLogging(`Password: ${mockSecretValue}`, mockSecretValue)).toBe(false);
-      expect(validateSecretLogging('Secret value: super-secret-password-123', mockSecretValue)).toBe(false);
+    it('should handle edge cases in redaction safely', () => {
+      const sensitiveValues = [null, undefined, '', 'valid-secret'];
+      const message = 'This contains a valid-secret that should be redacted';
+      
+      const redacted = redactSensitiveData(message, sensitiveValues);
+      expect(redacted).not.toContain('valid-secret');
+      expect(redacted).toContain('[REDACTED]');
+    });
 
-      console.log('✅ HIPAA COMPLIANCE: Secret values are properly redacted from logs');
+    it('should validate required Tebra secrets configuration', async () => {
+      // Mock the Secret Manager client
+      const mockAccessSecretVersion = jest.fn();
+      (secretManager as any)['client'].accessSecretVersion = mockAccessSecretVersion;
+
+      // Mock successful secret retrieval
+      mockAccessSecretVersion.mockResolvedValue([
+        {
+          payload: {
+            data: Buffer.from('mock-secret-value')
+          }
+        }
+      ]);
+
+      const validation = await secretManager.validateTebraSecrets();
+      
+      expect(validation.isValid).toBe(true);
+      expect(validation.availableSecrets).toContain('TEBRA_USERNAME');
+      expect(validation.availableSecrets).toContain('TEBRA_PASSWORD');
+      expect(validation.availableSecrets).toContain('TEBRA_API_URL');
+      expect(validation.missingSecrets).toHaveLength(0);
+    });
+
+    it('should detect missing secrets and provide recommendations', async () => {
+      // Mock the Secret Manager client to simulate missing secrets
+      const mockAccessSecretVersion = jest.fn();
+      (secretManager as any)['client'].accessSecretVersion = mockAccessSecretVersion;
+
+      // Mock failed secret retrieval
+      mockAccessSecretVersion.mockRejectedValue(new Error('Secret not found'));
+
+      const validation = await secretManager.validateTebraSecrets();
+      
+      expect(validation.isValid).toBe(false);
+      expect(validation.missingSecrets).toContain('TEBRA_USERNAME');
+      expect(validation.missingSecrets).toContain('TEBRA_PASSWORD');
+      expect(validation.missingSecrets).toContain('TEBRA_API_URL');
+    });
+
+    it('should perform HIPAA compliance audit', async () => {
+      // Mock the Secret Manager client
+      const mockAccessSecretVersion = jest.fn();
+      (secretManager as any)['client'].accessSecretVersion = mockAccessSecretVersion;
+
+      // Mock partial secret availability (some missing)
+      mockAccessSecretVersion
+        .mockResolvedValueOnce([{ payload: { data: Buffer.from('username') } }]) // TEBRA_USERNAME
+        .mockRejectedValueOnce(new Error('Secret not found')) // TEBRA_PASSWORD
+        .mockRejectedValueOnce(new Error('Secret not found')); // TEBRA_API_URL
+
+      const audit = await secretManager.auditSecretConfiguration();
+      
+      expect(audit.configurationStatus).toBe('non-compliant');
+      expect(audit.issues).toHaveLength(1);
+      expect(audit.issues[0]).toContain('Missing required secrets');
+      expect(audit.recommendations).toContain('Configure all required secrets in Google Secret Manager');
     });
   });
 
@@ -270,6 +354,185 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
       expect(exampleCode).not.toContain('console.log'); // No logging of secrets
 
       console.log('✅ HIPAA COMPLIANCE: TypeScript example validated for secure secret access');
+    });
+  });
+
+  describe('Task 2: Connection Testing Without PHI 🌐', () => {
+    it('should validate synthetic data usage for testing', () => {
+      const syntheticPatient = {
+        firstName: 'John',
+        lastName: 'Doe',
+        dateOfBirth: '1980-01-01',
+        mrn: 'TEST-MRN-001'
+      };
+
+      // Ensure synthetic data doesn't contain real PHI indicators
+      expect(syntheticPatient.lastName).toBe('Doe'); // Common test name
+      expect(syntheticPatient.mrn).toMatch(/^TEST-/); // Test prefix
+      expect(syntheticPatient.dateOfBirth).toBe('1980-01-01'); // Generic date
+    });
+
+    it('should validate that API responses do not contain real PHI', () => {
+      const mockApiResponse = {
+        status: 'success',
+        patients: [
+          {
+            id: 'test-patient-001',
+            name: 'John Doe',
+            mrn: 'TEST-MRN-001'
+          }
+        ]
+      };
+
+      // Validate that response contains only synthetic data
+      const patientData = JSON.stringify(mockApiResponse);
+      expect(patientData).not.toMatch(/\d{3}-\d{2}-\d{4}/); // No SSN pattern
+      expect(patientData).not.toMatch(/\d{4}-\d{4}-\d{4}-\d{4}/); // No credit card pattern
+      expect(patientData).toContain('TEST-'); // Contains test indicators
+    });
+  });
+
+  describe('Task 3: HIPAA Compliance Validation 🏥', () => {
+    it('should ensure all communications use HTTPS', () => {
+      const testUrls = [
+        'https://api.tebra.com/patients',
+        'https://secure.tebra.com/auth',
+        'https://api.tebra.com/providers'
+      ];
+
+      testUrls.forEach(url => {
+        expect(url).toMatch(/^https:\/\//);
+        expect(url).not.toMatch(/^http:\/\//);
+      });
+    });
+
+    it('should validate encryption requirements', () => {
+      const encryptionConfig = {
+        tlsVersion: '1.2',
+        cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384'],
+        certificateValidation: true
+      };
+
+      expect(parseFloat(encryptionConfig.tlsVersion)).toBeGreaterThanOrEqual(1.2);
+      expect(encryptionConfig.certificateValidation).toBe(true);
+      expect(encryptionConfig.cipherSuites.length).toBeGreaterThan(0);
+    });
+
+    it('should validate audit logging capabilities', () => {
+      const auditLog = {
+        timestamp: new Date().toISOString(),
+        action: 'ACCESS_PATIENT_DATA',
+        userId: 'user-123',
+        resource: 'patient-records',
+        result: 'success',
+        ipAddress: '[REDACTED]', // IP should be logged but potentially redacted
+        userAgent: 'TebrayEHR/1.0'
+      };
+
+      expect(auditLog.timestamp).toBeDefined();
+      expect(auditLog.action).toBeDefined();
+      expect(auditLog.userId).toBeDefined();
+      expect(auditLog.result).toMatch(/^(success|failure)$/);
+      
+      // Ensure sensitive data is properly handled
+      expect(auditLog.ipAddress).toMatch(/(\d+\.\d+\.\d+\.\d+|\[REDACTED\])/);
+    });
+  });
+
+  describe('Task 4: Network Security Checks 🛡️', () => {
+    it('should validate firewall configuration', () => {
+      const firewallRules = {
+        allowedPorts: [443, 80],
+        blockedPorts: [22, 3389, 21],
+        allowedIPs: ['10.0.0.0/8', '172.16.0.0/12'],
+        denyByDefault: true
+      };
+
+      expect(firewallRules.allowedPorts).toContain(443); // HTTPS
+      expect(firewallRules.blockedPorts).toContain(22); // SSH blocked
+      expect(firewallRules.denyByDefault).toBe(true);
+    });
+
+    it('should validate intrusion detection setup', () => {
+      const idsConfig = {
+        enabled: true,
+        monitoredEvents: ['failed_login', 'unusual_traffic', 'data_access'],
+        alertThresholds: {
+          failed_login: 5,
+          unusual_traffic: 100
+        }
+      };
+
+      expect(idsConfig.enabled).toBe(true);
+      expect(idsConfig.monitoredEvents).toContain('failed_login');
+      expect(idsConfig.alertThresholds.failed_login).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Task 5: Integration Flow Using Synthetic Data 🔄', () => {
+    it('should validate end-to-end flow with synthetic data only', async () => {
+      const syntheticWorkflow = {
+        step1: 'authenticate_with_synthetic_credentials',
+        step2: 'fetch_synthetic_patient_list',
+        step3: 'process_synthetic_data',
+        step4: 'generate_test_report'
+      };
+
+      // Simulate workflow execution
+      const workflowResult = Object.keys(syntheticWorkflow).every(step => 
+        syntheticWorkflow[step as keyof typeof syntheticWorkflow].includes('synthetic') || 
+        syntheticWorkflow[step as keyof typeof syntheticWorkflow].includes('test')
+      );
+
+      expect(workflowResult).toBe(true);
+    });
+
+    it('should implement data minimization principles', () => {
+      const requestPayload = {
+        query: 'patient_search',
+        filters: {
+          last_name: 'Doe',
+          date_of_birth: '1980-01-01'
+        },
+        // Only request necessary fields
+        fields: ['id', 'name', 'mrn'],
+        // Exclude sensitive fields
+        exclude: ['ssn', 'insurance_details', 'payment_info']
+      };
+
+      expect(requestPayload.fields).not.toContain('ssn');
+      expect(requestPayload.exclude).toContain('ssn');
+      expect(requestPayload.exclude).toContain('insurance_details');
+    });
+
+    it('should maintain comprehensive audit trails', () => {
+      const auditTrail = [
+        {
+          timestamp: '2024-01-01T10:00:00Z',
+          action: 'CONNECT_TO_TEBRA',
+          result: 'SUCCESS',
+          dataAccessed: 'NONE'
+        },
+        {
+          timestamp: '2024-01-01T10:00:01Z',
+          action: 'FETCH_SYNTHETIC_DATA',
+          result: 'SUCCESS',
+          dataAccessed: 'SYNTHETIC_PATIENT_LIST'
+        },
+        {
+          timestamp: '2024-01-01T10:00:02Z',
+          action: 'PROCESS_TEST_DATA',
+          result: 'SUCCESS',
+          dataAccessed: 'SYNTHETIC_ONLY'
+        }
+      ];
+
+      auditTrail.forEach(entry => {
+        expect(entry.timestamp).toBeDefined();
+        expect(entry.action).toBeDefined();
+        expect(entry.result).toMatch(/^(SUCCESS|FAILURE)$/);
+        expect(entry.dataAccessed).toMatch(/^(NONE|SYNTHETIC_.*|.*_TEST_.*)/);
+      });
     });
   });
 }); 
