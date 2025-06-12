@@ -84,7 +84,8 @@ openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -d \
 - ❌ Share encrypted files via insecure channels
 - ❌ Use weak encryption or short passwords
 
-### ALWAYS DO:
+### ALWAYS DO
+
 - ✅ Use Google Secret Manager for production
 - ✅ Encrypt local secrets with strong ciphers
 - ✅ Audit all secret access
@@ -109,7 +110,8 @@ openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -d \
 
 ## 🚨 Incident Response
 
-### If secrets are compromised:
+### If secrets are compromised
+
 1. **Immediate**: Rotate all affected secrets
 2. **Audit**: Review access logs for unauthorized access
 3. **Notify**: Inform security team and compliance officer
