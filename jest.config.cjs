@@ -48,8 +48,8 @@ module.exports = {
       testMatch: [
         '<rootDir>/src/**/__tests__/**/*Configuration.test.(ts|tsx)'
       ],
-      // Only run real API tests when explicitly enabled
-      testRunner: process.env.RUN_REAL_API_TESTS ? 'jest-runner' : '<rootDir>/src/test/skipRunner.js'
+             // Only run real API tests when explicitly enabled
+       testRunner: process.env.RUN_REAL_API_TESTS ? undefined : '<rootDir>/src/test/skipRunner.js'
     }
   ],
   collectCoverageFrom: [
