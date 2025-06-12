@@ -59,6 +59,9 @@ const callableWrapper = {
   tebraUpdateAppointment: createCallable('tebraUpdateAppointment'),
   tebraSyncTodaysSchedule: createCallable('tebraSyncTodaysSchedule'),
   tebraTestAppointments: createCallable('tebraTestAppointments'),
+  // HIPAA compliance functions
+  validateHIPAACompliance: createCallable('validateHIPAACompliance'),
+  testSecretRedaction: createCallable('testSecretRedaction'),
 };
 
 // Define types for Tebra data
@@ -124,6 +127,9 @@ export class TebraApiService {
   private tebraUpdateAppointment = callableWrapper.tebraUpdateAppointment;
   private tebraSyncTodaysSchedule = callableWrapper.tebraSyncTodaysSchedule;
   private tebraTestAppointments = callableWrapper.tebraTestAppointments;
+  // HIPAA compliance callables
+  private validateHIPAAComplianceBackend = callableWrapper.validateHIPAACompliance;
+  private testSecretRedactionBackend = callableWrapper.testSecretRedaction;
   
   /**
    * Frontend-safe logging that avoids exposing sensitive information
@@ -148,18 +154,57 @@ export class TebraApiService {
     recommendations: string[];
   }> {
     try {
-      // Call a Firebase Function that handles the actual Secret Manager validation
-      // For now, return a basic check - this should be implemented in Firebase Functions
-      return {
-        isCompliant: true,
-        issues: [],
-        recommendations: ['Implement backend HIPAA validation via Firebase Functions']
-      };
+      this.secureLog('Validating HIPAA compliance via Firebase Functions...');
+      const result = await this.validateHIPAAComplianceBackend();
+      const response = result.data;
+      
+      if (response.success) {
+        this.secureLog('HIPAA compliance validation completed');
+        return {
+          isCompliant: response.isCompliant,
+          issues: response.issues || [],
+          recommendations: response.recommendations || []
+        };
+      } else {
+        this.secureLog('HIPAA compliance validation failed');
+        return {
+          isCompliant: false,
+          issues: response.issues || ['Validation service unavailable'],
+          recommendations: response.recommendations || ['Check Firebase Functions connectivity']
+        };
+      }
     } catch (error) {
+      this.secureLog('HIPAA compliance validation error', error);
       return {
         isCompliant: false,
         issues: ['Failed to validate HIPAA compliance'],
         recommendations: ['Check Firebase Functions connectivity', 'Verify Secret Manager setup']
+      };
+    }
+  }
+
+  /**
+   * Test secret redaction functionality via Firebase Functions
+   */
+  async testSecretRedaction(message: string, testSecrets: string[]): Promise<{
+    success: boolean;
+    redactedMessage?: string;
+    containsSensitiveData?: boolean;
+  }> {
+    try {
+      this.secureLog('Testing secret redaction via Firebase Functions...');
+      const result = await this.testSecretRedactionBackend({ message, testSecrets });
+      const response = result.data;
+      
+      return {
+        success: response.success,
+        redactedMessage: response.redactedMessage,
+        containsSensitiveData: response.containsSensitiveData
+      };
+    } catch (error) {
+      this.secureLog('Secret redaction test failed', error);
+      return {
+        success: false
       };
     }
   }
