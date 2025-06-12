@@ -35,12 +35,12 @@ export const ENV_INFO = {
 // Helper function to safely access environment variables
 export const getEnvVar = (key: string, fallback: string = ''): string => {
   try {
-    // @ts-ignore - import.meta is provided by Vite
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const importMeta = (globalThis as any).import?.meta || import.meta;
     if (importMeta?.env) {
       return importMeta.env[key] || fallback;
     }
-  } catch (error) {
+  } catch {
     // Silently fall back in case import.meta is not available (e.g., in tests)
   }
   return fallback;

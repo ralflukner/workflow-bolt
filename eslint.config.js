@@ -5,7 +5,17 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'src/tebra-soap/**', '!src/tebra-soap/tebraSoapClient.ts', '!src/tebra-soap/__tests__/**'] },
+  { ignores: [
+    'dist', 
+    'src/tebra-soap/**', 
+    '!src/tebra-soap/tebraSoapClient.ts', 
+    '!src/tebra-soap/__tests__/**',
+    'coverage/**',
+    'node_modules/**',
+    'functions/node_modules/**',
+    'tebra-proxy/**',
+    '__mocks__/**'
+  ] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
