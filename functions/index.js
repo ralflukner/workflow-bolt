@@ -13,6 +13,12 @@ const {
   validateAppointmentData,
   logValidationAttempt 
 } = require('./src/validation');
+const { 
+  monitorAuth, 
+  monitorPhiAccess, 
+  monitorValidationFailure,
+  generateSecurityReport 
+} = require('./src/monitoring');
 
 // Initialize Firebase Admin (avoid duplicate app error)
 if (!admin.apps.length) {
@@ -113,8 +119,11 @@ exports.tebraGetPatient = onCall({
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required for patient data access');
   }
   
-  // Audit log for HIPAA compliance (no PHI logged)
-  console.log(`Patient data access requested by user: ${request.auth.uid}`);
+  // HIPAA Monitoring: Track PHI access
+  monitorPhiAccess(request.auth.uid, 'PATIENT_GET', { 
+    endpoint: 'tebraGetPatient',
+    timestamp: new Date().toISOString()
+  });
   
   try {
     // HIPAA Security: Validate and sanitize input
@@ -164,8 +173,11 @@ exports.tebraSearchPatients = onCall({ cors: true }, async (request) => {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required for patient search');
   }
   
-  // Audit log for HIPAA compliance (no PHI logged)
-  console.log(`Patient search requested by user: ${request.auth.uid}`);
+  // HIPAA Monitoring: Track PHI access
+  monitorPhiAccess(request.auth.uid, 'PATIENT_SEARCH', { 
+    endpoint: 'tebraSearchPatients',
+    timestamp: new Date().toISOString()
+  });
   
   try {
     // HIPAA Security: Validate and sanitize search criteria
@@ -207,8 +219,11 @@ exports.tebraGetAppointments = onCall({ cors: true }, async (request) => {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required for appointment data access');
   }
   
-  // Audit log for HIPAA compliance (no PHI logged)
-  console.log(`Appointment data access requested by user: ${request.auth.uid}`);
+  // HIPAA Monitoring: Track PHI access
+  monitorPhiAccess(request.auth.uid, 'APPOINTMENT_GET', { 
+    endpoint: 'tebraGetAppointments',
+    timestamp: new Date().toISOString()
+  });
   
   try {
     // HIPAA Security: Validate date input
