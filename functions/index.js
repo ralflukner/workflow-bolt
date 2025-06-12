@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const admin = require('firebase-admin');
 const jwt = require('jsonwebtoken');
 const jwksRsa = require('jwks-rsa');
+const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 const { tebraProxyClient } = require('./src/tebra-proxy-client');
 const { 
   validatePatientId, 
