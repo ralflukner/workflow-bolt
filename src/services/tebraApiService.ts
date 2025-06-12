@@ -30,8 +30,8 @@ const getFunctionsInstance = () => {
 
 // Utility to create a callable or a fallback stub
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const createCallable = (name: string): any => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return async (...args: any[]) => {
     const instance = getFunctionsInstance();
     if (instance) {
