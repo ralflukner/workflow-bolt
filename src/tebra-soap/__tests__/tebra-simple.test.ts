@@ -35,10 +35,15 @@ describe('Tebra Integration - Simplified Tests', () => {
       const originalEnv = process.env;
       process.env = {};
       
+      // Mock the secrets service to return empty values for this test
+      const { secretsService } = require('../../services/secretsService');
+      const mockGetSecretSync = jest.spyOn(secretsService, 'getSecretSync').mockReturnValue('');
+      
       try {
-        expect(() => new TebraApiService({})).toThrow('Invalid Tebra configuration');
+        expect(() => new TebraApiService({})).toThrow('Invalid Tebra configuration. Missing required fields: wsdlUrl, username, password');
       } finally {
         process.env = originalEnv;
+        mockGetSecretSync.mockRestore();
       }
     });
 

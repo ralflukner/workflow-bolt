@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import PatientCard from '../PatientCard';
 import { Patient } from '../../types';
+import { TestProviders } from '../../test/testHelpers';
 
 describe('PatientCard Wait Time Display', () => {
   const mockPatient: Patient = {
@@ -14,7 +15,11 @@ describe('PatientCard Wait Time Display', () => {
   };
 
   it('should display wait time correctly', () => {
-    render(<PatientCard patient={mockPatient} />);
+    render(
+      <TestProviders>
+        <PatientCard patient={mockPatient} />
+      </TestProviders>
+    );
     expect(screen.getByText('30 min')).toBeInTheDocument();
   });
 });
