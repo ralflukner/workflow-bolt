@@ -271,62 +271,67 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
       });
     });
 
-    it('should validate required Tebra secrets configuration', async () => {
-      // Mock the Secret Manager client
-      const mockAccessSecretVersion = jest.fn();
-      (secretManager as any)['client'].accessSecretVersion = mockAccessSecretVersion;
-
-      // Mock successful secret retrieval
-      mockAccessSecretVersion.mockResolvedValue([
-        {
-          payload: {
-            data: Buffer.from('mock-secret-value')
-          }
+    it('should validate HIPAA compliance via Firebase Functions', async () => {
+      // Mock the Firebase Function response
+      const mockValidateFunction = jest.fn().mockResolvedValue({
+        data: {
+          success: true,
+          isCompliant: true,
+          issues: [],
+          recommendations: []
         }
-      ]);
-
-      const validation = await secretManager.validateTebraSecrets();
+      });
       
-      expect(validation.isValid).toBe(true);
-      expect(validation.availableSecrets).toContain('TEBRA_USERNAME');
-      expect(validation.availableSecrets).toContain('TEBRA_PASSWORD');
-      expect(validation.availableSecrets).toContain('TEBRA_API_URL');
-      expect(validation.missingSecrets).toHaveLength(0);
+      (tebraService as any).validateHIPAAComplianceBackend = mockValidateFunction;
+
+      const validation = await tebraService.validateHIPAACompliance();
+      
+      expect(validation.isCompliant).toBe(true);
+      expect(validation.issues).toHaveLength(0);
+      expect(validation.recommendations).toHaveLength(0);
     });
 
-    it('should detect missing secrets and provide recommendations', async () => {
-      // Mock the Secret Manager client to simulate missing secrets
-      const mockAccessSecretVersion = jest.fn();
-      (secretManager as any)['client'].accessSecretVersion = mockAccessSecretVersion;
+    it('should detect compliance issues via Firebase Functions', async () => {
+      // Mock the Firebase Function response with issues
+      const mockValidateFunction = jest.fn();
+      tebraService['validateHIPAAComplianceBackend'] = mockValidateFunction;
 
-      // Mock failed secret retrieval
-      mockAccessSecretVersion.mockRejectedValue(new Error('Secret not found'));
+      // Mock validation response with issues
+      mockValidateFunction.mockResolvedValue({
+        data: {
+          success: true,
+          isCompliant: false,
+          issues: ['Missing required secrets: TEBRA_PASSWORD'],
+          recommendations: ['Configure all required secrets in Google Secret Manager']
+        }
+      });
 
-      const validation = await secretManager.validateTebraSecrets();
+      const validation = await tebraService.validateHIPAACompliance();
       
-      expect(validation.isValid).toBe(false);
-      expect(validation.missingSecrets).toContain('TEBRA_USERNAME');
-      expect(validation.missingSecrets).toContain('TEBRA_PASSWORD');
-      expect(validation.missingSecrets).toContain('TEBRA_API_URL');
+      expect(validation.isCompliant).toBe(false);
+      expect(validation.issues).toContain('Missing required secrets: TEBRA_PASSWORD');
+      expect(validation.recommendations).toContain('Configure all required secrets in Google Secret Manager');
     });
 
-    it('should perform HIPAA compliance audit', async () => {
-      // Mock the Secret Manager client
-      const mockAccessSecretVersion = jest.fn();
-      (secretManager as any)['client'].accessSecretVersion = mockAccessSecretVersion;
+    it('should test secret redaction via Firebase Functions', async () => {
+      // Mock the Firebase Function response
+      const mockRedactionFunction = jest.fn();
+      tebraService['testSecretRedactionBackend'] = mockRedactionFunction;
 
-      // Mock partial secret availability (some missing)
-      mockAccessSecretVersion
-        .mockResolvedValueOnce([{ payload: { data: Buffer.from('username') } }]) // TEBRA_USERNAME
-        .mockRejectedValueOnce(new Error('Secret not found')) // TEBRA_PASSWORD
-        .mockRejectedValueOnce(new Error('Secret not found')); // TEBRA_API_URL
+      // Mock redaction test response
+      mockRedactionFunction.mockResolvedValue({
+        data: {
+          success: true,
+          redactedMessage: 'Password: [REDACTED]',
+          containsSensitiveData: true
+        }
+      });
 
-      const audit = await secretManager.auditSecretConfiguration();
+      const result = await tebraService.testSecretRedaction('Password: secret123', ['secret123']);
       
-      expect(audit.configurationStatus).toBe('non-compliant');
-      expect(audit.issues).toHaveLength(1);
-      expect(audit.issues[0]).toContain('Missing required secrets');
-      expect(audit.recommendations).toContain('Configure all required secrets in Google Secret Manager');
+      expect(result.success).toBe(true);
+      expect(result.redactedMessage).toBe('Password: [REDACTED]');
+      expect(result.containsSensitiveData).toBe(true);
     });
   });
 

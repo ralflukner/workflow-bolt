@@ -167,24 +167,12 @@ export class SecretsService {
   }
 
   /**
-   * Retrieve secret from Google Secret Manager
+   * Frontend-safe method - Secret Manager access moved to Firebase Functions
+   * This now only handles environment variable fallback
    */
   private async getFromSecretManager(secretName: string): Promise<string | null> {
-    try {
-      // Dynamic import to avoid bundling in browser
-      const { SecretManagerServiceClient } = await import('@google-cloud/secret-manager');
-      const client = new SecretManagerServiceClient();
-      
-      const [version] = await client.accessSecretVersion({
-        name: `projects/${SecretsService.PROJECT_ID}/secrets/${secretName}/versions/latest`,
-      });
-
-      const secretValue = version.payload?.data?.toString();
-      return secretValue || null;
-    } catch (error) {
-      console.warn(`Could not retrieve ${secretName} from Secret Manager:`, error);
-      return null;
-    }
+    console.warn(`Secret Manager access moved to Firebase Functions backend. Use TebraApiService.validateHIPAACompliance() instead.`);
+    return null;
   }
 
   /**
@@ -249,45 +237,13 @@ export class SecretsService {
 
   /**
    * Store a secret in Google Secret Manager
+   * Note: This functionality has been moved to Firebase Functions for security
    */
   public async storeSecret(secretName: string, secretValue: string): Promise<void> {
-    try {
-      const { SecretManagerServiceClient } = await import('@google-cloud/secret-manager');
-      const client = new SecretManagerServiceClient();
-
-      // Create or update secret
-      try {
-        await client.createSecret({
-          parent: `projects/${SecretsService.PROJECT_ID}`,
-          secretId: secretName,
-          secret: {
-            replication: {
-              automatic: {},
-            },
-          },
-        });
-        console.log(`Created secret: ${secretName}`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (error: any) {
-        if (!error.message?.includes('already exists')) {
-          throw error;
-        }
-        console.log(`Secret ${secretName} already exists, adding new version`);
-      }
-
-      // Add secret version
-      await client.addSecretVersion({
-        parent: `projects/${SecretsService.PROJECT_ID}/secrets/${secretName}`,
-        payload: {
-          data: Buffer.from(secretValue),
-        },
-      });
-
-      console.log(`✅ Stored secret ${secretName} in Google Secret Manager`);
-    } catch (error) {
-      console.error(`Failed to store secret ${secretName}:`, error);
-      throw error;
-    }
+    throw new Error(
+      'Secret storage has been moved to Firebase Functions for HIPAA compliance. ' +
+      'Use the Firebase Functions backend to store secrets securely.'
+    );
   }
 }
 
