@@ -31,57 +31,19 @@ if (!admin.apps.length) {
   });
 }
 
-// Google Secrets Manager client (HIPAA Compliant)
-const secretClient = new SecretManagerServiceClient();
-const projectId = 'luknerlumina-firebase'; // Your Firebase project ID
+// Import centralized secrets management (HIPAA Compliant)
+const { secrets } = require('./src/config/secrets');
 
-// Cache for Auth0 config to avoid repeated Secret Manager calls
-let auth0ConfigCache = null;
-let configCacheExpiry = 0;
-const CONFIG_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+/** Verifies an Auth0 RS256 access / ID token and returns the decoded payload */
+async function verifyAuth0Jwt(token) {
+  // Get Auth0 config from Secret Manager via centralized module
+  const [domain, audience] = await Promise.all([
+    secrets.auth0Domain(),
+    secrets.auth0Audience()
+  ]);
 
-/** 
- * Fetches Auth0 configuration from Google Secrets Manager 
- * HIPAA Security: Secrets are encrypted and access-controlled
- */
-async function getAuth0Config() {
-  const now = Date.now();
-  
-  // Return cached config if still valid
-  if (auth0ConfigCache && now < configCacheExpiry) {
-    return auth0ConfigCache;
-  }
-
-  try {
-    // Fetch Auth0 domain and audience from Secrets Manager
-    const [domainResponse] = await secretClient.accessSecretVersion({
-      name: `projects/${projectId}/secrets/auth0-domain/versions/latest`,
-    });
-    
-    const [audienceResponse] = await secretClient.accessSecretVersion({
-      name: `projects/${projectId}/secrets/auth0-audience/versions/latest`,
-    });
-
-    const domain = domainResponse.payload.data.toString();
-    const audience = audienceResponse.payload.data.toString();
-
-    auth0ConfigCache = { domain, audience };
-    configCacheExpiry = now + CONFIG_CACHE_TTL;
-    
-    console.log('✅ Auth0 config loaded from Secrets Manager');
-    return auth0ConfigCache;
-  } catch (error) {
-    console.error('❌ Failed to load Auth0 config from Secrets Manager:', error);
-    throw new Error('Auth0 configuration not available');
-  }
-}
-
-/** 
- * Creates JWKS client with Auth0 domain from Secrets Manager 
- */
-async function createJwksClient() {
-  const { domain } = await getAuth0Config();
-  return jwksRsa({
+  // Create JWKS client with Auth0 domain
+  const jwksClient = jwksRsa({
     jwksUri: `https://${domain}/.well-known/jwks.json`,
     cache: true,
     cacheMaxEntries: 5,
@@ -89,12 +51,6 @@ async function createJwksClient() {
     rateLimit: true,
     jwksRequestsPerMinute: 10
   });
-}
-
-/** Verifies an Auth0 RS256 access / ID token and returns the decoded payload */
-async function verifyAuth0Jwt(token) {
-  const { domain, audience } = await getAuth0Config();
-  const jwksClient = await createJwksClient();
 
   const getSigningKey = (header, cb) =>
     jwksClient.getSigningKey(header.kid, (err, key) => {
