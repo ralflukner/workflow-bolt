@@ -1,8 +1,10 @@
 // First, attempt to get values from environment variables
-const domain = import.meta.env.VITE_AUTH0_DOMAIN;
-const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
-const redirectUri = import.meta.env.VITE_AUTH0_REDIRECT_URI || window.location.origin;
-const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
+import { AUTH0_CONFIG as AUTH0_ENV } from '../constants/env';
+
+const domain = AUTH0_ENV.domain;
+const clientId = AUTH0_ENV.clientId;
+const redirectUri = AUTH0_ENV.redirectUri || (typeof window !== 'undefined' ? window.location.origin : '');
+const audience = AUTH0_ENV.audience;
 
 // Check if critical values are missing
 if (!domain || !clientId) {

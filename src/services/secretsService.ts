@@ -191,15 +191,26 @@ export class SecretsService {
    * Retrieve secret from environment variables
    */
   private getFromEnvironment(envVar: string): string | null {
-    // Browser environment (Vite)
-    if (typeof window !== 'undefined') {
-      const value = (import.meta.env as any)?.[envVar];
-      return value || null;
+    // Try process.env first (works in both Node.js and Jest)
+    if (typeof process !== 'undefined' && process.env) {
+      const value = process.env[envVar];
+      if (value) {
+        return value;
+      }
     }
-    
-    // Node.js environment
-    if (typeof process !== 'undefined') {
-      return process.env[envVar] || null;
+
+    // Browser environment (Vite) - with error handling
+    if (typeof window !== 'undefined') {
+      try {
+        // @ts-ignore - import.meta is provided by Vite, not available in all environments
+        const importMeta = (globalThis as any).import?.meta || import.meta;
+        if (importMeta?.env) {
+          const value = importMeta.env[envVar];
+          return value || null;
+        }
+      } catch (error) {
+        // Silently fall through to return null
+      }
     }
 
     return null;

@@ -5,6 +5,10 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^.*/envUtils$': '<rootDir>/src/utils/__mocks__/envUtils.ts',
+    '^../constants/env$': '<rootDir>/src/constants/__mocks__/env.ts',
+    '^../../constants/env$': '<rootDir>/src/constants/__mocks__/env.ts',
+    '^../services/secretsService$': '<rootDir>/src/services/__mocks__/secretsService.ts',
+    '^../../services/secretsService$': '<rootDir>/src/services/__mocks__/secretsService.ts',
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.json', useESM: false }],

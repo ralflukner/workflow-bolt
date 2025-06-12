@@ -1,4 +1,5 @@
 import React from 'react';
+import { FIREBASE_CONFIG, ENV_INFO } from '../constants/env';
 
 export const EnvDebugger: React.FC = () => {
   const maskValue = (val?: string): string => {
@@ -9,12 +10,12 @@ export const EnvDebugger: React.FC = () => {
   };
 
   const envVars = {
-    VITE_FIREBASE_PROJECT_ID: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    VITE_FIREBASE_API_KEY: import.meta.env.VITE_FIREBASE_API_KEY,
-    VITE_FIREBASE_AUTH_DOMAIN: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    VITE_FIREBASE_STORAGE_BUCKET: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    VITE_FIREBASE_MESSAGING_SENDER_ID: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    VITE_FIREBASE_APP_ID: import.meta.env.VITE_FIREBASE_APP_ID,
+    VITE_FIREBASE_PROJECT_ID: FIREBASE_CONFIG.projectId,
+    VITE_FIREBASE_API_KEY: FIREBASE_CONFIG.apiKey,
+    VITE_FIREBASE_AUTH_DOMAIN: FIREBASE_CONFIG.authDomain,
+    VITE_FIREBASE_STORAGE_BUCKET: FIREBASE_CONFIG.storageBucket,
+    VITE_FIREBASE_MESSAGING_SENDER_ID: FIREBASE_CONFIG.messagingSenderId,
+    VITE_FIREBASE_APP_ID: FIREBASE_CONFIG.appId,
   };
 
   return (
@@ -29,9 +30,9 @@ export const EnvDebugger: React.FC = () => {
         ))}
       </div>
       <div className="mt-3 text-xs text-gray-400">
-        <div>NODE_ENV: {import.meta.env.NODE_ENV}</div>
-        <div>DEV: {import.meta.env.DEV ? 'true' : 'false'}</div>
-        <div>PROD: {import.meta.env.PROD ? 'true' : 'false'}</div>
+        <div>NODE_ENV: {ENV_INFO.nodeEnv}</div>
+        <div>DEV: {ENV_INFO.isDev ? 'true' : 'false'}</div>
+        <div>PROD: {ENV_INFO.isProd ? 'true' : 'false'}</div>
       </div>
     </div>
   );

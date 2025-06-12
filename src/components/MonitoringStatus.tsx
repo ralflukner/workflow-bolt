@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Clock, Wifi, Activity } from 'lucide-react';
+import { TEBRA_CONFIG } from '../constants/env';
 
 interface MonitoringStatusProps {
   className?: string;
@@ -28,7 +29,7 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
       const startTime = performance.now();
       
       // Check proxy health endpoint - use ping for faster response
-      const apiKey = import.meta.env.VITE_TEBRA_PROXY_API_KEY;
+      const apiKey = TEBRA_CONFIG.proxyApiKey;
       const proxyUrl = 'https://tebra-proxy-623450773640.us-central1.run.app/ping';
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);  // 15 seconds for ping
