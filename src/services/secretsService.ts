@@ -201,10 +201,11 @@ export class SecretsService {
 
     // Browser environment - use getEnvVar helper that handles import.meta safely
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { getEnvVar } = require('../constants/env');
       const value = getEnvVar(envVar);
       return value || null;
-    } catch (error) {
+    } catch {
       // Silently fall back to null if constants module not available
       return null;
     }
@@ -266,6 +267,7 @@ export class SecretsService {
           },
         });
         console.log(`Created secret: ${secretName}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         if (!error.message?.includes('already exists')) {
           throw error;

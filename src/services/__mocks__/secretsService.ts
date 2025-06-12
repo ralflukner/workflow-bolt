@@ -51,6 +51,7 @@ export class SecretsService {
   /**
    * Mock store secret
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async storeSecret(_secretName: string, _secretValue: string): Promise<void> {
     // Mock implementation - do nothing
   }
