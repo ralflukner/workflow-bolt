@@ -152,10 +152,6 @@ interface TebraPatient {
     Provider: string;
     PolicyNumber: string;
     GroupNumber: string;
-
-
-
-
   };
   CreatedAt: string;
   UpdatedAt: string;
