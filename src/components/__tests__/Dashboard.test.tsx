@@ -214,6 +214,9 @@ describe('Dashboard', () => {
   beforeEach(() => {
     jest.clearAllTimers();
     jest.clearAllMocks();
+    
+    // Re-establish window.open mock after clearAllMocks
+    global.window.open = jest.fn(() => mockWindow as unknown as Window);
   });
 
   afterEach(() => {
