@@ -33,7 +33,7 @@ describe('Tebra Integration - Simplified Tests', () => {
     it('should throw error for invalid credentials', () => {
       // Test with empty credentials object
       expect(() => new TebraApiService({} as TebraCredentials)).toThrow(
-        'Invalid Tebra credentials. All fields are required.'
+        'Invalid Tebra configuration. Missing required fields: username, password'
       );
       
       // Test with partial credentials
@@ -42,7 +42,7 @@ describe('Tebra Integration - Simplified Tests', () => {
         password: '', 
         wsdlUrl: '' 
       } as TebraCredentials)).toThrow(
-        'Invalid Tebra credentials. All fields are required.'
+        'Invalid Tebra configuration. Missing required fields: password, wsdlUrl'
       );
     });
 
