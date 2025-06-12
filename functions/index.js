@@ -79,7 +79,13 @@ exports.tebraTestConnection = onCall({ cors: true }, async (request) => {
 
 // Get patient by ID
 exports.tebraGetPatient = onCall({ cors: true }, async (request) => {
-  console.log('Getting patient:', request.data);
+  // HIPAA Compliance: Require authentication for PHI access
+  if (!request.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required for patient data access');
+  }
+  
+  // Audit log for HIPAA compliance (no PHI logged)
+  console.log(`Patient data access requested by user: ${request.auth.uid}`);
   
   try {
     const { patientId } = request.data;
@@ -117,7 +123,13 @@ exports.tebraGetPatient = onCall({ cors: true }, async (request) => {
 
 // Search patients
 exports.tebraSearchPatients = onCall({ cors: true }, async (request) => {
-  console.log('Searching patients:', request.data);
+  // HIPAA Compliance: Require authentication for PHI access
+  if (!request.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required for patient search');
+  }
+  
+  // Audit log for HIPAA compliance (no PHI logged)
+  console.log(`Patient search requested by user: ${request.auth.uid}`);
   
   try {
     const { searchCriteria } = request.data;
@@ -151,7 +163,13 @@ exports.tebraSearchPatients = onCall({ cors: true }, async (request) => {
 
 // Get appointments
 exports.tebraGetAppointments = onCall({ cors: true }, async (request) => {
-  console.log('Getting appointments:', request.data);
+  // HIPAA Compliance: Require authentication for PHI access
+  if (!request.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required for appointment data access');
+  }
+  
+  // Audit log for HIPAA compliance (no PHI logged)
+  console.log(`Appointment data access requested by user: ${request.auth.uid}`);
   
   try {
     const { date } = request.data;
@@ -234,7 +252,13 @@ exports.tebraTestAppointments = onCall({ cors: true }, async (request) => {
 
 // Create appointment
 exports.tebraCreateAppointment = onCall({ cors: true }, async (request) => {
-  console.log('Creating appointment:', request.data);
+  // HIPAA Compliance: Require authentication for PHI operations
+  if (!request.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required for appointment creation');
+  }
+  
+  // Audit log for HIPAA compliance (no PHI logged)
+  console.log(`Appointment creation requested by user: ${request.auth.uid}`);
   
   try {
     const appointmentData = request.data;
