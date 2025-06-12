@@ -118,6 +118,7 @@ openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -d \
 4. **Document**: Record incident and remediation steps
 
 ### Emergency Contacts
+
 - **Security Team**: [security@luknerclinic.com]
 - **HIPAA Officer**: [hipaa@luknerclinic.com]
 - **On-call Engineer**: [oncall@luknerclinic.com]
