@@ -57,7 +57,7 @@ const mockFirebaseAuth: {
   onAuthStateChanged: jest.fn(),
 };
 
-describe.skip('AuthBridge Integration Tests', () => {
+describe('AuthBridge Integration Tests', () => {
   let mockFetch: jest.MockedFunction<typeof fetch>;
 
   beforeEach(() => {
