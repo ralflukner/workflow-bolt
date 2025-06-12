@@ -194,12 +194,12 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
         // Secret value should never appear in logs
         if (logMessage.includes(secretValue)) return false;
         
-        // Common secret patterns should be redacted
+        // Common secret patterns should be redacted (only actual values, not the word followed by [REDACTED])
         const secretPatterns = [
-          /password[:\s]*[a-zA-Z0-9-]+/i,
-          /key[:\s]*[a-zA-Z0-9-]+/i,
-          /token[:\s]*[a-zA-Z0-9-]+/i,
-          /secret[:\s]*[a-zA-Z0-9-]+/i
+          /password[:\s]+(?!\[REDACTED\])[a-zA-Z0-9-]+/i,
+          /key[:\s]+(?!\[REDACTED\])[a-zA-Z0-9-]+/i,
+          /token[:\s]+(?!\[REDACTED\])[a-zA-Z0-9-]+/i,
+          /secret[:\s]+(?!\[REDACTED\])[a-zA-Z0-9-]+/i
         ];
 
         // Check if any unredacted secret patterns exist
