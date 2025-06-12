@@ -15,7 +15,7 @@ jest.mock('../../services/firebase/dailySessionService');
 import { describe, it, expect, jest } from '@jest/globals';
 import { TebraApiService } from '../tebra-api-service';
 import { createTebraConfig } from '../tebra-integration-service';
-import { TebraCredentials } from '../tebra-api-service.types';
+import { TebraCredentials } from '../types';
 
 describe('Tebra Integration - Simplified Tests', () => {
   const testCredentials: TebraCredentials = {
@@ -31,18 +31,18 @@ describe('Tebra Integration - Simplified Tests', () => {
     });
 
     it('should throw error for invalid credentials', () => {
-      // Clear environment variables to ensure test isolation
-      const originalEnv = process.env;
-      process.env = {};
-      
-      // Mock the secrets service to return empty values for this test
-      const { secretsService } = require('../../services/secretsService');
-      const mockGetSecretSync = jest.spyOn(secretsService, 'getSecretSync').mockReturnValue('');
-      
-      try {
-        expect(() => new TebraApiService({})).toThrow('Invalid Tebra configuration. Missing required fields: wsdlUrl, username, password');
-      } finally {
-        process.env = originalEnv;
+ // Clear environment variables to ensure test isolation
+ const originalEnv = { ...process.env };
+ Object.keys(process.env).forEach(key => delete (process as any).env[key]);
+
+// Mock the secrets service…
+try {
+  expect(() => new TebraApiService({})).toThrow(
+    'Invalid Tebra configuration. Missing required fields: wsdlUrl, username, password'
+  );
+} finally {
+  Object.assign(process.env, originalEnv);
+}
         mockGetSecretSync.mockRestore();
       }
     });

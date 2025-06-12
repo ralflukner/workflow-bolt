@@ -195,7 +195,7 @@ const TebraIntegration: React.FC = () => {
 
       const dateToSync = specificDate || new Date().toLocaleDateString('en-CA');
       setStatusMessage(`Syncing schedule for ${dateToSync}...`);
-      const result = await tebraApiService.syncTodaysSchedule(specificDate);
+      const result = await tebraApiService.syncTodaysSchedule(dateToSync);
       if (result.success) {
         const patientCount = result.patients?.length || 0;
         setStatusMessage(`✅ Sync completed. Found ${patientCount} appointments for ${dateToSync}.`);

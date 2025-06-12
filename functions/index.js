@@ -5,6 +5,8 @@ const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const admin = require('firebase-admin');
+const jwt = require('jsonwebtoken');
+const jwksRsa = require('jwks-rsa');
 const { tebraProxyClient } = require('./src/tebra-proxy-client');
 const { 
   validatePatientId, 
@@ -25,6 +27,38 @@ if (!admin.apps.length) {
   // Initialize with default credentials and explicit project ID
   admin.initializeApp({
     projectId: 'luknerlumina-firebase'
+  });
+}
+
+// JWKS Client for Auth0 JWT Verification (HIPAA Security)
+const jwksClient = jwksRsa({
+  jwksUri: `https://${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`,
+  cache: true,
+  cacheMaxEntries: 5,
+  cacheMaxAge: 10 * 60 * 1000,      // 10 min
+  rateLimit: true,
+  jwksRequestsPerMinute: 10
+});
+
+const getSigningKey = (header, cb) =>
+  jwksClient.getSigningKey(header.kid, (err, key) => {
+    if (err) return cb(err);
+    cb(null, key.getPublicKey());
+});
+
+/** Verifies an Auth0 RS256 access / ID token and returns the decoded payload */
+function verifyAuth0Jwt(token) {
+  return new Promise((resolve, reject) => {
+    jwt.verify(
+      token,
+      getSigningKey,
+      {
+        algorithms: ['RS256'],
+        audience: process.env.AUTH0_AUDIENCE,
+        issuer: `https://${process.env.AUTH0_DOMAIN}/`
+      },
+      (err, decoded) => (err ? reject(err) : resolve(decoded))
+    );
   });
 }
 
