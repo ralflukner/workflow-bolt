@@ -3,8 +3,16 @@ const functionsV1 = require('firebase-functions/v1');
 const { onCall } = require('firebase-functions/v2/https');
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const admin = require('firebase-admin');
 const { tebraProxyClient } = require('./src/tebra-proxy-client');
+const { 
+  validatePatientId, 
+  validateDate, 
+  validateSearchCriteria, 
+  validateAppointmentData,
+  logValidationAttempt 
+} = require('./src/validation');
 
 // Initialize Firebase Admin (avoid duplicate app error)
 if (!admin.apps.length) {
@@ -18,6 +26,24 @@ if (!admin.apps.length) {
 const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
+
+// HIPAA Security: Rate limiting for DDoS protection
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path === '/health';
+  }
+});
+
+app.use('/api', limiter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -78,7 +104,10 @@ exports.tebraTestConnection = onCall({ cors: true }, async (request) => {
 });
 
 // Get patient by ID
-exports.tebraGetPatient = onCall({ cors: true }, async (request) => {
+exports.tebraGetPatient = onCall({ 
+  cors: true,
+  enforceAppCheck: process.env.NODE_ENV === 'production' // Enable App Check in production
+}, async (request) => {
   // HIPAA Compliance: Require authentication for PHI access
   if (!request.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required for patient data access');
@@ -88,10 +117,13 @@ exports.tebraGetPatient = onCall({ cors: true }, async (request) => {
   console.log(`Patient data access requested by user: ${request.auth.uid}`);
   
   try {
+    // HIPAA Security: Validate and sanitize input
     const { patientId } = request.data;
+    const validatedPatientId = validatePatientId(patientId);
+    logValidationAttempt(request.auth.uid, 'PATIENT_ID_VALIDATION', true);
     
     // Get actual patient data from Tebra
-    const patientData = await tebraProxyClient.getPatientById(patientId);
+    const patientData = await tebraProxyClient.getPatientById(validatedPatientId);
     
     if (!patientData) {
       return {
@@ -104,7 +136,7 @@ exports.tebraGetPatient = onCall({ cors: true }, async (request) => {
     return {
       success: true,
       data: {
-        PatientId: patientData.PatientId || patientData.Id || patientId,
+        PatientId: patientData.PatientId || patientData.Id || validatedPatientId,
         FirstName: patientData.FirstName || '',
         LastName: patientData.LastName || '',
         DateOfBirth: patientData.DateOfBirth || patientData.DOB || '',
@@ -136,10 +168,13 @@ exports.tebraSearchPatients = onCall({ cors: true }, async (request) => {
   console.log(`Patient search requested by user: ${request.auth.uid}`);
   
   try {
+    // HIPAA Security: Validate and sanitize search criteria
     const { searchCriteria } = request.data;
+    const validatedCriteria = validateSearchCriteria(searchCriteria);
+    logValidationAttempt(request.auth.uid, 'PATIENT_SEARCH_VALIDATION', true);
     
     // Search for patients using Tebra API
-    const patients = await tebraProxyClient.searchPatients(searchCriteria.lastName || '');
+    const patients = await tebraProxyClient.searchPatients(validatedCriteria.lastName || '');
     
     // Transform the results
     const transformedPatients = patients.map(patient => ({
@@ -176,8 +211,10 @@ exports.tebraGetAppointments = onCall({ cors: true }, async (request) => {
   console.log(`Appointment data access requested by user: ${request.auth.uid}`);
   
   try {
+    // HIPAA Security: Validate date input
     const { date } = request.data;
-    const targetDate = date || new Date().toISOString().split('T')[0];
+    const targetDate = date ? validateDate(date) : new Date().toISOString().split('T')[0];
+    logValidationAttempt(request.auth.uid, 'APPOINTMENT_DATE_VALIDATION', true);
     
     // Get appointments from Tebra
     const appointments = await tebraProxyClient.getAppointments(targetDate, targetDate);

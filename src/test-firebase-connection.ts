@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getFunctions } from 'firebase/functions';
-import { FIREBASE_CONFIG } from './constants/env';
+npimport { FIREBASE_CONFIG } from './constants/env';
 
 const firebaseConfig = {
   projectId: FIREBASE_CONFIG.projectId,
