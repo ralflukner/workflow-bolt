@@ -413,50 +413,53 @@ exports.tebraUpdateAppointment = onCall({ cors: true }, async (request) => {
 const { tebraSyncTodaysSchedule } = require('./src/tebra-sync/index');
 exports.tebraSyncTodaysSchedule = tebraSyncTodaysSchedule;
 
-// Auth0 token exchange function
+// Secure Auth0 token exchange function (HIPAA Compliant)
 exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
-  console.log('Exchanging Auth0 token for Firebase token...');
-  
+  const { auth0Token } = request.data || {};
+  if (!auth0Token) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'auth0Token is required'
+    );
+  }
+
+  let decoded;
   try {
-    const { auth0Token } = request.data;
-    
-    if (!auth0Token) {
-      throw new Error('Auth0 token is required');
-    }
-    
-    // TODO: Verify the Auth0 token
-    // For now, we'll create a custom token but this needs proper verification
-    
-    // Extract user ID from Auth0 token (this should be done after verification)
-    // In production, decode and verify the JWT token properly
-    const uid = 'auth0|' + Date.now(); // This should be the actual Auth0 user ID
-    
-    // Log the service account being used
-    console.log('Service account:', process.env.GOOGLE_APPLICATION_CREDENTIALS || 'Using default credentials');
-    console.log('Function service account:', process.env.K_SERVICE || 'Unknown');
-    
-    // Create a custom Firebase token
-    const customToken = await admin.auth().createCustomToken(uid, {
+    decoded = await verifyAuth0Jwt(auth0Token);   // ① Full JWT verification
+  } catch (err) {
+    console.error('Invalid Auth0 JWT', err);
+    throw new functions.https.HttpsError('unauthenticated', 'JWT verification failed');
+  }
+
+  // ② Derive a stable, safe Firebase UID
+  const rawSub = decoded.sub || 'unknown_sub';
+  const firebaseUid = rawSub.replace(/[^a-zA-Z0-9:_-]/g, '_').slice(0, 128); // Firebase UID rules
+
+  // ③ Mint Firebase custom token
+  let customToken;
+  try {
+    customToken = await admin.auth().createCustomToken(firebaseUid, {
       // Add custom claims for HIPAA compliance
       provider: 'auth0',
       hipaaCompliant: true,
+      email: decoded.email,
+      email_verified: decoded.email_verified,
       timestamp: Date.now()
     });
-    
-    return {
-      success: true,
-      data: {
-        firebaseToken: customToken,
-        uid: uid
-      }
-    };
-  } catch (error) {
-    console.error('Token exchange failed:', error);
-    return {
-      success: false,
-      message: error.message || 'Failed to exchange token'
-    };
+  } catch (err) {
+    console.error('Failed to mint custom token', err);
+    throw new functions.https.HttpsError('internal', 'Could not mint custom token');
   }
+
+  // HIPAA Audit Log
+  console.log('HIPAA_AUDIT:', JSON.stringify({
+    type: 'TOKEN_EXCHANGE_SUCCESS',
+    userId: firebaseUid,
+    auth0Sub: rawSub,
+    timestamp: new Date().toISOString()
+  }));
+
+  return { firebaseToken: customToken };
 });
 
 // Security monitoring endpoint for HIPAA compliance
