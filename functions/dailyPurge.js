@@ -98,11 +98,18 @@ await Promise.all(commits);
  * Manual data purge function for authenticated admin use
  * Call this function only when manual purge is needed
  */
-exports.manualDataPurge = onCall(async (request) => {
-  // TODO: Add authentication check
-  // if (!request.auth || !request.auth.token.admin) {
-  //   throw new HttpsError('permission-denied', 'Admin access required');
-  // }
+exports.manualDataPurge = onCall({ cors: true }, async (request) => {
+  // HIPAA Security: Require authentication for manual purge
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Authentication required for manual purge');
+  }
+  
+  // Log the manual purge attempt for audit
+  console.log('HIPAA_AUDIT:', JSON.stringify({
+    type: 'MANUAL_PURGE_ATTEMPT',
+    userId: request.auth.uid,
+    timestamp: new Date().toISOString()
+  }));
   
   console.log('Manual purge function called by admin');
   

@@ -419,3 +419,41 @@ exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
     };
   }
 });
+
+// Security monitoring endpoint for HIPAA compliance
+exports.getSecurityReport = onCall({ 
+  cors: true,
+  enforceAppCheck: process.env.NODE_ENV === 'production'
+}, async (request) => {
+  // HIPAA Security: Require authentication for security reports
+  if (!request.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required for security reports');
+  }
+  
+  // TODO: Add admin role check in production
+  // if (!request.auth.token?.admin) {
+  //   throw new functions.https.HttpsError('permission-denied', 'Admin access required');
+  // }
+  
+  try {
+    const report = generateSecurityReport();
+    
+    // Log security report access
+    console.log('HIPAA_AUDIT:', JSON.stringify({
+      type: 'SECURITY_REPORT_ACCESS',
+      userId: request.auth.uid,
+      timestamp: new Date().toISOString()
+    }));
+    
+    return {
+      success: true,
+      data: report
+    };
+  } catch (error) {
+    console.error('Failed to generate security report:', error);
+    return {
+      success: false,
+      message: 'Failed to generate security report'
+    };
+  }
+});
