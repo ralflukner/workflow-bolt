@@ -86,6 +86,11 @@ app.use((err, req, res, next) => {
 // Keep api as 1st Gen
 exports.api = functions.https.onRequest(app);
 
+// HIPAA Compliance Functions
+const { validateHIPAACompliance, testSecretRedaction } = require('./hipaaValidation');
+exports.validateHIPAACompliance = validateHIPAACompliance;
+exports.testSecretRedaction = testSecretRedaction;
+
 // Tebra API Functions
 exports.tebraTestConnection = onCall({ cors: true }, async (request) => {
   console.log('Testing Tebra connection...');

@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import { SecretManager, redactSensitiveData } from '../../utils/secretManager';
+import { TebraApiService } from '../tebraApiService';
 
 describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
   let secretManager: SecretManager;
