@@ -25,9 +25,7 @@ export const getEnvVar = (name: string): string | undefined => {
 
   // In Vite environment, use import.meta.env directly
   try {
-    // @ts-ignore - import.meta.env is provided by Vite
     if (import.meta && import.meta.env) {
-      // @ts-ignore
       const value = import.meta.env[name];
       console.log(`getEnvVar(${name}):`, value); // Debug logging
       return value;

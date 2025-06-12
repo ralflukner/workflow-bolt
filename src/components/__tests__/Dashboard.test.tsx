@@ -417,8 +417,10 @@ describe('Dashboard', () => {
     const originalCreateElement = document.createElement;
     document.createElement = jest.fn(() => mockElement as unknown as HTMLAnchorElement);
     const originalAppendChild = document.body.appendChild;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     document.body.appendChild = jest.fn() as any;
     const originalRemoveChild = document.body.removeChild;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     document.body.removeChild = jest.fn() as any;
 
     // Click download button
