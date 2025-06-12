@@ -40,8 +40,8 @@ module.exports = {
         '<rootDir>/src/**/*.integration.test.(ts|tsx)',
         '<rootDir>/src/**/__tests__/**/integration/**/*.test.(ts|tsx)'
       ],
-      // Only run integration tests when environment variable is set
-      testRunner: process.env.RUN_INTEGRATION_TESTS ? 'jest-runner' : '<rootDir>/src/test/skipRunner.js'
+             // Only run integration tests when environment variable is set
+       testRunner: process.env.RUN_INTEGRATION_TESTS ? undefined : '<rootDir>/src/test/skipRunner.js'
     },
     {
       displayName: 'real-api',
