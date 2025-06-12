@@ -87,7 +87,7 @@ export const TebraConnectionDebugger: React.FC = () => {
         const newState = {
           ...prev,
           connectionTest: {
-            status: result ? 'success' : 'failed',
+            status: result ? 'success' as const : 'failed' as const,
             duration,
             error: result ? undefined : 'Connection returned false'
           }
@@ -103,7 +103,7 @@ export const TebraConnectionDebugger: React.FC = () => {
         const newState = {
           ...prev,
           connectionTest: {
-            status: 'failed',
+            status: 'failed' as const,
             duration,
             error: error instanceof Error ? error.message : String(error)
           }
