@@ -1,18 +1,12 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 import { TebraApiService } from '../tebraApiService';
-import { redactSecrets, redactSpecificValues, secureLog } from '../../utils/redact';
+import { redactSecrets, redactSpecificValues } from '../../utils/redact';
 
 describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
   let tebraService: TebraApiService;
-  let consoleSpy: jest.SpiedFunction<typeof console.log>;
 
   beforeEach(() => {
     tebraService = new TebraApiService();
-    consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   describe('Task 1: Secure Credential Management via Google Secret Manager 🔐', () => {
@@ -361,7 +355,7 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
     });
 
     it('should validate TypeScript example for secure secret access', () => {
-      // Example TypeScript code structure for Firebase Functions
+      // Example TypeScript code structure for Firebase Functions (backend only)
       const exampleCode = `
         import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
         
@@ -376,7 +370,7 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
         }
       `;
 
-      // Validate code structure
+      // Validate code structure (as string, no actual import)
       expect(exampleCode).toContain('@google-cloud/secret-manager');
       expect(exampleCode).toContain('SecretManagerServiceClient');
       expect(exampleCode).toContain('accessSecretVersion');

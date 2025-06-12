@@ -135,7 +135,7 @@ export class TebraApiService {
   /**
    * HIPAA-compliant logging using the frontend-safe redaction utility
    */
-  private log(message: string, data?: any): void {
+  private log(message: string, data?: unknown): void {
     secureLog(`[Tebra Service] ${message}`, data);
   }
 

@@ -48,7 +48,7 @@ export function redactSpecificValues(input: string, sensitiveValues: string[]): 
   for (const value of sensitiveValues) {
     if (value && typeof value === 'string' && value.length > 0) {
       // Escape special regex characters
-      const escapedValue = value.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const escapedValue = value.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&');
       const regex = new RegExp(escapedValue, 'gi');
       result = result.replace(regex, '[REDACTED]');
     }
@@ -62,7 +62,7 @@ export function redactSpecificValues(input: string, sensitiveValues: string[]): 
  * @param message - The message to log
  * @param data - Optional data to log (will be redacted)
  */
-export function secureLog(message: string, data?: any): void {
+export function secureLog(message: string, data?: unknown): void {
   const redactedMessage = redactSecrets(message);
   
   if (data) {

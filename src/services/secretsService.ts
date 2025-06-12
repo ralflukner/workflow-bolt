@@ -22,7 +22,6 @@ export class SecretsService {
   private static instance: SecretsService;
   private static cache: SecretsCache = {};
   private static readonly CACHE_TTL = 300000; // 5 minutes in milliseconds
-  private static readonly PROJECT_ID = 'luknerlumina-firebase';
 
   // Secret configuration mapping
   private static readonly SECRET_CONFIGS: Record<string, SecretConfig> = {
@@ -170,7 +169,8 @@ export class SecretsService {
    * Frontend-safe method - Secret Manager access moved to Firebase Functions
    * This now only handles environment variable fallback
    */
-  private async getFromSecretManager(secretName: string): Promise<string | null> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private async getFromSecretManager(_secretName: string): Promise<string | null> {
     console.warn(`Secret Manager access moved to Firebase Functions backend. Use TebraApiService.validateHIPAACompliance() instead.`);
     return null;
   }
@@ -239,7 +239,8 @@ export class SecretsService {
    * Store a secret in Google Secret Manager
    * Note: This functionality has been moved to Firebase Functions for security
    */
-  public async storeSecret(secretName: string, secretValue: string): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async storeSecret(_secretName: string, _secretValue: string): Promise<void> {
     throw new Error(
       'Secret storage has been moved to Firebase Functions for HIPAA compliance. ' +
       'Use the Firebase Functions backend to store secrets securely.'
