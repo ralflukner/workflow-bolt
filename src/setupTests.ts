@@ -66,6 +66,8 @@ jest.mock('./config/firebase', () => ({
   isLocalDevelopment: true,
 }));
 
+// Note: secretsService is mocked via moduleNameMapper in jest.config.cjs
+
 // Mock import.meta.env
 Object.defineProperty(global, 'import', {
   value: {

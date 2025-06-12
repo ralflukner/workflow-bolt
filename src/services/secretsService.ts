@@ -199,21 +199,15 @@ export class SecretsService {
       }
     }
 
-    // Browser environment (Vite) - with error handling
-    if (typeof window !== 'undefined') {
-      try {
-        // @ts-ignore - import.meta is provided by Vite, not available in all environments
-        const importMeta = (globalThis as any).import?.meta || import.meta;
-        if (importMeta?.env) {
-          const value = importMeta.env[envVar];
-          return value || null;
-        }
-      } catch (error) {
-        // Silently fall through to return null
-      }
+    // Browser environment - use getEnvVar helper that handles import.meta safely
+    try {
+      const { getEnvVar } = require('../constants/env');
+      const value = getEnvVar(envVar);
+      return value || null;
+    } catch (error) {
+      // Silently fall back to null if constants module not available
+      return null;
     }
-
-    return null;
   }
 
   /**
