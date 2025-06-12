@@ -22,11 +22,13 @@ This document outlines our security-first approach to managing secrets in Fireba
 ## 🛡️ Security Controls
 
 ### Encryption
+
 - **At Rest**: Google Secret Manager (AES-256 encryption)
 - **In Transit**: TLS 1.3 for all API communications
 - **Local Backup**: AES-256-CBC with PBKDF2 (100,000 iterations)
 
 ### Access Control
+
 - **IAM**: Cloud Functions service account has `secretmanager.secretAccessor` role
 - **Audit**: All secret access logged with timestamps
 - **Rotation**: Secrets can be rotated without code changes
@@ -34,6 +36,7 @@ This document outlines our security-first approach to managing secrets in Fireba
 ## 📝 CLI Commands
 
 ### Creating Secrets
+
 ```bash
 # Create a new secret
 gcloud secrets create SECRET_NAME --replication-policy=automatic
@@ -43,6 +46,7 @@ echo "SECRET_VALUE" | gcloud secrets versions add SECRET_NAME --data-file=-
 ```
 
 ### Managing Secrets
+
 ```bash
 # List all secrets
 gcloud secrets list
@@ -55,6 +59,7 @@ echo "NEW_VALUE" | gcloud secrets versions add SECRET_NAME --data-file=-
 ```
 
 ### Local Encryption
+
 ```bash
 # Encrypt .env file for secure backup
 ENV=.env
@@ -71,7 +76,8 @@ openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -d \
 
 ## 🚫 Security Violations
 
-### NEVER DO:
+### NEVER DO
+
 - ❌ Commit plaintext `.env` files
 - ❌ Log secret values in application code
 - ❌ Store secrets in frontend code
