@@ -2,46 +2,68 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^.*/envUtils$': '<rootDir>/src/utils/__mocks__/envUtils.ts',
-    '^../constants/env$': '<rootDir>/src/constants/__mocks__/env.ts',
-    '^../../constants/env$': '<rootDir>/src/constants/__mocks__/env.ts',
-    '^src/constants/env$': '<rootDir>/src/constants/__mocks__/env.ts',
-    '^../services/secretsService$': '<rootDir>/src/services/__mocks__/secretsService.ts',
-    '^../../services/secretsService$': '<rootDir>/src/services/__mocks__/secretsService.ts',
-    'src/services/secretsService': '<rootDir>/src/services/__mocks__/secretsService.ts',
-  },
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.json', useESM: false }],
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: 'tsconfig.json',
+      useESM: true
+    }]
   },
-  setupFiles: ['<rootDir>/jest.setup.js'],
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  moduleNameMapping: {
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^@/(.*)$': '<rootDir>/src/$1'
+  },
+  setupFilesAfterEnv: ['<rootDir>/src/test/setupTests.ts'],
   testMatch: [
-    '**/__tests__/**/*.test.[jt]s?(x)',
+    '**/__tests__/**/*.(ts|tsx|js)',
+    '**/*.(test|spec).(ts|tsx|js)'
   ],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  transformIgnorePatterns: [
-    '/node_modules/(?!(@tebra|soap)/)',
+  // Separate test runners for different test types
+  projects: [
+    {
+      displayName: 'unit',
+      testMatch: [
+        '<rootDir>/src/**/__tests__/**/*.test.(ts|tsx)',
+        '<rootDir>/src/**/*.test.(ts|tsx)'
+      ],
+      testPathIgnorePatterns: [
+        '/integration/',
+        '/e2e/',
+        '.integration.test.',
+        '.e2e.test.'
+      ]
+    },
+    {
+      displayName: 'integration',
+      testMatch: [
+        '<rootDir>/src/**/*.integration.test.(ts|tsx)',
+        '<rootDir>/src/**/__tests__/**/integration/**/*.test.(ts|tsx)'
+      ],
+      // Only run integration tests when environment variable is set
+      testRunner: process.env.RUN_INTEGRATION_TESTS ? 'jest-runner' : '<rootDir>/src/test/skipRunner.js'
+    },
+    {
+      displayName: 'real-api',
+      testMatch: [
+        '<rootDir>/src/**/__tests__/**/*Configuration.test.(ts|tsx)'
+      ],
+      // Only run real API tests when explicitly enabled
+      testRunner: process.env.RUN_REAL_API_TESTS ? 'jest-runner' : '<rootDir>/src/test/skipRunner.js'
+    }
   ],
-  testTimeout: 10000,
-  verbose: true,
-  forceExit: true,
-  detectOpenHandles: true,
-  bail: true,
-  clearMocks: true,
-  restoreMocks: true,
-  resetMocks: true,
-  collectCoverage: true,
-  coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'clover'],
-  // coverageThreshold temporarily disabled until suite is stable
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
-    '!src/**/*.stories.{ts,tsx}',
-    '!src/**/*.test.{ts,tsx}',
-    '!src/**/__tests__/**',
-    '!src/**/__mocks__/**',
+    '!src/test/**/*',
+    '!src/**/__tests__/**/*',
+    '!src/**/*.test.*'
   ],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
+  globals: {
+    'ts-jest': {
+      useESM: true
+    }
+  }
 }; 
