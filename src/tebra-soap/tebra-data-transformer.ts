@@ -1,10 +1,9 @@
 /**
- * @fileoverview Data transformer for Tebra API responses
+ * @fileoverview Tebra data transformer for mapping between Tebra and internal formats
  * @module services/tebra/tebra-data-transformer
  */
 
-import type { Patient, AppointmentType } from '../types';
-import type { TebraPatient, TebraAppointment, TebraDailySession, TebraProvider } from './tebra-api-service.types';
+import { TebraPatient, TebraAppointment, TebraDailySession } from './tebra-api-service.types';
 
 /**
  * Tebra data transformer class
@@ -12,126 +11,120 @@ import type { TebraPatient, TebraAppointment, TebraDailySession, TebraProvider }
  */
 export class TebraDataTransformer {
   /**
-   * Transforms patient data from Tebra format
-   * @param {any} data - Raw patient data
-   * @returns {TebraPatient} Transformed patient data
+   * Maps Tebra appointment status to internal status
+   * @param {string} tebraStatus - Tebra appointment status
+   * @returns {string} Internal appointment status
    */
-  public transformPatientData(data: any): TebraPatient {
-    // Handle date conversion safely
-    const getDateString = (date: any): string => {
-      if (!date) return '';
-      if (typeof date === 'string') return date;
-      if (date instanceof Date) return date.toISOString().split('T')[0];
-      return String(date);
+  static mapTebraStatusToInternal(tebraStatus: string): string {
+    const statusMap: Record<string, string> = {
+      'Scheduled': 'scheduled',
+      'Confirmed': 'scheduled',
+      'Arrived': 'arrived',
+      'Roomed': 'appt-prep',
+      'Ready for MD': 'ready-for-md',
+      'With Doctor': 'with-doctor',
+      'Seen by MD': 'seen-by-md',
+      'Checked Out': 'completed',
+      'Rescheduled': 'rescheduled',
+      'Cancelled': 'cancelled',
+      'No Show': 'no-show'
     };
 
+    return statusMap[tebraStatus] || tebraStatus.toLowerCase();
+  }
+
+  /**
+   * Transforms patient data from Tebra format to internal format
+   * @param {any} tebraPatient - Patient data in Tebra format
+   * @returns {TebraPatient} Patient data in internal format
+   */
+  transformPatientData(tebraPatient: any): TebraPatient {
     return {
-      PatientId: data.PatientId || data.Id || data.id || '',
-      FirstName: data.FirstName || data.firstName || '',
-      LastName: data.LastName || data.lastName || '',
-      DateOfBirth: getDateString(data.DateOfBirth || data.DOB || data.dateOfBirth),
-      Gender: data.Gender || data.gender || '',
-      Email: data.Email || data.EmailAddress || data.email || '',
-      Phone: data.Phone || data.PhoneNumber || data.phone || '',
+      PatientId: tebraPatient.PatientId || tebraPatient.Id || '',
+      FirstName: tebraPatient.FirstName || '',
+      LastName: tebraPatient.LastName || '',
+      DateOfBirth: tebraPatient.DateOfBirth || tebraPatient.DOB || '',
+      Phone: tebraPatient.Phone || tebraPatient.PhoneNumber || '',
+      Email: tebraPatient.Email || tebraPatient.EmailAddress || '',
+      Gender: tebraPatient.Gender || '',
       Address: {
-        Street: data.Address?.Street || data.address?.street || '',
-        City: data.Address?.City || data.address?.city || '',
-        State: data.Address?.State || data.address?.state || '',
-        ZipCode: data.Address?.ZipCode || data.Address?.Zip || data.address?.zipCode || '',
-        Country: data.Address?.Country || data.address?.country || 'USA'
+        Street: tebraPatient.Address?.Street || '',
+        City: tebraPatient.Address?.City || '',
+        State: tebraPatient.Address?.State || '',
+        ZipCode: tebraPatient.Address?.ZipCode || '',
+        Country: tebraPatient.Address?.Country || ''
       },
       Insurance: {
-        Provider: data.Insurance?.Provider || data.insurance?.provider || '',
-        PolicyNumber: data.Insurance?.PolicyNumber || data.insurance?.policyNumber || '',
-        GroupNumber: data.Insurance?.GroupNumber || data.insurance?.groupNumber || ''
+        Provider: tebraPatient.Insurance?.Provider || '',
+        PolicyNumber: tebraPatient.Insurance?.PolicyNumber || '',
+        GroupNumber: tebraPatient.Insurance?.GroupNumber || ''
       },
-      CreatedAt: getDateString(data.CreatedAt || data.createdAt) || new Date().toISOString(),
-      UpdatedAt: getDateString(data.UpdatedAt || data.updatedAt) || new Date().toISOString()
+      CreatedAt: new Date().toISOString(),
+      UpdatedAt: new Date().toISOString()
     };
   }
 
   /**
-   * Transforms appointment data from Tebra format
-   * @param {any} data - Raw appointment data
-   * @returns {TebraAppointment} Transformed appointment data
+   * Transforms appointment data from Tebra format to internal format
+   * @param {any} tebraAppointment - Appointment data in Tebra format
+   * @returns {TebraAppointment} Appointment data in internal format
    */
-  public transformAppointmentData(data: any): TebraAppointment {
-    // Handle date conversion safely
-    const getDateString = (date: any): string => {
-      if (!date) return '';
-      if (typeof date === 'string') return date;
-      if (date instanceof Date) return date.toISOString();
-      return String(date);
-    };
-
+  transformAppointmentData(tebraAppointment: any): TebraAppointment {
     return {
-      AppointmentId: data.AppointmentId || data.Id || data.id || '',
-      PatientId: data.PatientId || data.patientId || '',
-      ProviderId: data.ProviderId || data.providerId || '',
-      StartTime: getDateString(data.StartTime || data.AppointmentTime || data.startTime),
-      EndTime: getDateString(data.EndTime || data.endTime),
-      Status: data.Status || data.status || 'Scheduled',
-      Type: data.Type || data.AppointmentType || data.type || 'Office Visit',
-      Notes: data.Notes || data.notes || '',
-      CreatedAt: getDateString(data.CreatedAt || data.createdAt) || new Date().toISOString(),
-      UpdatedAt: getDateString(data.UpdatedAt || data.updatedAt) || new Date().toISOString()
+      AppointmentId: tebraAppointment.AppointmentId || tebraAppointment.Id || '',
+      PatientId: tebraAppointment.PatientId || '',
+      ProviderId: tebraAppointment.ProviderId || '',
+      StartTime: tebraAppointment.AppointmentTime || tebraAppointment.Time || '',
+      EndTime: tebraAppointment.EndTime || '',
+      Status: tebraAppointment.Status || 'Scheduled',
+      Type: tebraAppointment.AppointmentType || tebraAppointment.Type || 'Office Visit',
+      Notes: tebraAppointment.Notes || '',
+      CreatedAt: tebraAppointment.CreatedAt || new Date().toISOString(),
+      UpdatedAt: tebraAppointment.UpdatedAt || new Date().toISOString()
     };
   }
 
   /**
-   * Transforms daily session data from Tebra format
-   * @param {any} data - Raw daily session data
-   * @returns {TebraDailySession} Transformed daily session data
+   * Transforms daily session data from Tebra format to internal format
+   * @param {any} tebraDailySession - Daily session data in Tebra format
+   * @returns {TebraDailySession} Daily session data in internal format
    */
-  public transformDailySessionData(data: any): TebraDailySession {
-    // Handle date conversion safely
-    const getDateString = (date: any): string => {
-      if (!date) return '';
-      if (typeof date === 'string') return date;
-      if (date instanceof Date) return date.toISOString();
-      return String(date);
-    };
-
+  transformDailySessionData(tebraDailySession: any): TebraDailySession {
     return {
-      SessionId: data.SessionId || data.Id || data.id || '',
-      Date: getDateString(data.Date || data.date),
-      ProviderId: data.ProviderId || data.providerId || '',
-      Appointments: (data.Appointments || data.appointments)?.map((appointment: any) => ({
-        AppointmentId: appointment.AppointmentId || appointment.Id || appointment.id || '',
-        PatientId: appointment.PatientId || appointment.patientId || '',
-        StartTime: getDateString(appointment.StartTime || appointment.AppointmentTime || appointment.startTime),
-        EndTime: getDateString(appointment.EndTime || appointment.endTime),
-        Status: appointment.Status || appointment.status || 'Scheduled',
-        Type: appointment.Type || appointment.AppointmentType || appointment.type || 'Office Visit'
-      })) || [],
-      CreatedAt: getDateString(data.CreatedAt || data.createdAt) || new Date().toISOString(),
-      UpdatedAt: getDateString(data.UpdatedAt || data.updatedAt) || new Date().toISOString()
+      SessionId: tebraDailySession.SessionId || '',
+      Date: tebraDailySession.Date || new Date().toISOString(),
+      Appointments: Array.isArray(tebraDailySession.Appointments) 
+        ? tebraDailySession.Appointments.map((apt: any) => this.transformAppointmentData(apt))
+        : [],
+      Providers: Array.isArray(tebraDailySession.Providers)
+        ? tebraDailySession.Providers.map((provider: any) => ({
+            ProviderId: provider.ProviderId || provider.Id || '',
+            FirstName: provider.FirstName || '',
+            LastName: provider.LastName || '',
+            Title: provider.Title || 'Dr.'
+          }))
+        : [],
+      CreatedAt: tebraDailySession.CreatedAt || new Date().toISOString(),
+      UpdatedAt: tebraDailySession.UpdatedAt || new Date().toISOString()
     };
   }
 
-  static combineToInternalPatient(
-    appointment: TebraAppointment,
-    patient: TebraPatient,
-    providers: TebraProvider[]
-  ): Patient {
-    const provider = providers.find(p => p.ProviderId === appointment.ProviderId);
-
-    // Map appointment type to internal AppointmentType
-    const appointmentType: AppointmentType | undefined = 
-      appointment.Type === 'Office Visit' || appointment.Type === 'LABS' 
-        ? appointment.Type as AppointmentType
-        : 'Office Visit'; // Default fallback
-
+  /**
+   * Combines Tebra patient data with internal patient data
+   * @param {any} tebraPatient - Patient data from Tebra
+   * @param {any} internalPatient - Existing internal patient data
+   * @returns {any} Combined patient data
+   */
+  static combineToInternalPatient(tebraPatient: any, internalPatient: any): any {
     return {
-      id: patient.PatientId,
-      name: `${patient.FirstName} ${patient.LastName}`,
-      dob: patient.DateOfBirth,
-      appointmentTime: `${appointment.StartTime}`,
-      appointmentType,
-      provider: provider ? `${provider.Title} ${provider.FirstName} ${provider.LastName}` : 'Unknown Provider',
-      status: 'scheduled',
-      checkInTime: undefined,
-      room: undefined
+      ...internalPatient,
+      externalId: tebraPatient.PatientId || tebraPatient.Id || internalPatient.externalId,
+      firstName: tebraPatient.FirstName || internalPatient.firstName,
+      lastName: tebraPatient.LastName || internalPatient.lastName,
+      dateOfBirth: tebraPatient.DateOfBirth || tebraPatient.DOB || internalPatient.dateOfBirth,
+      phone: tebraPatient.Phone || tebraPatient.PhoneNumber || internalPatient.phone,
+      email: tebraPatient.Email || tebraPatient.EmailAddress || internalPatient.email,
+      lastUpdated: new Date().toISOString()
     };
   }
 }

@@ -60,9 +60,28 @@ interface SoapAppointmentData {
  * @class TebraSoapClient
  */
 export class TebraSoapClient {
-  private client: any;
+  private client: any = null;
   private rateLimiter: TebraRateLimiter;
   private credentials: TebraCredentials;
+
+  /**
+   * Gets the SOAP client instance
+   * @returns {any} SOAP client instance
+   */
+  async getClient() {
+    if (this.client == null) {
+      this.client = await this.createClient();
+    }
+    return this.client;
+  }
+
+  /**
+   * Sets the SOAP client instance (useful for testing)
+   * @param {any} client - SOAP client instance
+   */
+  setClient(client: any) {
+    this.client = client;
+  }
 
   /**
    * Creates an instance of TebraSoapClient
@@ -100,17 +119,25 @@ export class TebraSoapClient {
    * @throws {Error} If client initialization fails
    */
   private async initializeClient(): Promise<void> {
-    if (!this.client) {
-      try {
-        this.client = await soap.createClientAsync(this.credentials.wsdlUrl);
-        this.client.setSecurity(new soap.BasicAuthSecurity(
-          this.credentials.username,
-          this.credentials.password
-        ));
-      } catch (error) {
-        console.error('Failed to initialize Tebra SOAP client:', error);
-        throw new Error('Failed to initialize Tebra SOAP client');
-      }
+    await this.getClient();
+  }
+
+  /**
+   * Creates a new SOAP client
+   * @returns {Promise<any>} SOAP client instance
+   * @throws {Error} If client creation fails
+   */
+  private async createClient(): Promise<any> {
+    try {
+      const client = await soap.createClientAsync(this.credentials.wsdlUrl);
+      client.setSecurity(new soap.BasicAuthSecurity(
+        this.credentials.username,
+        this.credentials.password
+      ));
+      return client;
+    } catch (error) {
+      console.error('Failed to initialize Tebra SOAP client:', error);
+      throw new Error('Failed to initialize Tebra SOAP client');
     }
   }
 
@@ -123,7 +150,7 @@ export class TebraSoapClient {
   public async getPatientById(patientId: string): Promise<any> {
     await this.initializeClient();
     await this.rateLimiter.waitForSlot('GetPatient');
-    
+
     try {
       const [result] = await this.client.GetPatientAsync({ patientId });
       return result;
@@ -162,7 +189,7 @@ export class TebraSoapClient {
   public async getAppointmentById(appointmentId: string): Promise<any> {
     await this.initializeClient();
     await this.rateLimiter.waitForSlot('GetAppointment');
-    
+
     try {
       const [result] = await this.client.GetAppointmentAsync({ appointmentId });
       return result;
@@ -181,7 +208,7 @@ export class TebraSoapClient {
   public async getDailySessionData(date: Date): Promise<any> {
     await this.initializeClient();
     await this.rateLimiter.waitForSlot('GetDailySession');
-    
+
     try {
       const [result] = await this.client.GetDailySessionAsync({ date: date.toISOString() });
       return result;
@@ -294,11 +321,11 @@ export class TebraSoapClient {
 }
 
 // Create a singleton instance with environment variables
-// COMMENTED OUT: This was causing test failures due to missing env vars
-// const credentials: TebraCredentials = {
-//   wsdlUrl: process.env.REACT_APP_TEBRA_WSDL_URL || '',
-//   username: process.env.REACT_APP_TEBRA_USERNAME || '',
-//   password: process.env.REACT_APP_TEBRA_PASSWORD || ''
-// };
+// Use empty credentials for testing - actual credentials will be provided when used
+const credentials: TebraCredentials = {
+  wsdlUrl: process.env.REACT_APP_TEBRA_WSDL_URL || '',
+  username: process.env.REACT_APP_TEBRA_USERNAME || '',
+  password: process.env.REACT_APP_TEBRA_PASSWORD || ''
+};
 
-// export const tebraSoapClient = new TebraSoapClient(credentials);              
+// export const tebraSoapClient = new TebraSoapClient(credentials);

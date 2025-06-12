@@ -38,11 +38,12 @@ describe('Tebra Integration - Simplified Tests', () => {
       
       // Test with partial credentials
       expect(() => new TebraApiService({ 
-        username: 'test', 
+        username: 'dummy',    // provide to skip in validateConfig
+        accountId: 'dummy',   // provide to skip in validateConfig
         password: '', 
         wsdlUrl: '' 
       } as TebraCredentials)).toThrow(
-        'Invalid Tebra configuration. Missing required fields: password'
+        'Invalid Tebra configuration. Missing required fields: password, wsdlUrl'
       );
     });
 

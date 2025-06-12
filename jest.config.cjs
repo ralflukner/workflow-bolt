@@ -21,7 +21,9 @@ module.exports = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/',
-    '/build/'
+    '/build/',
+    '/src/__tests__/real-api/',
+    '/src/services/__tests__/.*\\.integration\\.test\\.ts$'
   ],
   // Add globals to mock import.meta for Jest
   globals: {
@@ -56,7 +58,9 @@ module.exports = {
         '/e2e/',
         '.integration.test.',
         '.e2e.test.',
-        'real-api'
+        'real-api',
+        '/src/__tests__/real-api/',
+        '/src/services/__tests__/.*\\.integration\\.test\\.ts$'
       ],
       // Add globals to mock import.meta for Jest
       globals: {

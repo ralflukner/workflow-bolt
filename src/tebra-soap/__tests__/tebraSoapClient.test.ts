@@ -3,7 +3,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { tebraSoapClient } from '../tebraSoapClient';
+import { TebraSoapClient } from '../tebraSoapClient';
 import soap from 'soap';
 
 jest.mock('soap', () => ({
@@ -17,11 +17,18 @@ const mockedSoap = soap as unknown as {
 
 describe('TebraSoapClient', () => {
   const mockPatientResponse = [{ patientId: '123', firstName: 'John', lastName: 'Doe' }];
+  const dummyCredentials = {
+    wsdlUrl: 'https://example.com/wsdl',
+    username: 'test-user',
+    password: 'test-pass'
+  };
+  let client: TebraSoapClient;
 
   beforeEach(() => {
     jest.resetAllMocks();
+    client = new TebraSoapClient(dummyCredentials);
     // Resetting private cache for test
-    tebraSoapClient['client'] = null;
+    client['client'] = null;
   });
 
   it('should call GetPatientAsync with correct parameters', async () => {
@@ -33,7 +40,7 @@ describe('TebraSoapClient', () => {
     mockedSoap.createClientAsync.mockResolvedValue(mockClient);
 
     // Act
-    const result = await tebraSoapClient.getPatientById('123');
+    const result = await client.getPatientById('123');
 
     // Assert
     expect(mockedSoap.createClientAsync).toHaveBeenCalled();
@@ -50,7 +57,7 @@ describe('TebraSoapClient', () => {
     };
     mockedSoap.createClientAsync.mockResolvedValue(mockClient);
 
-    const result = await tebraSoapClient.searchPatients('Smith');
+    const result = await client.searchPatients('Smith');
 
     expect(mockClient.SearchPatientsAsync).toHaveBeenCalledWith({ lastName: 'Smith' });
     expect(result).toEqual(patients.patients);

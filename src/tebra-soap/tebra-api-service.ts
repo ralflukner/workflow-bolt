@@ -187,9 +187,10 @@ export class TebraApiService {
    * @throws {Error} If configuration is invalid
    */
   private validateConfig(config: EnvConfig): void {
-    const requiredFields: (keyof EnvConfig)[] = ['wsdlUrl', 'username', 'password'];
-    const missingFields = requiredFields.filter(field => !config[field]);
-
+    const missingFields = [];
+    if (!config.username) missingFields.push('username');
+    if (!config.password) missingFields.push('password');
+    if (!config.wsdlUrl) missingFields.push('wsdlUrl');
     if (missingFields.length > 0) {
       throw new Error(
         `Invalid Tebra configuration. Missing required fields: ${missingFields.join(', ')}`
