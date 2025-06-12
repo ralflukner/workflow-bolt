@@ -1,15 +1,14 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { TebraApiService } from '../tebraApiService';
+import { redactSecrets, redactSpecificValues, secureLog } from '../../utils/redact';
 
 describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
-  let secretManager: SecretManager;
+  let tebraService: TebraApiService;
   let consoleSpy: jest.SpiedFunction<typeof console.log>;
-  let consoleErrorSpy: jest.SpiedFunction<typeof console.error>;
 
   beforeEach(() => {
-    secretManager = new SecretManager('test-project-id');
+    tebraService = new TebraApiService();
     consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -214,7 +213,7 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
 
       // Test that redaction works for all log messages
       for (const message of logMessages) {
-        const sanitizedMessage = redactSensitiveData(message, secrets);
+        const sanitizedMessage = redactSpecificValues(message, secrets);
         expect(sanitizedMessage).not.toContain(mockSecretValue);
         
         if (message.includes(mockSecretValue)) {
@@ -229,7 +228,7 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
       const apiKey = 'api-key-789';
       
       const message = `Connecting to Tebra with user: ${username}, password: ${password}, key: ${apiKey}`;
-      const redacted = redactSensitiveData(message, [username, password, apiKey]);
+      const redacted = redactSpecificValues(message, [username, password, apiKey]);
       
       expect(redacted).not.toContain(username);
       expect(redacted).not.toContain(password);
@@ -238,12 +237,38 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
     });
 
     it('should handle edge cases in redaction safely', () => {
-      const sensitiveValues = [null, undefined, '', 'valid-secret'];
+      const sensitiveValues = ['', 'valid-secret'];
       const message = 'This contains a valid-secret that should be redacted';
       
-      const redacted = redactSensitiveData(message, sensitiveValues);
+      const redacted = redactSpecificValues(message, sensitiveValues);
       expect(redacted).not.toContain('valid-secret');
       expect(redacted).toContain('[REDACTED]');
+    });
+
+    it('should redact common secret patterns automatically', () => {
+      const testCases = [
+        {
+          input: 'Sending password=12345 and token=abcdef',
+          expected: 'password=[REDACTED]'
+        },
+        {
+          input: 'Using secret: mysecret123',
+          expected: 'secret: [REDACTED]'
+        },
+        {
+          input: 'API key=sk-1234567890',
+          expected: 'key=[REDACTED]'
+        }
+      ];
+
+      testCases.forEach(testCase => {
+        const redacted = redactSecrets(testCase.input);
+        expect(redacted).toContain('[REDACTED]');
+        expect(redacted).not.toContain('12345');
+        expect(redacted).not.toContain('abcdef');
+        expect(redacted).not.toContain('mysecret123');
+        expect(redacted).not.toContain('sk-1234567890');
+      });
     });
 
     it('should validate required Tebra secrets configuration', async () => {

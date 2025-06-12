@@ -1,5 +1,6 @@
 import { httpsCallable, getFunctions } from 'firebase/functions';
 import { app, isFirebaseConfigured, functions } from '../config/firebase';
+import { secureLog } from '../utils/redact';
 
 // Lazy initialization of functions instance
 let functionsInstance: ReturnType<typeof getFunctions> | undefined;
@@ -132,16 +133,10 @@ export class TebraApiService {
   private testSecretRedactionBackend = callableWrapper.testSecretRedaction;
   
   /**
-   * Frontend-safe logging that avoids exposing sensitive information
-   * For production, this should be enhanced with proper log filtering
+   * HIPAA-compliant logging using the frontend-safe redaction utility
    */
-  private secureLog(message: string, data?: any): void {
-    // Simple frontend-safe logging without Node.js dependencies
-    console.log('[Tebra Service]', message);
-    if (data && typeof data === 'object') {
-      // Don't log the full data object to avoid potential credential exposure
-      console.log('[Tebra Service] Response received');
-    }
+  private log(message: string, data?: any): void {
+    secureLog(`[Tebra Service] ${message}`, data);
   }
 
   /**
@@ -154,19 +149,19 @@ export class TebraApiService {
     recommendations: string[];
   }> {
     try {
-      this.secureLog('Validating HIPAA compliance via Firebase Functions...');
+      this.log('Validating HIPAA compliance via Firebase Functions...');
       const result = await this.validateHIPAAComplianceBackend();
       const response = result.data;
       
       if (response.success) {
-        this.secureLog('HIPAA compliance validation completed');
+        this.log('HIPAA compliance validation completed');
         return {
           isCompliant: response.isCompliant,
           issues: response.issues || [],
           recommendations: response.recommendations || []
         };
       } else {
-        this.secureLog('HIPAA compliance validation failed');
+        this.log('HIPAA compliance validation failed');
         return {
           isCompliant: false,
           issues: response.issues || ['Validation service unavailable'],
@@ -174,7 +169,7 @@ export class TebraApiService {
         };
       }
     } catch (error) {
-      this.secureLog('HIPAA compliance validation error', error);
+      this.log('HIPAA compliance validation error', error);
       return {
         isCompliant: false,
         issues: ['Failed to validate HIPAA compliance'],
@@ -192,7 +187,7 @@ export class TebraApiService {
     containsSensitiveData?: boolean;
   }> {
     try {
-      this.secureLog('Testing secret redaction via Firebase Functions...');
+      this.log('Testing secret redaction via Firebase Functions...');
       const result = await this.testSecretRedactionBackend({ message, testSecrets });
       const response = result.data;
       
@@ -202,7 +197,7 @@ export class TebraApiService {
         containsSensitiveData: response.containsSensitiveData
       };
     } catch (error) {
-      this.secureLog('Secret redaction test failed', error);
+      this.log('Secret redaction test failed', error);
       return {
         success: false
       };
@@ -214,14 +209,14 @@ export class TebraApiService {
    */
   async testConnection(): Promise<boolean> {
     try {
-      this.secureLog('Testing Tebra API connection via Firebase Functions...');
+      this.log('Testing Tebra API connection via Firebase Functions...');
       const result = await this.tebraTestConnection();
       const response = result.data as ApiResponse<null>;
 
-      this.secureLog('Connection test result:', response);
+      this.log('Connection test result:', response);
       return response.success;
     } catch (error) {
-      this.secureLog('Connection test failed:', error);
+      this.log('Connection test failed:', error);
       return false;
     }
   }
