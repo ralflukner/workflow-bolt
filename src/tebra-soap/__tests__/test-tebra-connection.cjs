@@ -1,6 +1,6 @@
 require('ts-node/register');          // enable on‑the‑fly TS transpile
-const { SecretsService } = require('../services/secretsService.ts');
-const { TebraSoapClient } = require('../tebraSoapClient.ts');
+const { SecretsService } = require('../../services/secretsService.ts');
+const { TebraSoapClient } = require('../tebraSoapClient');
 
 (async () => {
   const secretsService = SecretsService.getInstance();
