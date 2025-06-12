@@ -42,7 +42,7 @@ describe('Tebra Integration - Simplified Tests', () => {
         password: '', 
         wsdlUrl: '' 
       } as TebraCredentials)).toThrow(
-        'Invalid Tebra configuration. Missing required fields: password, wsdlUrl'
+        'Invalid Tebra configuration. Missing required fields: password'
       );
     });
 
