@@ -12,6 +12,28 @@ interface SyncResult {
   lastSync?: Date;
 }
 
+interface TestAppointmentsData {
+  appointments?: Array<{
+    AppointmentId?: string;
+    PatientId?: string;
+    ProviderId?: string;
+    StartTime?: string;
+    EndTime?: string;
+    Status?: string;
+    Type?: string;
+    Notes?: string;
+  }>;
+  count?: number;
+  fromDate?: string;
+  toDate?: string;
+}
+
+interface TestAppointmentsResponse {
+  success: boolean;
+  data?: TestAppointmentsData;
+  message?: string;
+}
+
 const TebraIntegration: React.FC = () => {
   const { getCurrentTime } = useTimeContext();
   const { ensureFirebaseAuth } = useFirebaseAuth();
@@ -135,12 +157,15 @@ const TebraIntegration: React.FC = () => {
     setStatusMessage(`Testing raw appointments for ${date}...`);
 
     try {
-      const result = await tebraApiService.testAppointments(date);
+      const result = await tebraApiService.testAppointments(date) as TestAppointmentsResponse;
       console.log('Raw Tebra response:', result);
       setStatusMessage(`✅ Test complete. Check console for raw data.`);
-      if (result.data && result.data.appointments) {
-        console.log('Appointments found:', result.data.appointments.length);
-        console.log('First appointment:', result.data.appointments[0]);
+      if (result.success && result.data) {
+        const appointments = result.data.appointments || [];
+        console.log('Appointments found:', appointments.length);
+        if (appointments.length > 0) {
+          console.log('First appointment:', appointments[0]);
+        }
       }
     } catch (error) {
       console.error('Test failed:', error);

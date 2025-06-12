@@ -1,0 +1,288 @@
+/**
+ * HIPAA-Compliant Secrets Management Service
+ * Prioritizes Google Secret Manager over environment variables
+ * Handles secure retrieval of sensitive configuration data
+ */
+
+interface SecretConfig {
+  secretName: string;
+  envFallback?: string;
+  required?: boolean;
+}
+
+interface SecretsCache {
+  [key: string]: {
+    value: string;
+    timestamp: number;
+    ttl: number;
+  };
+}
+
+export class SecretsService {
+  private static instance: SecretsService;
+  private static cache: SecretsCache = {};
+  private static readonly CACHE_TTL = 300000; // 5 minutes in milliseconds
+  private static readonly PROJECT_ID = 'luknerlumina-firebase';
+
+  // Secret configuration mapping
+  private static readonly SECRET_CONFIGS: Record<string, SecretConfig> = {
+    // Encryption keys
+    PATIENT_ENCRYPTION_KEY: {
+      secretName: 'patient-encryption-key',
+      envFallback: 'REACT_APP_PATIENT_ENCRYPTION_KEY',
+      required: true
+    },
+    
+    // Tebra API credentials  
+    TEBRA_USERNAME: {
+      secretName: 'tebra-username',
+      envFallback: 'REACT_APP_TEBRA_USERNAME',
+      required: true
+    },
+    TEBRA_PASSWORD: {
+      secretName: 'tebra-password',
+      envFallback: 'REACT_APP_TEBRA_PASSWORD', 
+      required: true
+    },
+    TEBRA_CUSTOMER_KEY: {
+      secretName: 'tebra-customer-key',
+      envFallback: 'REACT_APP_TEBRA_CUSTOMERKEY',
+      required: true
+    },
+    
+    // API Keys
+    TEBRA_PROXY_API_KEY: {
+      secretName: 'tebra-proxy-api-key',
+      envFallback: 'VITE_TEBRA_PROXY_API_KEY',
+      required: true
+    },
+    
+    // Firebase config (for server-side usage)
+    FIREBASE_API_KEY: {
+      secretName: 'firebase-api-key',
+      envFallback: 'VITE_FIREBASE_API_KEY',
+      required: false
+    }
+  };
+
+  private constructor() {}
+
+  public static getInstance(): SecretsService {
+    if (!SecretsService.instance) {
+      SecretsService.instance = new SecretsService();
+    }
+    return SecretsService.instance;
+  }
+
+  /**
+   * Get secret from Google Secret Manager with fallback to environment variables
+   */
+  public async getSecret(secretKey: string): Promise<string> {
+    const config = SecretsService.SECRET_CONFIGS[secretKey];
+    if (!config) {
+      throw new Error(`Unknown secret key: ${secretKey}`);
+    }
+
+    // Check cache first
+    const cached = this.getCachedSecret(secretKey);
+    if (cached) {
+      return cached;
+    }
+
+    let secretValue: string | null = null;
+
+    try {
+      // Try Google Secret Manager first (server-side only)
+      if (typeof window === 'undefined') {
+        secretValue = await this.getFromSecretManager(config.secretName);
+        if (secretValue) {
+          console.log(`✅ Retrieved ${secretKey} from Google Secret Manager`);
+          this.cacheSecret(secretKey, secretValue);
+          return secretValue;
+        }
+      }
+
+      // Fallback to environment variables
+      if (config.envFallback) {
+        secretValue = this.getFromEnvironment(config.envFallback);
+        if (secretValue) {
+          console.log(`⚠️ Retrieved ${secretKey} from environment variable (fallback)`);
+          this.cacheSecret(secretKey, secretValue);
+          return secretValue;
+        }
+      }
+
+      // Handle missing required secrets
+      if (config.required) {
+        throw new Error(
+          `Required secret ${secretKey} not found in Secret Manager or environment variables. ` +
+          `Configure secret: gcloud secrets create ${config.secretName} --data-file=-`
+        );
+      }
+
+      return '';
+    } catch (error) {
+      console.error(`Failed to retrieve secret ${secretKey}:`, error);
+      
+      if (config.required) {
+        throw error;
+      }
+      
+      return '';
+    }
+  }
+
+  /**
+   * Get secret synchronously (environment variables only)
+   */
+  public getSecretSync(secretKey: string): string {
+    const config = SecretsService.SECRET_CONFIGS[secretKey];
+    if (!config) {
+      throw new Error(`Unknown secret key: ${secretKey}`);
+    }
+
+    // Check cache first
+    const cached = this.getCachedSecret(secretKey);
+    if (cached) {
+      return cached;
+    }
+
+    // Only environment variables for synchronous access
+    if (config.envFallback) {
+      const secretValue = this.getFromEnvironment(config.envFallback);
+      if (secretValue) {
+        this.cacheSecret(secretKey, secretValue);
+        return secretValue;
+      }
+    }
+
+    if (config.required) {
+      throw new Error(
+        `Required secret ${secretKey} not found. Set ${config.envFallback} environment variable ` +
+        `or configure Google Secret Manager: gcloud secrets create ${config.secretName} --data-file=-`
+      );
+    }
+
+    return '';
+  }
+
+  /**
+   * Retrieve secret from Google Secret Manager
+   */
+  private async getFromSecretManager(secretName: string): Promise<string | null> {
+    try {
+      // Dynamic import to avoid bundling in browser
+      const { SecretManagerServiceClient } = await import('@google-cloud/secret-manager');
+      const client = new SecretManagerServiceClient();
+      
+      const [version] = await client.accessSecretVersion({
+        name: `projects/${SecretsService.PROJECT_ID}/secrets/${secretName}/versions/latest`,
+      });
+
+      const secretValue = version.payload?.data?.toString();
+      return secretValue || null;
+    } catch (error) {
+      console.warn(`Could not retrieve ${secretName} from Secret Manager:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Retrieve secret from environment variables
+   */
+  private getFromEnvironment(envVar: string): string | null {
+    // Browser environment (Vite)
+    if (typeof window !== 'undefined') {
+      const value = (import.meta.env as any)?.[envVar];
+      return value || null;
+    }
+    
+    // Node.js environment
+    if (typeof process !== 'undefined') {
+      return process.env[envVar] || null;
+    }
+
+    return null;
+  }
+
+  /**
+   * Cache secret with TTL
+   */
+  private cacheSecret(key: string, value: string): void {
+    SecretsService.cache[key] = {
+      value,
+      timestamp: Date.now(),
+      ttl: SecretsService.CACHE_TTL
+    };
+  }
+
+  /**
+   * Get cached secret if not expired
+   */
+  private getCachedSecret(key: string): string | null {
+    const cached = SecretsService.cache[key];
+    if (!cached) {
+      return null;
+    }
+
+    const isExpired = Date.now() - cached.timestamp > cached.ttl;
+    if (isExpired) {
+      delete SecretsService.cache[key];
+      return null;
+    }
+
+    return cached.value;
+  }
+
+  /**
+   * Clear all cached secrets (for testing/security)
+   */
+  public clearCache(): void {
+    SecretsService.cache = {};
+  }
+
+  /**
+   * Store a secret in Google Secret Manager
+   */
+  public async storeSecret(secretName: string, secretValue: string): Promise<void> {
+    try {
+      const { SecretManagerServiceClient } = await import('@google-cloud/secret-manager');
+      const client = new SecretManagerServiceClient();
+
+      // Create or update secret
+      try {
+        await client.createSecret({
+          parent: `projects/${SecretsService.PROJECT_ID}`,
+          secretId: secretName,
+          secret: {
+            replication: {
+              automatic: {},
+            },
+          },
+        });
+        console.log(`Created secret: ${secretName}`);
+      } catch (error: any) {
+        if (!error.message?.includes('already exists')) {
+          throw error;
+        }
+        console.log(`Secret ${secretName} already exists, adding new version`);
+      }
+
+      // Add secret version
+      await client.addSecretVersion({
+        parent: `projects/${SecretsService.PROJECT_ID}/secrets/${secretName}`,
+        payload: {
+          data: Buffer.from(secretValue),
+        },
+      });
+
+      console.log(`✅ Stored secret ${secretName} in Google Secret Manager`);
+    } catch (error) {
+      console.error(`Failed to store secret ${secretName}:`, error);
+      throw error;
+    }
+  }
+}
+
+// Export singleton instance
+export const secretsService = SecretsService.getInstance();

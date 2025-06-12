@@ -1,44 +1,32 @@
 import CryptoJS from 'crypto-js';
 import { Patient } from '../../types';
+import { secretsService } from '../secretsService';
 
 /**
- * Service for encrypting and decrypting patient data for HIPAA compliance
- * Handles secure encryption of sensitive patient information at rest
+ * HIPAA-Compliant Patient Data Encryption Service
+ * Uses Google Secret Manager for secure key management
  */
 export class PatientEncryptionService {
+
   /**
-   * Get the encryption key from environment variables
-   * In production, this should use a secure key management system
+   * Get encryption key from Google Secret Manager or environment variables
    */
-  private static getEncryptionKey(): string {
-    if (process.env.NODE_ENV === 'test') {
-      const testKey = process.env.REACT_APP_PATIENT_ENCRYPTION_KEY;
-      if (!testKey) {
-        throw new Error('Missing encryption key in test environment. Set REACT_APP_PATIENT_ENCRYPTION_KEY.');
-      }
-      return testKey;
-    }
-    
-    // In production, this should use a secure key management system
-    try {
-      const envKey = typeof process !== 'undefined' && process.env?.REACT_APP_PATIENT_ENCRYPTION_KEY;
-      
-      if (!envKey) {
-        throw new Error('Missing encryption key. Set REACT_APP_PATIENT_ENCRYPTION_KEY environment variable.');
-      }
-      
-      return envKey;
-    } catch (error) {
-      console.error('Error retrieving encryption key:', error);
-      throw new Error('Failed to retrieve encryption key. Ensure REACT_APP_PATIENT_ENCRYPTION_KEY is set.');
-    }
+  private static async getEncryptionKey(): Promise<string> {
+    return await secretsService.getSecret('PATIENT_ENCRYPTION_KEY');
+  }
+
+  /**
+   * Synchronous wrapper for getEncryptionKey
+   */
+  private static getEncryptionKeySync(): string {
+    return secretsService.getSecretSync('PATIENT_ENCRYPTION_KEY');
   }
 
   /**
    * Encrypt a string value using AES encryption
    */
   static encryptValue(value: string): string {
-    const key = this.getEncryptionKey();
+    const key = this.getEncryptionKeySync();
     return CryptoJS.AES.encrypt(value, key).toString();
   }
 
@@ -46,7 +34,24 @@ export class PatientEncryptionService {
    * Decrypt an encrypted string value
    */
   static decryptValue(encryptedValue: string): string {
-    const key = this.getEncryptionKey();
+    const key = this.getEncryptionKeySync();
+    const bytes = CryptoJS.AES.decrypt(encryptedValue, key);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  }
+
+  /**
+   * Async version of encryptValue for when secret manager is needed
+   */
+  static async encryptValueAsync(value: string): Promise<string> {
+    const key = await this.getEncryptionKey();
+    return CryptoJS.AES.encrypt(value, key).toString();
+  }
+
+  /**
+   * Async version of decryptValue for when secret manager is needed
+   */
+  static async decryptValueAsync(encryptedValue: string): Promise<string> {
+    const key = await this.getEncryptionKey();
     const bytes = CryptoJS.AES.decrypt(encryptedValue, key);
     return bytes.toString(CryptoJS.enc.Utf8);
   }

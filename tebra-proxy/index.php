@@ -47,11 +47,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Security: API Key authentication
+// HIPAA-Compliant API Key authentication
 function validateApiKey()
 {
-    $api_key = getenv('API_KEY') ?: 'UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=';
-    $provided_key = $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? '';
+    $api_key = getenv('API_KEY');
+    $provided_key = $_SERVER['HTTP_X_API_KEY'] ?? '';
+
+    // Fail securely if no API key configured
+    if (!$api_key) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Service configuration error']);
+        logRequest('CONFIG_ERROR', 'Missing API key configuration');
+        exit();
+    }
 
     if (empty($provided_key) || !hash_equals($api_key, $provided_key)) {
         http_response_code(401);
@@ -238,11 +246,19 @@ try {
     $endpoint = $pathParts[0] ?? '';
     $method = $_SERVER['REQUEST_METHOD'];
     
-    // Configuration from environment variables
-    $TEBRA_USERNAME = getenv('TEBRA_SOAP_USERNAME') ?: 'work-flow@luknerclinic.com';
-    $TEBRA_PASSWORD = getenv('TEBRA_SOAP_PASSWORD') ?: 'Y2ISY-x@mf1B4renpKHV3w49';
-    $TEBRA_CUSTKEY = getenv('TEBRA_SOAP_CUSTKEY') ?: 'j57wt68dc39q';
+    // HIPAA-Compliant credential loading - NO hardcoded fallbacks
+    $TEBRA_USERNAME = getenv('TEBRA_SOAP_USERNAME');
+    $TEBRA_PASSWORD = getenv('TEBRA_SOAP_PASSWORD'); 
+    $TEBRA_CUSTKEY = getenv('TEBRA_SOAP_CUSTKEY');
     $TEBRA_WSDL = getenv('TEBRA_SOAP_WSDL') ?: 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl';
+
+    // Fail securely if credentials missing
+    if (!$TEBRA_USERNAME || !$TEBRA_PASSWORD || !$TEBRA_CUSTKEY) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Service configuration error']);
+        logRequest('CONFIG_ERROR', 'Missing Tebra credentials');
+        exit();
+    }
 
     // Create Tebra client
     $client = createTebraClient(

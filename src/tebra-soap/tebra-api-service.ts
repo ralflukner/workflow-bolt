@@ -7,6 +7,7 @@ import { TebraSoapClient } from './tebraSoapClient';
 import { TebraRateLimiter } from './tebra-rate-limiter';
 import { TebraDataTransformer } from './tebra-data-transformer';
 import { TebraCredentials, TebraPatient, TebraAppointment, TebraDailySession, TebraProvider } from './tebra-api-service.types';
+import { secretsService } from '../services/secretsService';
 
 // Type definitions for SOAP responses
 interface SoapAppointmentResponse {
@@ -68,6 +69,62 @@ const getEnvVar = (name: string, fallback: string): string => {
 };
 
 /**
+ * Gets Tebra credentials from secrets manager with environment fallback
+ * @returns {Promise<TebraCredentials>} Tebra credentials
+ */
+const getTebraCredentialsAsync = async (): Promise<Partial<TebraCredentials>> => {
+  try {
+    const [username, password, customerKey] = await Promise.all([
+      secretsService.getSecret('TEBRA_USERNAME').catch(() => null),
+      secretsService.getSecret('TEBRA_PASSWORD').catch(() => null),
+      secretsService.getSecret('TEBRA_CUSTOMER_KEY').catch(() => null)
+    ]);
+
+    const credentials: Partial<TebraCredentials> = {};
+    
+    if (username) credentials.username = username;
+    if (password) credentials.password = password;
+    
+    // Build WSDL URL with customer key if available
+    if (customerKey) {
+      credentials.wsdlUrl = `https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl&customerkey=${customerKey}`;
+    }
+
+    return credentials;
+  } catch (error) {
+    console.warn('Could not retrieve Tebra credentials from Secret Manager, falling back to environment variables:', error);
+    return {};
+  }
+};
+
+/**
+ * Gets Tebra credentials synchronously from environment variables
+ * @returns {Partial<TebraCredentials>} Tebra credentials
+ */
+const getTebraCredentialsSync = (): Partial<TebraCredentials> => {
+  try {
+    const username = secretsService.getSecretSync('TEBRA_USERNAME');
+    const password = secretsService.getSecretSync('TEBRA_PASSWORD');
+    const customerKey = secretsService.getSecretSync('TEBRA_CUSTOMER_KEY');
+
+    const credentials: Partial<TebraCredentials> = {};
+    
+    if (username) credentials.username = username;
+    if (password) credentials.password = password;
+    
+    // Build WSDL URL with customer key if available
+    if (customerKey) {
+      credentials.wsdlUrl = `https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl&customerkey=${customerKey}`;
+    }
+
+    return credentials;
+  } catch (error) {
+    console.warn('Could not retrieve Tebra credentials from secrets service, using environment fallback:', error);
+    return {};
+  }
+};
+
+/**
  * Tebra API service class
  * @class TebraApiService
  */
@@ -75,6 +132,29 @@ export class TebraApiService {
   private soapClient: TebraSoapClient;
   private rateLimiter: TebraRateLimiter;
   private dataTransformer: TebraDataTransformer;
+
+  /**
+   * Creates a TebraApiService instance using async secrets retrieval
+   * @param {Partial<TebraCredentials>} [credentials] - Optional credentials override
+   * @param {TebraDataTransformer} [dataTransformer] - Optional data transformer
+   * @returns {Promise<TebraApiService>} TebraApiService instance
+   */
+  static async createAsync(
+    credentials?: Partial<TebraCredentials>,
+    dataTransformer: TebraDataTransformer = new TebraDataTransformer()
+  ): Promise<TebraApiService> {
+    // Get credentials from secrets manager
+    const secretsCredentials = await getTebraCredentialsAsync();
+    
+    // Merge with provided credentials and fallback to env vars
+    const finalCredentials: Partial<TebraCredentials> = {
+      wsdlUrl: credentials?.wsdlUrl || secretsCredentials.wsdlUrl || getEnvVar('REACT_APP_TEBRA_WSDL_URL', ''),
+      username: credentials?.username || secretsCredentials.username || getEnvVar('REACT_APP_TEBRA_USERNAME', ''),
+      password: credentials?.password || secretsCredentials.password || getEnvVar('REACT_APP_TEBRA_PASSWORD', '')
+    };
+
+    return new TebraApiService(finalCredentials, dataTransformer);
+  }
 
   /**
    * Creates an instance of TebraApiService
@@ -86,10 +166,13 @@ export class TebraApiService {
     credentials?: Partial<TebraCredentials>,
     dataTransformer: TebraDataTransformer = new TebraDataTransformer()
   ) {
+    // Try to get credentials from secrets service first, then fallback to env vars
+    const secretsCredentials = getTebraCredentialsSync();
+    
     const config: EnvConfig = {
-      wsdlUrl: credentials?.wsdlUrl || getEnvVar('REACT_APP_TEBRA_WSDL_URL', ''),
-      username: credentials?.username || getEnvVar('REACT_APP_TEBRA_USERNAME', ''),
-      password: credentials?.password || getEnvVar('REACT_APP_TEBRA_PASSWORD', '')
+      wsdlUrl: credentials?.wsdlUrl || secretsCredentials.wsdlUrl || getEnvVar('REACT_APP_TEBRA_WSDL_URL', ''),
+      username: credentials?.username || secretsCredentials.username || getEnvVar('REACT_APP_TEBRA_USERNAME', ''),
+      password: credentials?.password || secretsCredentials.password || getEnvVar('REACT_APP_TEBRA_PASSWORD', '')
     };
 
     this.validateConfig(config);
