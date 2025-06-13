@@ -14,5 +14,8 @@
     "psr-4": { 
       "TebraProxy\\": "tests/helpers/"
     }
+  },
+  "require": {
+    "ext-ctype": "*"
   }
 }
