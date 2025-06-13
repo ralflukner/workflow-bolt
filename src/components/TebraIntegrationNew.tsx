@@ -65,7 +65,13 @@ const TebraIntegration: React.FC = () => {
     try {
       // Call Firebase Function instead of direct API service
       const { httpsCallable } = await import('firebase/functions');
-      const { functions } = await import('../firebase/firebase');
+      const { initializeFirebase, functions } = await import('../config/firebase');
+      await initializeFirebase();
+      
+      if (!functions) {
+        throw new Error('Firebase Functions not initialized');
+      }
+      
       const tebraTestConnection = httpsCallable(functions, 'tebraTestConnection');
       
       const result = await tebraTestConnection();
