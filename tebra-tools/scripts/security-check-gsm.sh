@@ -16,7 +16,7 @@ if [ -z "${GOOGLE_CLOUD_PROJECT:-}" ]; then
 fi
 
 # Check if gcloud is authenticated
-if ! gcloud auth print-access-token >/dev/null 2>&1; then
+if ! gcloud auth application-default print-access-token >/dev/null 2>&1; then
     echo "❌ Not authenticated with gcloud. Please run 'gcloud auth application-default login'"
     exit 1
 fi
@@ -282,27 +282,42 @@ else
     echo "   Run: $TOOLS_ROOT/scripts/manage-credential-rotation.sh record <credential_type>"
 fi
 
-# Check for accidentally tracked files
+# Check for sensitive files in Git
 echo -e "\n7. Checking for accidentally tracked sensitive files..."
 SENSITIVE_FILES=(
     ".env"
-    ".env.*"
+    ".env.local"
+    ".envrc"
     "credentials.json"
-    "service-account*.json"
-    "*.key"
+    "service-account.json"
     "*.pem"
-    "test-tebra.php"
-    "tebra_test.php"
+    "*.key"
+    "*.crt"
+    "*.p12"
+    "*.pfx"
 )
 
-TRACKED_SENSITIVE=0
-for file_pattern in "${SENSITIVE_FILES[@]}"; do
-    while IFS= read -r file; do
-        if [ -n "$file" ]; then
-            echo "⚠️  WARNING: Sensitive file tracked in Git: $file"
-            TRACKED_SENSITIVE=$((TRACKED_SENSITIVE + 1))
-        fi
-    done < <(git ls-files | grep -E "$file_pattern" 2>/dev/null || true)
+for file in "${SENSITIVE_FILES[@]}"; do
+    if git ls-files "$file" 2>/dev/null | grep -v "env-example" | grep -v "env.example" | grep -v "env-example.txt" > /dev/null; then
+        echo "⚠️  WARNING: Sensitive file tracked in Git: $file"
+        FOUND_ISSUES=$((FOUND_ISSUES + 1))
+    fi
+done
+
+# Check for potential patient data exposure
+echo -e "\n8. Checking for potential patient data exposure..."
+PATIENT_PATTERNS=(
+    "MRN[0-9]+"
+    "DOB.*[0-9]{2}/[0-9]{2}/[0-9]{4}"
+    "SSN.*[0-9]{3}-[0-9]{2}-[0-9]{4}"
+    "patient_id.*[0-9]+"
+)
+
+for pattern in "${PATIENT_PATTERNS[@]}"; do
+    if git grep -E "$pattern" 2>/dev/null | grep -v "env-example" | grep -v "env.example" | grep -v "env-example.txt" > /dev/null; then
+        echo "⚠️  WARNING: Potential patient data pattern found in Git history: $pattern"
+        FOUND_ISSUES=$((FOUND_ISSUES + 1))
+    fi
 done
 
 # Function: Patient data exposure check

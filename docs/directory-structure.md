@@ -1,6 +1,8 @@
+
 # Project Directory Structure
 
 ```
+
 .
 ├── src/                      # Main application source code
 │   ├── components/          # React components
@@ -35,11 +37,13 @@
 │   └── setup-tebra-test.sh
 │
 └── vendor/              # Composer dependencies
+
 ```
 
 ## Key Directories and Files
 
 ### Source Code
+
 - **src/**: Main application source code
   - **components/**: React components
   - **services/**: Service layer implementations
@@ -47,6 +51,7 @@
   - **tebra-soap/**: Tebra SOAP API integration code
 
 ### Tebra Tools
+
 - **tebra-tools/**: Tebra integration tools and scripts
   - **scripts/**: Shell scripts for Tebra operations
     - **security-check-gsm.sh**: Security check script
@@ -57,6 +62,7 @@
   - **debug-proxy-dates.php**: Debugging tool
 
 ### Services
+
 - **tebra-proxy/**: Tebra SOAP API proxy service
   - **public/**: Public web root
   - **src/**: Source code
@@ -68,13 +74,16 @@
   - **tests/**: Test files
 
 ### Documentation
+
 - **docs/**: Project documentation
   - **TEBRA_DEBUGGING_RESOLUTION.md**: Debugging guide
   - **directory-structure.md**: This file
 
 ### Scripts
+
 - **scripts/**: Project-wide scripts
   - **setup-tebra-test.sh**: Test environment setup script
 
 ### Dependencies
+
 - **vendor/**: Composer dependencies

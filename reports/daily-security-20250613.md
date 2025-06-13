@@ -1,4 +1,6 @@
+
 # Lukner Clinic Daily Security Summary
+
 **Date:** 2025-06-13**
 
 ## Alerts in the last 24h

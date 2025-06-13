@@ -1,10 +1,14 @@
+
 # Tebra API Support Request - InternalServiceFault Error
 
 **Account Information:**
 
 - **Main Tebra Account:** `lukner@gmail.com` / `lukner@luknerclinic.com`
+
 - **API Username:** `work-flow@luknerclinic.com` (dedicated API account)
+
 - **Customer Key:** j57wt68dc39q
+
 - **WSDL URL:** `https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl`
 
 **Issue Description:**
@@ -14,7 +18,9 @@ dedicated API account `work-flow@luknerclinic.com`.
 **System Integration Context:**
 
 - **Current System:** Clinic workflow management system (Lukner Clinic)
+
 - **API Account:** `work-flow@luknerclinic.com` (dedicated for this integration)
+
 - **Note:** Aledade ACO has separate API credentials (not sharing same account)
 
 ---
@@ -44,6 +50,7 @@ SOAPAction: "http://www.kareo.com/ServiceContracts/2.1/GetProviders"
     <kar:GetProviders />
   </soap:Body>
 </soap:Envelope>
+
 ```
 
 **RESPONSE XML:**
@@ -62,6 +69,7 @@ Content-Type: text/xml; charset=utf-8
     </s:Fault>
   </s:Body>
 </s:Envelope>
+
 ```
 
 ### 2. GetAppointments Operation
@@ -92,6 +100,7 @@ SOAPAction: "http://www.kareo.com/ServiceContracts/2.1/GetAppointments"
     </kar:GetAppointments>
   </soap:Body>
 </soap:Envelope>
+
 ```
 
 **RESPONSE XML:**
@@ -110,6 +119,7 @@ Content-Type: text/xml; charset=utf-8
     </s:Fault>
   </s:Body>
 </s:Envelope>
+
 ```
 
 ### 3. GetPractices Operation
@@ -135,6 +145,7 @@ SOAPAction: "http://www.kareo.com/ServiceContracts/2.1/GetPractices"
     <kar:GetPractices />
   </soap:Body>
 </soap:Envelope>
+
 ```
 
 **RESPONSE XML:**
@@ -153,6 +164,7 @@ Content-Type: text/xml; charset=utf-8
     </s:Fault>
   </s:Body>
 </s:Envelope>
+
 ```
 
 ---
@@ -162,14 +174,19 @@ Content-Type: text/xml; charset=utf-8
 **Authentication Verification:**
 
 - No 401 Unauthorized errors received (credentials working correctly)
+
 - All operations recognized by API (no 404 Not Found errors)
+
 - SOAP format accepted (no malformed request errors)
 
 **Multiple Operations Tested:**
 
 - GetProviders: ❌ InternalServiceFault
+
 - GetAppointments: ❌ InternalServiceFault
+
 - GetPractices: ❌ InternalServiceFault
+
 - All operations return identical fault response
 
 **Network Connectivity:**
@@ -178,6 +195,7 @@ Content-Type: text/xml; charset=utf-8
 $ curl -I https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl
 HTTP/1.1 200 OK
 Content-Type: text/xml; charset=utf-8
+
 ```
 
 **SOAP Operation Testing (curl demonstrations):**
@@ -204,6 +222,7 @@ $ curl -X POST https://webservice.kareo.com/services/soap/2.1/KareoServices.svc 
 </soap:Envelope>'
 
 # Response:
+
 <?xml version="1.0" encoding="utf-8"?>
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
   <s:Body>
@@ -214,12 +233,15 @@ $ curl -X POST https://webservice.kareo.com/services/soap/2.1/KareoServices.svc 
     </s:Fault>
   </s:Body>
 </s:Envelope>
+
 ```
 
 **Consistency:**
 
 - Error occurs on 100% of API calls
+
 - Same fault code across all operations
+
 - Started occurring recently (previously working)
 
 ---
@@ -234,7 +256,9 @@ $ curl -X POST https://webservice.kareo.com/services/soap/2.1/KareoServices.svc 
 **Rate Limiting:** Implemented per Tebra documentation
 
 - GetProviders: 500ms intervals
+
 - GetAppointments: 1000ms intervals
+
 - No rate limit violations detected
 
 ---
@@ -275,5 +299,7 @@ implementation problem.
 **Contact Information:**
 
 - **Email:** `ralf.b.lukner.md.phd@gmail.com`
+
 - **Phone:** Available upon request
+
 - **Preferred Response:** Email with technical analysis and resolution steps

@@ -1,3 +1,4 @@
+
 # tebra-soap-api.md
 
 Tell me about the Tebra SOAP EHR interface
@@ -35,8 +36,11 @@ Tebra provides a dedicated SOAP note type with structured sections including Chi
 **Multiple Entry Methods**: For each SOAP section, you have several documentation options:
 
 - **Text Shortcuts**: Pre-configured phrases and common documentation elements
+
 - **Templates**: Structured checklists with expandable options
+
 - **Free-form text**: Traditional typing for unique cases
+
 - **Smart Lists**: For medications, allergies, and problems with built-in management tools
 
 ⠀SOAP Section Structure
@@ -52,8 +56,11 @@ The SOAP note type includes: Chief Complaint (text shortcut and free-form text),
 Given your focus on comprehensive adult and pediatric care, substance use disorders, and chronic disease management, you'll benefit from:
 
 - **Mental/Functional Screening Tools**: Built-in screening assessments integrated into the SOAP workflow
+
 - **Chronic Disease Templates**: Structured documentation for diabetes, heart disease, and kidney disease
+
 - **Substance Use Disorder Support**: Specialized templates and documentation tools
+
 - **Problem List Integration**: Direct integration with assessment sections for ongoing care management
 
 ## Integration Capabilities
@@ -121,15 +128,21 @@ The user asks me to help design a system to populate their patient flow manageme
 ⠀From my earlier research, I know that Tebra uses:
 
 - Document/Literal SOAP binding style
+
 - BasicHttpBinding
+
 - SOAP 1.1
+
 - Content-Type: text/xml; charset=utf-8
+
 - Endpoint: ~[https://webservice.kareo.com/services/soap/2.1/KareoServices.svc](https://webservice.kareo.com/services/soap/2.1/KareoServices.svc)~
 
 ⠀Looking at their existing types, they have:
 
 - Patient interface with ID, name, DOB, appointment time, status, etc.
+
 - PatientApptStatus types
+
 - Import/export functionality
 
 ⠀I need to design:
@@ -143,8 +156,11 @@ The user asks me to help design a system to populate their patient flow manageme
 ⠀Given their medical background as an Internal Medicine Physician, I should focus on:
 
 - HIPAA compliance
+
 - Data security
+
 - Reliability for clinical workflows
+
 - Integration with their existing workflow states
 
 ⠀
@@ -164,13 +180,17 @@ The service uses BasicHttpBinding, as evidenced by multiple developer implementa
 **Binding Style**: Document/Literal
 
 - BasicHttpBinding uses HTTP as the transport for sending SOAP 1.1 messages and conforms to WS-I BP 1.1 (Web Services Interoperability Basic Profile 1.1) [BasicHttpBinding Class \(System.ServiceModel\) | Microsoft Learn](https://learn.microsoft.com/en-us/dotnet/api/system.servicemodel.basichttpbinding?view=net-9.0-pp&viewFallbackFrom=net-8.0)
+
 - It uses a "Text" message encoding and UTF-8 text encoding by default [BasicHttpBinding Class \(System.ServiceModel\) | Microsoft Learn](https://learn.microsoft.com/en-us/dotnet/api/system.servicemodel.basichttpbinding?view=net-9.0-pp&viewFallbackFrom=net-8.0)
+
 - Document/Literal is the default and recommended binding style for BasicHttpBinding
 
 ⠀**Message Format**:
 
 - SOAP 1.1 (not SOAP 1.2)
+
 - Content-Type: text/xml; charset=utf-8 (not application/soap+xml)
+
 - BasicHttpBinding uses SOAP 1.1 messages [SOAP 1.2 message format with BasicHttpBinding](https://pvlerick.github.io/2008/10/soap-12-message-format-with-basichttpbinding)
 
 ⠀Why Document/Literal vs. RPC/Encoded?
@@ -188,6 +208,7 @@ Can I explore any specific aspects of the Document/Literal implementation or how
 luknermed/workflow-boltmain
 
 GITHUB
+
 **RL**
 I need to be able to get Calendar/Schedule information and all the information for patients that will be seen in upcoming appointments. I would like to populate my workflow app data with schedule and patient information from the SOAP API. Help me design this.
 Edit
@@ -210,15 +231,21 @@ The user is asking me to help design a system to populate their patient flow man
 ⠀From my earlier research, I know that Tebra uses:
 
 - Document/Literal SOAP binding style
+
 - BasicHttpBinding
+
 - SOAP 1.1
+
 - Content-Type: text/xml; charset=utf-8
+
 - Endpoint: ~[https://webservice.kareo.com/services/soap/2.1/KareoServices.svc](https://webservice.kareo.com/services/soap/2.1/KareoServices.svc)~
 
 ⠀Looking at their existing types, they have:
 
 - Patient interface with id, name, dob, appointmentTime, status, etc.
+
 - PatientApptStatus types
+
 - Import/export functionality
 
 ⠀I need to design:
@@ -232,8 +259,11 @@ The user is asking me to help design a system to populate their patient flow man
 ⠀Given their medical background as an Internal Medicine Physician, I should focus on:
 
 - HIPAA compliance
+
 - Data security
+
 - Reliability for clinical workflows
+
 - Integration with their existing workflow states
 
 ⠀Based on your patient flow management application and the Tebra SOAP API specifications, I'll help you design a comprehensive integration system. Given your medical background and the clinical nature of this application, I'll prioritize HIPAA compliance, reliability, and seamless workflow integration.
@@ -292,30 +322,43 @@ I've designed a comprehensive Tebra SOAP API integration for your patient flow m
 ### 1. Tebra API Service
 
 - Document/Literal SOAP implementation using text/xml; charset=utf-8
+
 - Handles authentication with your Tebra credentials
+
 - Fetches appointments, patients, and provider data
+
 - Built-in error handling and connection testing
 
 ⠀2. Integration Service
 
 - Automatic scheduled syncing (configurable intervals)
+
 - Data transformation between Tebra and your internal formats
+
 - Status mapping from Tebra's appointment statuses to your workflow states
+
 - Firebase persistence for HIPAA-compliant data storage
 
 ⠀3. React Integration
 
 - Enhanced Patient Context that seamlessly integrates with your existing app
+
 - UI components for configuration and monitoring
+
 - Real-time sync status and error handling
+
 - Preserves your current workflow and UI design
 
 ⠀4. Clinical Workflow Benefits
+
 **For Your Internal Medicine Practice:**
 
 - **Automated Schedule Population**: Morning schedules automatically sync from Tebra
+
 - **Patient Data Integration**: Demographics, appointment types, and chief complaints flow directly into your workflow
+
 - **Status Continuity**: Tebra statuses (Scheduled, Confirmed, Arrived, etc.) map to your internal workflow states
+
 - **Substance Use & Mental Health Tracking**: Maintains your specialized workflow for addiction medicine cases
 
 ⠀Implementation Highlights
@@ -323,23 +366,31 @@ I've designed a comprehensive Tebra SOAP API integration for your patient flow m
 ### HIPAA Compliance Built-In
 
 - All data encrypted in transit (HTTPS/TLS)
+
 - Automatic 24-hour data purging
+
 - Audit trail for all sync operations
+
 - Secure credential management
 
 ⠀Clinical Reliability
 
 - **Fallback Protection**: Continues with mock data if Tebra is unavailable
+
 - **Error Recovery**: Robust error handling prevents workflow disruption
+
 - **Real-time Monitoring**: Sync status visible in your dashboard
 
 ⠀Systems Integration (Your PhD in Chemical Engineering Background)
 
 - **Event-driven Architecture**: Reactive updates when data changes
+
 - **Data Pipeline**: ETL process from Tebra → Firebase → React Context
+
 - **Modular Design**: Easy to extend or modify individual components
 
 ⠀Next Steps for Implementation
+
 **1** **Install Dependencies**: Add SOAP/XML parsing libraries
 **2** **Configure Credentials**: Set up your Tebra API credentials securely
 **3** **Test Integration**: Start with read-only operations to verify connectivity
@@ -349,6 +400,7 @@ I've designed a comprehensive Tebra SOAP API integration for your patient flow m
 ⠀The design preserves your existing patient flow states while enriching them with real EHR data, making your rural practice workflow more efficient without disrupting your current clinical processes.
 Would you like me to elaborate on any specific component or help you with the initial setup steps?
 Retry
+
 **RL**
 I would like to "cache" the schedule and patient information in a secure GCP Firebase database so I don't need to keep polling the SOAP interface for information. The GCP Firebase should provide bidirectional polling and writing back to Tebra EHR SOAP API. The firebase should be able to import lab results, imaging results, medical records, including previous progress notes, etc. The firebase should facilitate analysis of the patient's medical condition along with planning the appointment, providing real-time information for the appointment, and finally documenting the encounter and orders and writing those back to Tebra EHR and planning future visits.
 Edit

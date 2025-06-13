@@ -1,3 +1,4 @@
+
 # Component Design
 
 This document provides an overview of the UI components and their
@@ -16,6 +17,7 @@ App
 │           │   └── PatientCard (multiple instances)
 │           ├── NewPatientForm (modal)
 │           └── ImportSchedule (modal)
+
 ```
 
 ## Key Components
@@ -32,12 +34,15 @@ const Dashboard: React.FC = () => {
 
   // Component rendering logic
 };
+
 ```
 
 **Responsibilities:**
 
 - Layout management for the entire application
+
 - Triggering modal forms (NewPatientForm, ImportSchedule)
+
 - Organizing PatientList components by status
 
 ### PatientList
@@ -57,12 +62,15 @@ const PatientList: React.FC<PatientListProps> = ({ status, title }) => {
 
   // Rendering logic for the list of patients
 };
+
 ```
 
 **Responsibilities:**
 
 - Filtering patients by status
+
 - Rendering the appropriate list title
+
 - Containing PatientCard components
 
 ### PatientCard
@@ -82,13 +90,17 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
 
   // Rendering logic for patient information and actions
 };
+
 ```
 
 **Responsibilities:**
 
 - Displaying patient information
+
 - Managing room assignments
+
 - Providing status transitions (action buttons)
+
 - Visual indicators for status and wait times
 
 ### TimeControl
@@ -103,12 +115,15 @@ const TimeControl: React.FC = () => {
 
   // Time management logic and UI
 };
+
 ```
 
 **Responsibilities:**
 
 - Toggling between real and simulated time
+
 - Adjusting the simulated time
+
 - Displaying current time
 
 ### MetricsPanel
@@ -123,11 +138,13 @@ const MetricsPanel: React.FC = () => {
 
   // Rendering logic for metrics
 };
+
 ```
 
 **Responsibilities:**
 
 - Calculating and displaying clinic metrics
+
 - Visualizing patient flow efficiency
 
 ### Modal Components
@@ -143,6 +160,7 @@ interface NewPatientFormProps {
 const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
   // Form state and submission logic
 };
+
 ```
 
 #### ImportSchedule
@@ -156,6 +174,7 @@ interface ImportScheduleProps {
 const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
   // Import logic and UI
 };
+
 ```
 
 ## UI Design Patterns
@@ -186,6 +205,7 @@ const getStatusColor = (status: string): string => {
       return "bg-gray-500";
   }
 };
+
 ```
 
 ### Appointment Status Styling
@@ -202,6 +222,7 @@ patient.appointmentStatus === "Confirmed"
         patient.appointmentStatus === "Checked In"
       ? "bg-green-600 text-white"
       : "bg-red-600 text-white";
+
 ```
 
 ### Responsive Design
@@ -209,8 +230,11 @@ patient.appointmentStatus === "Confirmed"
 The application is fully responsive with:
 
 - Column layout on desktop
+
 - Single column layout on mobile
+
 - Expandable sections on mobile
+
 - Tailwind's responsive utility classes
 
 ### Action Flow

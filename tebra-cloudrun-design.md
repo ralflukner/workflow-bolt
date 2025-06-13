@@ -1,8 +1,10 @@
+
 # Tebra PHP API - Cloud Run Hybrid Architecture Design
 
 ## Architecture Overview
 
 ```
+
 ┌─────────────┐     ┌──────────────────┐     ┌─────────────────┐     ┌─────────────┐
 │  React App  │────▶│ Firebase Function│────▶│ Cloud Run (PHP) │────▶│  Tebra API  │
 │  (Frontend) │     │   (Auth/Logic)   │     │  (SOAP Bridge)  │     │   (SOAP)    │
@@ -12,6 +14,7 @@
       │              ┌─────────────┐           ┌──────────────┐
       └─────────────▶│  Firestore  │           │Secret Manager│
                      └─────────────┘           └──────────────┘
+
 ```
 
 ## Component Details
@@ -19,30 +22,43 @@
 ### 1. Frontend (React App)
 
 - Calls Firebase Functions (not Cloud Run directly)
+
 - Uses Firebase Auth for user authentication
+
 - Handles UI/UX for appointment scheduling, provider management
 
 ### 2. Firebase Functions (Node.js)
 
 - **Authentication**: Validates Firebase Auth tokens
+
 - **Authorization**: Checks user permissions
+
 - **Business Logic**: Data validation, transformations
+
 - **Proxy Calls**: Routes requests to Cloud Run PHP service
+
 - **Caching**: Implements caching for frequently accessed data
+
 - **Rate Limiting**: Prevents API abuse
 
 ### 3. Cloud Run PHP Service
 
 - **Single Responsibility**: SOAP communication with Tebra
+
 - **Stateless**: No session management
+
 - **Credentials**: Fetches from Secret Manager
+
 - **Transformation**: Converts JSON ↔ SOAP/XML
 
 ### 4. Security Layers
 
 - **Firebase Auth**: User authentication
+
 - **Service Account**: Cloud Run → Secret Manager
+
 - **API Key**: Internal auth between Firebase → Cloud Run
+
 - **HTTPS**: All communication encrypted
 
 ## Detailed Implementation
@@ -50,6 +66,7 @@
 ### Project Structure
 
 ```
+
 lukner-tebra-integration/
 ├── frontend/                 # Existing React app
 ├── functions/               # Firebase Functions
@@ -76,6 +93,7 @@ lukner-tebra-integration/
     ├── Dockerfile
     ├── composer.json
     └── .env.yaml
+
 ```
 
 ## Cloud Run PHP Service Implementation
@@ -86,6 +104,7 @@ lukner-tebra-integration/
 FROM php:8.2-apache
 
 # Install required extensions and tools
+
 RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libcurl4-openssl-dev \
@@ -98,16 +117,20 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Configure Apache
+
 RUN a2enmod rewrite headers
 COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 
 # Set working directory
+
 WORKDIR /var/www
 
 # Copy application files
+
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
@@ -115,12 +138,15 @@ COPY . .
 RUN composer dump-autoload --optimize
 
 # Set permissions
+
 RUN chown -R www-data:www-data /var/www
 
 # Cloud Run port configuration
+
 RUN sed -i 's/80/${PORT}/g' /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf
 
 EXPOSE 8080
+
 ```
 
 ### docker/apache.conf
@@ -150,6 +176,7 @@ EXPOSE 8080
     ErrorLog ${APACHE_LOG_DIR}/error.log
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
+
 ```
 
 ### composer.json
@@ -179,6 +206,7 @@ EXPOSE 8080
         "sort-packages": true
     }
 }
+
 ```
 
 ### public/index.php
@@ -292,6 +320,7 @@ try {
         'error' => $e->getMessage()
     ]);
 }
+
 ```
 
 ### src/TebraHttpClient.php (Enhanced)
@@ -477,6 +506,7 @@ class TebraHttpClient {
         return $output;
     }
 }
+
 ```
 
 ## Firebase Functions Implementation
@@ -567,9 +597,11 @@ export class TebraCloudRunClient {
     }
   }
 }
+
 ```
 
 ### functions/src/tebra/providers.ts
+
 ```typescript
 import * as functions from 'firebase-functions';
 import { TebraCloudRunClient } from './client';
@@ -629,9 +661,11 @@ export const getProviders = functions.https.onCall(async (data, context) => {
     );
   }
 });
+
 ```
 
 ### functions/src/middleware/auth.ts
+
 ```typescript
 import { CallableContext } from 'firebase-functions/v1/https';
 import * as functions from 'firebase-functions';
@@ -657,16 +691,21 @@ export function validateAuth(context: CallableContext): string {
 
   return context.auth.uid;
 }
+
 ```
 
 ## Deployment Process
 
 ### 1. Deploy Cloud Run Service
+
 ```bash
+
 # From tebra-php-service directory
+
 cd tebra-php-service
 
 # Build and deploy
+
 gcloud run deploy tebra-php-api \
   --source . \
   --platform managed \
@@ -681,23 +720,33 @@ gcloud run deploy tebra-php-api \
   --min-instances=0
 
 # Get the service URL
+
 gcloud run services describe tebra-php-api --region us-central1 --format 'value(status.url)'
+
 ```
 
 ### 2. Configure Firebase Functions
+
 ```bash
+
 # Set configuration
+
 firebase functions:config:set \
   tebra.cloud_run_url="https://tebra-php-api-xxxxx-uc.a.run.app" \
   tebra.internal_api_key="your-secure-api-key"
 
 # Deploy functions
+
 firebase deploy --only functions
+
 ```
 
 ### 3. Set up Secret Manager
+
 ```bash
+
 # Create secrets
+
 echo -n "https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl" | \
   gcloud secrets create tebra-wsdl-url --data-file=-
 
@@ -711,20 +760,27 @@ echo -n "your-internal-api-key" | \
   gcloud secrets create tebra-internal-api-key --data-file=-
 
 # Grant access to service account
+
 gcloud secrets add-iam-policy-binding tebra-wsdl-url \
   --member="serviceAccount:tebra-service@your-project-id.iam.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
+
 ```
 
 ## Monitoring & Observability
 
 ### Cloud Run Metrics
+
 - Request count and latency
+
 - CPU and memory usage
+
 - Cold start frequency
+
 - Error rate
 
 ### Custom Logging
+
 ```php
 // In PHP service
 $logger->info('API call', [
@@ -733,11 +789,15 @@ $logger->info('API call', [
     'duration' => $duration,
     'cacheHit' => $cacheHit
 ]);
+
 ```
 
 ### Alerts Setup
+
 ```yaml
+
 # monitoring/alerts.yaml
+
 alertPolicy:
   displayName: "Tebra API High Error Rate"
   conditions:
@@ -749,19 +809,24 @@ alertPolicy:
         comparison: COMPARISON_GT
         thresholdValue: 0.05
         duration: 300s
+
 ```
 
 ## Cost Optimization
 
 ### Estimated Monthly Costs
+
 - **Cloud Run**: ~$5-15 (based on usage)
   - CPU: $0.00002400/vCPU-second
   - Memory: $0.00000250/GiB-second
   - Requests: $0.40/million
+
 - **Secret Manager**: <$1
+
 - **Logging**: ~$2-5
 
 ### Optimization Strategies
+
 1. **Caching**: APCu for 5-minute response caching
 2. **Connection Pooling**: Reuse CURL handles
 3. **Min Instances**: Set to 0 for dev, 1 for prod
@@ -810,5 +875,3 @@ alertPolicy:
    # Keep 1 instance warm
    gcloud run services update tebra-php-api --min-instances=1
    ```
-
-This architecture provides a robust, scalable, and secure solution for integrating Tebra's SOAP API with your Firebase-based application while maintaining zero server management overhead.

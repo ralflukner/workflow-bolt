@@ -1,3 +1,4 @@
+
 # Recent Changes
 
 This document tracks significant recent changes to the Patient Flow
@@ -14,10 +15,13 @@ implemented and enhanced stability.
 
 - **Updated @vitejs/plugin-react to v4.4.1** for Vite 6.x
   compatibility
+
 - **Downgraded Vite to v5** for React plugin compatibility while
   maintaining performance
+
 - Fixed build system compatibility issues ensuring reliable development
   and production builds
+
 - Maintained all performance optimizations while ensuring plugin
   ecosystem compatibility
 
@@ -25,18 +29,26 @@ implemented and enhanced stability.
 
 - Updated TimeContext to refresh time every second instead of every
   minute
+
 - Made getCurrentDisplayTime use stored time consistently for better
   reliability
+
 - Enhanced TimeControl component with useEffect and state to react to
   time changes
+
 - Modified PatientCard to calculate wait times dynamically instead of
   once per render
+
 - Revised PatientContext to use separate update intervals for real-time
   (6s) and simulation (1s) modes
+
 - Expanded waitingPatients definition in metrics to include additional
   patient statuses
+
 - Ensured consistent time handling and formatting across components
+
 - Added proper cleanup for interval timers to prevent memory leaks
+
 - Moved context hooks to separate files to fix ESLint warnings and
   improve Fast Refresh compatibility
 
@@ -44,40 +56,55 @@ implemented and enhanced stability.
 
 - **Replaced any type with generic in useSecureStorage hook** improving
   type safety
+
 - Enhanced TypeScript configuration for better error detection
+
 - Improved generic type usage across hooks and components
+
 - Better type inference and compile-time error prevention
 
 ### 4. Auth0 Authentication Integration
 
 - Implemented secure authentication using Auth0
+
 - Added protected routes to secure application content
+
 - Configured proper session persistence and redirect handling
+
 - Enhanced error handling for authentication flows
 
 ### 5. Export Report Metrics Fixes
 
 - **Corrected patient count in export report metrics** ensuring
   accurate reporting
+
 - Fixed calculation bugs in patient flow statistics
+
 - Enhanced CSV and text export functionality with proper data validation
+
 - Improved metrics accuracy for clinical workflow analysis
 
 ### 6. Security Improvements
 
 - **Replaced hardcoded Auth0 credentials with placeholders** for better
   security practices
+
 - Added proper environment variable configuration guidance
+
 - Enhanced security documentation for production deployments
+
 - Implemented secure credential management patterns
 
 ### 7. Context and State Management Refactoring
 
 - **Refactored TimeContext to resolve rendering issues** improving
   application stability
+
 - Split TimeContext into definition and provider files for better organization
+
 - **Removed explicit localStorage caching from Auth0Provider** for
   cleaner authentication flow
+
 - Enhanced context provider architecture with proper TypeScript interfaces
 
 ## TypeScript Improvements (April 2025)
@@ -109,6 +136,7 @@ export type AppointmentStatus =
   | "No Show"
   | "Rescheduled"
   | "Cancelled";
+
 ```
 
 This change provides more granular status tracking and better alignment
@@ -120,6 +148,7 @@ Added missing React type definition packages:
 
 ```bash
 npm install @types/react @types/react-dom
+
 ```
 
 This resolves TypeScript errors related to React JSX elements.
@@ -135,6 +164,7 @@ Updated `tsconfig.app.json` with improved React support:
     "allowSyntheticDefaultImports": true
   }
 }
+
 ```
 
 These settings improve compatibility with React's module system and
@@ -145,8 +175,11 @@ prevent import-related errors.
 Enhanced type safety in the PatientCard component:
 
 - Added return type annotations to all functions
+
 - Created an ActionButton interface for button configuration
+
 - Added explicit type annotations for event handlers
+
 - Fixed dynamic color classes with a type-safe lookup object
 
 ```typescript
@@ -164,6 +197,7 @@ const buttonColors: Record<string, string> = {
 
 // className now uses the pre-defined color mapping from buttonColors
 // This ensures type safety and prevents runtime errors
+
 ```
 
 This change prevents potential runtime errors from dynamic class
@@ -189,6 +223,7 @@ patient.appointmentStatus === "Confirmed"
           patient.appointmentStatus === "Checked Out"
         ? "bg-teal-600 text-white"
         : "bg-red-600 text-white";
+
 ```
 
 This provides better visual distinction between different appointment statuses.

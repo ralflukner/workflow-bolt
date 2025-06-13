@@ -1,3 +1,4 @@
+
 # Tebra EHR API Rate Limiting
 
 This implementation automatically enforces the rate limits specified in the Tebra EHR API documentation to ensure compliance and prevent API throttling.
@@ -7,30 +8,51 @@ This implementation automatically enforces the rate limits specified in the Tebr
 ### Read Operations
 
 - **GetAllPatients**: 1 call every 5 seconds (5000ms)
+
 - **GetAppointment**: 1 call every ½ second (500ms)
+
 - **GetAppointments**: 1 call per second (1000ms)
+
 - **GetCharges**: 1 call per second (1000ms)
+
 - **GetEncounterDetails**: 1 call every ½ second (500ms)
+
 - **GetExternalVendors**: 1 call per second (1000ms)
+
 - **GetPatient**: 1 call every ¼ second (250ms)
+
 - **GetPatients**: 1 call per second (1000ms)
+
 - **GetPayments**: 1 call per second (1000ms)
+
 - **GetPractices**: 1 call every ½ second (500ms)
+
 - **GetProcedureCode**: 1 call every ½ second (500ms)
+
 - **GetProviders**: 1 call every ½ second (500ms)
+
 - **GetServiceLocations**: 1 call every ½ second (500ms)
+
 - **GetThrottles**: 1 call every 5 seconds (5000ms)
+
 - **GetTransactions**: 1 call per second (1000ms)
 
 ### Write Operations
 
 - **CreateAppointment**: 1 call every ½ second (500ms)
+
 - **CreateEncounter**: 1 call every ½ second (500ms)
+
 - **CreatePatient**: 1 call every ½ second (500ms)
+
 - **CreatePayments**: 1 call every ½ second (500ms)
+
 - **UpdateAppointment**: 1 call every ½ second (500ms)
+
 - **UpdateEncounterStatus**: 1 call every ½ second (500ms)
+
 - **UpdatePatient**: 1 call per second (1000ms)
+
 - **DeleteAppointment**: 1 call every ½ second (500ms)
 
 ### Search Operations
@@ -42,8 +64,11 @@ This implementation automatically enforces the rate limits specified in the Tebr
 ### TebraRateLimiter Class
 
 - Singleton pattern for global rate limit enforcement
+
 - Method-specific rate limiting based on Tebra documentation
+
 - Automatic waiting between API calls
+
 - Utility methods for rate limit monitoring
 
 ### Integration Points
@@ -69,15 +94,17 @@ if (tebraRateLimiter.canCallImmediately("GetPatient")) {
 // Get remaining wait time
 const waitTime = tebraRateLimiter.getRemainingWaitTime("GetAppointments");
 console.log(`Must wait ${waitTime}ms before next GetAppointments call`);
+
 ```
 
 ### Benefits
 
 - **Compliance**: Automatically follows Tebra's documented rate limits
+
 - **Reliability**: Prevents API throttling and service interruptions
+
 - **Transparency**: Clear logging of rate limit enforcement
+
 - **Flexibility**: Easy to adjust limits if Tebra updates their requirements
 
 ### Monitoring
-
-The integration UI displays rate limiting status and confirms that limits are being enforced automatically.

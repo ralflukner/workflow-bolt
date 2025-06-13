@@ -1,3 +1,4 @@
+
 # Testing Expansion Plan for Patient Flow Management
 
 Based on a thorough examination of the codebase, this document outlines a comprehensive testing strategy to improve code quality, reduce bugs, and make future development more efficient.
@@ -5,8 +6,11 @@ Based on a thorough examination of the codebase, this document outlines a compre
 ## Current Testing Status
 
 - **Test Coverage**: 60.77% statements, 42.76% branches, 52.85% functions
+
 - **Test Files**: 10 test suites with 33 tests
+
 - **Testing Framework**: Jest with TypeScript support
+
 - **Current Focus**: Primarily unit tests for data operations and schedule import functionality
 
 ## 1. Component Testing Implementation
@@ -16,11 +20,17 @@ Based on a thorough examination of the codebase, this document outlines a compre
 The PatientCard component is central to the application but lacks dedicated tests. Recommended tests include:
 
 - Rendering patient information correctly
+
 - Status transitions via action buttons
+
 - Room assignment functionality
+
 - Wait time display
+
 - Check-in time editing
+
 - Status dropdown for scheduled patients
+
 - Visual styling based on patient status
 
 ### PatientList Component Tests
@@ -28,9 +38,13 @@ The PatientCard component is central to the application but lacks dedicated test
 The PatientList component needs tests for:
 
 - Rendering the correct title and patient count
+
 - Displaying PatientCard components for each patient
+
 - Empty state handling when no patients match a status
+
 - Header color variations based on status
+
 - Scrollable container behavior with many patients
 
 ### Dashboard Component Tests
@@ -38,9 +52,13 @@ The PatientList component needs tests for:
 The Dashboard component requires tests for:
 
 - Rendering all patient list sections
+
 - Modal interactions (New Patient, Import Schedule, etc.)
+
 - Report generation functionality
+
 - Responsive behavior (expanded/collapsed sections)
+
 - Button functionality (Export JSON, Export CSV, etc.)
 
 ## 2. Context Provider Testing
@@ -50,11 +68,17 @@ The Dashboard component requires tests for:
 Expand testing of the PatientContext provider to cover:
 
 - Status transition edge cases
+
 - Metrics calculations with various patient states
+
 - Time-dependent functions with mocked time
+
 - Error handling for invalid data
+
 - Status normalization for different input formats
+
 - Room assignment validation
+
 - Wait time calculations for different scenarios
 
 ### TimeContext Provider Tests
@@ -62,9 +86,13 @@ Expand testing of the PatientContext provider to cover:
 Add tests for the TimeProvider component:
 
 - Time simulation mode transitions
+
 - Time adjustment functionality
+
 - Formatting functions with various inputs
+
 - Real-time vs. simulated time behavior
+
 - Time zone handling
 
 ## 3. Integration Testing
@@ -74,8 +102,11 @@ Add tests for the TimeProvider component:
 Add comprehensive integration tests for key workflows:
 
 - Complete patient journey (scheduled → arrived → prep → with doctor → completed)
+
 - Edge cases like cancellations and rescheduling
+
 - Room assignment workflow
+
 - Wait time calculations throughout the patient journey
 
 ### Schedule Import/Export Tests
@@ -83,9 +114,13 @@ Add comprehensive integration tests for key workflows:
 Expand existing tests with:
 
 - More real-world data examples
+
 - Edge cases for special statuses
+
 - Error handling for malformed data
+
 - CSV import/export functionality
+
 - Performance with large datasets
 
 ## 4. Authentication Testing
@@ -93,8 +128,11 @@ Expand existing tests with:
 Add tests for authentication functionality:
 
 - Protected routes behavior
+
 - Login/logout functionality
+
 - Role-based access control
+
 - Auth0 integration
 
 ## 5. Accessibility Testing
@@ -102,9 +140,13 @@ Add tests for authentication functionality:
 Implement accessibility testing:
 
 - Add jest-axe for accessibility testing
+
 - Test all UI components for WCAG compliance
+
 - Test keyboard navigation
+
 - Test screen reader compatibility
+
 - Color contrast validation
 
 ## 6. Performance Testing
@@ -112,16 +154,23 @@ Implement accessibility testing:
 Add performance tests for critical operations:
 
 - Rendering performance with large patient lists
+
 - Import/export performance with large datasets
+
 - Time simulation with frequent updates
+
 - Context provider performance with many consumers
 
 ## 7. Test Infrastructure Improvements
 
 - Fix TypeScript 'any' type issues in existing tests
+
 - Implement test data factories for consistent test data
+
 - Add snapshot testing for UI components
+
 - Set up E2E testing with Playwright or Cypress
+
 - Implement test coverage thresholds in CI pipeline
 
 ## Implementation Priority
@@ -225,6 +274,7 @@ describe('PatientCard', () => {
     expect(mockAssignRoom).toHaveBeenCalledWith('test-id', '1');
   });
 }
+
 ```
 
 ## Example Test Implementation for TimeContext
@@ -266,6 +316,5 @@ describe('TimeContext Provider', () => {
     expect(result.current.timeMode.simulated).toBe(true);
   });
 }
-```
 
-This testing expansion plan provides a comprehensive roadmap for improving test coverage and quality across the Patient Flow Management application.
+```

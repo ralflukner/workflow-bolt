@@ -1,3 +1,4 @@
+
 # Setup Guide
 
 This guide provides instructions for setting up the Patient Flow
@@ -43,6 +44,7 @@ Run the following command to start the development server:
 
 ```bash
 npm run dev
+
 ```
 
 The application will be available at
@@ -60,6 +62,7 @@ src/
 ├── data/              # Mock data and data utilities
 ├── types/             # TypeScript type definitions
 └── main.tsx           # Application entry point
+
 ```
 
 ### Recommended IDE Setup
@@ -67,8 +70,11 @@ src/
 We recommend using Visual Studio Code with the following extensions:
 
 - ESLint
+
 - Tailwind CSS IntelliSense
+
 - TypeScript Vue Plugin (Volar)
+
 - PostCSS Language Support
 
 ## TypeScript Configuration
@@ -76,7 +82,9 @@ We recommend using Visual Studio Code with the following extensions:
 The project uses TypeScript with the following configuration files:
 
 - `tsconfig.json`: Base configuration
+
 - `tsconfig.app.json`: Application-specific settings
+
 - `tsconfig.node.json`: Node.js-specific settings
 
 If you encounter TypeScript-related issues, ensure you have the required
@@ -84,6 +92,7 @@ type definitions:
 
 ```bash
 npm install @types/react @types/react-dom
+
 ```
 
 ## Linting and Code Quality
@@ -92,6 +101,7 @@ To run ESLint:
 
 ```bash
 npm run lint
+
 ```
 
 ## Building for Production
@@ -100,6 +110,7 @@ To create a production build:
 
 ```bash
 npm run build
+
 ```
 
 The output will be in the `dist` directory.
@@ -108,6 +119,7 @@ To preview the production build locally:
 
 ```bash
 npm run preview
+
 ```
 
 ## Testing
@@ -137,7 +149,9 @@ The project follows [Semantic Versioning](https://semver.org/) (SemVer)
 principles:
 
 - MAJOR version (1.0.0) for incompatible API changes
+
 - MINOR version (0.1.0) for backward-compatible functionality additions
+
 - PATCH version (0.0.1) for backward-compatible bug fixes
 
 ### Creating Version Tags in GitHub
@@ -172,6 +186,7 @@ To check out a specific tagged version:
 
 ```bash
 git checkout v0.1.0
+
 ```
 
 ## Troubleshooting
@@ -198,4 +213,3 @@ If you encounter issues not covered in this guide, please:
 
 1. Check the existing GitHub issues
 2. Create a new issue with detailed information about the problem
-3. Include environment details (OS, Node version, browser)

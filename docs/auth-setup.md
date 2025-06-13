@@ -1,3 +1,4 @@
+
 # Auth0 and Netlify Setup Guide
 
 This guide walks you through configuring Auth0 for your Patient Flow
@@ -33,13 +34,17 @@ In your new application's settings, configure the following:
 For local development:
 
 - **Allowed Callback URLs**: `http://localhost:5173`
+
 - **Allowed Logout URLs**: `http://localhost:5173`
+
 - **Allowed Web Origins**: `http://localhost:5173`
 
 For Netlify deployment (add these after you know your Netlify URL):
 
 - **Allowed Callback URLs**: `https://your-netlify-app.netlify.app`
+
 - **Allowed Logout URLs**: `https://your-netlify-app.netlify.app`
+
 - **Allowed Web Origins**: `https://your-netlify-app.netlify.app`
 
 > **Note**: You can add multiple URLs for each setting, separated by
@@ -68,6 +73,7 @@ If you plan to use a backend API:
 Ensure your project has:
 
 - A `netlify.toml` file with proper configuration
+
 - Build settings for Vite
 
 ### 2. Connect to Netlify
@@ -86,8 +92,11 @@ Go to **Site settings** > **Environment variables** and add the following
 variables:
 
 - `VITE_AUTH0_DOMAIN`: Your Auth0 domain
+
 - `VITE_AUTH0_CLIENT_ID`: Your Auth0 client ID
+
 - `VITE_AUTH0_AUDIENCE`: Your Auth0 API identifier (if using an API)
+
 - `VITE_AUTH0_REDIRECT_URI`: Your Netlify app URL
 
 ### 4. Update Auth0 Configuration
@@ -106,6 +115,7 @@ VITE_AUTH0_DOMAIN=your-auth0-domain.auth0.com
 VITE_AUTH0_CLIENT_ID=your-auth0-client-id
 VITE_AUTH0_REDIRECT_URI=http://localhost:5173
 VITE_AUTH0_AUDIENCE=https://api.patientflow.com
+
 ```
 
 1. Replace the values with your actual Auth0 application settings.
@@ -114,6 +124,7 @@ VITE_AUTH0_AUDIENCE=https://api.patientflow.com
 
 ```bash
 npm run dev
+
 ```
 
 ## Troubleshooting

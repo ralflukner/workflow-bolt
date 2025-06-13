@@ -82,11 +82,9 @@ const TebraIntegration: React.FC = () => {
 
     // Cleanup on unmount
     return () => {
-      // Note: We don't include integrationService in dependencies to avoid recreating the service
-      // The cleanup will happen when the component unmounts
       integrationService?.cleanup();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [credentials]);
 
   const handleImportFromTebra = async () => {
     if (!integrationService) {

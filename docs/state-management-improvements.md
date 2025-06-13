@@ -1,3 +1,4 @@
+
 # State Management Improvements Plan
 
 ## Overview
@@ -9,26 +10,35 @@ This document outlines the plan for improving state management across the applic
 ### 1. Scattered State Management
 
 - Multiple useState calls in components
+
 - Related state split across different variables
+
 - Complex state logic mixed with UI components
 
 ### 2. Inconsistent Patterns
 
 - Mix of local and global state
+
 - Inconsistent error handling
+
 - Varying approaches to loading states
 
 ### 3. Performance Concerns
 
 - Unnecessary re-renders
+
 - Missing memoization
+
 - Inefficient state updates
 
 ### 4. Wait Time Calculation Issues
 
 - Inconsistent time zone handling
+
 - Missing edge case handling
+
 - Lack of proper validation
+
 - Performance issues with frequent recalculations
 
 ## Improvement Plan
@@ -81,14 +91,19 @@ This document outlines the plan for improving state management across the applic
 #### 2.2 Patient Context
 
 - [ ] Implement proper state normalization
+
 - [ ] Add proper error boundaries
+
 - [ ] Implement optimistic updates
+
 - [ ] Integrate new wait time calculation system
 
 #### 2.3 Integration Context
 
 - [ ] Create dedicated context for Tebra integration
+
 - [ ] Implement proper error handling
+
 - [ ] Add retry mechanisms
 
 ### Phase 3: Performance Optimizations
@@ -96,15 +111,21 @@ This document outlines the plan for improving state management across the applic
 #### 3.1 Memoization
 
 - [ ] Implement useMemo for expensive calculations
+
 - [ ] Add useCallback for event handlers
+
 - [ ] Optimize dependency arrays
+
 - [ ] Add wait time calculation caching
 
 #### 3.2 State Updates
 
 - [ ] Implement batched updates
+
 - [ ] Add proper debouncing
+
 - [ ] Optimize re-render triggers
+
 - [ ] Implement efficient wait time updates
 
 ### Phase 4: Testing and Documentation
@@ -112,15 +133,21 @@ This document outlines the plan for improving state management across the applic
 #### 4.1 Testing
 
 - [ ] Add unit tests for custom hooks
+
 - [ ] Add integration tests for contexts
+
 - [ ] Add performance tests
+
 - [ ] Add comprehensive wait time calculation tests
 
 #### 4.2 Documentation
 
 - [ ] Document state management patterns
+
 - [ ] Add usage examples
+
 - [ ] Create troubleshooting guide
+
 - [ ] Document wait time calculation system
 
 ## Wait Time Calculation Improvements
@@ -200,27 +227,37 @@ const useWaitTime = (patient: Patient) => {
 
   return state;
 };
+
 ```
 
 #### 2. Performance Optimizations
 
 - Implement caching with configurable TTL
+
 - Add debouncing for frequent updates
+
 - Use memoization for expensive calculations
+
 - Batch updates for multiple patients
 
 #### 3. Error Handling
 
 - Add comprehensive validation
+
 - Implement proper error boundaries
+
 - Add retry mechanisms
+
 - Provide fallback values
 
 #### 4. Testing Requirements
 
 - Unit tests for all edge cases
+
 - Integration tests for time zone handling
+
 - Performance tests for caching
+
 - Error handling tests
 
 ## Progress Tracking
@@ -230,15 +267,21 @@ const useWaitTime = (patient: Patient) => {
 #### Documentation
 
 - [x] Created state management improvement plan
+
 - [x] Documented current issues
+
 - [x] Created testing requirements
+
 - [x] Documented wait time calculation issues
 
 #### Analysis
 
 - [x] Identified inappropriate useState usage
+
 - [x] Documented edge cases
+
 - [x] Created improvement recommendations
+
 - [x] Analyzed wait time calculation problems
 
 ### In Progress
@@ -246,20 +289,27 @@ const useWaitTime = (patient: Patient) => {
 #### Time Management
 
 - [ ] Implementing useTimeInput hook
+
 - [ ] Refactoring TimeControl component
+
 - [ ] Adding time zone support
 
 #### Patient Management
 
 - [ ] Creating usePatientCard hook
+
 - [ ] Implementing status management
+
 - [ ] Adding error handling
 
 #### Wait Time Management
 
 - [ ] Implementing useWaitTime hook
+
 - [ ] Adding time zone support
+
 - [ ] Implementing caching
+
 - [ ] Adding validation
 
 ### Next Steps
@@ -267,13 +317,17 @@ const useWaitTime = (patient: Patient) => {
 #### Integration Management
 
 - [ ] Create useTebraIntegration hook
+
 - [ ] Implement proper error handling
+
 - [ ] Add retry mechanisms
 
 #### Context Improvements
 
 - [ ] Split TimeContext
+
 - [ ] Normalize PatientContext
+
 - [ ] Create IntegrationContext
 
 ## Implementation Guidelines
@@ -308,6 +362,7 @@ const useTimeInput = (initialTime: Date) => {
 
   return [state, updateTime] as const;
 };
+
 ```
 
 ### Context Structure
@@ -328,6 +383,7 @@ interface TimeUpdateContextValue {
   currentTime: Date;
   adjustTime: (minutes: number) => void;
 }
+
 ```
 
 ### Performance Patterns
@@ -336,13 +392,14 @@ interface TimeUpdateContextValue {
 // Example: Optimized component
 const PatientCard: React.FC<PatientCardProps> = memo(({ patient }) => {
   const { state, handlers } = usePatientCard(patient);
-  
+
   return (
     <div className={getCardClassName(state)}>
       {/* Optimized render logic */}
     </div>
   );
 });
+
 ```
 
 ## Success Metrics
@@ -394,4 +451,3 @@ const PatientCard: React.FC<PatientCardProps> = memo(({ patient }) => {
 2. Create test cases for wait time calculations
 3. Document current wait time calculation patterns
 4. Set up performance monitoring
-5. Create PR template for state management changes

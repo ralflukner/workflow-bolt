@@ -1,3 +1,4 @@
+
 # Tebra SOAP Proxy - HIPAA Compliant
 
 A secure PHP proxy server for Tebra (Kareo) SOAP API integration with Firebase Functions.
@@ -5,12 +6,19 @@ A secure PHP proxy server for Tebra (Kareo) SOAP API integration with Firebase F
 ## 🔒 Security Features
 
 - ✅ **API Key Authentication** - Prevents unauthorized access
+
 - ✅ **HIPAA Audit Logging** - Complete request tracking
+
 - ✅ **Input Validation** - Prevents injection attacks
+
 - ✅ **Rate Limiting** - Protects against abuse
+
 - ✅ **CORS Restrictions** - Limited to Firebase domains
+
 - ✅ **Security Headers** - XSS, CSRF, clickjacking protection
+
 - ✅ **HTTPS Enforced** - All traffic encrypted in transit
+
 - ✅ **Non-root Container** - Reduced attack surface
 
 ## 📋 Prerequisites
@@ -28,6 +36,7 @@ A secure PHP proxy server for Tebra (Kareo) SOAP API integration with Firebase F
 export TEBRA_SOAP_USERNAME="work-flow@luknerclinic.com"
 export TEBRA_SOAP_PASSWORD="your-tebra-password"
 export TEBRA_SOAP_CUSTKEY="your-customer-key"
+
 ```
 
 2. **Login to Google Cloud:**
@@ -35,6 +44,7 @@ export TEBRA_SOAP_CUSTKEY="your-customer-key"
 ```bash
 gcloud auth login
 gcloud config set project luknerlumina-firebase
+
 ```
 
 3. **Deploy:**
@@ -42,6 +52,7 @@ gcloud config set project luknerlumina-firebase
 ```bash
 cd tebra-proxy
 ./deploy.sh
+
 ```
 
 4. **Save the Generated API Key!** 📝
@@ -67,6 +78,7 @@ Update your Firebase Functions environment:
 firebase functions:config:set \
   tebra.proxy_url="https://your-service-url" \
   tebra.proxy_api_key="your-generated-api-key"
+
 ```
 
 ## 📡 API Endpoints
@@ -78,6 +90,7 @@ All endpoints require `X-API-Key` header for authentication.
 ```bash
 GET /test
 X-API-Key: your-api-key
+
 ```
 
 ### Get Providers
@@ -85,6 +98,7 @@ X-API-Key: your-api-key
 ```bash
 GET /providers
 X-API-Key: your-api-key
+
 ```
 
 ### Get Appointments
@@ -98,6 +112,7 @@ Content-Type: application/json
   "fromDate": "2025-06-02",
   "toDate": "2025-06-02"
 }
+
 ```
 
 ### Get Practices
@@ -105,16 +120,20 @@ Content-Type: application/json
 ```bash
 GET /practices
 X-API-Key: your-api-key
+
 ```
 
 ### Patient Operations
 
 ```bash
+
 # Get patient by ID
+
 GET /patients/{id}
 X-API-Key: your-api-key
 
 # Search patients
+
 POST /patients
 X-API-Key: your-api-key
 Content-Type: application/json
@@ -123,6 +142,7 @@ Content-Type: application/json
   "LastName": "Smith",
   "FirstName": "John"
 }
+
 ```
 
 ## 🛡️ HIPAA Compliance
@@ -157,13 +177,21 @@ Content-Type: application/json
 ### Security Checklist
 
 - ✅ All data encrypted in transit (HTTPS)
+
 - ✅ All data encrypted at rest (Google Cloud default)
+
 - ✅ API access restricted by authentication
+
 - ✅ Request logging for audit trails
+
 - ✅ Rate limiting to prevent abuse
+
 - ✅ Input validation to prevent attacks
+
 - ✅ Security headers configured
+
 - ✅ Container runs as non-root user
+
 - ✅ Minimal attack surface
 
 ## 🔧 Local Development
@@ -173,6 +201,7 @@ Content-Type: application/json
 ```bash
 cd tebra-proxy
 php -S localhost:8080
+
 ```
 
 2. **Test with API key:**
@@ -180,6 +209,7 @@ php -S localhost:8080
 ```bash
 curl -H "X-API-Key: secure-random-key-change-in-production" \
      http://localhost:8080/test
+
 ```
 
 ## 📊 Monitoring
@@ -187,20 +217,27 @@ curl -H "X-API-Key: secure-random-key-change-in-production" \
 ### Cloud Run Metrics
 
 - Request count and latency
+
 - Error rates and status codes
+
 - Memory and CPU usage
+
 - Instance count
 
 ### Application Logs
 
 - All requests logged with audit information
+
 - Error tracking with stack traces
+
 - Security events (failed authentication)
 
 ### Alerts
 
 - High error rate (>5%)
+
 - Unusual traffic patterns
+
 - Authentication failures
 
 ## 🆘 Troubleshooting
@@ -225,11 +262,15 @@ curl -H "X-API-Key: secure-random-key-change-in-production" \
 ### Log Analysis
 
 ```bash
+
 # View recent logs
+
 gcloud logs read "resource.type=cloud_run_revision" --limit=50
 
 # Filter for errors
+
 gcloud logs read "resource.type=cloud_run_revision AND severity>=ERROR" --limit=20
+
 ```
 
 ## 📞 Support

@@ -1,3 +1,4 @@
+
 # Tebra EHR Integration
 
 A robust and well-documented integration with the Tebra EHR system using SOAP API.
@@ -5,19 +6,29 @@ A robust and well-documented integration with the Tebra EHR system using SOAP AP
 ## Features
 
 - SOAP API integration with Tebra EHR
+
 - Rate limiting to prevent API abuse
+
 - Data transformation between Tebra and internal formats
+
 - Comprehensive error handling
+
 - Type safety with TypeScript
+
 - Extensive test coverage
+
 - Environment variable configuration
+
 - Firebase integration for data persistence
 
 ## Prerequisites
 
 - Node.js 18 or higher
+
 - npm or yarn
+
 - Firebase project
+
 - Tebra EHR credentials
 
 ## Installation
@@ -27,29 +38,35 @@ A robust and well-documented integration with the Tebra EHR system using SOAP AP
 ```bash
 git clone https://github.com/your-org/tebra-integration.git
 cd tebra-integration
+
 ```
 
 2. Install dependencies:
 
 ```bash
 npm install
+
 ```
 
 3. Create a `.env.local` file with your credentials:
 
 ```env
+
 # Tebra EHR Integration
+
 REACT_APP_TEBRA_WSDL_URL="https://api.tebra.com/wsdl"
 REACT_APP_TEBRA_USERNAME="your-username"
 REACT_APP_TEBRA_PASSWORD="your-password"
 
 # Firebase Configuration
+
 VITE_FIREBASE_PROJECT_ID="your-project-id"
 VITE_FIREBASE_API_KEY="your-api-key"
 VITE_FIREBASE_AUTH_DOMAIN="your-auth-domain"
 VITE_FIREBASE_STORAGE_BUCKET="your-storage-bucket"
 VITE_FIREBASE_MESSAGING_SENDER_ID="your-messaging-sender-id"
 VITE_FIREBASE_APP_ID="your-app-id"
+
 ```
 
 ## Usage
@@ -77,6 +94,7 @@ const appointmentData = await apiService.getAppointmentData('appointment-id');
 
 // Get daily session data
 const sessionData = await apiService.getDailySessionData(new Date());
+
 ```
 
 ### API Reference
@@ -88,14 +106,23 @@ The main service class for interacting with the Tebra EHR system.
 ##### Methods
 
 - `testConnection()`: Tests the connection to the Tebra API
+
 - `getPatientData(patientId: string)`: Retrieves patient information
+
 - `getAppointmentData(appointmentId: string)`: Retrieves appointment details
+
 - `getDailySessionData(date: Date)`: Gets all appointments for a specific date
+
 - `getAppointments(fromDate: Date, toDate: Date)`: Retrieves appointments within a date range
+
 - `getPatients(patientIds: string[])`: Gets multiple patients by their IDs
+
 - `getProviders()`: Retrieves all providers
+
 - `getAllPatients()`: Gets all patients in the system
+
 - `createAppointment(appointmentData: Partial<TebraAppointment>)`: Creates a new appointment
+
 - `updateAppointment(appointmentData: Partial<TebraAppointment>)`: Updates an existing appointment
 
 #### Rate Limiting
@@ -110,6 +137,7 @@ const patientData = await apiService.getPatientData('patient-id');
 const stats = apiService.getRateLimiterStats();
 const canCallNow = apiService.canCallMethodImmediately('getPatientData');
 const waitTime = apiService.getRemainingWaitTime('getPatientData');
+
 ```
 
 ### Error Handling
@@ -126,6 +154,7 @@ try {
     console.error('Unexpected error:', error);
   }
 }
+
 ```
 
 ### Data Types
@@ -174,6 +203,7 @@ interface TebraAppointment {
   CreatedAt: string;
   UpdatedAt: string;
 }
+
 ```
 
 ## Development
@@ -182,18 +212,21 @@ interface TebraAppointment {
 
 ```bash
 npm test
+
 ```
 
 ### Linting
 
 ```bash
 npm run lint
+
 ```
 
 ### Building
 
 ```bash
 npm run build
+
 ```
 
 ## Architecture
@@ -201,8 +234,11 @@ npm run build
 The integration is built with a modular architecture:
 
 - `TebraSoapClient`: Handles direct SOAP API communication
+
 - `TebraRateLimiter`: Manages API rate limits
+
 - `TebraDataTransformer`: Transforms data between Tebra and internal formats
+
 - `TebraApiService`: High-level service for data synchronization
 
 ### Component Details
@@ -210,22 +246,31 @@ The integration is built with a modular architecture:
 #### TebraSoapClient
 
 - Handles SOAP API communication
+
 - Manages authentication
+
 - Implements retry logic
+
 - Handles SOAP envelope creation and parsing
 
 #### TebraRateLimiter
 
 - Implements token bucket algorithm
+
 - Configurable rate limits per method
+
 - Thread-safe implementation
+
 - Provides status monitoring
 
 #### TebraDataTransformer
 
 - Converts between SOAP and internal data formats
+
 - Handles date/time conversions
+
 - Validates data integrity
+
 - Provides default values for missing fields
 
 ## Troubleshooting
@@ -253,6 +298,7 @@ Enable debug logging by setting the environment variable:
 
 ```bash
 DEBUG=tebra:* npm start
+
 ```
 
 ## Contributing
@@ -268,5 +314,3 @@ DEBUG=tebra:* npm start
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
-
-For support, please open an issue in the GitHub repository or contact the maintainers.

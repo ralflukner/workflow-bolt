@@ -1,3 +1,4 @@
+
 # Authentication
 
 This document explains the Auth0 authentication implementation in the
@@ -17,13 +18,20 @@ should **not** be committed to version control).
 The following variables are required:
 
 ```plaintext
+
 # .env-local
+
 VITE_AUTH0_DOMAIN=YOUR_AUTH0_DOMAIN
 VITE_AUTH0_CLIENT_ID=YOUR_AUTH0_CLIENT_ID
+
 # e.g., http://localhost:5173 for development
+
 VITE_AUTH0_REDIRECT_URI=YOUR_APP_REDIRECT_URI
+
 # Optional: e.g., https://api.patientflow.com
+
 VITE_AUTH0_AUDIENCE=YOUR_API_IDENTIFIER
+
 ```
 
 Replace the placeholder values (`YOUR_...`) with your actual Auth0
@@ -55,6 +63,7 @@ authentication context:
 // src/auth/AuthProvider.tsx
 import { Auth0Provider } from "@auth0/auth0-react";
 // ...
+
 ```
 
 ### Login and Logout Buttons
@@ -65,12 +74,14 @@ Simple components for triggering authentication:
 // src/components/LoginButton.tsx
 import { useAuth0 } from "@auth0/auth0-react";
 // ...
+
 ```
 
 ```typescript
 // src/components/LogoutButton.tsx
 import { useAuth0 } from "@auth0/auth0-react";
 // ...
+
 ```
 
 ### Protected Route
@@ -82,6 +93,7 @@ authenticated users:
 // src/components/ProtectedRoute.tsx
 import { useAuth0 } from "@auth0/auth0-react";
 // ...
+
 ```
 
 ## User Authentication Flow
@@ -107,6 +119,7 @@ function MyComponent() {
 
   // Use authentication information in your component
 }
+
 ```
 
 ## Custom Claims and Roles
@@ -117,8 +130,11 @@ claims and roles in the user token.
 ## Security Considerations
 
 - The application uses Auth0's recommended security practices
+
 - User credentials are never stored in the application
+
 - Authentication tokens are handled securely through Auth0's SDK
+
 - The application uses HTTPS for all communications
 
 ## Troubleshooting

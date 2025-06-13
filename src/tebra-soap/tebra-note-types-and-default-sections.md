@@ -1,3 +1,4 @@
+
 # tebra - Note Types and Default Sections
 
 Tebra provides several types of notes. Each note type contains default sections with various entry options to make
@@ -498,5 +499,3 @@ Minor Procedures: Text Shortcut, Template, and free-form text_
 
 _<https://helpme.tebra.com/Clinical/Patient_Management/Notes/Navigating_Notes/Encounter_Note_Types_and_Default_Sections>
 Updated: Thu, 29 May 2025 22:29:04 GMT_
-
-_8_

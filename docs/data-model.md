@@ -1,3 +1,4 @@
+
 # Data Model Documentation
 
 This document details the data models used in the Tebra EHR Integration system, including their relationships, constraints, and usage patterns.
@@ -18,12 +19,15 @@ interface Patient {
   checkInTime?: string;       // Optional ISO datetime
   room?: string;              // Optional room assignment
 }
+
 ```
 
 #### Relationships
 
 - One-to-many with Appointments
+
 - One-to-one with Insurance
+
 - Many-to-one with Provider
 
 ### 2. Appointment Model
@@ -41,12 +45,15 @@ interface Appointment {
   createdAt: string;          // ISO datetime
   updatedAt: string;          // ISO datetime
 }
+
 ```
 
 #### Relationships
 
 - Many-to-one with Patient
+
 - Many-to-one with Provider
+
 - One-to-one with Session
 
 ### 3. Provider Model
@@ -62,12 +69,15 @@ interface Provider {
   createdAt: string;          // ISO datetime
   updatedAt: string;          // ISO datetime
 }
+
 ```
 
 #### Relationships
 
 - One-to-many with Appointments
+
 - One-to-many with Patients
+
 - One-to-one with Schedule
 
 ### 4. Session Model
@@ -82,11 +92,13 @@ interface Session {
   createdAt: string;          // ISO datetime
   updatedAt: string;          // ISO datetime
 }
+
 ```
 
 #### Relationships
 
 - One-to-many with Appointments
+
 - Many-to-one with Provider
 
 ## Enums and Types
@@ -101,6 +113,7 @@ enum AppointmentType {
   CONSULTATION = 'Consultation',
   PROCEDURE = 'Procedure'
 }
+
 ```
 
 ### 2. Status Types
@@ -130,6 +143,7 @@ enum SessionStatus {
   COMPLETED = 'completed',
   CANCELLED = 'cancelled'
 }
+
 ```
 
 ## Data Relationships
@@ -146,6 +160,7 @@ graph TD
     E --> G[Room Assignment]
     E --> H[Provider Visit]
     E --> I[Completion]
+
 ```
 
 ### 2. Provider Schedule
@@ -156,6 +171,7 @@ graph TD
     B --> C[Session]
     C --> D[Appointments]
     D --> E[Patients]
+
 ```
 
 ## Data Validation Rules
@@ -163,25 +179,37 @@ graph TD
 ### 1. Patient Validation
 
 - Name: Required, max 100 characters
+
 - DOB: Required, valid date, not in future
+
 - Appointment Time: Required, valid datetime
+
 - Status: Must be valid PatientStatus enum value
 
 ### 2. Appointment Validation
 
 - Patient ID: Required, must exist
+
 - Provider ID: Required, must exist
+
 - Start Time: Required, valid datetime
+
 - End Time: Required, valid datetime, after start time
+
 - Type: Must be valid AppointmentType enum value
+
 - Status: Must be valid AppointmentStatus enum value
 
 ### 3. Provider Validation
 
 - First Name: Required, max 50 characters
+
 - Last Name: Required, max 50 characters
+
 - Title: Required, valid title
+
 - Specialties: Array of valid specialties
+
 - Schedule: Valid schedule object
 
 ## Data Operations
@@ -214,6 +242,7 @@ interface DataOperations {
   deleteProvider(id: string): Promise<void>;
   deleteSession(id: string): Promise<void>;
 }
+
 ```
 
 ### 2. Query Operations
@@ -231,6 +260,7 @@ interface QueryOperations {
   getProviderAppointments(providerId: string): Promise<Appointment[]>;
   getSessionAppointments(sessionId: string): Promise<Appointment[]>;
 }
+
 ```
 
 ## Data Migration
@@ -238,15 +268,21 @@ interface QueryOperations {
 ### 1. Version Control
 
 - Each model version is tracked
+
 - Migration scripts are provided
+
 - Rollback procedures documented
+
 - Data validation on migration
 
 ### 2. Backup Strategy
 
 - Regular automated backups
+
 - Point-in-time recovery
+
 - Data integrity checks
+
 - Backup verification
 
 ## Performance Considerations
@@ -254,15 +290,21 @@ interface QueryOperations {
 ### 1. Indexing Strategy
 
 - Primary keys on all models
+
 - Foreign key indexes
+
 - Composite indexes for common queries
+
 - Text search indexes
 
 ### 2. Caching Strategy
 
 - In-memory caching
+
 - Query result caching
+
 - Cache invalidation rules
+
 - Cache size limits
 
 ## Security Considerations
@@ -270,13 +312,19 @@ interface QueryOperations {
 ### 1. Data Access Control
 
 - Role-based access
+
 - Field-level security
+
 - Audit logging
+
 - Data encryption
 
 ### 2. Data Privacy
 
 - PHI handling
+
 - Data masking
+
 - Retention policies
+
 - Compliance requirements
