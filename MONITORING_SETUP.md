@@ -25,13 +25,13 @@ Comprehensive monitoring and alerting has been configured for the Tebra SOAP pro
 - **Policy ID**: `14626826506718716196`
 - **Trigger**: No successful 2xx requests for 10 minutes
 - **Metric**: Absence of `response_code_class="2xx"` requests
-- **Email**: <lukner@luknerclinic.com>
+- **Email**: [lukner@luknerclinic.com](mailto:lukner@luknerclinic.com)
 
 ## Notification Channel
 
 - **Channel ID**: `11260908912930231273`
 - **Type**: Email
-- **Address**: <lukner@luknerclinic.com>
+- **Address**: [lukner@luknerclinic.com](mailto:lukner@luknerclinic.com)
 - **Status**: Enabled
 
 ## Dashboard Integration
@@ -98,7 +98,6 @@ Update the alert policies in Cloud Monitoring console or via gcloud CLI.
 Use the manual refresh button in the MonitoringStatus component or directly test endpoints to trigger alerts.
 
 ## Troubleshooting
-
 
 ### "Tebra Service Offline" in Dashboard
 **Issue**: MonitoringStatus shows service as offline
