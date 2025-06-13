@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Clock, Wifi, Activity } from 'lucide-react';
-import { TEBRA_CONFIG } from '../constants/env';
+import { tebraApiService } from '../services/tebraApiService';
 
 interface MonitoringStatusProps {
   className?: string;
@@ -28,28 +28,13 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
     try {
       const startTime = performance.now();
       
-      // Check proxy health endpoint - use ping for faster response
-      const apiKey = TEBRA_CONFIG.proxyApiKey;
-      const proxyUrl = 'https://tebra-proxy-623450773640.us-central1.run.app/ping';
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);  // 15 seconds for ping
+      // Use Firebase Function instead of direct proxy call
+      const isConnected = await tebraApiService.testConnection();
       
-      const response = await fetch(proxyUrl, {
-        method: 'GET',
-        headers: {
-          'X-API-Key': apiKey || 'secure-random-key-change-in-production'
-        },
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-
       const endTime = performance.now();
       const responseTime = Math.round(endTime - startTime);
       
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
+      if (isConnected) {
         setStatus({
           proxy: 'healthy',
           lastCheck: new Date().toLocaleTimeString(),
@@ -59,7 +44,7 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
         });
       } else {
         setStatus({
-          proxy: 'warning',
+          proxy: 'error',
           lastCheck: new Date().toLocaleTimeString(),
           responseTime,
           errors: 1
@@ -179,7 +164,7 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
             
             <div className="mt-3 flex justify-between items-center">
               <div className="text-xs text-gray-400">
-                Monitoring: Latency, Errors, Availability
+                Monitoring: Firebase Functions → Tebra Proxy → Tebra API
               </div>
               <a
                 href="https://console.cloud.google.com/monitoring/alerting/policies?project=luknerlumina-firebase"

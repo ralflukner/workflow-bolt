@@ -31,16 +31,17 @@ if (!admin.apps.length) {
   });
 }
 
-// Import centralized secrets management (HIPAA Compliant)
-const { secrets } = require('./src/config/secrets');
+// Note: Secrets management moved to environment variables for this deployment
 
 /** Verifies an Auth0 RS256 access / ID token and returns the decoded payload */
 async function verifyAuth0Jwt(token) {
-  // Get Auth0 config from Secret Manager via centralized module
-  const [domain, audience] = await Promise.all([
-    secrets.auth0Domain(),
-    secrets.auth0Audience()
-  ]);
+  // Get Auth0 config from environment variables
+  const domain = process.env.AUTH0_DOMAIN;
+  const audience = process.env.AUTH0_AUDIENCE;
+  
+  if (!domain || !audience) {
+    throw new Error('Missing Auth0 configuration in environment variables');
+  }
 
   // Create JWKS client with Auth0 domain
   const jwksClient = jwksRsa({
