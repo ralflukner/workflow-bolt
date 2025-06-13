@@ -16,6 +16,32 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
+// ---------------------------------------------
+// 🔐 Authentication middleware
+// Verifies Firebase ID token from Authorization: Bearer <token>
+// ---------------------------------------------
+
+async function authenticate(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization || '';
+    if (!authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized: No bearer token' });
+    }
+
+    const idToken = authHeader.split(' ')[1];
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    // Attach decoded token to request for downstream handlers
+    req.user = decoded;
+    return next();
+  } catch (err) {
+    console.error('Authentication failed', err);
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+}
+
+// Apply authentication middleware to all /test routes
+app.use('/test', authenticate);
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -119,51 +145,51 @@ async function getPurgeStatus() {
 // exports.dailyDataPurge = functionsV1.pubsub
 //   .schedule('every 24 hours')
 //   .onRun(async (context) => {
-    const startTime = new Date();
-    console.log(`Starting daily data purge at ${startTime.toISOString()}`);
-    
-    try {
-      // Simulate data purge operations
-      const itemsToPurge = [
-        { type: 'temp_files', age: '7d' },
-        { type: 'logs', age: '30d' },
-        { type: 'cache', age: '1d' }
-      ];
-      
-      let purgedCount = 0;
-      
-      // Simulate purging each type of data
-      for (const item of itemsToPurge) {
-        console.log(`Purging ${item.type} older than ${item.age}`);
-        // Add your actual purge logic here
-        // For example: await db.collection(item.type).where('createdAt', '<', cutoffDate).delete();
-        purgedCount++;
-      }
-      
-      // Update purge status in Firestore
-      await updatePurgeStatus({
-        timestamp: new Date(),
-        success: true,
-        error: null,
-        itemsPurged: purgedCount
-      });
-      
-      console.log(`Purge completed successfully. Purged ${purgedCount} items.`);
-      return null;
-    } catch (error) {
-      console.error('Purge failed:', error);
-      
-      // Update purge status in Firestore with error
-      await updatePurgeStatus({
-        timestamp: new Date(),
-        success: false,
-        error: error.message,
-        itemsPurged: 0
-      });
-      
-      throw error;
-    }
-  });
+//     const startTime = new Date();
+//     console.log(`Starting daily data purge at ${startTime.toISOString()}`);
+//     
+//     try {
+//       // Simulate data purge operations
+//       const itemsToPurge = [
+//         { type: 'temp_files', age: '7d' },
+//         { type: 'logs', age: '30d' },
+//         { type: 'cache', age: '1d' }
+//       ];
+//       
+//       let purgedCount = 0;
+//       
+//       // Simulate purging each type of data
+//       for (const item of itemsToPurge) {
+//         console.log(`Purging ${item.type} older than ${item.age}`);
+//         // Add your actual purge logic here
+//         // For example: await db.collection(item.type).where('createdAt', '<', cutoffDate).delete();
+//         purgedCount++;
+//       }
+//       
+//       // Update purge status in Firestore
+//       await updatePurgeStatus({
+//         timestamp: new Date(),
+//         success: true,
+//         error: null,
+//         itemsPurged: purgedCount
+//       });
+//       
+//       console.log(`Purge completed successfully. Purged ${purgedCount} items.`);
+//       return null;
+//     } catch (error) {
+//       console.error('Purge failed:', error);
+//       
+//       // Update purge status in Firestore with error
+//       await updatePurgeStatus({
+//         timestamp: new Date(),
+//         success: false,
+//         error: error.message,
+//         itemsPurged: 0
+//       });
+//       
+//       throw error;
+//     }
+//   });
 
 // Health check function (using v1 syntax)
 exports.purgeHealthCheck = functionsV1.pubsub

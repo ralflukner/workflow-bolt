@@ -21,26 +21,6 @@ interface SoapAppointmentResponse {
   Status?: string;
 }
 
-interface SoapProviderResponse {
-  ProviderId?: string;
-  Id?: string;
-  FirstName?: string;
-  LastName?: string;
-  Title?: string;
-}
-
-interface SoapPatientResponse {
-  PatientId?: string;
-  Id?: string;
-  FirstName?: string;
-  LastName?: string;
-  DateOfBirth?: string;
-  DOB?: string;
-  Phone?: string;
-  PhoneNumber?: string;
-  Email?: string;
-  EmailAddress?: string;
-}
 
 interface SoapAppointmentData {
   appointment: {
@@ -233,8 +213,15 @@ export class TebraSoapClient {
       throw new Error('Failed to test connection');
     }
   }
-
-  async getAppointments(fromDate: string, toDate: string): Promise<SoapAppointmentResponse[]> {
+  /**
+   * Gets appointments within a date range
+   * @param {string} fromDate - Start date in YYYY-MM-DD format
+   * @param {string} toDate - End date in YYYY-MM-DD format
+   * @returns {Promise<SoapAppointmentResponse[]>} Array of appointments
+   * @throws {Error} If API call fails or dates are invalid
+   */
+  public async getAppointments(fromDate: string, toDate: string): Promise<SoapAppointmentResponse[]> {
+    await this.initializeClient();
     if (!fromDate || !toDate) {
       throw new Error('fromDate and toDate are required');
     }
@@ -255,7 +242,13 @@ export class TebraSoapClient {
     }
   }
 
-  async getProviders(): Promise<SoapProviderResponse[]> {
+  /**
+   * Gets all providers
+   * @returns {Promise<any[]>} Array of providers
+   * @throws {Error} If API call fails
+   */
+  public async getProviders(): Promise<any[]> {
+    await this.initializeClient();
     try {
       await this.rateLimiter.waitForSlot('getProviders');
       const result = await this.client.GetProvidersAsync({});
@@ -266,7 +259,13 @@ export class TebraSoapClient {
     }
   }
 
-  async getAllPatients(): Promise<SoapPatientResponse[]> {
+  /**
+   * Gets all patients
+   * @returns {Promise<any[]>} Array of patients
+   * @throws {Error} If API call fails
+   */
+  public async getAllPatients(): Promise<any[]> {
+    await this.initializeClient();
     try {
       await this.rateLimiter.waitForSlot('getAllPatients');
       const result = await this.client.GetAllPatientsAsync({});
@@ -277,7 +276,14 @@ export class TebraSoapClient {
     }
   }
 
-  async createAppointment(appointmentData: Partial<SoapAppointmentData['appointment']>): Promise<any> {
+  /**
+   * Creates a new appointment
+   * @param {Partial<SoapAppointmentData['appointment']>} appointmentData - Appointment data
+   * @returns {Promise<any>} Created appointment result
+   * @throws {Error} If required fields are missing or API call fails
+   */
+  public async createAppointment(appointmentData: Partial<SoapAppointmentData['appointment']>): Promise<any> {
+    await this.initializeClient();
     if (!appointmentData.PatientId || !appointmentData.ProviderId) {
       throw new Error('PatientId and ProviderId are required');
     }
@@ -297,7 +303,14 @@ export class TebraSoapClient {
     }
   }
 
-  async updateAppointment(appointmentData: Partial<SoapAppointmentData['appointment']>): Promise<any> {
+  /**
+   * Updates an existing appointment
+   * @param {Partial<SoapAppointmentData['appointment']>} appointmentData - Appointment data with AppointmentId
+   * @returns {Promise<any>} Updated appointment result
+   * @throws {Error} If AppointmentId is missing or API call fails
+   */
+  public async updateAppointment(appointmentData: Partial<SoapAppointmentData['appointment']>): Promise<any> {
+    await this.initializeClient();
     if (!appointmentData.AppointmentId) {
       throw new Error('AppointmentId is required for updates');
     }
@@ -314,18 +327,17 @@ export class TebraSoapClient {
     }
   }
 
+  /**
+   * Validates date format (YYYY-MM-DD)
+   * @param {string} date - Date string to validate
+   * @returns {boolean} True if date format is valid
+   */
   private isValidDateFormat(date: string): boolean {
     const regex = /^\d{4}-\d{2}-\d{2}$/;
     return regex.test(date);
   }
 }
 
-// Create a singleton instance with environment variables
-// Use empty credentials for testing - actual credentials will be provided when used
-const credentials: TebraCredentials = {
-  wsdlUrl: process.env.REACT_APP_TEBRA_WSDL_URL || '',
-  username: process.env.REACT_APP_TEBRA_USERNAME || '',
-  password: process.env.REACT_APP_TEBRA_PASSWORD || ''
-};
-
+// Singleton instance creation commented out for now
+// Actual credentials will be provided when used
 // export const tebraSoapClient = new TebraSoapClient(credentials);

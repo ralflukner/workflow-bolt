@@ -185,9 +185,8 @@ export class TebraIntegrationService {
         if (patient) {
           try {
             const internalPatient = TebraDataTransformer.combineToInternalPatient(
-              appointment, 
-              patient, 
-              providers
+              patient,
+              appointment
             );
             internalPatients.push(internalPatient);
           } catch (error) {

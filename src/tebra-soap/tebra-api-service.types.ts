@@ -132,6 +132,8 @@ export interface TebraDailySession {
   Date: string;
   /** Provider ID */
   ProviderId: string;
+  /** List of providers */
+  Providers: TebraProvider[];
   /** List of appointments */
   Appointments: TebraDailySessionAppointment[];
   /** Creation timestamp */

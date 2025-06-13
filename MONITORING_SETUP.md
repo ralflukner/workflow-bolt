@@ -11,27 +11,27 @@ Comprehensive monitoring and alerting has been configured for the Tebra SOAP pro
 - **Policy ID**: `18129142588318108102`
 - **Trigger**: P95 latency > 10 seconds for 5 minutes
 - **Metric**: `run.googleapis.com/request_latencies`
-- **Email**: lukner@luknerclinic.com
+- **Email**: <lukner@luknerclinic.com>
 
 ### 2. High Error Count Alert
 
 - **Policy ID**: `9158751147478329485`
 - **Trigger**: More than 2 5xx errors per minute for 5 minutes
 - **Metric**: `run.googleapis.com/request_count` with `response_code_class="5xx"`
-- **Email**: lukner@luknerclinic.com
+- **Email**: <lukner@luknerclinic.com>
 
 ### 3. Service Availability Alert
 
 - **Policy ID**: `14626826506718716196`
 - **Trigger**: No successful 2xx requests for 10 minutes
 - **Metric**: Absence of `response_code_class="2xx"` requests
-- **Email**: lukner@luknerclinic.com
+- **Email**: <lukner@luknerclinic.com>
 
 ## Notification Channel
 
 - **Channel ID**: `11260908912930231273`
 - **Type**: Email
-- **Address**: lukner@luknerclinic.com
+- **Address**: <lukner@luknerclinic.com>
 - **Status**: Enabled
 
 ## Dashboard Integration
@@ -99,10 +99,11 @@ Use the manual refresh button in the MonitoringStatus component or directly test
 
 ## Troubleshooting
 
+
 ### "Tebra Service Offline" in Dashboard
 **Issue**: MonitoringStatus shows service as offline
 **Cause**: Missing or incorrect `VITE_TEBRA_PROXY_API_KEY` environment variable
-**Solution**: 
+**Solution**:
 
 1. Add the API key to `.env.local`:
 

@@ -85,7 +85,7 @@ const getTebraCredentialsAsync = async (): Promise<Partial<TebraCredentials>> =>
     if (username) credentials.username = username;
     if (password) credentials.password = password;
     
-    // Build WSDL URL with customer key if available
+    // Build WSDL URL with the customer key if available
     if (customerKey) {
       credentials.wsdlUrl = `https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl&customerkey=${customerKey}`;
     }
@@ -112,7 +112,7 @@ const getTebraCredentialsSync = (): Partial<TebraCredentials> => {
     if (username) credentials.username = username;
     if (password) credentials.password = password;
     
-    // Build WSDL URL with customer key if available
+    // Build WSDL URL with the customer key if available
     if (customerKey) {
       credentials.wsdlUrl = `https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl&customerkey=${customerKey}`;
     }
@@ -166,7 +166,7 @@ export class TebraApiService {
     credentials?: Partial<TebraCredentials>,
     dataTransformer: TebraDataTransformer = new TebraDataTransformer()
   ) {
-    // Try to get credentials from secrets service first, then fallback to env vars
+    // Try to get credentials from the secret service first, then fallback to env vars
     const secretsCredentials = getTebraCredentialsSync();
     
     const config: EnvConfig = {
@@ -302,7 +302,7 @@ export class TebraApiService {
       
     } catch (error) {
       console.error('Failed to get appointments:', error);
-      // Return empty array as fallback
+      // Return an empty array as fallback
       return [];
     }
   }
@@ -427,39 +427,6 @@ export class TebraApiService {
     }
   }
 
-  /**
-   * Create a new appointment in Tebra
-   */
-  async createAppointment(appointmentData: Partial<TebraAppointment>): Promise<boolean> {
-    try {
-      console.log('Creating appointment in Tebra...');
-      
-      const result = await this.soapClient.createAppointment(appointmentData);
-      
-      console.log('Appointment created successfully:', result);
-      return true;
-    } catch (error) {
-      console.error('Failed to create appointment:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Update an existing appointment in Tebra
-   */
-  async updateAppointment(appointmentData: Partial<TebraAppointment>): Promise<boolean> {
-    try {
-      console.log('Updating appointment in Tebra...');
-      
-      const result = await this.soapClient.updateAppointment(appointmentData);
-      
-      console.log('Appointment updated successfully:', result);
-      return true;
-    } catch (error) {
-      console.error('Failed to update appointment:', error);
-      return false;
-    }
-  }
 
   /**
    * Get rate limiter statistics

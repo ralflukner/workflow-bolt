@@ -93,6 +93,7 @@ export class TebraDataTransformer {
     return {
       SessionId: tebraDailySession.SessionId || '',
       Date: tebraDailySession.Date || new Date().toISOString(),
+      ProviderId: tebraDailySession.ProviderId || '',
       Appointments: Array.isArray(tebraDailySession.Appointments) 
         ? tebraDailySession.Appointments.map((apt: any) => this.transformAppointmentData(apt))
         : [],

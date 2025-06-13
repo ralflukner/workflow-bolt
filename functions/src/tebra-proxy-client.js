@@ -121,9 +121,9 @@ class TebraProxyClient {
   async testConnection() {
     try {
       console.log('[TebraProxy] 🔍 Starting connection test...');
-      const result = await this.makeRequest('health');
+      const result = await this.makeRequest('ping');
       console.log('[TebraProxy] ✅ Connection test successful, result:', JSON.stringify(result).slice(0, 200));
-      return result.status === 'healthy';
+      return result.curl_ok === true;
     } catch (error) {
       console.error('[TebraProxy] ❌ Connection test failed:', error.message);
       if (error.response) {
