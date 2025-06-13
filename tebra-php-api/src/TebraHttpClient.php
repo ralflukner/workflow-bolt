@@ -1,5 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
+namespace LuknerLumina\TebraApi;
+
 /**
  * Tebra HTTP Client for PHP
  * Uses cURL to make direct HTTP requests to Tebra API

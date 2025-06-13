@@ -1,66 +1,117 @@
-# Logs
-logs
+# ===== Environment Variables =====
+.env
+.env.*
+!.env.example
+!.env.sample
+.envrc
+
+# ===== Credentials and Secrets =====
+# Google Cloud
+**/credentials.json
+**/client_secret*.json
+**/service-account*.json
+gcloud-key.json
+gcr.json
+keyfile.json
+*-credentials.json
+
+# API Keys and Secrets
+**/secrets.json
+api-keys.txt
+apikeys.json
+**/apikey*
+*.key
+*.pem
+*.p12
+*.pfx
+*.cert
+*.crt
+
+# Tebra specific
+test-tebra.php
+tebra_test.php
+tebra-config.php
+**/tebra-credentials*
+
+# AWS
+.aws/
+aws-credentials
+
+# SSH Keys
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+*.ppk
+
+# ===== Dependencies =====
+node_modules/
+vendor/
+/functions/node_modules
+/functions/package-lock.json
+tebra-proxy/vendor/
+tebra-php-api/vendor/
+
+# ===== Build Outputs =====
+/dist
+/build
+coverage/
+.temp
+.tmp
+.cache
+
+# ===== Logs =====
+logs/
 *.log
+*.log.*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Dependencies
-/node_modules
-/functions/node_modules
-/functions/package-lock.json
-
-# Editor directories and files
+# ===== IDE and Editor =====
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*.swo
+*~
 
-# Environment variables
-.env
-.env.*
-.env.example
-.env-example
-.env.local
-.env-local
-.envrc
+# ===== OS Generated =====
+.DS_Store
+Thumbs.db
+desktop.ini
 
-# Sensitive configuration
-**/credentials.json
-**/secrets.json
-
-# Testing
-coverage
-
-# Production build
-/dist
+# ===== Project Specific =====
+# Local config overrides
+config.local.php
+config.local.json
+local.config.*
 
 # Temporary files
-.temp
-.tmp
-.cache
-
-# misc
-.env.*.local
-
-# local IDE settings
-.idea/
-.vscode/
-
-# OS generated files
-Thumbs.db
-
-# Commit Message drafts
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
 commit-message.txt
 
-# Vendor files
-tebra-proxy/vendor/
-tebra-php-api/vendor/
-/config/client_secret_472501334334-hoph63lb8i2o53a68d118n4k4le19kki.apps.googleusercontent.com.json
+# Security audit files
+security-audit-*.txt
+credential-rotations.log
+sensitive-strings.txt
+bfg.jar
+bfg-report/
+
+# ===== Keep These Files =====
+# Security scripts should be tracked
+!security-check.sh
+!rotate-credentials.sh
+!git-cleanup.sh
+!.gitignore
