@@ -43,7 +43,7 @@ querySnapshot.forEach((doc) => {
 });
 
 // Flush remaining writes
-commits.push(batch.commit());
+if (opCounter > 0) commits.push(batch.commit());
 await Promise.all(commits);
     
     console.log(`Successfully purged ${deleteCount} old sessions`);
@@ -102,6 +102,18 @@ exports.manualDataPurge = onCall({ cors: true }, async (request) => {
   // HIPAA Security: Require authentication for manual purge
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Authentication required for manual purge');
+  }
+
+  // Check for admin authorization using custom claims
+  if (!request.auth.token.admin) {
+    // Log unauthorized access attempt
+    await db.collection('audit_logs').add({
+      action: 'unauthorized_purge_attempt',
+      timestamp: new Date(),
+      userId: request.auth.uid,
+      reason: 'missing_admin_privileges'
+    });
+    throw new HttpsError('permission-denied', 'Admin privileges required for manual purge');
   }
   
   // Log the manual purge attempt for audit
@@ -163,7 +175,7 @@ exports.manualDataPurge = onCall({ cors: true }, async (request) => {
     
   } catch (error) {
     console.error('Manual purge failed:', error);
-    throw new HttpsError('internal', 'Manual purge failed');
+    throw new HttpsError('internal', 'Manual purge failed', { cause: error });
   }
 });
 

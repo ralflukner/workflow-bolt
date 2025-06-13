@@ -38,7 +38,7 @@ export const createMockPatientContext = (overrides = {}) => {
       
       const isMalformedDataTest = patients.length === 1 && 
         patients[0].status === null && 
-        patients[0].id === 'test-1' && 
+        patients[0].id === 'TEST-PATIENT-001' && 
         patients[0].name === 'Test Patient';
         
       if (!isMalformedDataTest) {

@@ -29,7 +29,7 @@ class TebraHttpClient {
     private function getRequiredEnv($key) {
         $value = getenv($key);
         if ($value === false) {
-            throw new Exception("Required environment variable {$key} is not set");
+            throw new \RuntimeException("Required environment variable {$key} is not set");
         }
         return $value;
     }
@@ -39,6 +39,9 @@ class TebraHttpClient {
      */
     private function makeSOAPRequest($action, $soapBody) {
         $ch = curl_init();
+        
+        // Create temporary stream for verbose output
+        $verbose = fopen('php://temp', 'w+');
         
         // Build SOAP envelope
         $soapEnvelope = '<?xml version="1.0" encoding="utf-8"?>
@@ -61,14 +64,30 @@ class TebraHttpClient {
             ],
             CURLOPT_USERPWD => $this->username . ':' . $this->password,
             CURLOPT_TIMEOUT => 60,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_VERBOSE => true
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_VERBOSE => true,
+            CURLOPT_STDERR => $verbose
         ]);
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
+        
+        // Read and scrub verbose output
+        rewind($verbose);
+        $verboseLog = stream_get_contents($verbose);
+        fclose($verbose);
+        
+        // Scrub sensitive information from verbose log
+        $verboseLog = preg_replace('/Authorization: Basic [^\r\n]+/', 'Authorization: Basic [REDACTED]', $verboseLog);
+        $verboseLog = preg_replace('/User: [^\r\n]+/', 'User: [REDACTED]', $verboseLog);
+        $verboseLog = preg_replace('/Pass: [^\r\n]+/', 'Pass: [REDACTED]', $verboseLog);
+        
+        // Log scrubbed verbose output if needed
+        if ($error || $httpCode >= 400) {
+            error_log("Tebra API request failed. Verbose log: " . $verboseLog);
+        }
         
         curl_close($ch);
         
@@ -77,7 +96,7 @@ class TebraHttpClient {
         }
         
         if ($httpCode >= 400) {
-            throw new Exception("HTTP error $httpCode: $response");
+            throw new \Exception("HTTP error $httpCode: $response");
         }
         
         return $response;

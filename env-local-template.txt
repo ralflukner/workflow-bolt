@@ -9,12 +9,12 @@ VITE_TEBRA_WSDL_URL="https://api.tebra.com/wsdl"
 VITE_TEBRA_CUSTOMER_KEY="your-customer-key"
 
 # Firebase Configuration
-VITE_FIREBASE_API_KEY="your-api-key"
-VITE_FIREBASE_AUTH_DOMAIN="your-project.firebaseapp.com"
-VITE_FIREBASE_PROJECT_ID="your-project-id"
-VITE_FIREBASE_STORAGE_BUCKET="your-project.appspot.com"
-VITE_FIREBASE_MESSAGING_SENDER_ID="your-sender-id"
-VITE_FIREBASE_APP_ID="your-app-id"
+VITE_FIREBASE_API_KEY=your-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
 
 # Auth0 Configuration
 VITE_AUTH0_DOMAIN="your-tenant.auth0.com"

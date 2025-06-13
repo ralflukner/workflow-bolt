@@ -13,11 +13,11 @@ const TebraIntegration: React.FC = () => {
   const [integrationService, setIntegrationService] = useState<TebraIntegrationService | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
 
-  const [credentials, setCredentials] = useState<TebraCredentials>({
+  const credentials: TebraCredentials = {
     username: process.env.VITE_TEBRA_USERNAME || '',
     password: process.env.VITE_TEBRA_PASSWORD || '',
     wsdlUrl: process.env.VITE_TEBRA_WSDL_URL || ''
-  });
+  };
 
   useEffect(() => {
     // Check if credentials are properly configured

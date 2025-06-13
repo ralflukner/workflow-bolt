@@ -165,11 +165,11 @@ describe('Simple Integration Tests', () => {
       
       expect(retrievedPatients).toHaveLength(1);
       expect(retrievedPatients[0].name).toBe('Test Test');
-      expect(retrievedPatients[0].id).toBe('tebra-test-123');
+      expect(retrievedPatients[0].id).toBe('TEST-PATIENT-001');
       
       // Verify all fields are properly set
       expect(retrievedPatients[0]).toMatchObject({
-        id: 'tebra-test-123',
+        id: 'TEST-PATIENT-001',
         name: 'Test Test',
         dob: '1985-06-15',
         appointmentType: 'Office Visit',

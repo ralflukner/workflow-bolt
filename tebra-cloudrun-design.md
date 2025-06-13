@@ -17,11 +17,13 @@
 ## Component Details
 
 ### 1. Frontend (React App)
+
 - Calls Firebase Functions (not Cloud Run directly)
 - Uses Firebase Auth for user authentication
 - Handles UI/UX for appointment scheduling, provider management
 
 ### 2. Firebase Functions (Node.js)
+
 - **Authentication**: Validates Firebase Auth tokens
 - **Authorization**: Checks user permissions
 - **Business Logic**: Data validation, transformations
@@ -30,12 +32,14 @@
 - **Rate Limiting**: Prevents API abuse
 
 ### 3. Cloud Run PHP Service
+
 - **Single Responsibility**: SOAP communication with Tebra
 - **Stateless**: No session management
 - **Credentials**: Fetches from Secret Manager
 - **Transformation**: Converts JSON ↔ SOAP/XML
 
 ### 4. Security Layers
+
 - **Firebase Auth**: User authentication
 - **Service Account**: Cloud Run → Secret Manager
 - **API Key**: Internal auth between Firebase → Cloud Run
@@ -44,6 +48,7 @@
 ## Detailed Implementation
 
 ### Project Structure
+
 ```
 lukner-tebra-integration/
 ├── frontend/                 # Existing React app
@@ -76,6 +81,7 @@ lukner-tebra-integration/
 ## Cloud Run PHP Service Implementation
 
 ### Dockerfile
+
 ```dockerfile
 FROM php:8.2-apache
 
@@ -118,27 +124,28 @@ EXPOSE 8080
 ```
 
 ### docker/apache.conf
+
 ```apache
 <VirtualHost *:${PORT}>
     DocumentRoot /var/www/public
-    
+
     <Directory /var/www/public>
         Options -Indexes +FollowSymLinks
         AllowOverride All
         Require all granted
-        
+
         # Rewrite rules
         RewriteEngine On
         RewriteCond %{REQUEST_FILENAME} !-f
         RewriteCond %{REQUEST_FILENAME} !-d
         RewriteRule ^ index.php [L]
     </Directory>
-    
+
     # Security headers
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "DENY"
     Header always set X-XSS-Protection "1; mode=block"
-    
+
     # Logging
     ErrorLog ${APACHE_LOG_DIR}/error.log
     CustomLog ${APACHE_LOG_DIR}/access.log combined
@@ -146,6 +153,7 @@ EXPOSE 8080
 ```
 
 ### composer.json
+
 ```json
 {
     "name": "lukner-clinic/tebra-php-service",
@@ -174,6 +182,7 @@ EXPOSE 8080
 ```
 
 ### public/index.php
+
 ```php
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -239,44 +248,44 @@ try {
     if (json_last_error() !== JSON_ERROR_NONE) {
         throw new Exception('Invalid JSON input');
     }
-    
+
     $action = $input['action'] ?? '';
     $params = $input['params'] ?? [];
-    
+
     $logger->info('Processing request', ['action' => $action]);
-    
+
     switch ($action) {
         case 'providers.list':
             $handler = new ProvidersHandler($logger);
             $result = $handler->getProviders($params);
             break;
-            
+
         case 'appointments.list':
             $handler = new AppointmentsHandler($logger);
             $result = $handler->getAppointments($params);
             break;
-            
+
         case 'appointments.create':
             $handler = new AppointmentsHandler($logger);
             $result = $handler->createAppointment($params);
             break;
-            
+
         default:
             throw new Exception("Unknown action: $action");
     }
-    
+
     echo json_encode([
         'success' => true,
         'data' => $result,
         'timestamp' => time()
     ]);
-    
+
 } catch (Exception $e) {
     $logger->error('Request failed', [
         'error' => $e->getMessage(),
         'trace' => $e->getTraceAsString()
     ]);
-    
+
     http_response_code(500);
     echo json_encode([
         'success' => false,
@@ -286,6 +295,7 @@ try {
 ```
 
 ### src/TebraHttpClient.php (Enhanced)
+
 ```php
 <?php
 namespace TebraService;
@@ -299,23 +309,23 @@ class TebraHttpClient {
     private string $password;
     private Logger $logger;
     private $cache;
-    
+
     public function __construct(Logger $logger) {
         $this->logger = $logger;
         $this->loadCredentials();
         $this->cache = apcu_enabled() ? new ApcuCache() : new NullCache();
     }
-    
+
     private function loadCredentials(): void {
         // Try Secret Manager first
         try {
             $client = new SecretManagerServiceClient();
             $projectId = getenv('GOOGLE_CLOUD_PROJECT');
-            
+
             $this->baseUrl = $this->getSecret($client, $projectId, 'tebra-wsdl-url');
             $this->username = $this->getSecret($client, $projectId, 'tebra-username');
             $this->password = $this->getSecret($client, $projectId, 'tebra-password');
-            
+
             $this->logger->info('Credentials loaded from Secret Manager');
         } catch (\Exception $e) {
             // Fallback to environment variables
@@ -325,13 +335,13 @@ class TebraHttpClient {
             $this->password = getenv('TEBRA_PASSWORD');
         }
     }
-    
+
     private function getSecret($client, $projectId, $secretId): string {
         $name = $client->secretVersionName($projectId, $secretId, 'latest');
         $response = $client->accessSecretVersion($name);
         return $response->getPayload()->getData();
     }
-    
+
     public function callSoapMethod(string $action, string $soapBody): array {
         // Check cache first
         $cacheKey = md5($action . $soapBody);
@@ -340,12 +350,12 @@ class TebraHttpClient {
             $this->logger->info('Cache hit', ['action' => $action]);
             return $cached;
         }
-        
+
         $startTime = microtime(true);
-        
+
         // Build SOAP envelope
         $soapEnvelope = $this->buildSoapEnvelope($soapBody);
-        
+
         // Make request
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -365,36 +375,36 @@ class TebraHttpClient {
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10
         ]);
-        
+
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
         curl_close($ch);
-        
+
         $duration = round((microtime(true) - $startTime) * 1000, 2);
-        
+
         $this->logger->info('SOAP request completed', [
             'action' => $action,
             'httpCode' => $httpCode,
             'duration' => $duration . 'ms'
         ]);
-        
+
         if ($error) {
             throw new \Exception("CURL error: $error");
         }
-        
+
         if ($httpCode !== 200) {
             throw new \Exception("HTTP error: $httpCode");
         }
-        
+
         $result = $this->parseSoapResponse($response);
-        
+
         // Cache successful responses
         $this->cache->set($cacheKey, $result, 300); // 5 minutes
-        
+
         return $result;
     }
-    
+
     private function buildSoapEnvelope(string $body): string {
         return '<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" 
@@ -405,38 +415,38 @@ class TebraHttpClient {
     </soap:Body>
 </soap:Envelope>';
     }
-    
+
     private function parseSoapResponse(string $xml): array {
         // Remove namespaces for easier parsing
         $xml = preg_replace('/xmlns[^=]*="[^"]*"/i', '', $xml);
         $xml = preg_replace('/[a-zA-Z0-9]+:([a-zA-Z0-9]+)/', '$1', $xml);
-        
+
         $doc = new \DOMDocument();
         if (!$doc->loadXML($xml)) {
             throw new \Exception('Failed to parse SOAP response');
         }
-        
+
         // Convert to array
         return $this->domToArray($doc->documentElement);
     }
-    
+
     private function domToArray(\DOMNode $node): array {
         $output = [];
-        
+
         switch ($node->nodeType) {
             case XML_CDATA_SECTION_NODE:
             case XML_TEXT_NODE:
                 $output = trim($node->textContent);
                 break;
-                
+
             case XML_ELEMENT_NODE:
                 for ($i = 0; $i < $node->childNodes->length; $i++) {
                     $child = $node->childNodes->item($i);
                     $v = $this->domToArray($child);
-                    
+
                     if (isset($child->tagName)) {
                         $t = $child->tagName;
-                        
+
                         if (!isset($output[$t])) {
                             $output[$t] = [];
                         }
@@ -445,25 +455,25 @@ class TebraHttpClient {
                         $output = (string) $v;
                     }
                 }
-                
+
                 if ($node->attributes->length && !is_array($output)) {
                     $output = ['@content' => $output];
                 }
-                
+
                 if (is_array($output)) {
                     foreach ($output as $t => $v) {
                         if (is_array($v) && count($v) == 1 && $t != '@attributes') {
                             $output[$t] = $v[0];
                         }
                     }
-                    
+
                     if (empty($output)) {
                         $output = '';
                     }
                 }
                 break;
         }
-        
+
         return $output;
     }
 }
@@ -472,6 +482,7 @@ class TebraHttpClient {
 ## Firebase Functions Implementation
 
 ### functions/src/tebra/client.ts
+
 ```typescript
 import { config } from 'firebase-functions';
 import axios, { AxiosInstance } from 'axios';
@@ -570,28 +581,28 @@ const client = new TebraCloudRunClient();
 export const getProviders = functions.https.onCall(async (data, context) => {
   // Validate authentication
   const userId = validateAuth(context);
-  
+
   // Check rate limit
   await checkRateLimit(userId, 'getProviders', 100); // 100 calls per hour
-  
+
   try {
     // Validate input
     const { practiceId, active = true, includeSchedule = false } = data;
-    
+
     if (!practiceId) {
       throw new functions.https.HttpsError(
         'invalid-argument',
         'Practice ID is required'
       );
     }
-    
+
     // Call Cloud Run service
     const providers = await client.callAction('providers.list', {
       practiceId,
       active,
       includeSchedule
     }, context.auth?.token);
-    
+
     // Transform response if needed
     return {
       success: true,
@@ -603,14 +614,14 @@ export const getProviders = functions.https.onCall(async (data, context) => {
         active: p.Active
       }))
     };
-    
+
   } catch (error: any) {
     functions.logger.error('Get providers error', { error, userId });
-    
+
     if (error instanceof functions.https.HttpsError) {
       throw error;
     }
-    
+
     throw new functions.https.HttpsError(
       'internal',
       'Failed to retrieve providers',
@@ -633,7 +644,7 @@ export function validateAuth(context: CallableContext): string {
       'User must be authenticated'
     );
   }
-  
+
   // Additional permission checks can go here
   // For example, check if user has 'staff' role
   const customClaims = context.auth.token;
@@ -643,7 +654,7 @@ export function validateAuth(context: CallableContext): string {
       'User does not have required permissions'
     );
   }
-  
+
   return context.auth.uid;
 }
 ```

@@ -7,7 +7,8 @@ require_once __DIR__ . '/config.php';
 header('Content-Type: application/json');
 
 // Verify API key
-$apiKey = $_SERVER['HTTP_X_API_KEY'] ?? '';
+$headers = array_change_key_case(getallheaders(), CASE_LOWER);
+$apiKey  = $headers['x-api-key'] ?? '';
 if ($apiKey !== getenv('INTERNAL_API_KEY')) {
     http_response_code(401);
     echo json_encode(['error' => 'Invalid API key']);
@@ -16,6 +17,12 @@ if ($apiKey !== getenv('INTERNAL_API_KEY')) {
 
 // Get request body
 $rawBody = file_get_contents('php://input');
+if (empty($rawBody)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Request body is required']);
+    exit;
+}
+
 $requestBody = json_decode($rawBody, true);
 if (json_last_error() !== JSON_ERROR_NONE) {
     http_response_code(400);

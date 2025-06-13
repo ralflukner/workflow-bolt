@@ -3,6 +3,7 @@
 ## Problem Identified
 
 Your `.gitignore` contained a specific OAuth client secret file:
+
 ```
 /config/client_secret_472501334334-hoph63lb8i2o53a68d118n4k4le19kki.apps.googleusercontent.com.json
 ```
@@ -53,21 +54,21 @@ use App\Traits\SecretManagerTrait;
 class GoogleOAuthService
 {
     use SecretManagerTrait;
-    
+
     private array $oauthConfig;
-    
+
     public function __construct()
     {
         $this->initializeSecretManager();
         $this->loadOAuthConfig();
     }
-    
+
     private function loadOAuthConfig(): void
     {
         // Option 1: Load entire config from GSM
         $configJson = $this->getSecret('google-oauth-config');
         $this->oauthConfig = json_decode($configJson, true);
-        
+
         // Option 2: Load individual secrets
         $this->oauthConfig = [
             'client_id' => $this->getSecret('google-oauth-client-id'),
@@ -75,7 +76,7 @@ class GoogleOAuthService
             'redirect_uri' => getenv('GOOGLE_OAUTH_REDIRECT_URI')
         ];
     }
-    
+
     public function getAuthUrl(): string
     {
         $params = [
@@ -85,10 +86,10 @@ class GoogleOAuthService
             'scope' => 'openid email profile',
             'access_type' => 'offline'
         ];
-        
+
         return 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query($params);
     }
-    
+
     public function exchangeCodeForToken(string $code): array
     {
         // This uses the client secret, so must be server-side only
@@ -99,7 +100,7 @@ class GoogleOAuthService
             'redirect_uri' => $this->oauthConfig['redirect_uri'],
             'grant_type' => 'authorization_code'
         ];
-        
+
         // Make request to token endpoint...
     }
 }
@@ -113,10 +114,10 @@ return [
     'google' => [
         // Client ID can be in config (it's public)
         'client_id' => env('GOOGLE_OAUTH_CLIENT_ID', '472501334334-hoph63lb8i2o53a68d118n4k4le19kki.apps.googleusercontent.com'),
-        
+
         // Never put client secret in config files
         'client_secret' => null, // Loaded from GSM at runtime
-        
+
         // Redirect URIs can be in config
         'redirect_uri' => env('GOOGLE_OAUTH_REDIRECT_URI', 'https://yourapp.com/auth/callback'),
     ]
@@ -176,6 +177,7 @@ echo "3. Clean Git history if the file was previously committed"
 ### 6. For Different OAuth Flows
 
 #### Implicit Flow (SPA)
+
 ```javascript
 // Client ID only - no secret needed
 const googleAuth = {
@@ -185,12 +187,14 @@ const googleAuth = {
 ```
 
 #### Authorization Code Flow (Server-Side)
+
 ```php
 // Client secret required - must be in GSM
 $oauth = new GoogleOAuthService(); // Loads from GSM
 ```
 
 #### Service Account Flow
+
 ```php
 // Different from OAuth - uses service account key
 $serviceAccountKey = $this->getSecret('google-service-account-key');

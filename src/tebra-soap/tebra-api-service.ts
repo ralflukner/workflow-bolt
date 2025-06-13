@@ -4,7 +4,6 @@
  */
 
 import { TebraSoapClient } from './tebraSoapClient';
-import { TebraRateLimiter } from './tebra-rate-limiter';
 import { TebraDataTransformer } from './tebra-data-transformer';
 import { TebraCredentials, TebraPatient, TebraAppointment, TebraDailySession, TebraProvider } from './tebra-api-service.types';
 import { secretsService } from '../services/secretsService';
@@ -81,10 +80,10 @@ const getTebraCredentialsAsync = async (): Promise<Partial<TebraCredentials>> =>
     ]);
 
     const credentials: Partial<TebraCredentials> = {};
-    
+
     if (username) credentials.username = username;
     if (password) credentials.password = password;
-    
+
     // Build WSDL URL with the customer key if available
     if (customerKey) {
       credentials.wsdlUrl = `https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl&customerkey=${customerKey}`;
@@ -97,32 +96,6 @@ const getTebraCredentialsAsync = async (): Promise<Partial<TebraCredentials>> =>
   }
 };
 
-/**
- * Gets Tebra credentials synchronously from environment variables
- * @returns {Partial<TebraCredentials>} Tebra credentials
- */
-const getTebraCredentialsSync = (): Partial<TebraCredentials> => {
-  try {
-    const username = secretsService.getSecretSync('TEBRA_USERNAME');
-    const password = secretsService.getSecretSync('TEBRA_PASSWORD');
-    const customerKey = secretsService.getSecretSync('TEBRA_CUSTOMER_KEY');
-
-    const credentials: Partial<TebraCredentials> = {};
-    
-    if (username) credentials.username = username;
-    if (password) credentials.password = password;
-    
-    // Build WSDL URL with the customer key if available
-    if (customerKey) {
-      credentials.wsdlUrl = `https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl&customerkey=${customerKey}`;
-    }
-
-    return credentials;
-  } catch (error) {
-    console.warn('Could not retrieve Tebra credentials from secrets service, using environment fallback:', error);
-    return {};
-  }
-};
 
 /**
  * Tebra API service class
@@ -144,7 +117,7 @@ export class TebraApiService {
   ): Promise<TebraApiService> {
     // Get credentials from secrets manager
     const secretsCredentials = await getTebraCredentialsAsync();
-    
+
     // Merge with provided credentials and fallback to env vars
     const finalCredentials: Partial<TebraCredentials> = {
       wsdlUrl: credentials?.wsdlUrl || secretsCredentials.wsdlUrl || getEnvVar('VITE_TEBRA_WSDL_URL', ''),
@@ -267,16 +240,16 @@ export class TebraApiService {
   async getAppointments(fromDate: Date, toDate: Date): Promise<TebraAppointment[]> {
     return this.executeRateLimitedCall('getAppointments', async () => {
       console.log(`Getting appointments from ${fromDate.toISOString()} to ${toDate.toISOString()}`);
-      
+
       // Format dates for Tebra API
       const fromDateStr = fromDate.toISOString().split('T')[0];
       const toDateStr = toDate.toISOString().split('T')[0];
-      
+
       // Use the SOAP client's getAppointments method (which includes rate limiting)
       const appointments = await this.soapClient.getAppointments(fromDateStr, toDateStr) as SoapAppointmentResponse[];
-      
+
       console.log(`Retrieved ${appointments.length} appointments from Tebra API`);
-      
+
       // Transform response to our format
       return appointments.map((apt: SoapAppointmentResponse) => ({
         AppointmentId: apt.AppointmentId || apt.Id || '',
@@ -296,14 +269,14 @@ export class TebraApiService {
   async getPatients(patientIds: string[]): Promise<TebraPatient[]> {
     try {
       console.log(`Getting patients for IDs: ${patientIds.join(', ')}`);
-      
+
       const patients: TebraPatient[] = [];
-      
+
       // Get patient details for each ID (rate limiting is handled in the SOAP client)
       for (const patientId of patientIds) {
         try {
           const result = await this.soapClient.getPatientById(patientId);
-          
+
           if (result) {
             // Type assertion for the SOAP response
             const patientData = result as Record<string, unknown>;
@@ -335,7 +308,7 @@ export class TebraApiService {
           console.error(`Failed to get patient ${patientId}:`, error);
         }
       }
-      
+
       return patients;
     } catch (error) {
       console.error('Failed to get patients:', error);
@@ -346,19 +319,19 @@ export class TebraApiService {
   async getProviders(): Promise<TebraProvider[]> {
     try {
       console.log('Getting providers...');
-      
+
       // Use the SOAP client's getProviders method (which includes rate limiting)
       const providers = await this.soapClient.getProviders() as SoapProviderResponse[];
-      
+
       console.log(`Retrieved ${providers.length} providers from Tebra API`);
-      
+
       return providers.map((provider: SoapProviderResponse) => ({
         ProviderId: provider.ProviderId || provider.Id || '',
         FirstName: provider.FirstName || '',
         LastName: provider.LastName || '',
         Title: provider.Title || 'Dr.'
       }));
-      
+
     } catch (error) {
       console.error('Failed to get providers:', error);
       // Return a default provider as fallback
@@ -377,12 +350,12 @@ export class TebraApiService {
   async getAllPatients(): Promise<TebraPatient[]> {
     try {
       console.log('Getting all patients...');
-      
+
       // Use the SOAP client's getAllPatients method (which includes rate limiting)
       const patients = await this.soapClient.getAllPatients() as SoapPatientResponse[];
-      
+
       console.log(`Retrieved ${patients.length} patients from Tebra API`);
-      
+
       return patients.map((patient: SoapPatientResponse) => ({
         PatientId: patient.PatientId || patient.Id || '',
         FirstName: patient.FirstName || '',
@@ -406,7 +379,7 @@ export class TebraApiService {
         CreatedAt: new Date().toISOString(),
         UpdatedAt: new Date().toISOString()
       }));
-      
+
     } catch (error) {
       console.error('Failed to get all patients:', error);
       return [];

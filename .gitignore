@@ -5,6 +5,16 @@
 !.env.sample
 .envrc
 .env.local
+env-example
+-env-example
+src/**/env*.ts
+src/**/env*.js
+src/**/env*.d.ts
+src/**/__tests__/env*.test.ts
+src/**/__mocks__/env*.ts
+src/**/envUtils.ts
+src/vite-env.d.ts
+scripts/setup-env.sh
 
 # ===== Git Internals =====
 .git/info/refs
@@ -138,3 +148,13 @@ src/vite-env.d.ts
 !tebra-tools/scripts/rotate-username-password.sh
 !tebra-tools/scripts/git-cleanup.sh
 !.gitignore
+
+# ===== Sensitive Data Patterns =====
+# Patient identifiers
+*MRN[0-9]*
+*DOB_[0-9]*
+*SSN*
+*patient*id*[0-9]*
+*patientId*
+*patient_id*
+*patient-id*

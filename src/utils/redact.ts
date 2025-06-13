@@ -29,7 +29,7 @@ export function redactSecrets(input: string): string {
     // Redact username patterns when followed by sensitive context
     .replace(/(username[=:\s]+)([^\s&,]+)(\s*[,&]\s*password)/gi, '$1[REDACTED]$3')
     // Redact URLs with embedded credentials
-    .replace(/(https?:\/\/)[^:\/\s]+:[^@\/\s]+@/gi, '$1[REDACTED]:[REDACTED]@');
+    .replace(/(https?:\/\/)[^:/\\s]+:[^@/\\s]+@/g, '$1[REDACTED]:[REDACTED]@');
 }
 
 /**

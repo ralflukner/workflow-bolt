@@ -16,7 +16,7 @@ const mockedSoap = soap as unknown as {
 };
 
 describe('TebraSoapClient', () => {
-  const mockPatientResponse = [{ patientId: '123', firstName: 'John', lastName: 'Doe' }];
+  const mockPatientResponse = [{ patientId: 'TEST-PATIENT-001', firstName: 'John', lastName: 'Doe' }];
   const dummyCredentials = {
     wsdlUrl: 'https://example.com/wsdl',
     username: 'test-user',
@@ -40,12 +40,12 @@ describe('TebraSoapClient', () => {
     mockedSoap.createClientAsync.mockResolvedValue(mockClient);
 
     // Act
-    const result = await client.getPatientById('123');
+    const result = await client.getPatientById('TEST-PATIENT-001');
 
     // Assert
     expect(mockedSoap.createClientAsync).toHaveBeenCalled();
     expect(mockClient.setSecurity).toHaveBeenCalled();
-    expect(mockClient.GetPatientAsync).toHaveBeenCalledWith({ patientId: '123' });
+    expect(mockClient.GetPatientAsync).toHaveBeenCalledWith({ patientId: 'TEST-PATIENT-001' });
     expect(result).toEqual(mockPatientResponse[0]);
   });
 
