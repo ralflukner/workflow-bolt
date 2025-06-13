@@ -13,31 +13,11 @@ function getTebraConfig() {
         'customer_key' => getenv('TEBRA_CUSTOMER_KEY') ?: getenv('REACT_APP_TEBRA_CUSTOMER_KEY')
     ];
     
-    // Fallback to hardcoded values for development (replace with your actual values)
-    if (!$config['wsdl_url']) {
-        $config['wsdl_url'] = 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl';
-    }
-    
-    if (!$config['username']) {
-        $config['username'] = 'ZEp7U8-VeHuza@luknerclinic.com';
-    }
-    
-    // Password should be provided via environment or Google Secret Manager
-    if (!$config['password']) {
-        // Try to get from Google Secret Manager if available
-        $config['password'] = getSecretFromGSM('tebra-password') ?: '';
-    }
-    
-    if (!$config['customer_key']) {
-        // Try to get from Google Secret Manager if available
-        $config['customer_key'] = getSecretFromGSM('tebra-customer-key') ?: '';
-    }
-    
-    // Validate required fields
-    $requiredFields = ['wsdl_url', 'username', 'password'];
-    foreach ($requiredFields as $field) {
+    // Validate required configuration
+    $required_fields = ['wsdl_url', 'username', 'password', 'customer_key'];
+    foreach ($required_fields as $field) {
         if (empty($config[$field])) {
-            throw new Exception("Missing required Tebra configuration: $field");
+            die("Error: Missing required configuration: $field\n");
         }
     }
     

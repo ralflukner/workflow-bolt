@@ -1,0 +1,19 @@
+{
+    "name": "luknerclinic/workflow-bolt",
+    "description": "Tebra API integration and workflow automation tools",
+    "type": "project",
+    "require": {
+        "php": "^8.2",
+        "google/cloud-secret-manager": "^1.12",
+        "ext-soap": "*",
+        "ext-openssl": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "TebraTools\\": "tebra-tools/src/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+} 

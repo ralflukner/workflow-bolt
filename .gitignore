@@ -4,6 +4,7 @@
 !.env.example
 !.env.sample
 .envrc
+.env.local
 
 # ===== Credentials and Secrets =====
 # Google Cloud
@@ -28,10 +29,13 @@ apikeys.json
 *.crt
 
 # Tebra specific
-test-tebra.php
-tebra_test.php
-tebra-config.php
+tebra-tools/test-tebra.php
+tebra-tools/test-tebra-env.php
+tebra-tools/check-setup.php
+tebra-tools/debug-proxy-dates.php
 **/tebra-credentials*
+**/tebra-config*
+tebra_test.php
 
 # AWS
 .aws/
@@ -85,6 +89,11 @@ lerna-debug.log*
 
 # ===== OS Generated =====
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 desktop.ini
 
@@ -109,9 +118,19 @@ sensitive-strings.txt
 bfg.jar
 bfg-report/
 
-# ===== Keep These Files =====
+# Test files with environment variables
+src/**/__tests__/envVariables.test.ts
+src/**/__mocks__/env.ts
+src/**/envUtils.ts
+src/vite-env.d.ts
+
 # Security scripts should be tracked
-!security-check.sh
-!rotate-credentials.sh
-!git-cleanup.sh
+!tebra-tools/scripts/security-check-gsm.sh
+!tebra-tools/scripts/rotate-username-password.sh
+!tebra-tools/scripts/git-cleanup.sh
+
+# ===== Keep These Files =====
+!tebra-tools/scripts/security-check-gsm.sh
+!tebra-tools/scripts/rotate-username-password.sh
+!tebra-tools/scripts/git-cleanup.sh
 !.gitignore

@@ -16,6 +16,10 @@
 const { execSync } = require('child_process');
 const path = require('path');
 
+// Get the directory where the script is located
+const SCRIPT_DIR = __dirname;
+const PROJECT_ROOT = path.resolve(SCRIPT_DIR, '..');
+
 // Load environment variables from .env.local if it exists
 try {
   require('dotenv').config({ path: '.env.local' });
@@ -61,11 +65,13 @@ try {
       break;
       
     case 'tebra':
-      command = `node -e "
-        require('./src/utils/test-integration.ts').testTebraOperations()
-          .then(() => console.log('\\n✅ Tebra test completed'))
-          .catch(err => { console.error('❌ Test failed:', err); process.exit(1); });
-      "`;
+      console.log('\nTesting Tebra operations...');
+      require('../src/utils/test-integration.ts').testTebraOperations()
+          .then(() => console.log('\n✅ Tebra test completed'))
+          .catch(error => {
+              console.error('\n❌ Tebra test failed:', error);
+              process.exit(1);
+          });
       break;
       
     case 'all':
@@ -92,8 +98,8 @@ try {
   console.error('\n💥 Integration test runner failed:', error.message);
   console.log('\nTroubleshooting tips:');
   console.log('1. Ensure your .env.local file has the correct Tebra credentials');
-  console.log('2. Make sure Firebase is configured');
-  console.log('3. Check that you have network connectivity');
+  console.log('2. Run `npm install` to install dependencies');
+  console.log('3. Run `npm run build` to build the project');
   console.log('4. Verify that the Tebra EHR service is accessible');
   process.exit(1);
 } 

@@ -690,7 +690,7 @@ firebase deploy --only functions
 echo -n "https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl" | \
   gcloud secrets create tebra-wsdl-url --data-file=-
 
-echo -n "ZEp7U8-VeHuza@luknerclinic.com" | \
+echo -n "your-username@example.com" | \
   gcloud secrets create tebra-username --data-file=-
 
 echo -n "your-password" | \

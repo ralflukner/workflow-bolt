@@ -218,7 +218,7 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
 
     it('should properly redact multiple sensitive values', () => {
       const username = 'tebra-user';
-      const password = 'secret-pass-456';
+      const password = 'mock-test-password-' + Math.random().toString(36).slice(2);
       const apiKey = 'api-key-789';
       
       const message = `Connecting to Tebra with user: ${username}, password: ${password}, key: ${apiKey}`;
