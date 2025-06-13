@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const { GoogleAuth } = require('google-auth-library');
+const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 
 class TebraProxyClient {
   constructor() {
@@ -8,43 +9,61 @@ class TebraProxyClient {
     this.proxyApiKey = null;
     this.auth = null;
     this.authClient = null;
+    this.secretClient = new SecretManagerServiceClient();
+    this.projectId = 'luknerlumina-firebase';
+  }
+
+  async getSecret(secretName) {
+    try {
+      const [version] = await this.secretClient.accessSecretVersion({
+        name: `projects/${this.projectId}/secrets/${secretName}/versions/latest`,
+      });
+      return version.payload?.data?.toString() || '';
+    } catch (error) {
+      console.error(`Error reading secret ${secretName}:`, error);
+      throw error;
+    }
   }
 
   async initialize() {
     if (this.initialized) return;
 
-    // Use environment variables for Firebase Functions v2
-    this.proxyUrl = process.env.TEBRA_PROXY_URL;
-    this.proxyApiKey = process.env.TEBRA_PROXY_API_KEY;
-
-    // Validate proxy URL
-    if (this.proxyUrl) {
-      try {
-        const url = new URL(this.proxyUrl);
-        if (url.protocol !== 'https:') {
-          throw new Error('Tebra proxy URL must use HTTPS');
-        }
-      } catch (error) {
-        throw new Error('Invalid Tebra proxy URL format');
-      }
-    }
-
-    if (!this.proxyUrl || !this.proxyApiKey) {
-      throw new Error('Missing Tebra proxy configuration in environment variables');
-    }
-
-    // Initialize Google Auth for Cloud Run authentication
     try {
+      // Get Tebra proxy configuration from Google Secret Manager
+      console.log('Loading Tebra proxy configuration from Google Secret Manager...');
+      
+      // Check if we have the proxy URL in GSM, otherwise use the known URL
+      try {
+        this.proxyUrl = await this.getSecret('tebra-proxy-url');
+      } catch (error) {
+        console.log('tebra-proxy-url not found in GSM, using default URL');
+        this.proxyUrl = 'https://tebra-proxy-623450773640.us-central1.run.app';
+      }
+
+      // Get the API key from GSM
+      this.proxyApiKey = await this.getSecret('tebra-proxy-api-key');
+
+      if (!this.proxyUrl || !this.proxyApiKey) {
+        throw new Error('Missing Tebra proxy configuration from Google Secret Manager');
+      }
+
+      // Validate proxy URL
+      const url = new URL(this.proxyUrl);
+      if (url.protocol !== 'https:') {
+        throw new Error('Tebra proxy URL must use HTTPS');
+      }
+
+      // Initialize Google Auth for Cloud Run authentication
       this.auth = new GoogleAuth();
       this.authClient = await this.auth.getIdTokenClient(this.proxyUrl);
       console.log('Google Auth initialized for Cloud Run authentication');
-    } catch (error) {
-      console.error('Failed to initialize Google Auth:', error);
-      throw new Error('Failed to initialize Google Auth for Cloud Run');
-    }
 
-    this.initialized = true;
-    console.log('Tebra proxy client initialized successfully with Google Auth');
+      this.initialized = true;
+      console.log('Tebra proxy client initialized successfully with GSM and Google Auth');
+    } catch (error) {
+      console.error('Failed to initialize Tebra proxy client:', error);
+      throw new Error(`Failed to initialize Tebra proxy client: ${error.message}`);
+    }
   }
 
   async makeRequest(endpoint, method = 'GET', data = null) {
