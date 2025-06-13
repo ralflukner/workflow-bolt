@@ -1,0 +1,11 @@
+.git
+.gitignore
+*.md
+.env
+.env.*
+vendor/
+composer.lock
+tests/
+test-*.php
+*.log
+.DS_Store 

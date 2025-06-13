@@ -18,4 +18,4 @@ RUN npm run build
 EXPOSE 8080
 
 # Start the service
-CMD [ "npm", "start" ] 
+CMD [ "npm", "start" ] # Build: Fri Jun 13 01:07:41 CDT 2025

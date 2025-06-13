@@ -1,0 +1,9 @@
+{
+    "name": "lukner-clinic/tebra-php-api",
+    "description": "PHP SOAP bridge for Tebra API",
+    "require": {
+        "php": ">=8.0",
+        "ext-soap": "",
+        "ext-curl": ""
+    }
+} 
