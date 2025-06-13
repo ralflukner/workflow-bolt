@@ -1,4 +1,4 @@
-#!/bin/bash
+  #!/bin/bash
 
 # This script ensures that NVM (Node Version Manager) is properly loaded
 # and that node and npm are available in the PATH.

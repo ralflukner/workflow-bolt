@@ -11,14 +11,14 @@ Comprehensive monitoring and alerting has been configured for the Tebra SOAP pro
 - **Policy ID**: `18129142588318108102`
 - **Trigger**: P95 latency > 10 seconds for 5 minutes
 - **Metric**: `run.googleapis.com/request_latencies`
-- **Email**: <lukner@luknerclinic.com>
+- **Email**: [lukner@luknerclinic.com](mailto:lukner@luknerclinic.com)
 
 ### 2. High Error Count Alert
 
 - **Policy ID**: `9158751147478329485`
 - **Trigger**: More than 2 5xx errors per minute for 5 minutes
 - **Metric**: `run.googleapis.com/request_count` with `response_code_class="5xx"`
-- **Email**: <lukner@luknerclinic.com>
+- **Email**: [lukner@luknerclinic.com](mailto:lukner@luknerclinic.com)
 
 ### 3. Service Availability Alert
 
