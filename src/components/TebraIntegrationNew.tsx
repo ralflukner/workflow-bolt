@@ -64,6 +64,7 @@ const TebraIntegration: React.FC = () => {
     
     try {
       // Call Firebase Function instead of direct API service
+      console.log('🔄 Initializing Firebase for Tebra connection test...');
       const { httpsCallable } = await import('firebase/functions');
       const { initializeFirebase, functions } = await import('../config/firebase');
       await initializeFirebase();
@@ -72,9 +73,11 @@ const TebraIntegration: React.FC = () => {
         throw new Error('Firebase Functions not initialized');
       }
       
+      console.log('🔄 Calling tebraTestConnection Firebase Function...');
       const tebraTestConnection = httpsCallable(functions, 'tebraTestConnection');
       
       const result = await tebraTestConnection();
+      console.log('📨 Firebase Function response:', result);
       const connected = result.data?.success || false;
       
       setIsConnected(connected);

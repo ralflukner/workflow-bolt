@@ -22,6 +22,17 @@ export async function initializeFirebase(): Promise<void> {
     auth = getAuth(existingApp);
     functions = getFunctions(existingApp);
     analytics = getAnalytics(existingApp);
+    
+    // Configure emulators in development (temporarily disabled due to CORS issues)
+    // if (process.env.NODE_ENV === 'development') {
+    //   const { connectFunctionsEmulator } = await import('firebase/functions');
+    //   try {
+    //     connectFunctionsEmulator(functions, 'localhost', 5002);
+    //     console.log('🔧 Connected to Functions emulator');
+    //   } catch (error) {
+    //     console.warn('Functions emulator already connected or not available:', error);
+    //   }
+    // }
     return;
   }
 
@@ -31,6 +42,18 @@ export async function initializeFirebase(): Promise<void> {
     auth = getAuth(app);
     functions = getFunctions(app);
     analytics = getAnalytics(app);
+    
+    // Configure emulators in development (temporarily disabled due to CORS issues)
+    // if (process.env.NODE_ENV === 'development') {
+    //   const { connectFunctionsEmulator } = await import('firebase/functions');
+    //   try {
+    //     connectFunctionsEmulator(functions, 'localhost', 5002);
+    //     console.log('🔧 Connected to Functions emulator');
+    //   } catch (error) {
+    //     console.warn('Functions emulator already connected or not available:', error);
+    //   }
+    // }
+    
     console.log('✅ Firebase initialized successfully');
   } catch (error) {
     console.error('❌ Firebase initialization failed:', error);
