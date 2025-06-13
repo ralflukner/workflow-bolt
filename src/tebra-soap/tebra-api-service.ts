@@ -166,13 +166,12 @@ export class TebraApiService {
     credentials?: Partial<TebraCredentials>,
     dataTransformer: TebraDataTransformer = new TebraDataTransformer()
   ) {
-    // Try to get credentials from the secret service first, then fallback to env vars
-    const secretsCredentials = getTebraCredentialsSync();
-    
+    // Use credentials passed in or fallback to environment variables
+    // Note: Credentials should be retrieved from Firebase Functions/GSM via backend
     const config: EnvConfig = {
-      wsdlUrl: credentials?.wsdlUrl || secretsCredentials.wsdlUrl || getEnvVar('REACT_APP_TEBRA_WSDL_URL', ''),
-      username: credentials?.username || secretsCredentials.username || getEnvVar('REACT_APP_TEBRA_USERNAME', ''),
-      password: credentials?.password || secretsCredentials.password || getEnvVar('REACT_APP_TEBRA_PASSWORD', '')
+      wsdlUrl: credentials?.wsdlUrl || getEnvVar('REACT_APP_TEBRA_WSDL_URL', ''),
+      username: credentials?.username || getEnvVar('REACT_APP_TEBRA_USERNAME', ''),
+      password: credentials?.password || getEnvVar('REACT_APP_TEBRA_PASSWORD', '')
     };
 
     this.validateConfig(config);
