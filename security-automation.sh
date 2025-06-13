@@ -64,7 +64,7 @@ run_security_dashboard() {
     # 1. Credential rotation status
     echo "\n🔄 CREDENTIAL ROTATION STATUS"
     if [[ -f "$TOOLS_ROOT/credential-rotation.log" ]]; then
-        local last_rotation=$(tail -n 1 "$TOOLS_ROOT/credential-rotation.log" | awk '{print $1" "$2}')
+        local last_rotation=$(tail -n 1 "$TOOLS_ROOT/credential-rotation.log" | awk '{print $1" "$2}' | tr -d '[]')
         local days_since=$(( ($(date +%s) - $(date_or_die -d "$last_rotation" +%s)) / 86400 ))
         local days_until_next=$((90 - days_since))
         if [[ $days_until_next -le 7 ]]; then
