@@ -94,6 +94,14 @@ export class TebraSoapClient {
   }
 
   /**
+   * Gets the credentials
+   * @returns {TebraCredentials} Tebra API credentials
+   */
+  public getCredentials(): TebraCredentials {
+    return this.credentials;
+  }
+
+  /**
    * Initializes the SOAP client
    * @returns {Promise<void>}
    * @throws {Error} If client initialization fails

@@ -99,6 +99,7 @@ Use the manual refresh button in the MonitoringStatus component or directly test
 
 ## Troubleshooting
 
+
 ### "Tebra Service Offline" in Dashboard
 **Issue**: MonitoringStatus shows service as offline
 **Cause**: Missing or incorrect `VITE_TEBRA_PROXY_API_KEY` environment variable
@@ -116,7 +117,7 @@ Use the manual refresh button in the MonitoringStatus component or directly test
 
 ```bash
 curl -H "X-API-Key: UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=" \
-  [https://tebra-proxy-623450773640.us-central1.run.app/health](https://tebra-proxy-623450773640.us-central1.run.app/health)
+  https://tebra-proxy-623450773640.us-central1.run.app/health
 ```
 
 ### Verify Appointment Retrieval
@@ -125,7 +126,7 @@ curl -H "X-API-Key: UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=" \
 curl -X POST -H "Content-Type: application/json" \
   -H "X-API-Key: UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=" \
   -d '{"fromDate": "2025-06-10", "toDate": "2025-06-10"}' \
-  [https://tebra-proxy-623450773640.us-central1.run.app/appointments](https://tebra-proxy-623450773640.us-central1.run.app/appointments)
+  https://tebra-proxy-623450773640.us-central1.run.app/appointments
 ```
 
 ## Environment Configuration
