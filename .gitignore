@@ -6,6 +6,10 @@
 .envrc
 .env.local
 
+# ===== Git Internals =====
+.git/info/refs
+.git/info/
+
 # ===== Credentials and Secrets =====
 # Google Cloud
 **/credentials.json

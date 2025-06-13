@@ -1,21 +1,28 @@
-# Use Node.js LTS version
-FROM node:20-slim
+FROM php:8.2-apache
 
-# Create app directory
-WORKDIR /usr/src/app
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libxml2-dev \
+    gettext-base \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install app dependencies
-COPY package*.json ./
-RUN npm ci --only=production
+# Install PHP extensions
+RUN docker-php-ext-install soap
 
-# Copy app source
-COPY . .
+# Copy Apache configuration templates
+COPY docker/000-default.conf.template /etc/apache2/sites-available/000-default.conf.template
+COPY docker/ports.conf.template /etc/apache2/ports.conf.template
 
-# Build TypeScript code
-RUN npm run build
+# Copy application files
+COPY . /var/www/
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
-# Expose port
+# Set permissions
+RUN chown -R www-data:www-data /var/www \
+    && chmod +x /usr/local/bin/entrypoint.sh
+
+# Expose port (will be overridden by Cloud Run)
 EXPOSE 8080
 
-# Start the service
-CMD [ "npm", "start" ] # Build: Fri Jun 13 01:07:41 CDT 2025
+# Use custom entrypoint
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -21,18 +21,24 @@ create_env_file() {
   echo -e "${YELLOW}Creating .env.local file...${NC}"
   
   cat > .env.local << EOL
-# Tebra EHR Integration
-REACT_APP_TEBRA_WSDL_URL="https://api.tebra.com/wsdl"
-REACT_APP_TEBRA_USERNAME="your-username"
-REACT_APP_TEBRA_PASSWORD="your-password"
+# Tebra API Configuration
+VITE_TEBRA_WSDL_URL="https://api.tebra.com/wsdl"
+VITE_TEBRA_USERNAME="your-username"
+VITE_TEBRA_PASSWORD="your-password"
+VITE_TEBRA_CUSTOMER_KEY="your-customer-key"
 
 # Firebase Configuration
-VITE_FIREBASE_PROJECT_ID="your-project-id"
 VITE_FIREBASE_API_KEY="your-api-key"
-VITE_FIREBASE_AUTH_DOMAIN="your-auth-domain"
-VITE_FIREBASE_STORAGE_BUCKET="your-storage-bucket"
-VITE_FIREBASE_MESSAGING_SENDER_ID="your-messaging-sender-id"
+VITE_FIREBASE_AUTH_DOMAIN="your-project.firebaseapp.com"
+VITE_FIREBASE_PROJECT_ID="your-project-id"
+VITE_FIREBASE_STORAGE_BUCKET="your-project.appspot.com"
+VITE_FIREBASE_MESSAGING_SENDER_ID="your-sender-id"
 VITE_FIREBASE_APP_ID="your-app-id"
+
+# Auth0 Configuration
+VITE_AUTH0_DOMAIN="your-tenant.auth0.com"
+VITE_AUTH0_CLIENT_ID="your-client-id"
+VITE_AUTH0_AUDIENCE="your-api-identifier"
 EOL
 
   echo -e "${GREEN}Created .env.local file. Please update the values with your actual credentials.${NC}"
@@ -89,7 +95,7 @@ check_node_version
 check_npm_version
 
 # Create .env.local file if it doesn't exist
-if ! file_exists .env.local; then
+if [ ! -f .env.local ]; then
   create_env_file
 else
   echo -e "${YELLOW}.env.local file already exists.${NC}"

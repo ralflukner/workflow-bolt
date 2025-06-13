@@ -15,10 +15,11 @@ if ($apiKey !== getenv('INTERNAL_API_KEY')) {
 }
 
 // Get request body
-$requestBody = json_decode(file_get_contents('php://input'), true);
-if (!$requestBody) {
+$rawBody = file_get_contents('php://input');
+$requestBody = json_decode($rawBody, true);
+if (json_last_error() !== JSON_ERROR_NONE) {
     http_response_code(400);
-    echo json_encode(['error' => 'Invalid request body']);
+    echo json_encode(['error' => 'Invalid JSON: ' . json_last_error_msg()]);
     exit;
 }
 
@@ -26,6 +27,31 @@ $action = $requestBody['action'] ?? '';
 $params = $requestBody['params'] ?? [];
 
 try {
+    // Validate required environment variables
+    $requiredEnvVars = [
+        'TEBRA_USERNAME' => 'Tebra username',
+        'TEBRA_PASSWORD' => 'Tebra password',
+        'TEBRA_CUSTOMER_KEY' => 'Tebra customer key',
+        'TEBRA_WSDL_URL' => 'Tebra WSDL URL'
+    ];
+
+    $missingVars = [];
+    foreach ($requiredEnvVars as $var => $description) {
+        $value = getenv($var);
+        if ($value === false || $value === '') {
+            $missingVars[] = $description;
+        }
+    }
+
+    if (!empty($missingVars)) {
+        http_response_code(503);
+        echo json_encode([
+            'error' => 'Service temporarily unavailable',
+            'details' => 'Configuration error: Missing required environment variables'
+        ]);
+        exit;
+    }
+
     $client = new TebraApiClient(
         getenv('TEBRA_USERNAME'),
         getenv('TEBRA_PASSWORD'),
@@ -56,6 +82,7 @@ try {
 
     echo json_encode($result);
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+http_response_code(500);
+error_log($e);                   // server-side
+echo json_encode(['error' => 'Internal server error']);
 } 

@@ -130,7 +130,6 @@ const getTebraCredentialsSync = (): Partial<TebraCredentials> => {
  */
 export class TebraApiService {
   private soapClient: TebraSoapClient;
-  private rateLimiter: TebraRateLimiter;
   private dataTransformer: TebraDataTransformer;
 
   /**
@@ -148,9 +147,9 @@ export class TebraApiService {
     
     // Merge with provided credentials and fallback to env vars
     const finalCredentials: Partial<TebraCredentials> = {
-      wsdlUrl: credentials?.wsdlUrl || secretsCredentials.wsdlUrl || getEnvVar('REACT_APP_TEBRA_WSDL_URL', ''),
-      username: credentials?.username || secretsCredentials.username || getEnvVar('REACT_APP_TEBRA_USERNAME', ''),
-      password: credentials?.password || secretsCredentials.password || getEnvVar('REACT_APP_TEBRA_PASSWORD', '')
+      wsdlUrl: credentials?.wsdlUrl || secretsCredentials.wsdlUrl || getEnvVar('VITE_TEBRA_WSDL_URL', ''),
+      username: credentials?.username || secretsCredentials.username || getEnvVar('VITE_TEBRA_USERNAME', ''),
+      password: credentials?.password || secretsCredentials.password || getEnvVar('VITE_TEBRA_PASSWORD', '')
     };
 
     return new TebraApiService(finalCredentials, dataTransformer);
@@ -169,14 +168,13 @@ export class TebraApiService {
     // Use credentials passed in or fallback to environment variables
     // Note: Credentials should be retrieved from Firebase Functions/GSM via backend
     const config: EnvConfig = {
-      wsdlUrl: credentials?.wsdlUrl || getEnvVar('REACT_APP_TEBRA_WSDL_URL', ''),
-      username: credentials?.username || getEnvVar('REACT_APP_TEBRA_USERNAME', ''),
-      password: credentials?.password || getEnvVar('REACT_APP_TEBRA_PASSWORD', '')
+      wsdlUrl: credentials?.wsdlUrl || getEnvVar('VITE_TEBRA_WSDL_URL', ''),
+      username: credentials?.username || getEnvVar('VITE_TEBRA_USERNAME', ''),
+      password: credentials?.password || getEnvVar('VITE_TEBRA_PASSWORD', '')
     };
 
     this.validateConfig(config);
     this.soapClient = new TebraSoapClient(config);
-    this.rateLimiter = new TebraRateLimiter();
     this.dataTransformer = dataTransformer;
   }
 
@@ -199,23 +197,17 @@ export class TebraApiService {
 
   /**
    * Executes a rate-limited API call
-   * @template T
-   * @param {string} method - API method name
-   * @param {Function} apiCall - API call function
-   * @returns {Promise<T>} API response
-   * @throws {Error} If API call fails
+   * @param {string} method - Method name for rate limiting
+   * @param {() => Promise<T>} apiCall - API call function
+   * @returns {Promise<T>} API call result
    */
   private async executeRateLimitedCall<T>(
     method: string,
     apiCall: () => Promise<T>
   ): Promise<T> {
-    try {
-      await this.rateLimiter.waitForSlot(method);
-      return await apiCall();
-    } catch (error) {
-      console.error(`Failed to execute ${method}:`, error);
-      throw error;
-    }
+    const rateLimiter = this.soapClient.getRateLimiter();
+    await rateLimiter.waitForSlot(method);
+    return apiCall();
   }
 
   /**
@@ -273,7 +265,7 @@ export class TebraApiService {
   }
 
   async getAppointments(fromDate: Date, toDate: Date): Promise<TebraAppointment[]> {
-    try {
+    return this.executeRateLimitedCall('getAppointments', async () => {
       console.log(`Getting appointments from ${fromDate.toISOString()} to ${toDate.toISOString()}`);
       
       // Format dates for Tebra API
@@ -298,12 +290,7 @@ export class TebraApiService {
         CreatedAt: '',
         UpdatedAt: ''
       }));
-      
-    } catch (error) {
-      console.error('Failed to get appointments:', error);
-      // Return an empty array as fallback
-      return [];
-    }
+    });
   }
 
   async getPatients(patientIds: string[]): Promise<TebraPatient[]> {
@@ -426,28 +413,29 @@ export class TebraApiService {
     }
   }
 
-
   /**
-   * Get rate limiter statistics
+   * Gets rate limiter statistics
+   * @returns {Record<string, number>} Rate limiter statistics
    */
   getRateLimiterStats(): Record<string, number> {
-    const rateLimiter = this.soapClient.getRateLimiter();
-    return rateLimiter.getAllRateLimits();
+    return this.soapClient.getRateLimiter().getAllRateLimits();
   }
 
   /**
-   * Check if a specific API method can be called immediately
+   * Checks if a method can be called immediately
+   * @param {string} methodName - Method name to check
+   * @returns {boolean} True if method can be called immediately
    */
   canCallMethodImmediately(methodName: string): boolean {
-    const rateLimiter = this.soapClient.getRateLimiter();
-    return rateLimiter.canCallImmediately(methodName);
+    return this.soapClient.getRateLimiter().canCallImmediately(methodName);
   }
 
   /**
-   * Get remaining wait time for a specific API method
+   * Gets remaining wait time for a method
+   * @param {string} methodName - Method name to check
+   * @returns {number} Remaining wait time in milliseconds
    */
   getRemainingWaitTime(methodName: string): number {
-    const rateLimiter = this.soapClient.getRateLimiter();
-    return rateLimiter.getRemainingWaitTime(methodName);
+    return this.soapClient.getRateLimiter().getRemainingWaitTime(methodName);
   }
 }  

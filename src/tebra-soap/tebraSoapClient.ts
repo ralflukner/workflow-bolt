@@ -63,16 +63,30 @@ export class TebraSoapClient {
   private client: any = null;
   private rateLimiter: TebraRateLimiter;
   private credentials: TebraCredentials;
+  private initializationPromise: Promise<any> | null = null;
 
   /**
    * Gets the SOAP client instance
-   * @returns {any} SOAP client instance
+   * @returns {Promise<any>} SOAP client instance
    */
-  async getClient() {
-    if (this.client == null) {
-      this.client = await this.createClient();
+  async getClient(): Promise<any> {
+    if (this.client) {
+      return this.client;
     }
-    return this.client;
+
+    if (!this.initializationPromise) {
+      this.initializationPromise = this.createClient()
+        .then(client => {
+          this.client = client;
+          return client;
+        })
+        .catch(error => {
+          this.initializationPromise = null; // Reset on error to allow retry
+          throw error;
+        });
+    }
+
+    return this.initializationPromise;
   }
 
   /**
@@ -81,6 +95,7 @@ export class TebraSoapClient {
    */
   setClient(client: any) {
     this.client = client;
+    this.initializationPromise = Promise.resolve(client);
   }
 
   /**
@@ -163,16 +178,38 @@ export class TebraSoapClient {
   /**
    * Searches for patients by last name
    * @param {string} lastName - Last name to search for
-   * @returns {Promise<any[]>} Search results
+   * @returns {Promise<SoapPatientResponse[]>} Search results
    * @throws {Error} If API call fails
    */
-  public async searchPatients(lastName: string): Promise<any[]> {
+  public async searchPatients(lastName: string): Promise<SoapPatientResponse[]> {
     await this.initializeClient();
     await this.rateLimiter.waitForSlot('SearchPatients');
     try {
       const [result] = await this.client.SearchPatientsAsync({ lastName });
-      if (Array.isArray(result.patients)) return result.patients;
-      if (Array.isArray(result)) return result;
+      
+      // Handle different response formats
+      if (result.patients) {
+        // If result.patients is an array, return it
+        if (Array.isArray(result.patients)) {
+          return result.patients;
+        }
+        // If result.patients is a single object, wrap it in an array
+        if (typeof result.patients === 'object') {
+          return [result.patients];
+        }
+      }
+      
+      // If result itself is an array, return it
+      if (Array.isArray(result)) {
+        return result;
+      }
+      
+      // If result is a single object, wrap it in an array
+      if (typeof result === 'object') {
+        return [result];
+      }
+      
+      // If no valid data found, return empty array
       return [];
     } catch (error) {
       console.error('Failed to search patients:', error);

@@ -11,9 +11,41 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
+// Define trusted origins for CORS
+const TRUSTED_ORIGINS = [
+  'https://luknerclinic.com',
+  'https://app.luknerclinic.com',
+  'https://admin.luknerclinic.com',
+  'https://workflow-bolt.web.app',
+  'https://workflow-bolt.firebaseapp.com',
+  // Add local development origins
+  'http://localhost:3000',
+  'http://localhost:5173' // Vite default port
+];
+
+// CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    if (TRUSTED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`Blocked request from untrusted origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 // Initialize Express app
 const app = express();
-app.use(cors({ origin: true }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // ---------------------------------------------

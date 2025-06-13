@@ -4,10 +4,33 @@
  * RESTful API endpoint that bridges HTTP requests to Tebra SOAP API
  */
 
+// List of trusted origins that can access the API
+$trustedOrigins = [
+    'https://your-production-domain.com',
+    'https://staging.your-domain.com',
+    'https://localhost:3000',  // For local development
+];
+
+// Get the requesting origin
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+// Check if the origin is trusted
+if (in_array($origin, $trustedOrigins)) {
+    header("Access-Control-Allow-Origin: $origin");
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization');
+    header('Access-Control-Max-Age: 86400'); // 24 hours
+} else {
+    // For non-CORS requests or untrusted origins, only allow server-to-server calls
+    header('Access-Control-Allow-Origin: null');
+}
+
+// Additional security headers
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);

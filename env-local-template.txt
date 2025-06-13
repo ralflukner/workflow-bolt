@@ -2,13 +2,24 @@
 # Copy this content to .env.local and update with your actual credentials
 # .env.local is gitignored and will not be committed to version control
 
-# Tebra EHR Credentials (REQUIRED - Update with actual values)
-REACT_APP_TEBRA_USERNAME="work-flow@luknerclinic.com"
-REACT_APP_TEBRA_PASSWORD="s?3dVK=iXBj73*i$%5i8/5<4xtiP9?"
+# Tebra API Configuration
+VITE_TEBRA_USERNAME="work-flow@luknerclinic.com"
+VITE_TEBRA_PASSWORD="s?3dVK=iXBj73*i$%5i8/5<4xtiP9?"
+VITE_TEBRA_WSDL_URL="https://api.tebra.com/wsdl"
+VITE_TEBRA_CUSTOMER_KEY="your-customer-key"
 
-# Optional: Override Auth0 settings for local development
-# VITE_AUTH0_DOMAIN="your-local-auth0-domain.auth0.com"
-# VITE_AUTH0_CLIENT_ID="your-local-client-id"
+# Firebase Configuration
+VITE_FIREBASE_API_KEY="your-api-key"
+VITE_FIREBASE_AUTH_DOMAIN="your-project.firebaseapp.com"
+VITE_FIREBASE_PROJECT_ID="your-project-id"
+VITE_FIREBASE_STORAGE_BUCKET="your-project.appspot.com"
+VITE_FIREBASE_MESSAGING_SENDER_ID="your-sender-id"
+VITE_FIREBASE_APP_ID="your-app-id"
+
+# Auth0 Configuration
+VITE_AUTH0_DOMAIN="your-tenant.auth0.com"
+VITE_AUTH0_CLIENT_ID="your-client-id"
+VITE_AUTH0_AUDIENCE="your-api-identifier"
 
 # Setup Instructions:
 # 1. Copy this file to .env.local:

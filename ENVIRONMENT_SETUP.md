@@ -47,9 +47,9 @@ cp .env-example .env.local
 
 ```env
 # Tebra EHR Integration
-REACT_APP_TEBRA_WSDL_URL="https://api.tebra.com/wsdl"
-REACT_APP_TEBRA_USERNAME="your-username"
-REACT_APP_TEBRA_PASSWORD="your-password"
+VITE_TEBRA_WSDL_URL="https://api.tebra.com/wsdl"
+VITE_TEBRA_USERNAME="your-username"
+VITE_TEBRA_PASSWORD="your-password"
 
 # Firebase Configuration
 VITE_FIREBASE_PROJECT_ID="your-project-id"

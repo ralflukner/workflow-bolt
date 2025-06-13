@@ -13,17 +13,18 @@ const TebraIntegration: React.FC = () => {
   const [integrationService, setIntegrationService] = useState<TebraIntegrationService | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
 
-  // Tebra credentials - SECURE IMPLEMENTATION
-  const tebraCredentials: TebraCredentials = {
-    username: process.env.REACT_APP_TEBRA_USERNAME || '',
-    password: process.env.REACT_APP_TEBRA_PASSWORD || '',
-    wsdlUrl: process.env.REACT_APP_TEBRA_WSDL_URL || ''
-  };
+  const [credentials, setCredentials] = useState<TebraCredentials>({
+    username: process.env.VITE_TEBRA_USERNAME || '',
+    password: process.env.VITE_TEBRA_PASSWORD || '',
+    wsdlUrl: process.env.VITE_TEBRA_WSDL_URL || ''
+  });
 
-  // Validate credentials are available
-  const hasValidCredentials = tebraCredentials.username && 
-                              tebraCredentials.password && 
-                              tebraCredentials.wsdlUrl;
+  useEffect(() => {
+    // Check if credentials are properly configured
+    if (!credentials.username || !credentials.password || !credentials.wsdlUrl) {
+      console.warn('Tebra credentials missing. Please set VITE_TEBRA_USERNAME, VITE_TEBRA_PASSWORD, and VITE_TEBRA_WSDL_URL in .env.local');
+    }
+  }, [credentials]);
 
   useEffect(() => {
     // Set default date to current time
@@ -36,24 +37,24 @@ const TebraIntegration: React.FC = () => {
     const initializeService = async () => {
       try {
         // Check if credentials are available
-        if (!hasValidCredentials) {
+        if (!credentials.username || !credentials.password || !credentials.wsdlUrl) {
           setStatusMessage('Tebra credentials not configured - environment variables missing');
-          console.warn('Tebra credentials missing. Please set REACT_APP_TEBRA_USERNAME, REACT_APP_TEBRA_PASSWORD, and REACT_APP_TEBRA_WSDL_URL in .env.local');
+          console.warn('Tebra credentials missing. Please set VITE_TEBRA_USERNAME, VITE_TEBRA_PASSWORD, and VITE_TEBRA_WSDL_URL in .env.local');
           setIsConnected(false);
           return;
         }
         
         // Validate credential format
-        if (tebraCredentials.username.trim() === '' || 
-            tebraCredentials.password.trim() === '' || 
-            tebraCredentials.wsdlUrl.trim() === '') {
+        if (credentials.username.trim() === '' || 
+            credentials.password.trim() === '' || 
+            credentials.wsdlUrl.trim() === '') {
           setStatusMessage('Tebra credentials are invalid - check environment variables');
           console.warn('Tebra credentials are empty or invalid. Please check your environment variables.');
           setIsConnected(false);
           return;
         }
 
-        const config = createTebraConfig(tebraCredentials, {
+        const config = createTebraConfig(credentials, {
           syncInterval: 30, // 30 minutes
           lookAheadDays: 7, // 1 week ahead
           autoSync: false, // Manual sync only
@@ -233,7 +234,7 @@ const TebraIntegration: React.FC = () => {
         <div className="bg-gray-700 rounded-lg p-3">
           <h4 className="text-white font-medium mb-2">Connection Info</h4>
           <div className="text-gray-300 text-sm space-y-1">
-            <p>User: {tebraCredentials.username ? '***@luknerclinic.com' : 'Not configured'}</p>
+            <p>User: {credentials.username ? '***@luknerclinic.com' : 'Not configured'}</p>
             <p>Status: {isConnected ? 'API Connected' : 'Using Fallback Data'}</p>
             <p>Current Mode: {timeMode.simulated ? 'Simulated Time' : 'Real Time'}</p>
           </div>

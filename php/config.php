@@ -7,10 +7,10 @@
 function getTebraConfig() {
     // Try to get from environment variables first
     $config = [
-        'wsdl_url' => getenv('TEBRA_WSDL_URL') ?: getenv('REACT_APP_TEBRA_WSDL_URL'),
-        'username' => getenv('TEBRA_USERNAME') ?: getenv('REACT_APP_TEBRA_USERNAME'),
-        'password' => getenv('TEBRA_PASSWORD') ?: getenv('REACT_APP_TEBRA_PASSWORD'),
-        'customer_key' => getenv('TEBRA_CUSTOMER_KEY') ?: getenv('REACT_APP_TEBRA_CUSTOMER_KEY')
+        'wsdl_url' => getenv('TEBRA_WSDL_URL') ?: getenv('VITE_TEBRA_WSDL_URL') ?: getenv('REACT_APP_TEBRA_WSDL_URL'),
+        'username' => getenv('TEBRA_USERNAME') ?: getenv('VITE_TEBRA_USERNAME') ?: getenv('REACT_APP_TEBRA_USERNAME'),
+        'password' => getenv('TEBRA_PASSWORD') ?: getenv('VITE_TEBRA_PASSWORD') ?: getenv('REACT_APP_TEBRA_PASSWORD'),
+        'customer_key' => getenv('TEBRA_CUSTOMER_KEY') ?: getenv('VITE_TEBRA_CUSTOMER_KEY') ?: getenv('REACT_APP_TEBRA_CUSTOMER_KEY')
     ];
     
     // Validate required configuration
@@ -71,5 +71,27 @@ function getEnvVar($key, $default = null) {
     $value = getenv($key);
     return $value !== false ? $value : $default;
 }
+
+return [
+    'tebra' => [
+        'wsdl_url' => getenv('TEBRA_WSDL_URL') ?: getenv('VITE_TEBRA_WSDL_URL') ?: getenv('REACT_APP_TEBRA_WSDL_URL'),
+        'username' => getenv('TEBRA_USERNAME') ?: getenv('VITE_TEBRA_USERNAME') ?: getenv('REACT_APP_TEBRA_USERNAME'),
+        'password' => getenv('TEBRA_PASSWORD') ?: getenv('VITE_TEBRA_PASSWORD') ?: getenv('REACT_APP_TEBRA_PASSWORD'),
+        'customer_key' => getenv('TEBRA_CUSTOMER_KEY') ?: getenv('VITE_TEBRA_CUSTOMER_KEY') ?: getenv('REACT_APP_TEBRA_CUSTOMER_KEY')
+    ],
+    'firebase' => [
+        'api_key' => getenv('VITE_FIREBASE_API_KEY'),
+        'auth_domain' => getenv('VITE_FIREBASE_AUTH_DOMAIN'),
+        'project_id' => getenv('VITE_FIREBASE_PROJECT_ID'),
+        'storage_bucket' => getenv('VITE_FIREBASE_STORAGE_BUCKET'),
+        'messaging_sender_id' => getenv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
+        'app_id' => getenv('VITE_FIREBASE_APP_ID')
+    ],
+    'auth0' => [
+        'domain' => getenv('VITE_AUTH0_DOMAIN'),
+        'client_id' => getenv('VITE_AUTH0_CLIENT_ID'),
+        'audience' => getenv('VITE_AUTH0_AUDIENCE')
+    ]
+];
 
 ?>
