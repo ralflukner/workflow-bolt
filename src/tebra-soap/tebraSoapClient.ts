@@ -325,12 +325,11 @@ export class TebraSoapClient {
   }
 }
 
-// Create a singleton instance with environment variables
-// Use empty credentials for testing - actual credentials will be provided when used
-const credentials: TebraCredentials = {
-  wsdlUrl: process.env.REACT_APP_TEBRA_WSDL_URL || '',
-  username: process.env.REACT_APP_TEBRA_USERNAME || '',
-  password: process.env.REACT_APP_TEBRA_PASSWORD || ''
-};
-
+// Singleton instance creation commented out for now
+// Actual credentials will be provided when used
+// const credentials: TebraCredentials = {
+//   wsdlUrl: process.env.REACT_APP_TEBRA_WSDL_URL || '',
+//   username: process.env.REACT_APP_TEBRA_USERNAME || '',
+//   password: process.env.REACT_APP_TEBRA_PASSWORD || ''
+// };
 // export const tebraSoapClient = new TebraSoapClient(credentials);
