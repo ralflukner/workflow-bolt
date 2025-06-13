@@ -75,7 +75,8 @@ const TebraIntegration: React.FC = () => {
     } catch (error) {
       console.error('Connection test error:', error);
       setIsConnected(false);
-      setStatusMessage('❌ Connection test failed');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setStatusMessage(`❌ Connection test failed: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
