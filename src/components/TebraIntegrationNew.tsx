@@ -63,14 +63,22 @@ const TebraIntegration: React.FC = () => {
     setStatusMessage('Testing Tebra API connection...');
     
     try {
-      const connected = await tebraApiService.testConnection();
+      // Call Firebase Function instead of direct API service
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('../firebase/firebase');
+      const tebraTestConnection = httpsCallable(functions, 'tebraTestConnection');
+      
+      const result = await tebraTestConnection();
+      const connected = result.data?.success || false;
+      
       setIsConnected(connected);
       setConnectionTested(true);
       
       if (connected) {
         setStatusMessage('✅ Connected to Tebra API via Firebase Functions');
       } else {
-        setStatusMessage('❌ Failed to connect to Tebra API. Check configuration.');
+        const errorMessage = result.data?.message || 'Check configuration';
+        setStatusMessage(`❌ Failed to connect to Tebra API. ${errorMessage}`);
       }
     } catch (error) {
       console.error('Connection test error:', error);
