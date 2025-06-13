@@ -340,4 +340,4 @@ export class TebraSoapClient {
 
 // Singleton instance creation commented out for now
 // Actual credentials will be provided when used
-// export const tebraSoapClient = new TebraSoapClient(credentials);
+// export const tebraSoapClient = new TebraSoapClient(/* credentials */);
