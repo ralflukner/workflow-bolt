@@ -147,6 +147,9 @@ FOUND_ISSUES=0
 CURRENT_CRED_ISSUES=0
 OLD_CRED_ISSUES=0
 
+# Track count of sensitive files found (initially 0 to avoid unbound variable errors when using `set -u` in CI)
+TRACKED_SENSITIVE=0
+
 # Check current working directory for CURRENT credentials
 if [ ${#PATTERNS[@]} -gt 0 ]; then
     echo -e "\n1. Checking working directory for CURRENT credentials..."
@@ -301,6 +304,7 @@ for file in "${SENSITIVE_FILES[@]}"; do
     if git ls-files "$file" 2>/dev/null | grep -v "env-example" | grep -v "env.example" | grep -v "env-example.txt" > /dev/null; then
         echo "⚠️  WARNING: Sensitive file tracked in Git: $file"
         FOUND_ISSUES=$((FOUND_ISSUES + 1))
+        TRACKED_SENSITIVE=$((TRACKED_SENSITIVE + 1))
     fi
 done
 

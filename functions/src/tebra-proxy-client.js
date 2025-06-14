@@ -14,33 +14,34 @@ class TebraProxyClient {
   async initialize() {
     if (this.initialized) return;
 
-    try {
-      // Get configuration from Firebase Functions config
-      const config = functions.config().tebra;
-      if (!config?.cloud_run_url || !config?.internal_api_key) {
-        throw new Error('Missing Tebra Cloud Run configuration in Firebase Functions config');
-      }
+    // 1️⃣  New preferred path: env vars
+    this.cloudRunUrl     = process.env.TEBRA_CLOUD_RUN_URL;
+    this.internalApiKey  = process.env.TEBRA_INTERNAL_API_KEY;
 
-      this.cloudRunUrl = config.cloud_run_url;
-      this.internalApiKey = config.internal_api_key;
-
-      // Validate Cloud Run URL
-      const url = new URL(this.cloudRunUrl);
-      if (url.protocol !== 'https:') {
-        throw new Error('Tebra Cloud Run URL must use HTTPS');
-      }
-
-      // Initialize Google Auth for Cloud Run authentication
-      this.auth = new GoogleAuth();
-      this.authClient = await this.auth.getIdTokenClient(this.cloudRunUrl);
-      console.log('Google Auth initialized for Cloud Run authentication');
-
-      this.initialized = true;
-      console.log('Tebra Cloud Run client initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize Tebra Cloud Run client:', error);
-      throw new Error(`Failed to initialize Tebra Cloud Run client: ${error.message}`);
+    // 2️⃣  Fallback for old v1 deployments
+    if ((!this.cloudRunUrl || !this.internalApiKey) && typeof functions.config === 'function') {
+      const cfg = functions.config().tebra || {};
+      this.cloudRunUrl    = this.cloudRunUrl    || cfg.cloud_run_url;
+      this.internalApiKey = this.internalApiKey || cfg.internal_api_key;
     }
+
+    if (!this.cloudRunUrl || !this.internalApiKey) {
+      throw new Error('Missing Tebra Cloud-Run configuration (env vars or functions.config)');
+    }
+
+    // Validate Cloud Run URL
+    const url = new URL(this.cloudRunUrl);
+    if (url.protocol !== 'https:') {
+      throw new Error('Tebra Cloud Run URL must use HTTPS');
+    }
+
+    // Initialize Google Auth for Cloud Run authentication
+    this.auth = new GoogleAuth();
+    this.authClient = await this.auth.getIdTokenClient(this.cloudRunUrl);
+    console.log('Google Auth initialized for Cloud Run authentication');
+
+    this.initialized = true;
+    console.log('Tebra Cloud Run client initialized successfully');
   }
 
   async makeRequest(action, params = {}) {
