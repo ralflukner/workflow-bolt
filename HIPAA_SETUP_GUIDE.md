@@ -38,8 +38,8 @@ gcloud secrets create TEBRA_API_URL --project=$PROJECT_ID
 
 # Add secret values (replace with your actual credentials)
 
-echo -n "your-tebra-username" | gcloud secrets versions add TEBRA_USERNAME --data-file=-
-echo -n "your-tebra-password" | gcloud secrets versions add TEBRA_PASSWORD --data-file=-
+echo -n "your-tebra-username" | gcloud secrets create TEBRA_USERNAME --data-file=-
+echo -n "your-tebra-password" | gcloud secrets create TEBRA_PASSWORD --data-file=-
 echo -n "https://api.tebra.com" | gcloud secrets versions add TEBRA_API_URL --data-file=-
 
 ```

@@ -10,5 +10,5 @@ gcloud run deploy tebra-php-api \
   --region us-central1 \
   --platform managed \
   --no-allow-unauthenticated \
-  --set-secrets="TEBRA_USERNAME=tebra-username:latest,TEBRA_PASSWORD=tebra-password:latest,TEBRA_WSDL_URL=tebra-wsdl-url:latest,TEBRA_CUSTOMER_KEY=tebra-customer-key:latest,INTERNAL_API_KEY=tebra-internal-api-key:latest" \
+  --set-secrets="TEBRA_USERNAME=TEBRA_USERNAME:latest,TEBRA_PASSWORD=TEBRA_PASSWORD:latest,TEBRA_WSDL_URL=tebra-wsdl-url:latest,TEBRA_CUSTOMER_KEY=TEBRA_CUSTOMER_KEY:latest,INTERNAL_API_KEY=tebra-internal-api-key:latest" \
   --service-account=tebra-cloud-run-sa@luknerlumina-firebase.iam.gserviceaccount.com

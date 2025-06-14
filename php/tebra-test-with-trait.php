@@ -30,9 +30,9 @@ class TebraApiTest
             
             // Get credentials from GSM
             $credentials = $this->getSecrets([
-                'username' => 'tebra-username',
-                'password' => 'tebra-password',
-                'customerKey' => 'tebra-customer-key'
+                'username' => 'TEBRA_USERNAME',
+                'password' => 'TEBRA_PASSWORD',
+                'customerKey' => 'TEBRA_CUSTOMER_KEY'
             ]);
             
             echo "Credentials retrieved successfully.\n";

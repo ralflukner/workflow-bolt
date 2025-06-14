@@ -159,7 +159,7 @@ describe('Tebra Configuration Diagnostics', () => {
 
     it('should validate Secrets Service configuration', () => {
       const checkSecretsServiceHealth = (secrets: Record<string, string | null>) => {
-        const required = ['tebra-username', 'tebra-password', 'tebra-api-url'];
+        const required = ['TEBRA_USERNAME', 'TEBRA_PASSWORD', 'tebra-api-url'];
         return required.every(key => 
           secrets[key] !== null && 
           secrets[key] !== undefined && 
@@ -168,14 +168,14 @@ describe('Tebra Configuration Diagnostics', () => {
       };
 
       const validSecrets = {
-        'tebra-username': 'user',
-        'tebra-password': 'pass',
+        'TEBRA_USERNAME': 'user',
+        'TEBRA_PASSWORD': 'pass',
         'tebra-api-url': 'https://api.tebra.com'
       };
 
       const invalidSecrets = {
-        'tebra-username': null,
-        'tebra-password': 'pass',
+        'TEBRA_USERNAME': null,
+        'TEBRA_PASSWORD': 'pass',
         'tebra-api-url': 'https://api.tebra.com'
       };
 

@@ -19,6 +19,7 @@ scripts/setup-env.sh
 # ===== Git Internals =====
 .git/info/refs
 .git/info/
+workflow-bolt-clean.git/
 
 # ===== Credentials and Secrets =====
 # Google Cloud

@@ -110,9 +110,9 @@ check_secret() {
 
 # Get current credentials for pattern matching
 echo "Retrieving current credentials from GSM..."
-CURRENT_USERNAME=$(get_secret "tebra-username")
-CURRENT_PASSWORD=$(get_secret "tebra-password")
-CURRENT_CUSTOMER_KEY=$(get_secret "tebra-customer-key")
+CURRENT_USERNAME=$(get_secret "TEBRA_USERNAME")
+CURRENT_PASSWORD=$(get_secret "TEBRA_PASSWORD")
+CURRENT_CUSTOMER_KEY=$(get_secret "TEBRA_CUSTOMER_KEY")
 
 # Initialize patterns array
 PATTERNS=()
@@ -127,7 +127,7 @@ if [ -n "$CURRENT_USERNAME" ] && [ -n "$CURRENT_PASSWORD" ]; then
     PATTERNS+=("$CURRENT_PASSWORD")
 else
     echo "⚠️  Could not retrieve all secrets from GSM"
-    echo "   Make sure you have access to: tebra-username, tebra-password, tebra-customer-key"
+    echo "   Make sure you have access to: TEBRA_USERNAME, TEBRA_PASSWORD, TEBRA_CUSTOMER_KEY"
     echo
 fi
 

@@ -38,8 +38,8 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
       const secretNamingPattern = /^[a-z][a-z0-9-]*[a-z0-9]$/;
       
       const expectedSecrets = [
-        'tebra-username',
-        'tebra-password', 
+        'TEBRA_USERNAME',
+        'TEBRA_PASSWORD', 
         'tebra-api-url'
       ];
 
@@ -73,13 +73,13 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
       };
 
       // Test valid configurations
-      expect(validateSecretAccess('firebase-tebra-service@project.iam.gserviceaccount.com', 'tebra-username')).toBe(true);
-      expect(validateSecretAccess('tebra-integration@project.iam.gserviceaccount.com', 'tebra-password')).toBe(true);
+      expect(validateSecretAccess('firebase-tebra-service@project.iam.gserviceaccount.com', 'TEBRA_USERNAME')).toBe(true);
+      expect(validateSecretAccess('tebra-integration@project.iam.gserviceaccount.com', 'TEBRA_PASSWORD')).toBe(true);
       
       // Test invalid configurations (should fail)
-      expect(validateSecretAccess(undefined, 'tebra-username')).toBe(false);
-      expect(validateSecretAccess('default@project.iam.gserviceaccount.com', 'tebra-username')).toBe(false);
-      expect(validateSecretAccess('editor@project.iam.gserviceaccount.com', 'tebra-username')).toBe(false);
+      expect(validateSecretAccess(undefined, 'TEBRA_USERNAME')).toBe(false);
+      expect(validateSecretAccess('default@project.iam.gserviceaccount.com', 'TEBRA_USERNAME')).toBe(false);
+      expect(validateSecretAccess('editor@project.iam.gserviceaccount.com', 'TEBRA_USERNAME')).toBe(false);
       expect(validateSecretAccess('firebase-tebra-service@project.iam.gserviceaccount.com', 'test-secret')).toBe(false);
 
       console.log('✅ HIPAA COMPLIANCE: Secret access requires proper service account authentication');
@@ -102,7 +102,7 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
         const auditLogEntry = {
           timestamp: new Date().toISOString(),
           serviceAccount: 'firebase-tebra-service@project.iam.gserviceaccount.com',
-          secretName: 'tebra-username',
+          secretName: 'TEBRA_USERNAME',
           operation: operation,
           sourceIP: '10.0.0.1',
           userAgent: 'Firebase-Functions/1.0'

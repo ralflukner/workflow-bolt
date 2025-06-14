@@ -10,7 +10,7 @@ echo
 
 # Check if secrets exist
 echo "Checking if secrets exist..."
-SECRETS=("tebra-username" "tebra-password" "tebra-customer-key")
+SECRETS=("TEBRA_USERNAME" "TEBRA_PASSWORD" "TEBRA_CUSTOMER_KEY")
 
 for secret in "${SECRETS[@]}"; do
     echo -n "  $secret: "
@@ -45,13 +45,13 @@ echo "=== Creating Missing Secrets ==="
 echo "If any secrets are missing, you can create them with:"
 echo
 echo "# For username (replace with your actual username):"
-echo "echo -n 'your-username@luknerclinic.com' | gcloud secrets create tebra-username --data-file=-"
+echo "echo -n 'your-username@luknerclinic.com' | gcloud secrets create TEBRA_USERNAME --data-file=-"
 echo
 echo "# For password (replace with your actual password):"
-echo "echo -n 'your-actual-password' | gcloud secrets create tebra-password --data-file=-"
+echo "echo -n 'your-actual-password' | gcloud secrets create TEBRA_PASSWORD --data-file=-"
 echo
 echo "# For customer key (replace with your actual key):"
-echo "echo -n 'your-customer-key' | gcloud secrets create tebra-customer-key --data-file=-"
+echo "echo -n 'your-customer-key' | gcloud secrets create TEBRA_CUSTOMER_KEY --data-file=-"
 echo
 
 echo "=== Checking IAM Permissions ==="

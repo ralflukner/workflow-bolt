@@ -13,9 +13,9 @@ This document outlines our security-first approach to managing secrets in Fireba
 
 - `auth0-audience` - Auth0 API audience for token validation
 
-- `tebra-username` - Tebra API username (future)
+- `TEBRA_USERNAME` - Tebra API username (future)
 
-- `tebra-password` - Tebra API password (future)
+- `TEBRA_PASSWORD` - Tebra API password (future)
 
 - `tebra-api-url` - Tebra API endpoint URL (future)
 

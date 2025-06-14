@@ -102,7 +102,7 @@ run_security_dashboard() {
 
     # 3. Secret Manager access
     echo "\n🔐 SECRET MANAGER STATUS"
-    local secrets=("tebra-username" "tebra-password" "tebra-customer-key")
+    local secrets=("TEBRA_USERNAME" "TEBRA_PASSWORD" "TEBRA_CUSTOMER_KEY")
     local secret_issues=0
     for secret in "${secrets[@]}"; do
         if gcloud secrets versions access latest --secret="$secret" >/dev/null 2>&1; then

@@ -12,8 +12,8 @@ export const secrets = {
   auth0Audience: () => getSecret(`projects/${projectId}/secrets/auth0-audience/versions/latest`),
   
   // Future Tebra secrets (when needed)
-  tebraUser: () => getSecret(`projects/${projectId}/secrets/tebra-username/versions/latest`),
-  tebraPass: () => getSecret(`projects/${projectId}/secrets/tebra-password/versions/latest`),
+  tebraUser: () => getSecret(`projects/${projectId}/secrets/TEBRA_USERNAME/versions/latest`),
+  tebraPass: () => getSecret(`projects/${projectId}/secrets/TEBRA_PASSWORD/versions/latest`),
   tebraAPI: () => getSecret(`projects/${projectId}/secrets/tebra-api-url/versions/latest`)
 };
 

@@ -34,17 +34,17 @@ export class SecretsService {
     
     // Tebra API credentials  
     TEBRA_USERNAME: {
-      secretName: 'tebra-username',
+      secretName: 'TEBRA_USERNAME',
       envFallback: 'REACT_APP_TEBRA_USERNAME',
       required: true
     },
     TEBRA_PASSWORD: {
-      secretName: 'tebra-password',
+      secretName: 'TEBRA_PASSWORD',
       envFallback: 'REACT_APP_TEBRA_PASSWORD', 
       required: true
     },
     TEBRA_CUSTOMER_KEY: {
-      secretName: 'tebra-customer-key',
+      secretName: 'TEBRA_CUSTOMER_KEY',
       envFallback: 'REACT_APP_TEBRA_CUSTOMERKEY',
       required: true
     },

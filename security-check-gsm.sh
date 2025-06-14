@@ -100,7 +100,7 @@ check_secret() {
 # Check all Tebra-related secrets
 echo "Checking Tebra credentials in project: $GOOGLE_CLOUD_PROJECT"
 
-secrets=("tebra-username" "tebra-password" "tebra-customer-key")
+secrets=("TEBRA_USERNAME" "TEBRA_PASSWORD" "TEBRA_CUSTOMER_KEY")
 has_failures=0
 
 for secret in "${secrets[@]}"; do

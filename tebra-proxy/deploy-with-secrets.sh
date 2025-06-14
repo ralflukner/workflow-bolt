@@ -31,7 +31,7 @@ gcloud config set project $PROJECT_ID
 
 # Verify secrets exist
 echo -e "${YELLOW}🔑 Verifying secrets in Secret Manager...${NC}"
-REQUIRED_SECRETS=("tebra-username" "tebra-password" "tebra-customerkey" "tebra-proxy-api-key")
+REQUIRED_SECRETS=("TEBRA_USERNAME" "TEBRA_PASSWORD" "tebra-customerkey" "tebra-proxy-api-key")
 
 for secret in "${REQUIRED_SECRETS[@]}"; do
     if gcloud secrets describe "$secret" >/dev/null 2>&1; then
@@ -55,7 +55,7 @@ gcloud run deploy $SERVICE_NAME \
   --image $IMAGE_NAME \
   --platform managed \
   --region $REGION \
-  --set-secrets="TEBRA_SOAP_USERNAME=tebra-username:latest,TEBRA_SOAP_PASSWORD=tebra-password:latest,TEBRA_SOAP_CUSTKEY=tebra-customerkey:latest,API_KEY=tebra-proxy-api-key:latest" \
+  --set-secrets="TEBRA_SOAP_USERNAME=TEBRA_USERNAME:latest,TEBRA_SOAP_PASSWORD=TEBRA_PASSWORD:latest,TEBRA_SOAP_CUSTKEY=tebra-customerkey:latest,API_KEY=tebra-proxy-api-key:latest" \
   --max-instances=10 \
   --min-instances=1 \
   --memory=512Mi \
