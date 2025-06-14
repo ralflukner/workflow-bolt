@@ -13,8 +13,8 @@ const MetricsPanel: React.FC = () => {
           <Users size={52} className="text-blue-500" />
         </div>
         <div>
-          <p className="text-gray-400 text-sm">Total Appointments</p>
-          <p className="text-2xl font-bold text-white">{metrics.totalAppointments}</p>
+          <p className="text-gray-400 text-sm">Total Patients</p>
+          <p className="text-2xl font-bold text-white">{metrics.totalPatients}</p>
         </div>
       </div>
 
@@ -23,8 +23,10 @@ const MetricsPanel: React.FC = () => {
           <Users size={52} className="text-amber-500" />
         </div>
         <div>
-          <p className="text-gray-400 text-sm">Patients Waiting</p>
-          <p className="text-2xl font-bold text-white">{metrics.waitingCount}</p>
+          <p className="text-gray-400 text-sm">Waiting Patients</p>
+          <p className="text-2xl font-bold text-white">
+            {metrics.patientsByStatus.arrived + metrics.patientsByStatus['appt-prep'] + metrics.patientsByStatus['ready-for-md']}
+          </p>
         </div>
       </div>
 
@@ -45,9 +47,9 @@ const MetricsPanel: React.FC = () => {
           <AlertTriangle size={52} className="text-red-500" />
         </div>
         <div>
-          <p className="text-gray-400 text-sm">Max Wait Time</p>
-          <p className={`text-2xl font-bold ${metrics.maxWaitTime > 15 ? 'text-red-400' : 'text-white'}`}>
-            {metrics.maxWaitTime} min
+          <p className="text-gray-400 text-sm">Patients Seen Today</p>
+          <p className="text-2xl font-bold text-white">
+            {metrics.patientsSeenToday}
           </p>
         </div>
       </div>

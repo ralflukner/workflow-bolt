@@ -50,7 +50,7 @@ export const DiagnosticPanel: React.FC = () => {
       try {
         const firebaseReady = isFirebaseConfigured();
         const service = firebaseReady ? dailySessionService : localSessionService;
-        const stats = await service.getStats();
+        const stats = await service.getSessionStats();
         setStorageStats(stats);
       } catch (error) {
         console.error('Failed to load storage stats:', error);

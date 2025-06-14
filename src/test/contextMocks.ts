@@ -19,10 +19,21 @@ export const createMockPatientContext = (overrides = {}) => {
       return patientState.filter(p => p.status === status);
     }),
     getMetrics: jest.fn(() => ({ 
-      totalAppointments: 0, 
-      waitingCount: 0, 
-      averageWaitTime: 0, 
-      maxWaitTime: 0 
+      totalPatients: 0,
+      patientsByStatus: {
+        scheduled: 0,
+        arrived: 0,
+        'appt-prep': 0,
+        'ready-for-md': 0,
+        'With Doctor': 0,
+        'seen-by-md': 0,
+        completed: 0,
+        Cancelled: 0,
+        'No Show': 0,
+        Rescheduled: 0
+      },
+      averageWaitTime: 0,
+      patientsSeenToday: 0
     })),
     getWaitTime: jest.fn((patient) => {
       if (patient?.status === 'arrived') return 25;

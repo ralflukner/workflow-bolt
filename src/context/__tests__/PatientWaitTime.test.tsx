@@ -197,8 +197,11 @@ describe('PatientContext - Wait Time Calculations', () => {
       });
 
       const metrics = result.current.getMetrics();
-      expect(metrics.totalAppointments).toBe(2);
+      expect(metrics.totalPatients).toBe(2);
+      expect(metrics.patientsByStatus.arrived).toBe(1);
+      expect(metrics.patientsByStatus['With Doctor']).toBe(1);
       expect(metrics.averageWaitTime).toBeGreaterThan(0);
+      expect(metrics.patientsSeenToday).toBe(0);
     });
 
     it('should handle empty patient list', () => {
@@ -207,8 +210,11 @@ describe('PatientContext - Wait Time Calculations', () => {
       });
 
       const metrics = result.current.getMetrics();
-      expect(metrics.totalAppointments).toBe(0);
+      expect(metrics.totalPatients).toBe(0);
+      expect(metrics.patientsByStatus.arrived).toBe(0);
+      expect(metrics.patientsByStatus['With Doctor']).toBe(0);
       expect(metrics.averageWaitTime).toBe(0);
+      expect(metrics.patientsSeenToday).toBe(0);
     });
   });
 
