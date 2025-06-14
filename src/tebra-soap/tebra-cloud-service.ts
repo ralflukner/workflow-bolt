@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { TebraCredentials, TebraPatient, TebraAppointment } from './tebra-api-service.types';
+import { TebraPatient, TebraAppointment } from './tebra-api-service.types';
 import { Patient } from '../types';
 import { TebraDataTransformer } from './tebra-data-transformer';
 

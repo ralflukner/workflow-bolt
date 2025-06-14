@@ -34,6 +34,11 @@ interface TestAppointmentsResponse {
   message?: string;
 }
 
+interface TebraIntegrationResponse {
+  success: boolean;
+  message?: string;
+}
+
 const TebraIntegration: React.FC = () => {
   const { getCurrentTime } = useTimeContext();
   const { ensureFirebaseAuth } = useFirebaseAuth();
@@ -78,7 +83,8 @@ const TebraIntegration: React.FC = () => {
       
       const result = await tebraTestConnection();
       console.log('📨 Firebase Function response:', result);
-      const connected = result.data?.success || false;
+      const data = result.data as TebraIntegrationResponse;
+      const connected = data.success || false;
       
       setIsConnected(connected);
       setConnectionTested(true);
@@ -86,7 +92,7 @@ const TebraIntegration: React.FC = () => {
       if (connected) {
         setStatusMessage('✅ Connected to Tebra API via Firebase Functions');
       } else {
-        const errorMessage = result.data?.message || 'Check configuration';
+        const errorMessage = data.message || 'Check configuration';
         setStatusMessage(`❌ Failed to connect to Tebra API. ${errorMessage}`);
       }
     } catch (error) {

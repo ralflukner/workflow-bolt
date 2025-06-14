@@ -1,17 +1,28 @@
 #!/usr/bin/env node
 
-const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
-const fs = require('fs');
-const path = require('path');
+import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get current file's directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configuration
 const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || 'your-project-id';
 const SECRETS_TO_PULL = [
+  // Auth0 secrets
   { name: 'AUTH0_DOMAIN', envVar: 'VITE_AUTH0_DOMAIN' },
   { name: 'AUTH0_CLIENT_ID', envVar: 'VITE_AUTH0_CLIENT_ID' },
   { name: 'AUTH0_REDIRECT_URI', envVar: 'VITE_AUTH0_REDIRECT_URI' },
   { name: 'AUTH0_AUDIENCE', envVar: 'VITE_AUTH0_AUDIENCE' },
   { name: 'AUTH0_SCOPE', envVar: 'VITE_AUTH0_SCOPE' },
+  // Tebra secrets
+  { name: 'TEBRA_USERNAME', envVar: 'VITE_TEBRA_USERNAME' },
+  { name: 'TEBRA_PASSWORD', envVar: 'VITE_TEBRA_PASSWORD' },
+  { name: 'TEBRA_CUSTOMER_KEY', envVar: 'VITE_TEBRA_CUSTOMER_KEY' },
+  { name: 'TEBRA_WSDL_URL', envVar: 'VITE_TEBRA_WSDL_URL' },
 ];
 
 async function readSecret(secretName) {
@@ -50,20 +61,22 @@ async function pullSecrets() {
     const value = await readSecret(name);
     if (value) {
       envContent.push(`${envVar}=${value}`);
-      console.log(`✅ ${envVar} = ${value.substring(0, 10)}...`);
+      // Mask sensitive values in logs
+      const maskedValue = envVar.includes('PASSWORD') ? '********' : value.substring(0, 10) + '...';
+      console.log(`✅ ${envVar} = ${maskedValue}`);
     } else {
       console.log(`⚠️  ${envVar} = (not found in GSM)`);
     }
   }
   
-  // Add any existing non-VITE_AUTH0_ variables
+  // Add any existing non-VITE_ variables
   if (existingEnv) {
     envContent.push('');
     envContent.push('# Existing environment variables');
     const existingLines = existingEnv.split('\n').filter(line => 
       line.trim() && 
       !line.startsWith('#') && 
-      !line.startsWith('VITE_AUTH0_')
+      !line.startsWith('VITE_')
     );
     envContent.push(...existingLines);
   }
@@ -77,11 +90,11 @@ async function pullSecrets() {
 }
 
 // Run if called directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   pullSecrets().catch(error => {
     console.error('❌ Failed to pull secrets:', error);
     process.exit(1);
   });
 }
 
-module.exports = { pullSecrets }; 
+export { pullSecrets }; 
