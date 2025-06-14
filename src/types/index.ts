@@ -43,8 +43,19 @@ export interface TimeMode {
 }
 
 export interface Metrics {
-  totalAppointments: number;
-  waitingCount: number;
+  totalPatients: number;
+  patientsByStatus: {
+    scheduled: number;
+    arrived: number;
+    'appt-prep': number;
+    'ready-for-md': number;
+    'With Doctor': number;
+    'seen-by-md': number;
+    completed: number;
+    Cancelled: number;
+    'No Show': number;
+    Rescheduled: number;
+  };
   averageWaitTime: number;
-  maxWaitTime: number;
+  patientsSeenToday: number;
 }

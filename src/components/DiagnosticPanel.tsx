@@ -33,23 +33,24 @@ export const DiagnosticPanel: React.FC = () => {
       } catch (error) {
         setAuthStatus('failed');
         console.error('Auth check failed:', error);
-useEffect(() => {
+      }
+    };
+
     const firebaseReady = isFirebaseConfigured();
     if (firebaseReady) {
-       checkAuth();
-     } else {
-       setAuthStatus('authenticated'); // localStorage doesn't need auth
-     }
-   }, [ensureFirebaseAuth]);
-@@
+      checkAuth();
+    } else {
+      setAuthStatus('authenticated'); // localStorage doesn't need auth
+    }
+  }, [ensureFirebaseAuth]);
+
+  // Load storage stats
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const firebaseReady = isFirebaseConfigured();
         const service = firebaseReady ? dailySessionService : localSessionService;
-@@
-      const service = firebaseReady ? dailySessionService : localSessionService;
-@@
-              <span className={getStatusColor(firebaseReady.toString())}>
-                {firebaseReady.toString()}
-@@
-                {firebaseReady ? 'Firebase' : 'LocalStorage'}
+        const stats = await service.getStats();
         setStorageStats(stats);
       } catch (error) {
         console.error('Failed to load storage stats:', error);
@@ -248,7 +249,7 @@ useEffect(() => {
             </div>
             {saveError && (
               <div className="text-red-400 mt-2 p-2 bg-red-900/20 rounded">
-                Error: {saveError}
+                {saveError}
               </div>
             )}
           </div>

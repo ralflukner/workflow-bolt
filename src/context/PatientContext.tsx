@@ -66,10 +66,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   const firebaseReady = isFirebaseConfigured();
   const storageService = firebaseReady ? dailySessionService : localSessionService;
   const storageType = firebaseReady ? 'Firebase' : 'LocalStorage';
-...
-        if (!firebaseReady) {
-...
-          if (firebaseReady) {
+
+  // Load today's data on mount and when persistence is toggled
   useEffect(() => {
     const loadTodaysData = async () => {
       if (!persistenceEnabled) {
@@ -79,24 +77,24 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         return;
       }
 
-try {
-         setIsLoading(true);
-         console.log(`Using ${storageType} for data persistence`);
-         const savedPatients = await storageService.loadTodaysSession();
-         
-         if (savedPatients.length > 0) {
-           console.log(`Loaded ${savedPatients.length} patients from ${storageType}`);
-           setPatients(savedPatients);
-           setHasRealData(true);
-         } else {
-           console.log(`No saved session found in ${storageType}, starting with empty patient list`);
-           setPatients([]);
-           setHasRealData(false);
-         }
-       } catch (error) {
-         console.error(`Failed to load from ${storageType}, starting with empty list:`, error);
-         setPatients([]);
-         setHasRealData(false);
+      try {
+        setIsLoading(true);
+        console.log(`Using ${storageType} for data persistence`);
+        const savedPatients = await storageService.loadTodaysSession();
+        
+        if (savedPatients.length > 0) {
+          console.log(`Loaded ${savedPatients.length} patients from ${storageType}`);
+          setPatients(savedPatients);
+          setHasRealData(true);
+        } else {
+          console.log(`No saved session found in ${storageType}, starting with empty patient list`);
+          setPatients([]);
+          setHasRealData(false);
+        }
+      } catch (error) {
+        console.error(`Failed to load from ${storageType}, starting with empty list:`, error);
+        setPatients([]);
+        setHasRealData(false);
         
         // Only disable persistence for localStorage errors, not Firebase network issues
         if (!isFirebaseConfigured()) {
@@ -105,7 +103,7 @@ try {
         } else {
           console.warn('Firebase load failed, but persistence remains enabled for retry');
         }
-       } finally {
+      } finally {
         setIsLoading(false);
       }
     };
@@ -252,133 +250,100 @@ try {
 
   const getWaitTime = (patient: Patient): number => {
     if (!patient.checkInTime) return 0;
-
-    const checkInTime = new Date(patient.checkInTime);
-    const endTime = patient.withDoctorTime 
-      ? new Date(patient.withDoctorTime)
-      : getCurrentTime();
-
-    const waitTimeMs = endTime.valueOf() - checkInTime.valueOf();
-    return Math.max(0, Math.floor(waitTimeMs / 60000));
+    const checkIn = new Date(patient.checkInTime).getTime();
+    const now = getCurrentTime().getTime();
+    return Math.max(0, Math.floor((now - checkIn) / 1000 / 60)); // Convert to minutes
   };
 
   const getMetrics = (): Metrics => {
-    const waitingPatients = patients.filter(p => 
-      ['arrived', 'appt-prep', 'ready-for-md'].includes(p.status as string)
-    );
-    const waitTimes = waitingPatients.map(getWaitTime);
-
-    const averageWaitTime = waitTimes.length > 0
-      ? waitTimes.reduce((acc, time) => acc + time, 0) / waitTimes.length
-      : 0;
-
-    const maxWaitTime = waitTimes.length > 0
-      ? Math.max(...waitTimes)
-      : 0;
+    const now = getCurrentTime();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     return {
-      totalAppointments: patients.length,
-      waitingCount: waitingPatients.length,
-      averageWaitTime,
-      maxWaitTime,
+      totalPatients: patients.length,
+      patientsByStatus: {
+        scheduled: getPatientsByStatus('scheduled').length,
+        arrived: getPatientsByStatus('arrived').length,
+        'appt-prep': getPatientsByStatus('appt-prep').length,
+        'ready-for-md': getPatientsByStatus('ready-for-md').length,
+        'With Doctor': getPatientsByStatus('With Doctor').length,
+        'seen-by-md': getPatientsByStatus('seen-by-md').length,
+        completed: getPatientsByStatus('completed').length,
+        Cancelled: getPatientsByStatus('Cancelled').length,
+        'No Show': getPatientsByStatus('No Show').length,
+        Rescheduled: getPatientsByStatus('Rescheduled').length,
+      },
+      averageWaitTime: patients.reduce((acc, patient) => acc + getWaitTime(patient), 0) / patients.length || 0,
+      patientsSeenToday: patients.filter(p => p.completedTime && new Date(p.completedTime) >= today).length,
     };
   };
 
   const exportPatientsToJSON = () => {
-    const jsonData = JSON.stringify(patients, null, 2);
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `patient-data-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const dataStr = JSON.stringify(patients, null, 2);
+    const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+    const exportFileDefaultName = `patients-${new Date().toISOString()}.json`;
+
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
   };
 
-  // Import patients and mark as real data
   const importPatientsFromJSON = (importedPatients: Patient[]) => {
-     if (!Array.isArray(importedPatients)) {
-       throw new Error('Invalid data format: expected array of patients');
-     }
+    // Validate imported data
+    if (!Array.isArray(importedPatients)) {
+      throw new Error('Invalid import data: must be an array of patients');
+    }
 
-     const normalized = importedPatients.map(p => {
-       const updated = { ...p };
-       const normalizedStatus = normalizeStatus(updated.status as string);
-       updated.status = normalizedStatus as PatientApptStatus;
+    // Validate each patient
+    importedPatients.forEach((patient, index) => {
+      if (!patient.id || !patient.name || !patient.status) {
+        throw new Error(`Invalid patient at index ${index}: missing required fields`);
+      }
+    });
 
-       const now = new Date().toISOString();
+    // Update state
+    setPatients(importedPatients);
+    setHasRealData(true);
+  };
 
-       if (['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'].includes(normalizedStatus)) {
-         updated.checkInTime = updated.checkInTime || now;
-       }
+  const saveCurrentSession = async () => {
+    if (!persistenceEnabled) {
+      throw new Error('Persistence is disabled');
+    }
 
-       if (['With Doctor', 'seen-by-md', 'completed'].includes(normalizedStatus)) {
-         updated.withDoctorTime = updated.withDoctorTime || now;
-       }
+    try {
+      await storageService.saveTodaysSession(patients);
+      console.log(`Session saved to ${storageType}`);
+    } catch (error) {
+      console.error(`Failed to save to ${storageType}:`, error);
+      throw error;
+    }
+  };
 
-       if (normalizedStatus === 'completed') {
-         updated.completedTime = updated.completedTime || now;
-       }
-
-       return updated;
-     });
-
-     const requiredFields = ['id', 'name', 'dob', 'appointmentTime', 'provider', 'status'];
-     normalized.forEach((patient, index) => {
-       requiredFields.forEach(field => {
-         if (!(field in patient)) {
-           throw new Error(`Patient at index ${index} missing required field: ${field}`);
-         }
-       });
-     });
-
-     setPatients(normalized);
-     setHasRealData(true); // Imported data is real data
-   };
-
-  // Force save current session (manual trigger)
-const saveCurrentSession = async () => {
-   if (!persistenceEnabled) return;
-   
-   try {
-    await storageService.saveTodaysSession(patients);
-     // Only mark as real data if we have actual patient data
-     if (patients.length > 0) {
-       setHasRealData(true);
-     }
-    console.log(`Session saved manually to ${storageType}`);
-   } catch (error) {
-    console.error(`Manual save to ${storageType} failed:`, error);
-     throw error;
-   }
- };
-
-  // Toggle persistence (for testing/debugging)
   const togglePersistence = () => {
     setPersistenceEnabled(prev => !prev);
   };
 
   const value = {
     patients,
+    isLoading,
+    persistenceEnabled,
+    hasRealData,
+    tickCounter,
+    clearPatients,
     addPatient,
+    loadMockData,
     updatePatientStatus,
     assignRoom,
     updateCheckInTime,
     getPatientsByStatus,
-    getMetrics,
     getWaitTime,
-    clearPatients,
+    getMetrics,
     exportPatientsToJSON,
     importPatientsFromJSON,
-    tickCounter,
-    isLoading,
-    persistenceEnabled,
     saveCurrentSession,
     togglePersistence,
-    hasRealData,
-    loadMockData,
   };
 
   return (
