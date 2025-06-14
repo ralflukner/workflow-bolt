@@ -11,9 +11,9 @@ describe('MetricsPanel Wait Time Calculations', () => {
     );
 
     // Check for the actual metrics displayed by the component
-    expect(screen.getByText('Total Appointments')).toBeInTheDocument();
-    expect(screen.getByText('Patients Waiting')).toBeInTheDocument();
+    expect(screen.getByText('Total Patients')).toBeInTheDocument();
+    expect(screen.getByText('Waiting Patients')).toBeInTheDocument();
     expect(screen.getByText('Avg. Wait Time')).toBeInTheDocument();
-    expect(screen.getByText('Max Wait Time')).toBeInTheDocument();
+    expect(screen.getByText('Patients Seen Today')).toBeInTheDocument();
   });
 });

@@ -7,6 +7,8 @@ import { TebraSoapClient } from './tebraSoapClient';
 import { TebraDataTransformer } from './tebra-data-transformer';
 import { TebraCredentials, TebraPatient, TebraAppointment, TebraDailySession, TebraProvider } from './tebra-api-service.types';
 import { secretsService } from '../services/secretsService';
+import { secureLog } from '../utils/secureLog';
+import { SecretsService } from '../services/secretsService';
 
 // Type definitions for SOAP responses
 interface SoapAppointmentResponse {
@@ -104,6 +106,7 @@ const getTebraCredentialsAsync = async (): Promise<Partial<TebraCredentials>> =>
 export class TebraApiService {
   private soapClient: TebraSoapClient;
   private dataTransformer: TebraDataTransformer;
+  private secretsService: SecretsService;
 
   /**
    * Creates a TebraApiService instance using async secrets retrieval
@@ -149,6 +152,7 @@ export class TebraApiService {
     this.validateConfig(config);
     this.soapClient = new TebraSoapClient(config);
     this.dataTransformer = dataTransformer;
+    this.secretsService = SecretsService.getInstance();
   }
 
   /**
@@ -232,7 +236,7 @@ export class TebraApiService {
       await this.soapClient.testConnection();
       return true;
     } catch (error) {
-      console.error('Tebra API connection test failed:', error);
+      secureLog('Tebra API connection test failed:', error);
       throw error;
     }
   }
@@ -410,5 +414,10 @@ export class TebraApiService {
    */
   getRemainingWaitTime(methodName: string): number {
     return this.soapClient.getRateLimiter().getRemainingWaitTime(methodName);
+  }
+
+  public async getSecret(secretName: string): Promise<string> {
+    const normalizedSecretName = secretName.toLowerCase().replace(/_/g, '-');
+    return this.secretsService.getSecret(normalizedSecretName);
   }
 }  

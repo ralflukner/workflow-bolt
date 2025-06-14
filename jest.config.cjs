@@ -72,7 +72,7 @@ module.exports = {
     {
       displayName: 'integration',
       preset: 'ts-jest',
-      testEnvironment: 'node',
+      testEnvironment: 'jsdom',
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
@@ -89,8 +89,6 @@ module.exports = {
         '<rootDir>/src/**/*.integration.test.(ts|tsx)',
         '<rootDir>/src/**/__tests__/**/integration/**/*.test.(ts|tsx)'
       ],
-      // Only run integration tests when environment variable is set
-      testRunner: process.env.RUN_INTEGRATION_TESTS ? undefined : '<rootDir>/src/test/skipRunner.js',
       globals: {
         'import.meta': {
           env: {}
@@ -116,8 +114,6 @@ module.exports = {
       testMatch: [
         '<rootDir>/src/**/__tests__/**/real-api/**/*.test.(ts|tsx)'
       ],
-      // Only run real API tests when explicitly enabled
-      testRunner: process.env.RUN_REAL_API_TESTS ? undefined : '<rootDir>/src/test/skipRunner.js',
       globals: {
         'import.meta': {
           env: {}
