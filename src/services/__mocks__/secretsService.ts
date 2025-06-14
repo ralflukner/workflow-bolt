@@ -21,6 +21,7 @@ export class SecretsService {
       TEBRA_CUSTOMER_KEY: 'test-customer-key',
       TEBRA_PROXY_API_KEY: 'test-proxy-api-key',
       FIREBASE_API_KEY: 'test-firebase-api-key',
+      TEBRA_WSDL_URL: 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl',
     };
 
     return mockSecrets[secretKey] || '';
@@ -36,6 +37,7 @@ export class SecretsService {
       TEBRA_CUSTOMER_KEY: 'test-customer-key',
       TEBRA_PROXY_API_KEY: 'test-proxy-api-key',
       FIREBASE_API_KEY: 'test-firebase-api-key',
+      TEBRA_WSDL_URL: 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl',
     };
 
     return mockSecrets[secretKey] || '';

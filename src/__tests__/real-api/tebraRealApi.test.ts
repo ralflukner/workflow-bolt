@@ -9,7 +9,14 @@ import { TebraApiService } from '../../services/tebraApiService';
  * 
  * Run with: RUN_REAL_API_TESTS=true npm test
  */
-describe('🚨 REAL Tebra API Integration Tests (Expected to FAIL when API is down)', () => {
+
+// Skip entire suite in CI unless explicitly enabled
+const realApiEnabled = process.env.RUN_REAL_API_TESTS === 'true';
+// Use dynamic describe based on flag
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const realDescribe: any = realApiEnabled ? describe : describe.skip;
+
+realDescribe('🚨 REAL Tebra API Integration Tests (Expected to FAIL when API is down)', () => {
   let tebraService: TebraApiService;
 
   beforeEach(() => {

@@ -2,6 +2,9 @@ import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import { afterEach, afterAll, jest, beforeEach } from '@jest/globals';
 
+// Determine if we are running real API tests (Firebase should not be mocked)
+const isRealApiRun = process.env.RUN_REAL_API_TESTS === 'true';
+
 // Mock timers globally to prevent hanging
 jest.useFakeTimers();
 
@@ -22,49 +25,24 @@ afterAll(() => {
   jest.useRealTimers();
 });
 
-// Basic Firebase mocks
-jest.mock('firebase/app', () => ({
-  initializeApp: jest.fn(() => ({})),
-}));
-
-jest.mock('firebase/firestore', () => ({
-  getFirestore: jest.fn(() => ({})),
-  collection: jest.fn(),
-  doc: jest.fn(),
-  getDocs: jest.fn(),
-  setDoc: jest.fn(),
-  query: jest.fn(),
-  where: jest.fn(),
-  orderBy: jest.fn(),
-  Timestamp: {
-    now: jest.fn(() => ({ seconds: 1640995200, nanoseconds: 0 })),
-  },
-  writeBatch: jest.fn(() => ({
-    delete: jest.fn(),
-    commit: jest.fn(),
-  })),
-}));
-
-jest.mock('firebase/auth', () => ({
-  getAuth: jest.fn(() => ({})),
-}));
-
 // Mock URL APIs
 globalThis.URL.createObjectURL = jest.fn(() => 'mock-url');
 globalThis.URL.revokeObjectURL = jest.fn();
 
 // Mock Firebase config
-jest.mock('./config/firebase', () => ({
-  db: {},
-  auth: {},
-  app: {},
-  functions: {},
-  analytics: {},
-  isFirebaseConfigured: jest.fn(() => false),
-  initializeFirebase: jest.fn(),
-  getFirebaseServices: jest.fn(),
-  isLocalDevelopment: true,
-}));
+if (!isRealApiRun) {
+  jest.mock('./config/firebase', () => ({
+    db: {},
+    auth: {},
+    app: {},
+    functions: {},
+    analytics: {},
+    isFirebaseConfigured: jest.fn(() => false),
+    initializeFirebase: jest.fn(),
+    getFirebaseServices: jest.fn(),
+    isLocalDevelopment: true,
+  }));
+}
 
 // Note: secretsService is mocked via moduleNameMapper in jest.config.cjs
 
@@ -107,4 +85,50 @@ global.console = {
   log: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),
-}; 
+};
+
+// ---------------------------------------------------------------------------
+// Firebase mocks (disabled when RUN_REAL_API_TESTS=true)
+// ---------------------------------------------------------------------------
+
+if (!isRealApiRun) {
+  jest.mock('firebase/app', () => ({
+    initializeApp: jest.fn(() => ({})),
+  }));
+
+  jest.mock('firebase/firestore', () => ({
+    getFirestore: jest.fn(() => ({})),
+    collection: jest.fn(),
+    doc: jest.fn(),
+    getDocs: jest.fn(),
+    setDoc: jest.fn(),
+    query: jest.fn(),
+    where: jest.fn(),
+    orderBy: jest.fn(),
+    Timestamp: {
+      now: jest.fn(() => ({ seconds: 1640995200, nanoseconds: 0 })),
+    },
+    writeBatch: jest.fn(() => ({
+      delete: jest.fn(),
+      commit: jest.fn(),
+    })),
+  }));
+
+  jest.mock('firebase/auth', () => ({
+    getAuth: jest.fn(() => ({})),
+  }));
+}
+
+if (!isRealApiRun) {
+  jest.mock('./config/firebase', () => ({
+    db: {},
+    auth: {},
+    app: {},
+    functions: {},
+    analytics: {},
+    isFirebaseConfigured: jest.fn(() => false),
+    initializeFirebase: jest.fn(),
+    getFirebaseServices: jest.fn(),
+    isLocalDevelopment: true,
+  }));
+} 

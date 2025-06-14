@@ -131,7 +131,7 @@ export class TebraApiService {
   // HIPAA compliance callables
   private validateHIPAAComplianceBackend = callableWrapper.validateHIPAACompliance;
   private testSecretRedactionBackend = callableWrapper.testSecretRedaction;
-  
+
   /**
    * HIPAA-compliant logging using the frontend-safe redaction utility
    */
@@ -209,10 +209,10 @@ export class TebraApiService {
    */
   async testConnection(): Promise<boolean> {
     try {
+      // Always use callable Firebase Function backed by PHP proxy
       this.log('Testing Tebra API connection via Firebase Functions...');
       const result = await this.tebraTestConnection();
       const response = result.data as ApiResponse<null>;
-
       this.log('Connection test result:', response);
       return response.success;
     } catch (error) {
@@ -245,16 +245,15 @@ export class TebraApiService {
    */
   async searchPatients(searchCriteria: SearchCriteria): Promise<TebraPatient[]> {
     try {
-      console.log('Searching patients:', searchCriteria);
+      console.log('Searching patients via Functions:', searchCriteria);
       const result = await this.tebraSearchPatients({ searchCriteria });
       const response = result.data as ApiResponse<TebraPatient[]>;
-
       if (response.success && response.data) {
         return response.data;
       }
       return [];
     } catch (error) {
-      console.error('Failed to search patients:', error);
+      console.error('searchPatients failed:', error);
       return [];
     }
   }
@@ -283,16 +282,15 @@ export class TebraApiService {
    */
   async getProviders(): Promise<TebraProvider[]> {
     try {
-      console.log('Getting providers...');
+      console.log('Getting providers via Functions...');
       const result = await this.tebraGetProviders();
       const response = result.data as ApiResponse<TebraProvider[]>;
-
       if (response.success && response.data) {
         return response.data;
       }
       return [];
     } catch (error) {
-      console.error('Failed to get providers:', error);
+      console.error('getProviders failed:', error);
       return [];
     }
   }

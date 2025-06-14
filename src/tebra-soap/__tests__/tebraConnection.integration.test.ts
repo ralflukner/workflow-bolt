@@ -7,7 +7,7 @@ interface TebraError extends Error {
   };
 }
 
-describe('Tebra API Live Connection', () => {
+describe.skip('Tebra API Live Connection (direct SOAP access disabled)', () => {
   it('should connect to the Tebra API and return true', async () => {
     const secretsService = SecretsService.getInstance();
     const username = await secretsService.getSecret('TEBRA_USERNAME');

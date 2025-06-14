@@ -48,6 +48,11 @@ export class SecretsService {
       envFallback: 'REACT_APP_TEBRA_CUSTOMERKEY',
       required: true
     },
+    TEBRA_WSDL_URL: {
+      secretName: 'TEBRA_WSDL_URL',
+      envFallback: 'REACT_APP_TEBRA_WSDL_URL',
+      required: true
+    },
     
     // API Keys
     TEBRA_PROXY_API_KEY: {
@@ -169,10 +174,34 @@ export class SecretsService {
    * Frontend-safe method - Secret Manager access moved to Firebase Functions
    * This now only handles environment variable fallback
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private async getFromSecretManager(_secretName: string): Promise<string | null> {
-    console.warn(`Secret Manager access moved to Firebase Functions backend. Use TebraApiService.validateHIPAACompliance() instead.`);
-    return null;
+  private async getFromSecretManager(secretName: string): Promise<string | null> {
+    try {
+      // Lazy-load the client so the browser bundle is not affected
+      // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+      const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
+      const client = new SecretManagerServiceClient();
+
+      const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID || process.env.PROJECT_ID;
+      if (!projectId) {
+        console.warn('GOOGLE_CLOUD_PROJECT environment variable not set – cannot access Secret Manager');
+        return null;
+      }
+
+      const [version] = await client.accessSecretVersion({
+        name: `projects/${projectId}/secrets/${secretName}/versions/latest`,
+      });
+
+      if (!version.payload?.data) {
+        console.warn(`Secret ${secretName} has no payload`);
+        return null;
+      }
+
+      // Convert Buffer to string
+      return version.payload.data.toString();
+    } catch (error) {
+      console.error(`getFromSecretManager error for ${secretName}:`, error);
+      return null;
+    }
   }
 
   /**
