@@ -213,7 +213,7 @@ $ curl -X POST https://webservice.kareo.com/services/soap/2.1/KareoServices.svc 
     <kar:RequestHeader>
       <kar:CustomerKey>j57wt68dc39q</kar:CustomerKey>
       <kar:User>work-flow@luknerclinic.com</kar:User>
-      <kar:Password>s?3dVK=iXBj73*i$%5i8/5<4xtiP9?</kar:Password>
+      <kar:Password>REDACTED</kar:Password>
     </kar:RequestHeader>
   </soap:Header>
   <soap:Body>

@@ -164,7 +164,7 @@ export class TebraSoapClient {
    */
   public async getPatientById(patientId: string): Promise<any> {
     await this.initializeClient();
-    await this.rateLimiter.waitForSlot('GetPatient');
+    await this.rateLimiter.waitForSlot('getpatient');
 
     try {
       const [result] = await this.client.GetPatientAsync({ patientId });

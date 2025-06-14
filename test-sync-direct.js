@@ -3,7 +3,8 @@ const admin = require('firebase-admin');
 
 // Initialize Firebase Admin
 admin.initializeApp({
-  projectId: 'luknerlumina-firebase'
+  credential: admin.credential.applicationDefault(), // or admin.credential.cert(serviceAccount)
+  projectId: 'luknerlumina-firebase',
 });
 
 const db = admin.firestore();

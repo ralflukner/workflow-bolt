@@ -35,8 +35,9 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
       const responseTime = Math.round(endTime - startTime);
       
       if (isConnected) {
+        const proxyState = responseTime > 1000 ? 'warning' : 'healthy';
         setStatus({
-          proxy: 'healthy',
+          proxy: proxyState,
           lastCheck: new Date().toLocaleTimeString(),
           responseTime,
           latency: responseTime,

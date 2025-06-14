@@ -63,12 +63,13 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   const [persistenceEnabled, setPersistenceEnabled] = useState(true);
   const [hasRealData, setHasRealData] = useState(false);
   const { getCurrentTime, timeMode } = useTimeContext();
-
-  // Determine which storage service to use
-  const storageService = isFirebaseConfigured() ? dailySessionService : localSessionService;
-  const storageType = isFirebaseConfigured() ? 'Firebase' : 'LocalStorage';
-
-  // Load today's session data on mount
+  const firebaseReady = isFirebaseConfigured();
+  const storageService = firebaseReady ? dailySessionService : localSessionService;
+  const storageType = firebaseReady ? 'Firebase' : 'LocalStorage';
+...
+        if (!firebaseReady) {
+...
+          if (firebaseReady) {
   useEffect(() => {
     const loadTodaysData = async () => {
       if (!persistenceEnabled) {

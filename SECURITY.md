@@ -1,4 +1,3 @@
-
 # Security Guidelines
 
 This document outlines the security measures and best practices for the Tebra EHR Integration system.
@@ -191,3 +190,37 @@ The system is designed to comply with:
 - [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
 
 - [Security Training](https://training.yourdomain.com/security)
+
+## 🚨 Security Incidents
+
+### Emergency Contacts
+
+- **Security Team**: lukner@luknerclinic.com
+- **Emergency Phone**: 806-329-3050
+- **Security Documentation**: https://github.com/ralflukner/workflow-bolt/wiki
+
+### Incident Response
+
+1. **Immediate Actions**
+   - Contact security team via email or phone
+   - Document incident details
+   - Isolate affected systems
+   - Preserve evidence
+
+2. **Investigation**
+   - Review system logs
+   - Analyze security events
+   - Identify root cause
+   - Document findings
+
+3. **Remediation**
+   - Apply security patches
+   - Update access controls
+   - Rotate credentials
+   - Verify fixes
+
+4. **Post-Incident**
+   - Update security procedures
+   - Conduct team review
+   - Update documentation
+   - Schedule follow-up

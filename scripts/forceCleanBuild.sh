@@ -1,5 +1,8 @@
-# Make sure you're in the tebra-php-api directory
-pwd  # Should show .../tebra-php-api
+#/usr/bin/env bash
+set -euo pipefail
+
+ # Make sure you're in the tebra-php-api directory
+ pwd  # Should show .../tebra-php-api
 
 # Force rebuild with a cache-busting change
 echo "# Build: $(date)" >> Dockerfile

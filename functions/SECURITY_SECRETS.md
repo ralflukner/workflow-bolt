@@ -1,4 +1,3 @@
-
 # SECURITY SECRETS MANAGEMENT
 
 ## 🔐 HIPAA-Compliant Secret Storage
@@ -43,46 +42,43 @@ This document outlines our security-first approach to managing secrets in Fireba
 
 - **Rotation**: Secrets can be rotated without code changes
 
+### Data Residency
+
+- **Region**: All secrets stored in us-central1
+- **Replication**: User-managed replication policy
+- **Compliance**: HIPAA data residency requirements
+
 ## 📝 CLI Commands
 
 ### Creating Secrets
 
 ```bash
-
-# Create a new secret
-
-gcloud secrets create SECRET_NAME --replication-policy=automatic
+# Create a new secret with HIPAA-compliant data residency
+gcloud secrets create SECRET_NAME \
+    --replication-policy=user-managed \
+    --locations=us-central1
 
 # Add secret value
-
 echo "SECRET_VALUE" | gcloud secrets versions add SECRET_NAME --data-file=-
-
 ```
 
 ### Managing Secrets
 
 ```bash
-
 # List all secrets
-
 gcloud secrets list
 
 # View secret metadata (not the value)
-
 gcloud secrets describe SECRET_NAME
 
 # Add new version (rotation)
-
 echo "NEW_VALUE" | gcloud secrets versions add SECRET_NAME --data-file=-
-
 ```
 
 ### Local Encryption
 
 ```bash
-
 # Encrypt .env file for secure backup
-
 ENV=.env
 STAMP=$(date +%Y%m%d)
 openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt \
@@ -90,11 +86,9 @@ openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt \
         -k "$(whoami)-$(hostname)-HIPAA"
 
 # Decrypt when needed (NEVER commit decrypted files)
-
 openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -d \
         -in "$ENV.$STAMP.enc" -out "$ENV.temp" \
         -k "$(whoami)-$(hostname)-HIPAA"
-
 ```
 
 ## 🚫 Security Violations
@@ -111,6 +105,8 @@ openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -d \
 
 - ❌ Use weak encryption or short passwords
 
+- ❌ Use automatic replication for HIPAA data
+
 ### ALWAYS DO
 
 - ✅ Use Google Secret Manager for production
@@ -122,6 +118,8 @@ openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -d \
 - ✅ Rotate secrets regularly
 
 - ✅ Use least-privilege IAM policies
+
+- ✅ Specify data residency requirements
 
 ## 🔄 Secret Rotation Process
 
@@ -165,6 +163,7 @@ openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -d \
 | Audit Trails | Cloud Logging, Secret Manager audit |
 | Data Integrity | Cryptographic signatures |
 | Transmission Security | TLS 1.3 for all communications |
+| Data Residency | User-managed replication in us-central1 |
 
 ---
 

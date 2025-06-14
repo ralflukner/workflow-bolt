@@ -33,22 +33,23 @@ export const DiagnosticPanel: React.FC = () => {
       } catch (error) {
         setAuthStatus('failed');
         console.error('Auth check failed:', error);
-      }
-    };
-
-    if (isFirebaseConfigured()) {
-      checkAuth();
-    } else {
-      setAuthStatus('authenticated'); // localStorage doesn't need auth
-    }
-  }, [ensureFirebaseAuth]);
-
-  // Load storage statistics
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const service = isFirebaseConfigured() ? dailySessionService : localSessionService;
-        const stats = await service.getSessionStats();
+useEffect(() => {
+    const firebaseReady = isFirebaseConfigured();
+    if (firebaseReady) {
+       checkAuth();
+     } else {
+       setAuthStatus('authenticated'); // localStorage doesn't need auth
+     }
+   }, [ensureFirebaseAuth]);
+@@
+        const service = firebaseReady ? dailySessionService : localSessionService;
+@@
+      const service = firebaseReady ? dailySessionService : localSessionService;
+@@
+              <span className={getStatusColor(firebaseReady.toString())}>
+                {firebaseReady.toString()}
+@@
+                {firebaseReady ? 'Firebase' : 'LocalStorage'}
         setStorageStats(stats);
       } catch (error) {
         console.error('Failed to load storage stats:', error);

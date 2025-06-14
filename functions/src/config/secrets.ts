@@ -1,7 +1,18 @@
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 
 const secretClient = new SecretManagerServiceClient();
-const projectId = 'luknerlumina-firebase';
+
+// Get project ID from environment variable with fallback
+const getProjectId = (): string => {
+  const envProjectId = process.env.GCP_PROJECT_ID;
+  if (!envProjectId) {
+    console.warn('GCP_PROJECT_ID not set, using default project ID. This is not recommended for production.');
+    return 'luknerlumina-firebase';
+  }
+  return envProjectId;
+};
+
+const projectId = getProjectId();
 
 /**
  * Centralized secret management for HIPAA compliance
@@ -36,7 +47,8 @@ async function getSecret(name: string): Promise<string> {
       type: 'SECRET_ACCESS',
       secretName: name.split('/').slice(-3, -2)[0], // Just the secret name
       timestamp: new Date().toISOString(),
-      source: 'cloud-function'
+      source: 'cloud-function',
+      projectId: projectId
     }));
     
     return secretValue;

@@ -9,7 +9,8 @@ import { TebraApiService } from '../../services/tebraApiService';
  * 
  * Run with: RUN_REAL_API_TESTS=true npm test
  */
-describe('🔧 Tebra Connection Diagnostics - Real API Tests', () => {
+const real = process.env.RUN_REAL_API_TESTS === 'true' ? describe : describe.skip;
+real('🔧 Tebra Connection Diagnostics - Real API Tests', () => {
   let tebraService: TebraApiService;
 
   beforeEach(() => {
