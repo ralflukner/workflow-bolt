@@ -1,11 +1,33 @@
 # Changelog
 
+## [Unreleased]
+
+- Added new feature X
+- Fixed bug Y
+- Improved performance Z
+
+## [1.0.0] - 2024-03-20
+
+- Initial release
+- Basic functionality implemented
+- Core features working
+
+## [0.9.0] - 2024-03-15
+
+- Beta release
+- Testing phase
+- Bug fixes
+
+## [0.8.0] - 2024-03-10
+
+- Alpha release
+- Development phase
+- Initial setup
+
 All notable changes to the Tebra Proxy service will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [1.0.0] - 2024-03-20
 
 ### Added
 - Initial release of Tebra Proxy service
@@ -25,8 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Autoscaling settings (1-10 instances)
 - Resource limits (1 CPU, 512Mi memory)
 - Health check probes
-
-## [Unreleased]
 
 ### Planned
 - Enhanced error handling

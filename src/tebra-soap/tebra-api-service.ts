@@ -6,8 +6,7 @@
 import { TebraSoapClient } from './tebraSoapClient';
 import { TebraDataTransformer } from './tebra-data-transformer';
 import { TebraCredentials, TebraPatient, TebraAppointment, TebraDailySession, TebraProvider } from './tebra-api-service.types';
-import { secretsService } from '../services/secretsService';
-import { secureLog } from '../utils/secureLog';
+import { secureLog } from '../utils/redact';
 import { SecretsService } from '../services/secretsService';
 
 // Type definitions for SOAP responses
@@ -75,10 +74,11 @@ const getEnvVar = (name: string, fallback: string): string => {
  */
 const getTebraCredentialsAsync = async (): Promise<Partial<TebraCredentials>> => {
   try {
+    const secrets = SecretsService.getInstance();
     const [username, password, customerKey] = await Promise.all([
-      secretsService.getSecret('TEBRA_USERNAME').catch(() => null),
-      secretsService.getSecret('TEBRA_PASSWORD').catch(() => null),
-      secretsService.getSecret('TEBRA_CUSTOMER_KEY').catch(() => null)
+      secrets.getSecret('TEBRA_USERNAME').catch(() => null),
+      secrets.getSecret('TEBRA_PASSWORD').catch(() => null),
+      secrets.getSecret('TEBRA_CUSTOMER_KEY').catch(() => null)
     ]);
 
     const credentials: Partial<TebraCredentials> = {};
@@ -123,9 +123,9 @@ export class TebraApiService {
 
     // Merge with provided credentials and fallback to env vars
     const finalCredentials: Partial<TebraCredentials> = {
-      wsdlUrl: credentials?.wsdlUrl || secretsCredentials.wsdlUrl || getEnvVar('VITE_TEBRA_WSDL_URL', ''),
-      username: credentials?.username || secretsCredentials.username || getEnvVar('VITE_TEBRA_USERNAME', ''),
-      password: credentials?.password || secretsCredentials.password || getEnvVar('VITE_TEBRA_PASSWORD', '')
+      wsdlUrl: credentials?.wsdlUrl || secretsCredentials.wsdlUrl || getEnvVar('TEBRA_WSDL_URL', ''),
+      username: credentials?.username || secretsCredentials.username || getEnvVar('TEBRA_USERNAME', ''),
+      password: credentials?.password || secretsCredentials.password || getEnvVar('TEBRA_PASSWORD', '')
     };
 
     return new TebraApiService(finalCredentials, dataTransformer);
@@ -144,9 +144,9 @@ export class TebraApiService {
     // Use credentials passed in or fallback to environment variables
     // Note: Credentials should be retrieved from Firebase Functions/GSM via backend
     const config: EnvConfig = {
-      wsdlUrl: credentials?.wsdlUrl || getEnvVar('VITE_TEBRA_WSDL_URL', ''),
-      username: credentials?.username || getEnvVar('VITE_TEBRA_USERNAME', ''),
-      password: credentials?.password || getEnvVar('VITE_TEBRA_PASSWORD', '')
+      wsdlUrl: credentials?.wsdlUrl || getEnvVar('TEBRA_WSDL_URL', ''),
+      username: credentials?.username || getEnvVar('TEBRA_USERNAME', ''),
+      password: credentials?.password || getEnvVar('TEBRA_PASSWORD', '')
     };
 
     this.validateConfig(config);
@@ -243,7 +243,11 @@ export class TebraApiService {
 
   async getAppointments(fromDate: Date, toDate: Date): Promise<TebraAppointment[]> {
     return this.executeRateLimitedCall('getAppointments', async () => {
-      console.log(`Getting appointments from ${fromDate.toISOString()} to ${toDate.toISOString()}`);
+      secureLog('Getting appointments for date range', {
+        // Log ISO dates only (no patient/provider IDs)
+        from: fromDate.toISOString().split('T')[0],
+        to: toDate.toISOString().split('T')[0]
+      });
 
       // Format dates for Tebra API
       const fromDateStr = fromDate.toISOString().split('T')[0];
@@ -252,7 +256,7 @@ export class TebraApiService {
       // Use the SOAP client's getAppointments method (which includes rate limiting)
       const appointments = await this.soapClient.getAppointments(fromDateStr, toDateStr) as SoapAppointmentResponse[];
 
-      console.log(`Retrieved ${appointments.length} appointments from Tebra API`);
+      secureLog(`Retrieved ${appointments.length} appointments from Tebra API`);
 
       // Transform response to our format
       return appointments.map((apt: SoapAppointmentResponse) => ({

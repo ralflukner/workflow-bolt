@@ -34,13 +34,12 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
     });
 
     it('should validate that secret names follow security patterns', () => {
-      // HIPAA Requirement: Proper naming conventions for secrets
-      const secretNamingPattern = /^[a-z][a-z0-9-]*[a-z0-9]$/;
-      
+      // Updated pattern to allow uppercase letters and underscores
+      const secretNamingPattern = /^[A-Z][A-Z0-9_]*[A-Z0-9]$/;
       const expectedSecrets = [
         'TEBRA_USERNAME',
-        'TEBRA_PASSWORD', 
-        'tebra-api-url'
+        'TEBRA_PASSWORD',
+        'TEBRA_WSDL_URL'
       ];
 
       expectedSecrets.forEach(secretName => {
@@ -276,7 +275,9 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
         }
       });
       
-      (tebraService as any).validateHIPAAComplianceBackend = mockValidateFunction;
+      (tebraService as unknown as Record<string, unknown>)[
+        'validateHIPAAComplianceBackend'
+      ] = mockValidateFunction;
 
       const validation = await tebraService.validateHIPAACompliance();
       
@@ -288,7 +289,9 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
     it('should detect compliance issues via Firebase Functions', async () => {
       // Mock the Firebase Function response with issues
       const mockValidateFunction = jest.fn();
-      tebraService['validateHIPAAComplianceBackend'] = mockValidateFunction;
+      (tebraService as unknown as Record<string, unknown>)[
+        'validateHIPAAComplianceBackend'
+      ] = mockValidateFunction;
 
       // Mock validation response with issues
       mockValidateFunction.mockResolvedValue({
@@ -310,7 +313,9 @@ describe('HIPAA-Compliant Tebra Diagnostic Testing', () => {
     it('should test secret redaction via Firebase Functions', async () => {
       // Mock the Firebase Function response
       const mockRedactionFunction = jest.fn();
-      tebraService['testSecretRedactionBackend'] = mockRedactionFunction;
+      (tebraService as unknown as Record<string, unknown>)[
+        'testSecretRedactionBackend'
+      ] = mockRedactionFunction;
 
       // Mock redaction test response
       mockRedactionFunction.mockResolvedValue({

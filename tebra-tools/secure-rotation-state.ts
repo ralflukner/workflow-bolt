@@ -20,10 +20,13 @@ export class SecureRotationState {
   private readonly bucketName: string;
   private readonly stateObjectName: string;
 
-  constructor() {
+  constructor(projectId?: string) {
     this.secretClient = new SecretManagerServiceClient();
     this.storage = new Storage();
-    this.projectId = process.env.GCP_PROJECT_ID || 'luknerlumina-firebase';
+    this.projectId = projectId ?? process.env.GCP_PROJECT_ID ?? '';
+    if (!this.projectId) {
+      throw new Error('GCP_PROJECT_ID environment variable must be set or provided to SecureRotationState');
+    }
     this.secretId = 'tebra-rotation-state';
     this.bucketName = `${this.projectId}-rotation-state`;
     this.stateObjectName = 'credential-rotation-state.json';
@@ -40,7 +43,7 @@ export class SecureRotationState {
         await this.storage.createBucket(this.bucketName, {
           location: 'us-central1',
           storageClass: 'STANDARD',
-          versioning: true,
+          versioning: { enabled: true },
           labels: {
             environment: 'production',
             purpose: 'credential-rotation'
@@ -124,6 +127,9 @@ export class SecureRotationState {
         const [version] = await this.secretClient.accessSecretVersion({
           name: `projects/${this.projectId}/secrets/${this.secretId}/versions/latest`
         });
+        if (!version.payload?.data) {
+          throw new Error('Secret payload empty');
+        }
         return JSON.parse(version.payload.data.toString());
       } catch {
         // Fallback to Cloud Storage
@@ -147,9 +153,11 @@ export class SecureRotationState {
       const archiveName = `archive/${this.stateObjectName}.${timestamp}`;
 
       // Archive in Cloud Storage
-      await this.storage.bucket(this.bucketName)
-        .file(this.stateObjectName)
-        .copy(this.bucketName, archiveName);
+ const dest = this.storage.bucket(this.bucketName).file(archiveName);
+ await this.storage
+   .bucket(this.bucketName)
+   .file(this.stateObjectName)
+   .copy(dest);
 
       // Delete old versions from Secret Manager
       const [versions] = await this.secretClient.listSecretVersions({

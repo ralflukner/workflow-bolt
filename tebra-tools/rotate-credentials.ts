@@ -44,7 +44,7 @@ export class CredentialRotator {
   async rotateCredentials(): Promise<void> {
     try {
       // Get current credentials
-      const currentCredentials = await this.getCurrentCredentials();
+      // const currentCredentials = await getCurrentCredentials();
       
       // Generate new credentials
       const newCredentials = await this.generateNewCredentials();
