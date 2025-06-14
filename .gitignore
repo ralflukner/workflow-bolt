@@ -163,3 +163,4 @@ src/vite-env.d.ts
 # Credential rotation state
 tebra-tools/credential-rotation-state.json
 key.json
+key.json
