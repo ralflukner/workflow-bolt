@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+if (!admin.apps.length) admin.initializeApp();
 import { DashboardPatient } from '../tebra-sync/mappers';
 
 export interface DailySessionRepo {
@@ -10,7 +11,7 @@ export const firestoreDailySessionRepo: DailySessionRepo = {
     const db = admin.firestore();
     const batch = db.batch();
     const root = db.collection('daily_sessions').doc(date);
-    
+
     // Store metadata and patients array (for backward compatibility)
     batch.set(root, { 
       date, 
@@ -18,7 +19,7 @@ export const firestoreDailySessionRepo: DailySessionRepo = {
       lastSync: admin.firestore.FieldValue.serverTimestamp(), 
       syncedBy: uid 
     }, { merge: true });
-    
+
     // Also store each patient in subcollection (for scalability)
  let ops = 0;
  for (const p of patients) {

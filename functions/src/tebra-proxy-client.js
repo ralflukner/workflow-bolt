@@ -91,12 +91,9 @@ class TebraProxyClient {
 
   async testConnection() {
     try {
-      console.log('[TebraCloudRun] 🔍 Starting connection test...');
-      const result = await this.makeRequest('health');
-      console.log('[TebraCloudRun] ✅ Connection test successful:', result);
-      return result.status === 'healthy';
-    } catch (error) {
-      console.error('[TebraCloudRun] ❌ Connection test failed:', error.message);
+      const result = await this.makeRequest('getProviders');
+      return Array.isArray(result);
+    } catch (e) {
       return false;
     }
   }

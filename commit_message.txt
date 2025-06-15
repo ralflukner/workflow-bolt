@@ -1,108 +1,14 @@
-feat: add Firebase Functions setup for Tebra EHR integration
+fix: Add Firebase Admin initialization guards for Functions v2
 
-This commit introduces a comprehensive setup for integrating Tebra EHR with Firebase Cloud Functions, enabling secure server-side SOAP API calls and robust data synchronization capabilities.
+In Firebase Functions v2, each revision runs as its own Cloud Run container
+and Firebase Admin is not automatically initialized. This caused errors when
+modules that use Firebase Admin were imported before the main initialization
+in index.js.
 
-## Key Components
+Changes:
+- Added initialization guard to src/monitoring.js
+- Added initialization guard to src/services/firestoreDailySession.ts
+- Created README.md with deployment instructions
 
-### Server-Side Implementation
-- Created Firebase Functions infrastructure with Node.js 20 runtime
-- Implemented TebraSoapClient class for SOAP API communication
-- Added a rate limiting mechanism to prevent API overload
-- Developed both callable and scheduled functions for different integration needs
-- Set up error handling and logging for reliable operation
-
-### Client-Side Integration
-- Created TebraApiService for type-safe interaction with Firebase Functions
-- Implemented graceful fallbacks for environments without Firebase
-- Added TebraIntegrationNew component with intuitive UI controls
-- Integrated the component into the main Dashboard
-
-### Documentation & Configuration
-- Added detailed FIREBASE_SETUP.md with comprehensive setup instructions
-- Included security best practices and troubleshooting guidance
-- Configured firebase.json for proper deployment settings
-- Set up package.json with required dependencies
-
-## Features
-
-### Firebase Functions
-- tebraTestConnection: Tests API connectivity
-- tebraGetPatient: Retrieves patient by ID
-- tebraSearchPatients: Searches for patients by criteria
-- tebraGetAppointments: Gets appointments by date
-- tebraGetProviders: Retrieves all providers
-- tebraCreateAppointment: Creates new appointments
-- tebraUpdateAppointment: Updates existing appointments
-- tebraSyncTodaysSchedule: Syncs and stores today's schedule
-- tebraAutoSync: Scheduled function for automatic syncing (every 15 minutes during business hours)
-
-### Benefits
-- Improved security by moving API credentials to server-side
-- Enhanced reliability with rate limiting and error handling
-- Better performance through scheduled synchronization
-- Simplified client-side code with type-safe interfaces
-- Comprehensive documentation for future maintenance
-
-This implementation provides a solid foundation for the Tebra EHR integration, enabling secure and efficient patient data management while maintaining a clean separation between client and server responsibilities.
-
-Remove vendor directory from Git tracking
-
-✅ Successfully Removed Vendor Directory from Git Tracking
-
-What was done:
-• Added tebra-proxy/vendor/ to .gitignore
-• Removed 2,212 PHP dependency files from Git tracking
-• Verified vendor directory still exists locally for development
-• Confirmed Git properly ignores vendor files
-
-Benefits achieved:
-• Reduced repository size by removing thousands of dependency files
-• Follows PHP best practices for dependency management  
-• Faster Git operations (clone, fetch, push) due to smaller repository
-• Cleaner Git history without dependency file changes
-• Vendor directory remains functional locally for development
-
-Current status:
-✅ Working directory is clean
-✅ Vendor directory exists locally and is functional
-✅ Git properly ignores all vendor files
-✅ Repository follows PHP dependency management best practices
-✅ Ready to push changes to remote repository
-
-The PHP dependencies are still available locally for development and the 
-Tebra proxy will continue to work normally. The only difference is that 
-these dependency files are no longer tracked in Git, which is the correct 
-approach for PHP projects using Composer.
-
-feat(auth): enhance Auth0-Firebase bridge with robust testing and advanced features
-
-This commit significantly improves the Auth0-Firebase authentication bridge with comprehensive testing and advanced features for better reliability, security, and debugging capabilities.
-
-🧪 Testing Enhancements:
-- Added extensive unit tests for AuthBridge class and useFirebaseAuth hook
-- Implemented integration tests covering real-world authentication scenarios
-- Added tests for error handling, token validation, and retry mechanisms
-- Created test mocks for Auth0 and Firebase interactions
-
-🔒 Security & Performance Features:
-- Implemented token caching with proper expiration handling
-- Added token validation with expiry checks and format verification
-- Created retry logic with exponential backoff for network resilience
-- Added Firebase auth state monitoring for better debugging
-- Implemented health check functionality for system monitoring
-
-🛠️ Technical Improvements:
-- Enhanced error handling with detailed error messages
-- Added comprehensive debug logging for troubleshooting
-- Implemented performance tracking for authentication operations
-- Added support for silent token refresh with popup fallback
-- Created utility functions for cache management and debugging
-
-📋 Implementation Details:
-- Enhanced AuthBridge class with a singleton pattern and improved methods
-- Expanded useFirebaseAuth hook with additional utility functions
-- Added onAuthStateChanged listener for Firebase auth state monitoring
-- Implemented structured debug information collection
-- Created a health check system with status reporting
-
-This implementation provides a more robust, reliable authentication system with comprehensive testing and advanced features to ensure secure access to patient data while maintaining HIPAA compliance.
+This fixes the "Error: The default Firebase app does not exist" that was
+occurring when the functions were deployed to v2 runtime.

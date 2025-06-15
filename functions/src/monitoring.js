@@ -4,6 +4,7 @@
  */
 
 const admin = require('firebase-admin');
+if (!admin.apps.length) admin.initializeApp();
 
 // Alert configuration
 const ALERT_EMAIL = 'lukner@luknerclinic.com';
@@ -29,12 +30,12 @@ class UserActivityTracker {
   async trackActivity(userId, action, metadata = {}) {
     const now = Date.now();
     const minuteAgo = now - (60 * 1000); // One minute window
-    
+
     try {
       // Get or create user activity document
       const userActivityRef = this.activitiesCollection.doc(userId);
       const userActivityDoc = await userActivityRef.get();
-      
+
       let session;
       if (!userActivityDoc.exists) {
         session = {
@@ -45,18 +46,18 @@ class UserActivityTracker {
         };
       } else {
         session = userActivityDoc.data();
-        
+
         // Clean old activities (keep last minute)
         session.activities = session.activities.filter(activity => activity.timestamp > minuteAgo);
       }
-      
+
       // Add new activity
       session.activities.push({
         action,
         timestamp: now,
         metadata
       });
-      
+
       session.lastActivity = now;
 
       // Update counters
@@ -84,19 +85,34 @@ class UserActivityTracker {
   async cleanupOldData(userId) {
     try {
       const now = Date.now();
-      const retentionCutoff = now - (ACTIVITY_RETENTION_MINUTES * 60 * 1000);
-      
+      const activityRetentionCutoff = now - (ACTIVITY_RETENTION_MINUTES * 60 * 1000);
+      const securityEventsRetentionCutoff = new Date(now - (SECURITY_EVENTS_RETENTION_DAYS * 24 * 60 * 60 * 1000)).toISOString();
+
       // Cleanup old activities
       const userActivityRef = this.activitiesCollection.doc(userId);
       const userActivityDoc = await userActivityRef.get();
-      
+
       if (userActivityDoc.exists) {
         const session = userActivityDoc.data();
-        session.activities = session.activities.filter(activity => activity.timestamp > retentionCutoff);
+        session.activities = session.activities.filter(activity => activity.timestamp > activityRetentionCutoff);
         await userActivityRef.set(session, { merge: true });
       }
 
-      // Cleanup old security events
+      // Cleanup old security events by retention days
+      const oldEventsQuery = this.securityEventsCollection
+        .where('userId', '==', userId)
+        .where('timestamp', '<', securityEventsRetentionCutoff);
+
+      const oldEventsSnapshot = await oldEventsQuery.get();
+      if (!oldEventsSnapshot.empty) {
+        const batch = this.db.batch();
+        oldEventsSnapshot.docs.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+      }
+
+      // Cleanup excess security events by count limit
       const securityEventsQuery = this.securityEventsCollection
         .where('userId', '==', userId)
         .orderBy('timestamp', 'desc')
@@ -166,13 +182,13 @@ class UserActivityTracker {
 
       // Store alert in Firestore
       await this.securityEventsCollection.add(alert);
-      
+
       // Log the security event
       console.log('SECURITY_ALERT:', JSON.stringify(alert));
-      
+
       // Send email alert
       await this.sendEmailAlert(alert);
-      
+
       // Log to Cloud Logging for centralized monitoring
       await this.logToCloudMonitoring(alert);
     } catch (error) {
@@ -213,10 +229,10 @@ class UserActivityTracker {
 
   generateAlertEmail(alert) {
     const sanitizedDetails = this.sanitizeAlertDetails(alert.details);
-    
+
     return `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
       <head>
         <style>
           .alert-container { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; }
@@ -234,19 +250,19 @@ class UserActivityTracker {
           <div class="header">
             <h1>🚨 HIPAA Security Alert</h1>
           </div>
-          
+
           <div class="content">
             <div class="severity-${alert.severity.toLowerCase()}">
               <h2>Alert Type: ${alert.type}</h2>
               <p><strong>Severity:</strong> ${alert.severity}</p>
               <p><strong>Time:</strong> ${alert.timestamp}</p>
             </div>
-            
+
             <div class="details">
               <h3>Details:</h3>
               <pre>${JSON.stringify(sanitizedDetails, null, 2)}</pre>
             </div>
-            
+
             <div class="details">
               <h3>Recommended Actions:</h3>
               <ul>
@@ -254,7 +270,7 @@ class UserActivityTracker {
               </ul>
             </div>
           </div>
-          
+
           <div class="footer">
             <p>This is an automated security alert from the Patient Flow Management System.</p>
             <p>Please investigate immediately to ensure HIPAA compliance.</p>
@@ -267,9 +283,9 @@ class UserActivityTracker {
 
   sanitizeAlertDetails(details) {
     if (!details) return {};
-    
+
     const sanitized = { ...details };
-    
+
     // List of fields that might contain PHI or sensitive data
     const sensitiveFields = [
       'patientId', 'patientName', 'patientDOB', 'patientSSN', 'patientEmail',
@@ -334,14 +350,8 @@ class UserActivityTracker {
 
   async sendEmailAlert(alert) {
     try {
-      // In production, integrate with SendGrid, AWS SES, or similar
-      // For now, we'll use Firebase Admin to trigger an email function
-      
-      const emailData = {
-        to: ALERT_EMAIL,
-        subject: `🚨 HIPAA Security Alert: ${alert.type}`,
-        html: this.generateAlertEmail(alert)
-      };
+      // Import the service account email service (production-grade approach)
+      const { sendEmail } = require('./services/serviceAccountEmailService');
 
       // Log email attempt for audit
       console.log('EMAIL_ALERT_SENT:', {
@@ -355,9 +365,22 @@ class UserActivityTracker {
       // Store full alert details in secure audit log
       await this.logToSecureAuditLog(alert);
 
-      // In a real implementation, you would send the email here
-      // Example: await sendgrid.send(emailData);
-      
+      // Create email data for sending
+      const emailData = {
+        to: ALERT_EMAIL,
+        subject: `🚨 HIPAA Security Alert: ${alert.type}`,
+        html: this.generateAlertEmail(alert)
+      };
+
+      // Send the email using the email service
+      const result = await sendEmail(emailData);
+
+      if (result.success) {
+        console.log(`Email sent successfully with message ID: ${result.messageId}`);
+      } else {
+        console.error(`Failed to send email: ${result.error}`);
+      }
+
     } catch (error) {
       console.error('Failed to send security alert email:', error);
     }
@@ -439,7 +462,7 @@ const generateSecurityReport = async () => {
   try {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     const snapshot = await activityTracker.securityEventsCollection
       .where('timestamp', '>=', startOfDay.toISOString())
       .get();

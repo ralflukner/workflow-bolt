@@ -23,6 +23,15 @@ const SECRETS_TO_PULL = [
   { name: 'TEBRA_PASSWORD', envVar: 'VITE_TEBRA_PASSWORD' },
   { name: 'TEBRA_CUSTOMER_KEY', envVar: 'VITE_TEBRA_CUSTOMER_KEY' },
   { name: 'TEBRA_WSDL_URL', envVar: 'VITE_TEBRA_WSDL_URL' },
+  // Gmail OAuth2 secrets
+  { name: 'GMAIL_CLIENT_ID', envVar: 'GMAIL_CLIENT_ID' },
+  { name: 'GMAIL_CLIENT_SECRET', envVar: 'GMAIL_CLIENT_SECRET' },
+  { name: 'GMAIL_REFRESH_TOKEN', envVar: 'GMAIL_REFRESH_TOKEN' },
+  { name: 'GMAIL_OAUTH_CLIENT_ID', envVar: 'GMAIL_OAUTH_CLIENT_ID' },
+  { name: 'GMAIL_OAUTH_CLIENT_SECRET', envVar: 'GMAIL_OAUTH_CLIENT_SECRET' },
+  // Gmail Service Account secrets (for Domain-Wide Delegation)
+  { name: 'GMAIL_SERVICE_ACCOUNT_EMAIL', envVar: 'GMAIL_SERVICE_ACCOUNT_EMAIL' },
+  { name: 'GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY', envVar: 'GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY' },
 ];
 
 async function readSecret(secretName) {
@@ -40,22 +49,22 @@ async function readSecret(secretName) {
 
 async function pullSecrets() {
   console.log('🔐 Pulling secrets from Google Secret Manager...');
-  
+
   const envContent = [];
   const existingEnvPath = path.join(process.cwd(), '.env');
-  
+
   // Read existing .env file if it exists
   let existingEnv = '';
   if (fs.existsSync(existingEnvPath)) {
     existingEnv = fs.readFileSync(existingEnvPath, 'utf8');
     console.log('📄 Found existing .env file');
   }
-  
+
   // Add header
   envContent.push('# Auto-generated from Google Secret Manager');
   envContent.push(`# Generated at: ${new Date().toISOString()}`);
   envContent.push('');
-  
+
   // Pull each secret
   for (const { name, envVar } of SECRETS_TO_PULL) {
     const value = await readSecret(name);
@@ -68,7 +77,7 @@ async function pullSecrets() {
       console.log(`⚠️  ${envVar} = (not found in GSM)`);
     }
   }
-  
+
   // Add any existing non-VITE_ variables
   if (existingEnv) {
     envContent.push('');
@@ -80,11 +89,11 @@ async function pullSecrets() {
     );
     envContent.push(...existingLines);
   }
-  
+
   // Write to .env file
   const envPath = path.join(process.cwd(), '.env');
   fs.writeFileSync(envPath, envContent.join('\n') + '\n');
-  
+
   console.log(`📝 Wrote ${envContent.length} lines to .env`);
   console.log('🎉 Secrets pulled successfully!');
 }
