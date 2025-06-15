@@ -75,7 +75,7 @@ In addition to the client ID and client secret, you'll need a refresh token to u
 
 Once you have the refresh token, you can store it in Google Secret Manager:
 
-@@ -78,4 +78,8 @@
+```bash
 echo -n "YOUR_REFRESH_TOKEN" |
   gcloud secrets create GMAIL_REFRESH_TOKEN
     --project=luknerlumina-firebase
