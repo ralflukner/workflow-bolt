@@ -181,11 +181,11 @@ Content-Type: text/xml; charset=utf-8
 
 **Multiple Operations Tested:**
 
-- GetProviders: ❌ InternalServiceFault
+- GetProviders: ❌ InternalServiceFaul
 
-- GetAppointments: ❌ InternalServiceFault
+- GetAppointments: ❌ InternalServiceFaul
 
-- GetPractices: ❌ InternalServiceFault
+- GetPractices: ❌ InternalServiceFaul
 
 - All operations return identical fault response
 
@@ -203,9 +203,9 @@ Content-Type: text/xml; charset=utf-8
 GetProviders curl test:
 
 ```bash
-$ curl -X POST https://webservice.kareo.com/services/soap/2.1/KareoServices.svc \
-  -H "Content-Type: text/xml; charset=utf-8" \
-  -H "SOAPAction: http://www.kareo.com/ServiceContracts/2.1/GetProviders" \
+$ curl -X POST https://webservice.kareo.com/services/soap/2.1/KareoServices.svc
+  -H "Content-Type: text/xml; charset=utf-8"
+  -H "SOAPAction: http://www.kareo.com/ServiceContracts/2.1/GetProviders"
   -d '<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
                xmlns:kar="http://www.kareo.com/ServiceContracts/2.1">
@@ -263,7 +263,7 @@ $ curl -X POST https://webservice.kareo.com/services/soap/2.1/KareoServices.svc 
 
 ---
 
-## Impact Assessment
+## Impact Assessmen
 
 **Current Status:** Complete API service unavailable
 **Business Impact:** Unable to sync patient schedules for clinic workflow system
@@ -272,9 +272,9 @@ $ curl -X POST https://webservice.kareo.com/services/soap/2.1/KareoServices.svc 
 
 ---
 
-## Questions for Tebra Support
+## Questions for Tebra Suppor
 
-1. **API Account Status:** Is there any issue with API account
+1. **API Account Status:** Is there any issue with API accoun
    `work-flow@luknerclinic.com` permissions or status?
 
 2. **InternalServiceFault Root Cause:** What server-side conditions typically
@@ -288,18 +288,18 @@ $ curl -X POST https://webservice.kareo.com/services/soap/2.1/KareoServices.svc 
 
 ---
 
-## Request for Support
+## Request for Suppor
 
 Per Tebra's troubleshooting template, requesting engineering investigation of
-server-side InternalServiceFault affecting all SOAP operations for API account
+server-side InternalServiceFault affecting all SOAP operations for API accoun
 `work-flow@luknerclinic.com`. The consistent fault across all operations
-suggests a server-side configuration or account-level issue rather than client
+suggests a server-side configuration or account-level issue rather than clien
 implementation problem.
 
 **Contact Information:**
 
 - **Email:** `ralf.b.lukner.md.phd@gmail.com`
 
-- **Phone:** Available upon request
+- **Phone:** Available upon reques
 
 - **Preferred Response:** Email with technical analysis and resolution steps

@@ -33,7 +33,7 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 
 #### React Application
 
-- Built with React 18 and TypeScript
+- Built with React 18 and TypeScrip
 
 - Uses Vite for build tooling
 
@@ -41,7 +41,7 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 
 - Follows atomic design principles
 
-#### State Management
+#### State Managemen
 
 - Redux for global state
 
@@ -67,11 +67,11 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 
 - Token bucket algorithm
 
-- Configurable limits per endpoint
+- Configurable limits per endpoin
 
 - Automatic retry mechanism
 
-- Queue management
+- Queue managemen
 
 ### 3. Data Layer
 
@@ -81,7 +81,7 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 
 - Real-time updates
 
-- Offline support
+- Offline suppor
 
 - Data synchronization
 
@@ -91,7 +91,7 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 
 - Appointment scheduling
 
-- Provider management
+- Provider managemen
 
 - Session tracking
 
@@ -103,7 +103,7 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 2. Firebase Auth handles authentication
 3. JWT token generated
 4. Token used for API requests
-5. Session management
+5. Session managemen
 
 ### Data Synchronization
 
@@ -120,7 +120,7 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 2. Error classification
 3. User notification
 4. Error logging
-5. Recovery attempt
+5. Recovery attemp
 
 ## Design Decisions
 
@@ -198,15 +198,15 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 
 - Role-based access
 
-- Session management
+- Session managemen
 
-- MFA support
+- MFA suppor
 
 ### 2. Data Protection
 
-- Encryption at rest
+- Encryption at res
 
-- TLS in transit
+- TLS in transi
 
 - Input validation
 
@@ -248,7 +248,7 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 
 ### 2. Environments
 
-- Development
+- Developmen
 
 - Staging
 
@@ -262,7 +262,7 @@ The Tebra EHR Integration is built as a modern web application with a focus on r
 
 - GraphQL migration
 
-- WebSocket support
+- WebSocket suppor
 
 - Mobile app
 

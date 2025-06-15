@@ -11,7 +11,7 @@ This guide provides detailed instructions for setting up the development environ
 
 - npm 9.x or higher
 
-- Git
+- Gi
 
 - VS Code (recommended) or your preferred IDE
 
@@ -21,11 +21,11 @@ This guide provides detailed instructions for setting up the development environ
 
 ### Required Accounts
 
-- GitHub account
+- GitHub accoun
 
-- Firebase account
+- Firebase accoun
 
-- Tebra EHR account
+- Tebra EHR accoun
 
 - Auth0 account (for authentication)
 
@@ -34,7 +34,7 @@ This guide provides detailed instructions for setting up the development environ
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/tebra-integration.git
+git clone https://github.com/your-org/tebra-integration.gi
 cd tebra-integration
 
 ```
@@ -101,7 +101,7 @@ firebase login
 3. Initialize Firebase:
 
 ```bash
-firebase init
+firebase ini
 
 ```
 
@@ -119,7 +119,7 @@ firebase init
 
 #### VS Code Extensions
 
-- ESLint
+- ESLin
 
 - Prettier
 
@@ -150,7 +150,7 @@ npm run dev
 
 # Run all tests
 
-npm test
+npm tes
 
 # Run tests in watch mode
 
@@ -168,7 +168,7 @@ npm run test:coverage
 
 # Run linter
 
-npm run lint
+npm run lin
 
 # Fix linting issues
 
@@ -176,7 +176,7 @@ npm run lint:fix
 
 # Format code
 
-npm run format
+npm run forma
 
 ```
 
@@ -238,7 +238,7 @@ npm install
 1. **Enable Debug Logging**
 
 ```bash
-DEBUG=tebra:* npm start
+DEBUG=tebra:* npm star
 
 ```
 
@@ -289,7 +289,7 @@ DEBUG=tebra:* npm start
 
 - [Auth0 Documentation](https://auth0.com/docs)
 
-## Support
+## Suppor
 
 For additional help:
 

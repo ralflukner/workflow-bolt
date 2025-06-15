@@ -23,7 +23,7 @@ management with cloud-based storage.
 
 ### 2.1 Firestore Collections Structure
 
-```typescript
+```typescrip
 /patients/{patientId}
   - id: string
   - firstName: string
@@ -58,7 +58,7 @@ management with cloud-based storage.
   - name: string
   - specialty: string
   - isActive: boolean
-  - schedule?: object
+  - schedule?: objec
   - createdAt: Timestamp
   - updatedAt: Timestamp
 
@@ -87,7 +87,7 @@ The system implements three primary user roles:
 
 #### Sample Firestore Security Rules
 
-```javascript
+```javascrip
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -165,7 +165,7 @@ service cloud.firestore {
 
 - Minimum necessary access principle enforced
 
-- Data encryption in transit and at rest
+- Data encryption in transit and at res
 
 - User authentication required for all operations
 
@@ -199,7 +199,7 @@ service cloud.firestore {
 
 - [ ] Audit Log Service
 
-### 3.3 Offline Support
+### 3.3 Offline Suppor
 
 - [ ] Enable Firestore offline persistence
 
@@ -211,7 +211,7 @@ service cloud.firestore {
 
 ##### Primary Model: Last-Write-Wins with Timestamp Validation
 
-The system uses a hybrid approach combining last-write-wins with intelligent
+The system uses a hybrid approach combining last-write-wins with intelligen
 conflict detection:
 
 1. **Timestamp-Based Resolution**
@@ -222,7 +222,7 @@ conflict detection:
 
 2. **Field-Level Conflict Detection**
 
-   ```typescript
+   ```typescrip
    interface ConflictResolution {
      strategy: "last-write-wins" | "merge" | "manual";
      conflictFields: string[];
@@ -246,7 +246,7 @@ conflict detection:
 
 5. **Conflict Resolution Workflow**
 
-   ```text
+   ```tex
    1. Detect conflict during sync
    2. Compare timestamps and field changes
    3. Apply resolution strategy
@@ -275,11 +275,11 @@ conflict detection:
 
 ### 4.2 New Context Providers
 
-- [ ] AppointmentContext
+- [ ] AppointmentContex
 
-- [ ] ProviderContext
+- [ ] ProviderContex
 
-- [ ] RoomContext
+- [ ] RoomContex
 
 - [ ] AuthContext (if not using Auth0)
 
@@ -293,7 +293,7 @@ conflict detection:
 
 - [ ] Set up custom claims for role-based access
 
-- [ ] Session management
+- [ ] Session managemen
 
 ### 5.2 Security Implementation
 
@@ -325,7 +325,7 @@ conflict detection:
 
 - [ ] System alerts
 
-## Phase 7: Data Migration & Import/Export
+## Phase 7: Data Migration & Import/Expor
 
 ### 7.1 Data Migration
 
@@ -335,7 +335,7 @@ conflict detection:
 
 - [ ] Backup and restore procedures
 
-### 7.2 Enhanced Import/Export
+### 7.2 Enhanced Import/Expor
 
 - [ ] Bulk import from various formats (CSV, JSON, HL7)
 
@@ -445,7 +445,7 @@ graph TD
 
 ```
 
-##### Authentication Flow Chart
+##### Authentication Flow Char
 
 ```mermaid
 sequenceDiagram
@@ -454,7 +454,7 @@ sequenceDiagram
     participant F as Firestore
     participant R as Security Rules
 
-    U->>A: Login Request
+    U->>A: Login Reques
     A->>U: JWT Token
     U->>F: Request with Token
     F->>R: Validate Token & Role
@@ -490,7 +490,7 @@ graph LR
 ```mermaid
 stateDiagram-v2
     [*] --> Online
-    Online --> Offline: Network Lost
+    Online --> Offline: Network Los
     Offline --> QueueOperations: User Actions
     QueueOperations --> Offline: Continue Offline
     Offline --> Online: Network Restored
@@ -551,7 +551,7 @@ stateDiagram-v2
 
 1. Authentication and authorization
 2. Real-time features and notifications
-3. Data migration and enhanced import/export
+3. Data migration and enhanced import/expor
 
 ### Low Priority (Phase 8-11)
 

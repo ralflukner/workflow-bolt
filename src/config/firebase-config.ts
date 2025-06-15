@@ -1,4 +1,3 @@
-import { getEnvVar } from '../utils/envUtils';
 import { secretsService } from '../services/secretsService';
 
 /**

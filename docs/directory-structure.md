@@ -14,18 +14,18 @@
 │   ├── scripts/            # Shell scripts for Tebra operations
 │   │   ├── security-check-gsm.sh
 │   │   └── rotate-username-password.sh
-│   ├── test-tebra.php      # Main Tebra test script
-│   ├── test-tebra-env.php  # Environment-based test script
-│   ├── check-setup.php     # Setup verification script
+│   ├── test-tebra.php      # Main Tebra test scrip
+│   ├── test-tebra-env.php  # Environment-based test scrip
+│   ├── check-setup.php     # Setup verification scrip
 │   └── debug-proxy-dates.php # Debugging tool
 │
 ├── tebra-proxy/            # Tebra SOAP API proxy service
-│   ├── public/            # Public web root
+│   ├── public/            # Public web roo
 │   ├── src/              # Source code
 │   └── tests/            # Test files
 │
 ├── tebra-php-api/         # Tebra PHP API service
-│   ├── public/           # Public web root
+│   ├── public/           # Public web roo
 │   ├── src/             # Source code
 │   └── tests/           # Test files
 │
@@ -54,22 +54,22 @@
 
 - **tebra-tools/**: Tebra integration tools and scripts
   - **scripts/**: Shell scripts for Tebra operations
-    - **security-check-gsm.sh**: Security check script
-    - **rotate-username-password.sh**: Credential rotation script
+    - **security-check-gsm.sh**: Security check scrip
+    - **rotate-username-password.sh**: Credential rotation scrip
   - **test-tebra.php**: Main test script using GSM
-  - **test-tebra-env.php**: Environment-based test script
-  - **check-setup.php**: Setup verification script
+  - **test-tebra-env.php**: Environment-based test scrip
+  - **check-setup.php**: Setup verification scrip
   - **debug-proxy-dates.php**: Debugging tool
 
 ### Services
 
 - **tebra-proxy/**: Tebra SOAP API proxy service
-  - **public/**: Public web root
+  - **public/**: Public web roo
   - **src/**: Source code
   - **tests/**: Test files
 
 - **tebra-php-api/**: Tebra PHP API service
-  - **public/**: Public web root
+  - **public/**: Public web roo
   - **src/**: Source code
   - **tests/**: Test files
 
@@ -82,7 +82,7 @@
 ### Scripts
 
 - **scripts/**: Project-wide scripts
-  - **setup-tebra-test.sh**: Test environment setup script
+  - **setup-tebra-test.sh**: Test environment setup scrip
 
 ### Dependencies
 

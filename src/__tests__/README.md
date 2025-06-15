@@ -11,10 +11,10 @@ This document explains how the test suite is organized and how to run different 
 
 - **Purpose**: Test individual functions and components in isolation
 
-- **Characteristics**: 
+- **Characteristics**:
   - Fast execution
   - No external dependencies
-  - Always pass when code is correct
+  - Always pass when code is correc
   - Use mocks for external services
 
 **Run with**: `npm run test:unit`
@@ -52,7 +52,7 @@ This document explains how the test suite is organized and how to run different 
 
 # Run only unit tests (default, always reliable)
 
-npm run test:unit
+npm run test:uni
 
 # Run unit tests in watch mode
 
@@ -70,7 +70,7 @@ npm run test:real-api
 
 npm run test:all
 
-# Generate coverage report
+# Generate coverage repor
 
 npm run test:coverage
 
@@ -153,9 +153,9 @@ Real API tests provide detailed diagnostic information:
 
 ## 🛠️ Best Practices
 
-### For Development
+### For Developmen
 
-- Run `npm run test:unit` frequently during development
+- Run `npm run test:unit` frequently during developmen
 
 - Use `npm run test:watch` for TDD workflow
 
@@ -183,9 +183,9 @@ Real API tests provide detailed diagnostic information:
 
 - Check if you're running real API tests
 
-- Verify environment variables are set
+- Verify environment variables are se
 
-- Ensure Firebase configuration is correct
+- Ensure Firebase configuration is correc
 
 ### "Real API tests always fail"
 
@@ -213,4 +213,4 @@ This test organization allows for:
 
 - **Monitoring capabilities** (real API tests as health checks)
 
-- **Clear separation of concerns** (internal vs external dependencies) 
+- **Clear separation of concerns** (internal vs external dependencies)

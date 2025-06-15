@@ -63,7 +63,7 @@ This implementation automatically enforces the rate limits specified in the Tebr
 
 ### TebraRateLimiter Class
 
-- Singleton pattern for global rate limit enforcement
+- Singleton pattern for global rate limit enforcemen
 
 - Method-specific rate limiting based on Tebra documentation
 
@@ -74,19 +74,19 @@ This implementation automatically enforces the rate limits specified in the Tebr
 ### Integration Points
 
 1. **TebraSoapClient**: All SOAP API calls automatically wait for appropriate intervals
-2. **TebraApiService**: Higher-level API methods that use the rate-limited SOAP client
+2. **TebraApiService**: Higher-level API methods that use the rate-limited SOAP clien
 3. **TebraIntegrationService**: Business logic layer that orchestrates API calls
 
 ### Usage Example
 
-```typescript
+```typescrip
 import { tebraRateLimiter } from "./tebra-rate-limiter";
 
 // Check if a method can be called immediately
 if (tebraRateLimiter.canCallImmediately("GetPatient")) {
   // Make the call
 } else {
-  // Wait for rate limit
+  // Wait for rate limi
   await tebraRateLimiter.waitForRateLimit("GetPatient");
   // Now make the call
 }
@@ -103,7 +103,7 @@ console.log(`Must wait ${waitTime}ms before next GetAppointments call`);
 
 - **Reliability**: Prevents API throttling and service interruptions
 
-- **Transparency**: Clear logging of rate limit enforcement
+- **Transparency**: Clear logging of rate limit enforcemen
 
 - **Flexibility**: Easy to adjust limits if Tebra updates their requirements
 

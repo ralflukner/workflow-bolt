@@ -18,7 +18,7 @@ This document outlines our security-first approach to managing secrets in Fireba
 
 - `tebra-api-url` - Tebra API endpoint URL (future)
 
-### Local Development
+### Local Developmen
 
 - Encrypted `.env` files for local development only
 
@@ -82,12 +82,12 @@ echo "NEW_VALUE" | gcloud secrets versions add SECRET_NAME --data-file=-
 ENV=.env
 STAMP=$(date +%Y%m%d)
 openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt \
-        -in "$ENV" -out "$ENV.$STAMP.enc" \
+        -in "$ENV" -out "$ENV.$STAMP.enc"
         -k "$(whoami)-$(hostname)-HIPAA"
 
 # Decrypt when needed (NEVER commit decrypted files)
 openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -d \
-        -in "$ENV.$STAMP.enc" -out "$ENV.temp" \
+        -in "$ENV.$STAMP.enc" -out "$ENV.temp"
         -k "$(whoami)-$(hostname)-HIPAA"
 ```
 

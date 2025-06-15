@@ -6,7 +6,7 @@ interactions within the Patient Flow Management application.
 
 ## Component Hierarchy
 
-```text
+```tex
 App
 ├── TimeProvider
 │   └── PatientProvider
@@ -26,7 +26,7 @@ App
 
 The Dashboard is the main container component that orchestrates the entire user interface.
 
-```typescript
+```typescrip
 // Dashboard.tsx
 const Dashboard: React.FC = () => {
   const [showNewPatientForm, setShowNewPatientForm] = useState(false);
@@ -45,11 +45,11 @@ const Dashboard: React.FC = () => {
 
 - Organizing PatientList components by status
 
-### PatientList
+### PatientLis
 
 The PatientList component displays a filtered list of patients based on their status.
 
-```typescript
+```typescrip
 // PatientList.tsx
 interface PatientListProps {
   status: PatientStatus;
@@ -77,7 +77,7 @@ const PatientList: React.FC<PatientListProps> = ({ status, title }) => {
 
 The PatientCard component represents a single patient and their information.
 
-```typescript
+```typescrip
 // PatientCard.tsx
 interface PatientCardProps {
   patient: Patient;
@@ -107,7 +107,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
 
 The TimeControl component allows users to manipulate time for testing.
 
-```typescript
+```typescrip
 // TimeControl.tsx
 const TimeControl: React.FC = () => {
   const { timeMode, toggleSimulation, adjustTime, getCurrentTime, formatTime } =
@@ -130,7 +130,7 @@ const TimeControl: React.FC = () => {
 
 The MetricsPanel component displays key performance metrics.
 
-```typescript
+```typescrip
 // MetricsPanel.tsx
 const MetricsPanel: React.FC = () => {
   const { getMetrics } = usePatientContext();
@@ -151,7 +151,7 @@ const MetricsPanel: React.FC = () => {
 
 #### NewPatientForm
 
-```typescript
+```typescrip
 // NewPatientForm.tsx
 interface NewPatientFormProps {
   onClose: () => void;
@@ -165,7 +165,7 @@ const NewPatientForm: React.FC<NewPatientFormProps> = ({ onClose }) => {
 
 #### ImportSchedule
 
-```typescript
+```typescrip
 // ImportSchedule.tsx
 interface ImportScheduleProps {
   onClose: () => void;
@@ -183,7 +183,7 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
 
 Each patient status has a consistent color code applied across components:
 
-```typescript
+```typescrip
 // Example from PatientCard.tsx
 const getStatusColor = (status: string): string => {
   switch (status) {
@@ -212,7 +212,7 @@ const getStatusColor = (status: string): string => {
 
 Appointment statuses use a different color scheme:
 
-```typescript
+```typescrip
 // Example from PatientCard.tsx
 patient.appointmentStatus === "Confirmed"
   ? "bg-blue-600 text-white"
@@ -255,5 +255,5 @@ Example: Patient Status Update Flow:
 2. handleStatusChange() is called in PatientCard
 3. updatePatientStatus() from PatientContext is called
 4. PatientContext updates the patient's status and adds a timestamp
-5. State changes propagate to all components using the context
+5. State changes propagate to all components using the contex
 6. PatientCard moves to a different PatientList based on the new status

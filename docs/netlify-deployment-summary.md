@@ -17,7 +17,7 @@
 
 3. **Verified Auth0 Configuration**
    - Confirmed that auth0-config.ts uses environment variables
-   - Verified that AuthProvider.tsx is properly configured for deployment
+   - Verified that AuthProvider.tsx is properly configured for deploymen
 
 ## Deployment Process
 
@@ -37,7 +37,7 @@ To deploy this project to Netlify:
 
 3. **Configure environment variables** in the Netlify UI:
 
-   - Go to Site settings > Build & deploy > Environment
+   - Go to Site settings > Build & deploy > Environmen
    - Add the following variables:
 
      ```bash
@@ -45,13 +45,13 @@ To deploy this project to Netlify:
      VITE_AUTH0_CLIENT_ID=your-auth0-client-id
      VITE_AUTH0_REDIRECT_URI=https://your-netlify-site-name.netlify.app
      VITE_AUTH0_AUDIENCE=https://api.patientflow.com
-     VITE_APP_NAME=Patient Flow Management
+     VITE_APP_NAME=Patient Flow Managemen
      ```
 
    - Replace the placeholders with your actual values:
      - `your-auth0-domain.region.auth0.com`: Your Auth0 domain from your
-       Auth0 account
-     - `your-auth0-client-id`: Your Auth0 client ID from your Auth0 account
+       Auth0 accoun
+     - `your-auth0-client-id`: Your Auth0 client ID from your Auth0 accoun
      - `your-netlify-site-name.netlify.app`: Your actual Netlify domain
 
    > **Important**: You must create your own Auth0 account and
@@ -61,7 +61,7 @@ To deploy this project to Netlify:
 4. **Update Auth0 configuration**:
    - Log in to your Auth0 Dashboard
    - Go to Applications > Your Application > Settings
-   - Add your Netlify domain to "Allowed Callback URLs", "Allowed Logout
+   - Add your Netlify domain to "Allowed Callback URLs", "Allowed Logou
      URLs", and "Allowed Web Origins"
 
 ## Next Steps

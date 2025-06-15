@@ -2,7 +2,7 @@
 # tebra-soap-api.md
 
 Tell me about the Tebra SOAP EHR interface
-Edit
+Edi
 Probed Tebra's SOAP interface for current healthcare technology insights.
 
 I'll research current information about Tebra’s SOAP EHR interface and provide the most up-to-date details.
@@ -61,7 +61,7 @@ Given your focus on comprehensive adult and pediatric care, substance use disord
 
 - **Substance Use Disorder Support**: Specialized templates and documentation tools
 
-- **Problem List Integration**: Direct integration with assessment sections for ongoing care management
+- **Problem List Integration**: Direct integration with assessment sections for ongoing care managemen
 
 ## Integration Capabilities
 
@@ -75,7 +75,7 @@ Would you like me to explore any specific aspects of the SOAP interface in more 
 Retry
 **RL**
 Does Tebra EHR SOAP API use **WSDL Binding Styles: Document vs. RPC?**
-Edit
+Edi
 I probed Tebra’s SOAP API documentation for details on binding style.
 
 I'll search for more specific technical details about Tebra's SOAP API implementation and WSDL binding styles.
@@ -211,7 +211,7 @@ GITHUB
 
 **RL**
 I need to be able to get Calendar/Schedule information and all the information for patients that will be seen in upcoming appointments. I would like to populate my workflow app data with schedule and patient information from the SOAP API. Help me design this.
-Edit
+Edi
 Thought process
 
 ## 9s
@@ -285,13 +285,13 @@ Mapped out Tebra integration with dashboard and patient workflow.
 ## 2s
 
 Tebra Integration Implementation Guide
-Document
+Documen
 
 ## Tebra SOAP API Integration Implementation Guide
 
 ## Overview
 
-This implementation provides a secure, HIPAA-compliant integration between your Patient Flow Management application and Tebra's SOAP API. The integration automatically syncs appointment
+This implementation provides a secure, HIPAA-compliant integration between your Patient Flow Management application and Tebra's SOAP API. The integration automatically syncs appointmen
 Engineered comprehensive Tebra SOAP API integration for patient workflow.
 
 ## 7s
@@ -371,7 +371,7 @@ I've designed a comprehensive Tebra SOAP API integration for your patient flow m
 
 - Audit trail for all sync operations
 
-- Secure credential management
+- Secure credential managemen
 
 ⠀Clinical Reliability
 
@@ -385,7 +385,7 @@ I've designed a comprehensive Tebra SOAP API integration for your patient flow m
 
 - **Event-driven Architecture**: Reactive updates when data changes
 
-- **Data Pipeline**: ETL process from Tebra → Firebase → React Context
+- **Data Pipeline**: ETL process from Tebra → Firebase → React Contex
 
 - **Modular Design**: Easy to extend or modify individual components
 
@@ -403,7 +403,7 @@ Retry
 
 **RL**
 I would like to "cache" the schedule and patient information in a secure GCP Firebase database so I don't need to keep polling the SOAP interface for information. The GCP Firebase should provide bidirectional polling and writing back to Tebra EHR SOAP API. The firebase should be able to import lab results, imaging results, medical records, including previous progress notes, etc. The firebase should facilitate analysis of the patient's medical condition along with planning the appointment, providing real-time information for the appointment, and finally documenting the encounter and orders and writing those back to Tebra EHR and planning future visits.
-Edit
+Edi
 Engineered comprehensive medical data sync strategy for Tebra EHR.
 
 ##

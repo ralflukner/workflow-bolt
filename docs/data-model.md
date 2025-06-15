@@ -7,7 +7,7 @@ This document details the data models used in the Tebra EHR Integration system, 
 
 ### 1. Patient Model
 
-```typescript
+```typescrip
 interface Patient {
   id: string;                 // Unique identifier
   name: string;               // Full name
@@ -17,7 +17,7 @@ interface Patient {
   provider: string;           // Provider name
   status: PatientStatus;
   checkInTime?: string;       // Optional ISO datetime
-  room?: string;              // Optional room assignment
+  room?: string;              // Optional room assignmen
 }
 
 ```
@@ -32,10 +32,10 @@ interface Patient {
 
 ### 2. Appointment Model
 
-```typescript
+```typescrip
 interface Appointment {
   id: string;                 // Unique identifier
-  patientId: string;          // Reference to Patient
+  patientId: string;          // Reference to Patien
   providerId: string;         // Reference to Provider
   startTime: string;          // ISO datetime
   endTime: string;            // ISO datetime
@@ -50,7 +50,7 @@ interface Appointment {
 
 #### Relationships
 
-- Many-to-one with Patient
+- Many-to-one with Patien
 
 - Many-to-one with Provider
 
@@ -58,7 +58,7 @@ interface Appointment {
 
 ### 3. Provider Model
 
-```typescript
+```typescrip
 interface Provider {
   id: string;                 // Unique identifier
   firstName: string;
@@ -82,7 +82,7 @@ interface Provider {
 
 ### 4. Session Model
 
-```typescript
+```typescrip
 interface Session {
   id: string;                 // Unique identifier
   date: string;               // ISO date
@@ -105,7 +105,7 @@ interface Session {
 
 ### 1. Appointment Types
 
-```typescript
+```typescrip
 enum AppointmentType {
   OFFICE_VISIT = 'Office Visit',
   LABS = 'LABS',
@@ -118,7 +118,7 @@ enum AppointmentType {
 
 ### 2. Status Types
 
-```typescript
+```typescrip
 enum PatientStatus {
   SCHEDULED = 'scheduled',
   CHECKED_IN = 'checked_in',
@@ -188,9 +188,9 @@ graph TD
 
 ### 2. Appointment Validation
 
-- Patient ID: Required, must exist
+- Patient ID: Required, must exis
 
-- Provider ID: Required, must exist
+- Provider ID: Required, must exis
 
 - Start Time: Required, valid datetime
 
@@ -210,13 +210,13 @@ graph TD
 
 - Specialties: Array of valid specialties
 
-- Schedule: Valid schedule object
+- Schedule: Valid schedule objec
 
 ## Data Operations
 
 ### 1. CRUD Operations
 
-```typescript
+```typescrip
 interface DataOperations {
   // Create
   createPatient(patient: Patient): Promise<Patient>;
@@ -247,7 +247,7 @@ interface DataOperations {
 
 ### 2. Query Operations
 
-```typescript
+```typescrip
 interface QueryOperations {
   // Find by criteria
   findPatients(criteria: PatientCriteria): Promise<Patient[]>;

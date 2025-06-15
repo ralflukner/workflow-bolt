@@ -26,7 +26,7 @@ This indicates you're using Google OAuth. Here's how to properly manage these se
 
 OAuth client IDs for web apps are **not secret** and can be in your code:
 
-```javascript
+```javascrip
 // This is OK for web apps
 const googleClientId = '472501334334-hoph63lb8i2o53a68d118n4k4le19kki.apps.googleusercontent.com';
 
@@ -134,7 +134,7 @@ return [
 
 ```
 
-### 5. Migration Script
+### 5. Migration Scrip
 
 ```bash
 #!/bin/bash
@@ -163,7 +163,7 @@ CLIENT_SECRET=$(jq -r '.web.client_secret // .installed.client_secret' "$CLIENT_
 # Store in GSM
 
 echo "Storing in Google Secret Manager..."
-echo -n "$CLIENT_ID" | gcloud secrets create google-oauth-client-id --data-file=- 2>/dev/null || \
+echo -n "$CLIENT_ID" | gcloud secrets create google-oauth-client-id --data-file=- 2>/dev/null ||
     echo -n "$CLIENT_ID" | gcloud secrets versions add google-oauth-client-id --data-file=-
 
 echo -n "$CLIENT_SECRET" | gcloud secrets create google-oauth-client-secret --data-file=- 2>/dev/null || \
@@ -196,7 +196,7 @@ echo "3. Clean Git history if the file was previously committed"
 
 #### Implicit Flow (SPA)
 
-```javascript
+```javascrip
 // Client ID only - no secret needed
 const googleAuth = {
     clientId: '472501334334-hoph63lb8i2o53a68d118n4k4le19kki.apps.googleusercontent.com',

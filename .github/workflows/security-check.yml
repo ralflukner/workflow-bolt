@@ -16,7 +16,7 @@ on:
 
 jobs:
   security-check:
-    runs-on: ubuntu-lates
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3

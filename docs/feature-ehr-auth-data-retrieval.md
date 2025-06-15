@@ -156,7 +156,7 @@ A comprehensive testing strategy ensures the reliability and correctness of the 
 
 In components or services requiring Firebase authentication:
 
-```typescript
+```typescrip
 import { useFirebaseAuth } from './services/authBridge'; // Adjust path as needed
 
 function MySecureComponent() {
@@ -187,7 +187,7 @@ function MySecureComponent() {
 
 For troubleshooting in development:
 
-```typescript
+```typescrip
 import { useFirebaseAuth } from './services/authBridge';
 
 function AuthDebugTools() {

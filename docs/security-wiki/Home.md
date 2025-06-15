@@ -36,7 +36,7 @@ This wiki contains comprehensive security documentation for the Lukner Clinic Wo
 
 - 2024-03-20: Updated credential rotation procedures
 - 2024-03-19: Enhanced audit logging requirements
-- 2024-03-18: Added new HIPAA compliance checklist
+- 2024-03-18: Added new HIPAA compliance checklis
 
 ## 🔒 Security Features
 
@@ -57,4 +57,4 @@ This wiki contains comprehensive security documentation for the Lukner Clinic Wo
 
 ## 🔄 Maintenance
 
-This wiki is maintained by the security team. For updates or corrections, please contact lukner@luknerclinic.com. 
+This wiki is maintained by the security team. For updates or corrections, please contact lukner@luknerclinic.com.

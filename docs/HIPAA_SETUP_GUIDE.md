@@ -48,14 +48,14 @@ echo -n "https://api.tebra.com" | gcloud secrets versions add TEBRA_API_URL --da
 
 ```bash
 
-# Get your Firebase Functions service account
+# Get your Firebase Functions service accoun
 
 export SERVICE_ACCOUNT="your-project@appspot.gserviceaccount.com"
 
 # Grant Secret Manager access
 
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:$SERVICE_ACCOUNT" \
+gcloud projects add-iam-policy-binding $PROJECT_ID
+    --member="serviceAccount:$SERVICE_ACCOUNT"
     --role="roles/secretmanager.secretAccessor"
 
 ```
@@ -66,7 +66,7 @@ Set your Google Cloud project ID:
 
 ```bash
 
-# In your .env file or environment
+# In your .env file or environmen
 
 export GOOGLE_CLOUD_PROJECT="your-project-id"
 
@@ -92,7 +92,7 @@ npm test -- src/services/__tests__/tebraConfiguration.test.ts
 
 Use the new method in your code:
 
-```typescript
+```typescrip
 import { TebraApiService } from './services/tebraApiService';
 
 const tebraService = new TebraApiService();
@@ -118,7 +118,7 @@ console.log('HIPAA Compliance Status:', compliance);
 
 - Configurable redaction patterns
 
-### ✅ Secure Credential Management
+### ✅ Secure Credential Managemen
 
 - Credentials stored in Google Secret Manager
 
@@ -136,9 +136,9 @@ console.log('HIPAA Compliance Status:', compliance);
 
 ### ✅ Synthetic Data Testing
 
-- PHI-free testing environment
+- PHI-free testing environmen
 
-- Synthetic patient data for development
+- Synthetic patient data for developmen
 
 - Data minimization principles
 
@@ -169,7 +169,7 @@ If tests fail, check:
 4. **Secrets exist** in Secret Manager
 5. **Network connectivity** to Google Cloud
 
-## 🎯 Next Phase: Production Deployment
+## 🎯 Next Phase: Production Deploymen
 
 Once all tests pass and secrets are configured:
 

@@ -1,5 +1,5 @@
 
-# Testing Expansion Plan for Patient Flow Management
+# Testing Expansion Plan for Patient Flow Managemen
 
 Based on a thorough examination of the codebase, this document outlines a comprehensive testing strategy to improve code quality, reduce bugs, and make future development more efficient.
 
@@ -9,7 +9,7 @@ Based on a thorough examination of the codebase, this document outlines a compre
 
 - **Test Files**: 10 test suites with 33 tests
 
-- **Testing Framework**: Jest with TypeScript support
+- **Testing Framework**: Jest with TypeScript suppor
 
 - **Current Focus**: Primarily unit tests for data operations and schedule import functionality
 
@@ -37,9 +37,9 @@ The PatientCard component is central to the application but lacks dedicated test
 
 The PatientList component needs tests for:
 
-- Rendering the correct title and patient count
+- Rendering the correct title and patient coun
 
-- Displaying PatientCard components for each patient
+- Displaying PatientCard components for each patien
 
 - Empty state handling when no patients match a status
 
@@ -184,7 +184,7 @@ Add performance tests for critical operations:
 
 ## Example Test Implementation for PatientCard
 
-```typescript
+```typescrip
 // src/components/__tests__/PatientCard.test.tsx
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -277,9 +277,9 @@ describe('PatientCard', () => {
 
 ```
 
-## Example Test Implementation for TimeContext
+## Example Test Implementation for TimeContex
 
-```typescript
+```typescrip
 // src/context/__tests__/TimeContext.test.ts
 import { renderHook, act } from '@testing-library/react';
 import { TimeProvider } from '../TimeProvider';

@@ -26,7 +26,7 @@ The newly developed credential management tool (`scripts/create-gmail-oauth-secr
 
 A detailed technical documentation suite has been created to support secure implementation:
 
-- **Security Rationale**: Explains the security implications of credential management
+- **Security Rationale**: Explains the security implications of credential managemen
 - **Implementation Guide**: Step-by-step instructions for initial setup and configuration
 - **Operational Procedures**: Guidelines for ongoing management and rotation
 - **Integration Reference**: Details on integrating with Firebase Functions and other services
@@ -41,7 +41,7 @@ The implementation leverages Google Secret Manager with several advanced feature
 - **Version Control**: Full support for secret versioning and rotation
 - **Fine-grained Access Control**: IAM policies restrict access to authorized service accounts only
 - **Audit Logging**: All access attempts are logged for security monitoring
-- **Automatic Environment Integration**: Seamless integration with application environment
+- **Automatic Environment Integration**: Seamless integration with application environmen
 
 ## Deployment Workflow
 
@@ -56,10 +56,10 @@ The implementation supports a secure deployment workflow:
 2. **Service Deployment with Secret Integration**:
    ```bash
    # Deploy with secure secret references
-   gcloud functions deploy notification-service \
-     --gen2 \
-     --runtime=nodejs20 \
-     --region=us-central1 \
+   gcloud functions deploy notification-service
+     --gen2
+     --runtime=nodejs20
+     --region=us-central1
      --set-env-vars="GMAIL_CLIENT_ID=$(gcloud secrets versions access latest --secret=GMAIL_CLIENT_ID),GMAIL_CLIENT_SECRET=$(gcloud secrets versions access latest --secret=GMAIL_CLIENT_SECRET)"
    ```
 

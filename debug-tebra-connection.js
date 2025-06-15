@@ -54,7 +54,9 @@ async function debugTebraProxyClient() {
   
   // Simulate the TebraProxyClient initialization
   const cloudRunUrl = process.env.TEBRA_CLOUD_RUN_URL || 'https://tebra-php-api-xccvzgogwa-uc.a.run.app';
-  const internalApiKey = process.env.TEBRA_INTERNAL_API_KEY || 'UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=';
+  const internalApiKey = process.env.TEBRA_INTERNAL_API_KEY ?? (() => {
+  throw new Error('TEBRA_INTERNAL_API_KEY env var missing');
+})();
   
   console.log('\nUsing:');
   console.log('- Cloud Run URL:', cloudRunUrl);

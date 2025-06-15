@@ -7,7 +7,7 @@ This document outlines the plan for improving state management across the applic
 
 ## Current Issues
 
-### 1. Scattered State Management
+### 1. Scattered State Managemen
 
 - Multiple useState calls in components
 
@@ -45,7 +45,7 @@ This document outlines the plan for improving state management across the applic
 
 ### Phase 1: State Consolidation and Custom Hooks
 
-#### 1.1 Time Management
+#### 1.1 Time Managemen
 
 - [ ] Create `useTimeInput` hook
   - Consolidate time-related state
@@ -53,7 +53,7 @@ This document outlines the plan for improving state management across the applic
   - Manage AM/PM state
   - Target: TimeControl.tsx
 
-#### 1.2 Patient Management
+#### 1.2 Patient Managemen
 
 - [ ] Create `usePatientCard` hook
   - Manage patient card state
@@ -61,7 +61,7 @@ This document outlines the plan for improving state management across the applic
   - Manage check-in editing
   - Target: PatientCard.tsx
 
-#### 1.3 Integration Management
+#### 1.3 Integration Managemen
 
 - [ ] Create `useTebraIntegration` hook
   - Manage connection state
@@ -69,7 +69,7 @@ This document outlines the plan for improving state management across the applic
   - Manage loading states
   - Target: TebraIntegrationNew.tsx
 
-#### 1.4 Wait Time Management
+#### 1.4 Wait Time Managemen
 
 - [ ] Create `useWaitTime` hook
   - Centralize wait time calculation logic
@@ -81,14 +81,14 @@ This document outlines the plan for improving state management across the applic
 
 ### Phase 2: Context Improvements
 
-#### 2.1 Time Context
+#### 2.1 Time Contex
 
 - [ ] Split TimeContext into smaller contexts
   - [ ] TimeModeContext for simulation
   - [ ] TimeFormatContext for formatting
   - [ ] TimeUpdateContext for updates
 
-#### 2.2 Patient Context
+#### 2.2 Patient Contex
 
 - [ ] Implement proper state normalization
 
@@ -98,7 +98,7 @@ This document outlines the plan for improving state management across the applic
 
 - [ ] Integrate new wait time calculation system
 
-#### 2.3 Integration Context
+#### 2.3 Integration Contex
 
 - [ ] Create dedicated context for Tebra integration
 
@@ -164,7 +164,7 @@ This document outlines the plan for improving state management across the applic
 
 #### 1. Centralized Calculation
 
-```typescript
+```typescrip
 interface WaitTimeState {
   currentWaitTime: number;
   totalTime: number;
@@ -187,7 +187,7 @@ const useWaitTime = (patient: Patient) => {
       }
 
       const checkInTime = new Date(patient.checkInTime);
-      const endTime = patient.withDoctorTime 
+      const endTime = patient.withDoctorTime
         ? new Date(patient.withDoctorTime)
         : getCurrentTime();
 
@@ -286,27 +286,27 @@ const useWaitTime = (patient: Patient) => {
 
 ### In Progress
 
-#### Time Management
+#### Time Managemen
 
 - [ ] Implementing useTimeInput hook
 
-- [ ] Refactoring TimeControl component
+- [ ] Refactoring TimeControl componen
 
-- [ ] Adding time zone support
+- [ ] Adding time zone suppor
 
-#### Patient Management
+#### Patient Managemen
 
 - [ ] Creating usePatientCard hook
 
-- [ ] Implementing status management
+- [ ] Implementing status managemen
 
 - [ ] Adding error handling
 
-#### Wait Time Management
+#### Wait Time Managemen
 
 - [ ] Implementing useWaitTime hook
 
-- [ ] Adding time zone support
+- [ ] Adding time zone suppor
 
 - [ ] Implementing caching
 
@@ -314,7 +314,7 @@ const useWaitTime = (patient: Patient) => {
 
 ### Next Steps
 
-#### Integration Management
+#### Integration Managemen
 
 - [ ] Create useTebraIntegration hook
 
@@ -324,17 +324,17 @@ const useWaitTime = (patient: Patient) => {
 
 #### Context Improvements
 
-- [ ] Split TimeContext
+- [ ] Split TimeContex
 
-- [ ] Normalize PatientContext
+- [ ] Normalize PatientContex
 
-- [ ] Create IntegrationContext
+- [ ] Create IntegrationContex
 
 ## Implementation Guidelines
 
 ### Custom Hooks
 
-```typescript
+```typescrip
 // Example: useTimeInput hook
 interface TimeInputState {
   currentTime: Date;
@@ -367,8 +367,8 @@ const useTimeInput = (initialTime: Date) => {
 
 ### Context Structure
 
-```typescript
-// Example: Split TimeContext
+```typescrip
+// Example: Split TimeContex
 interface TimeModeContextValue {
   isSimulated: boolean;
   toggleSimulation: () => void;
@@ -389,7 +389,7 @@ interface TimeUpdateContextValue {
 ### Performance Patterns
 
 ```tsx
-// Example: Optimized component
+// Example: Optimized componen
 const PatientCard: React.FC<PatientCardProps> = memo(({ patient }) => {
   const { state, handlers } = usePatientCard(patient);
 

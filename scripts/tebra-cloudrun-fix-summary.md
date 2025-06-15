@@ -35,8 +35,8 @@ chmod +x scripts/create-tebra-secrets.sh
 2. Update the Cloud Run service with your new API key:
 
 ```bash
-gcloud run services update tebra-php-api \
-     --region us-central1 \
+gcloud run services update tebra-php-api
+     --region us-central1
      --set-env-vars TEBRA_INTERNAL_API_KEY="$NEW_KEY"
 ```
 

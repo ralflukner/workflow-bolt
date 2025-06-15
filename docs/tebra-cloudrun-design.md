@@ -25,7 +25,7 @@
 
 - Uses Firebase Auth for user authentication
 
-- Handles UI/UX for appointment scheduling, provider management
+- Handles UI/UX for appointment scheduling, provider managemen
 
 ### 2. Firebase Functions (Node.js)
 
@@ -45,7 +45,7 @@
 
 - **Single Responsibility**: SOAP communication with Tebra
 
-- **Stateless**: No session management
+- **Stateless**: No session managemen
 
 - **Credentials**: Fetches from Secret Manager
 
@@ -105,15 +105,15 @@ FROM php:8.2-apache
 
 # Install required extensions and tools
 
-RUN apt-get update && apt-get install -y \
-    libxml2-dev \
-    libcurl4-openssl-dev \
-    zip \
-    unzip \
-    && docker-php-ext-install soap curl \
-    && pecl install apcu \
-    && docker-php-ext-enable apcu \
-    && apt-get clean \
+RUN apt-get update && apt-get install -y
+    libxml2-dev
+    libcurl4-openssl-dev
+    zip
+    unzip
+    && docker-php-ext-install soap curl
+    && pecl install apcu
+    && docker-php-ext-enable apcu
+    && apt-get clean
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
@@ -240,7 +240,7 @@ header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key');
 header('Content-Type: application/json');
 
-// Handle preflight
+// Handle prefligh
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
@@ -270,7 +270,7 @@ try {
     $logger->error('Auth validation failed', ['error' => $e->getMessage()]);
 }
 
-// Route request
+// Route reques
 try {
     $input = json_decode(file_get_contents('php://input'), true);
     if (json_last_error() !== JSON_ERROR_NONE) {
@@ -346,7 +346,7 @@ class TebraHttpClient {
     }
 
     private function loadCredentials(): void {
-        // Try Secret Manager first
+        // Try Secret Manager firs
         try {
             $client = new SecretManagerServiceClient();
             $projectId = getenv('GOOGLE_CLOUD_PROJECT');
@@ -372,7 +372,7 @@ class TebraHttpClient {
     }
 
     public function callSoapMethod(string $action, string $soapBody): array {
-        // Check cache first
+        // Check cache firs
         $cacheKey = md5($action . $soapBody);
         $cached = $this->cache->get($cacheKey);
         if ($cached !== false) {
@@ -385,7 +385,7 @@ class TebraHttpClient {
         // Build SOAP envelope
         $soapEnvelope = $this->buildSoapEnvelope($soapBody);
 
-        // Make request
+        // Make reques
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL => $this->baseUrl,
@@ -436,7 +436,7 @@ class TebraHttpClient {
 
     private function buildSoapEnvelope(string $body): string {
         return '<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" 
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
                xmlns:kar="http://www.kareo.com/api/schemas/">
     <soap:Header/>
     <soap:Body>
@@ -513,7 +513,7 @@ class TebraHttpClient {
 
 ### functions/src/tebra/client.ts
 
-```typescript
+```typescrip
 import { config } from 'firebase-functions';
 import axios, { AxiosInstance } from 'axios';
 import { logger } from 'firebase-functions';
@@ -602,7 +602,7 @@ export class TebraCloudRunClient {
 
 ### functions/src/tebra/providers.ts
 
-```typescript
+```typescrip
 import * as functions from 'firebase-functions';
 import { TebraCloudRunClient } from './client';
 import { validateAuth } from '../middleware/auth';
@@ -614,11 +614,11 @@ export const getProviders = functions.https.onCall(async (data, context) => {
   // Validate authentication
   const userId = validateAuth(context);
 
-  // Check rate limit
+  // Check rate limi
   await checkRateLimit(userId, 'getProviders', 100); // 100 calls per hour
 
   try {
-    // Validate input
+    // Validate inpu
     const { practiceId, active = true, includeSchedule = false } = data;
 
     if (!practiceId) {
@@ -666,7 +666,7 @@ export const getProviders = functions.https.onCall(async (data, context) => {
 
 ### functions/src/middleware/auth.ts
 
-```typescript
+```typescrip
 import { CallableContext } from 'firebase-functions/v1/https';
 import * as functions from 'firebase-functions';
 import { getAuth } from 'firebase-admin/auth';
@@ -706,17 +706,17 @@ cd tebra-php-service
 
 # Build and deploy
 
-gcloud run deploy tebra-php-api \
-  --source . \
-  --platform managed \
-  --region us-central1 \
-  --no-allow-unauthenticated \
-  --set-env-vars="GOOGLE_CLOUD_PROJECT=your-project-id" \
-  --set-secrets="INTERNAL_API_KEY=tebra-internal-api-key:latest" \
-  --service-account=tebra-service@your-project-id.iam.gserviceaccount.com \
-  --memory=512Mi \
-  --cpu=1 \
-  --max-instances=10 \
+gcloud run deploy tebra-php-api
+  --source .
+  --platform managed
+  --region us-central1
+  --no-allow-unauthenticated
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=your-project-id"
+  --set-secrets="INTERNAL_API_KEY=tebra-internal-api-key:latest"
+  --service-account=tebra-service@your-project-id.iam.gserviceaccount.com
+  --memory=512Mi
+  --cpu=1
+  --max-instances=10
   --min-instances=0
 
 # Get the service URL
@@ -731,8 +731,8 @@ gcloud run services describe tebra-php-api --region us-central1 --format 'value(
 
 # Set configuration
 
-firebase functions:config:set \
-  tebra.cloud_run_url="https://tebra-php-api-xxxxx-uc.a.run.app" \
+firebase functions:config:se
+  tebra.cloud_run_url="https://tebra-php-api-xxxxx-uc.a.run.app"
   tebra.internal_api_key="your-secure-api-key"
 
 # Deploy functions
@@ -747,22 +747,22 @@ firebase deploy --only functions
 
 # Create secrets
 
-echo -n "https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl" | \
+echo -n "https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl" |
   gcloud secrets create tebra-wsdl-url --data-file=-
 
-echo -n "your-username@example.com" | \
+echo -n "your-username@example.com" |
   gcloud secrets create tebra-username --data-file=-
 
-echo -n "your-password" | \
+echo -n "your-password" |
   gcloud secrets create tebra-password --data-file=-
 
-echo -n "your-internal-api-key" | \
+echo -n "your-internal-api-key" |
   gcloud secrets create tebra-internal-api-key --data-file=-
 
-# Grant access to service account
+# Grant access to service accoun
 
-gcloud secrets add-iam-policy-binding tebra-wsdl-url \
-  --member="serviceAccount:tebra-service@your-project-id.iam.gserviceaccount.com" \
+gcloud secrets add-iam-policy-binding tebra-wsdl-url
+  --member="serviceAccount:tebra-service@your-project-id.iam.gserviceaccount.com"
   --role="roles/secretmanager.secretAccessor"
 
 ```
@@ -787,7 +787,7 @@ $logger->info('API call', [
     'action' => $action,
     'userId' => $userId,
     'duration' => $duration,
-    'cacheHit' => $cacheHit
+    'cacheHit' => $cacheHi
 ]);
 
 ```
@@ -803,7 +803,7 @@ alertPolicy:
   conditions:
     - displayName: "Error rate > 5%"
       conditionThreshold:
-        filter: 'resource.type="cloud_run_revision" 
+        filter: 'resource.type="cloud_run_revision"
                  AND resource.labels.service_name="tebra-php-api"
                  AND metric.type="run.googleapis.com/request_count"'
         comparison: COMPARISON_GT
@@ -842,11 +842,11 @@ alertPolicy:
 2. **Secrets Management**
    - All credentials in Secret Manager
    - Rotate API keys quarterly
-   - Never commit secrets to git
+   - Never commit secrets to gi
 
 3. **Network Security**
    - HTTPS everywhere
-   - No public Cloud Run endpoint
+   - No public Cloud Run endpoin
    - Firestore rules for data access
 
 4. **Audit Logging**
@@ -860,7 +860,7 @@ alertPolicy:
 
 1. **SOAP Timeout**
    ```php
-   // Increase timeout in TebraHttpClient
+   // Increase timeout in TebraHttpClien
    CURLOPT_TIMEOUT => 60, // 60 seconds
    ```
 

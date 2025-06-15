@@ -1,5 +1,5 @@
 
-# Tebra SOAP Proxy - HIPAA Compliant
+# Tebra SOAP Proxy - HIPAA Complian
 
 A secure PHP proxy server for Tebra (Kareo) SOAP API integration with Firebase Functions.
 
@@ -17,7 +17,7 @@ A secure PHP proxy server for Tebra (Kareo) SOAP API integration with Firebase F
 
 - ✅ **Security Headers** - XSS, CSRF, clickjacking protection
 
-- ✅ **HTTPS Enforced** - All traffic encrypted in transit
+- ✅ **HTTPS Enforced** - All traffic encrypted in transi
 
 - ✅ **Non-root Container** - Reduced attack surface
 
@@ -28,7 +28,7 @@ A secure PHP proxy server for Tebra (Kareo) SOAP API integration with Firebase F
 3. **Docker** installed
 4. **HIPAA Business Associate Agreement** signed with Google
 
-## 🚀 Quick Deployment
+## 🚀 Quick Deploymen
 
 1. **Set Environment Variables:**
 
@@ -75,8 +75,8 @@ cd tebra-proxy
 Update your Firebase Functions environment:
 
 ```bash
-firebase functions:config:set \
-  tebra.proxy_url="https://your-service-url" \
+firebase functions:config:se
+  tebra.proxy_url="https://your-service-url"
   tebra.proxy_api_key="your-generated-api-key"
 
 ```
@@ -88,7 +88,7 @@ All endpoints require `X-API-Key` header for authentication.
 ### Health Check
 
 ```bash
-GET /test
+GET /tes
 X-API-Key: your-api-key
 
 ```
@@ -153,13 +153,13 @@ Content-Type: application/json
 
    - Navigate to Google Cloud Console
    - Go to Compliance → BAA
-   - Review and sign the Business Associate Agreement
+   - Review and sign the Business Associate Agreemen
 
 2. **Enable Audit Logging:**
 
    ```bash
-   gcloud logging sinks create tebra-audit-sink \
-     storage.googleapis.com/your-audit-bucket \
+   gcloud logging sinks create tebra-audit-sink
+     storage.googleapis.com/your-audit-bucke
      --log-filter='resource.type="cloud_run_revision" AND resource.labels.service_name="tebra-proxy"'
    ```
 
@@ -174,7 +174,7 @@ Content-Type: application/json
    - Monitor for unusual activity
    - Update dependencies regularly
 
-### Security Checklist
+### Security Checklis
 
 - ✅ All data encrypted in transit (HTTPS)
 
@@ -194,7 +194,7 @@ Content-Type: application/json
 
 - ✅ Minimal attack surface
 
-## 🔧 Local Development
+## 🔧 Local Developmen
 
 1. **Start PHP development server:**
 
@@ -207,8 +207,8 @@ php -S localhost:8080
 2. **Test with API key:**
 
 ```bash
-curl -H "X-API-Key: secure-random-key-change-in-production" \
-     http://localhost:8080/test
+curl -H "X-API-Key: secure-random-key-change-in-production"
+     http://localhost:8080/tes
 
 ```
 
@@ -222,7 +222,7 @@ curl -H "X-API-Key: secure-random-key-change-in-production" \
 
 - Memory and CPU usage
 
-- Instance count
+- Instance coun
 
 ### Application Logs
 
@@ -251,12 +251,12 @@ curl -H "X-API-Key: secure-random-key-change-in-production" \
 
 2. **Rate Limited (429)**
 
-   - Implement exponential backoff in client
+   - Implement exponential backoff in clien
    - Consider increasing rate limits if legitimate
 
 3. **SOAP Faults**
    - Check Tebra credentials
-   - Verify customer key is correct
+   - Verify customer key is correc
    - Check network connectivity
 
 ### Log Analysis
@@ -273,7 +273,7 @@ gcloud logs read "resource.type=cloud_run_revision AND severity>=ERROR" --limit=
 
 ```
 
-## 📞 Support
+## 📞 Suppor
 
 For technical issues:
 

@@ -6,7 +6,7 @@ with code in this repository.
 
 ## Commands
 
-### Development
+### Developmen
 
 ```bash
 
@@ -22,9 +22,9 @@ npm run build
 
 npm run preview
 
-# Run ESLint
+# Run ESLin
 
-npm run lint
+npm run lin
 
 ```
 
@@ -33,7 +33,7 @@ npm run lint
 ### Project Overview
 
 This is a Patient Flow Management dashboard built with Vite, React,
-TypeScript, and Tailwind CSS. It provides an interface for managing patient
+TypeScript, and Tailwind CSS. It provides an interface for managing patien
 appointments and workflow in a clinical setting.
 
 ### Core Technologies
@@ -48,7 +48,7 @@ appointments and workflow in a clinical setting.
 
 - Auth0 for authentication
 
-### State Management
+### State Managemen
 
 The application uses React Context API for state management:
 
@@ -78,7 +78,7 @@ The application uses React Context API for state management:
 
 ### Component Hierarchy
 
-```text
+```tex
 App
 ├── TimeProvider
 │   └── PatientProvider

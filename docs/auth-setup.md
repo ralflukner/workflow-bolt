@@ -6,7 +6,7 @@ Management application and deploying it to Netlify.
 
 ## Auth0 Setup
 
-### 1. Create an Auth0 Account
+### 1. Create an Auth0 Accoun
 
 If you don't already have one, [sign up for a free Auth0 account](https://auth0.com/signup).
 
@@ -66,7 +66,7 @@ If you plan to use a backend API:
 5. Select `RS256` as the signing algorithm.
 6. Click **Create**.
 
-## Netlify Deployment
+## Netlify Deploymen
 
 ### 1. Set Up Your Repository for Netlify
 
@@ -133,7 +133,7 @@ npm run dev
 
 1. **Login Doesn't Work**:
 
-   - Verify Auth0 domain and client ID are correct
+   - Verify Auth0 domain and client ID are correc
    - Check if callback URLs are correctly configured in Auth0
 
 2. **Redirect Issues After Login**:

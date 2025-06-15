@@ -23,14 +23,14 @@ The Service Account Email Service uses a production-grade approach (Service Acco
 6. Click "Create and Continue"
 7. For the role, select "Basic" > "Viewer" (minimal permissions needed)
 8. Click "Continue" and then "Done"
-9. Find the newly created service account in the list and click on it
+9. Find the newly created service account in the list and click on i
 10. Go to the "Keys" tab
 11. Click "Add Key" > "Create new key"
 12. Select "JSON" as the key type and click "Create"
 13. The key file will be downloaded to your computer
 14. Note the service account email address (e.g., gmail-service-account@luknerlumina-firebase.iam.gserviceaccount.com)
 
-### 2. Enable Domain-Wide Delegation for the Service Account
+### 2. Enable Domain-Wide Delegation for the Service Accoun
 
 1. Go back to the service account details page
 2. Click "Edit" at the top of the page
@@ -54,10 +54,10 @@ Add the following environment variables to your Firebase Functions:
 
 ```bash
 # For Cloud Functions v2, deploy with environment variables:
-gcloud functions deploy FUNCTION_NAME \
-  --gen2 \
-  --runtime=nodejs20 \
-  --region=us-central1 \
+gcloud functions deploy FUNCTION_NAME
+  --gen2
+  --runtime=nodejs20
+  --region=us-central1
   --set-env-vars="GMAIL_SERVICE_ACCOUNT_EMAIL=your-service-account@luknerlumina-firebase.iam.gserviceaccount.com,GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----\n"
 ```
 
@@ -72,33 +72,33 @@ For better security, store the service account credentials in Google Secret Mana
 
 ```bash
 # Create secrets
-echo -n "your-service-account@luknerlumina-firebase.iam.gserviceaccount.com" | \
-  gcloud secrets create GMAIL_SERVICE_ACCOUNT_EMAIL \
-  --project=luknerlumina-firebase \
-  --replication-policy="automatic" \
+echo -n "your-service-account@luknerlumina-firebase.iam.gserviceaccount.com" |
+  gcloud secrets create GMAIL_SERVICE_ACCOUNT_EMAIL
+  --project=luknerlumina-firebase
+  --replication-policy="automatic"
   --data-file=-
 
-echo -n "-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----\n" | \
-  gcloud secrets create GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY \
-  --project=luknerlumina-firebase \
-  --replication-policy="automatic" \
+echo -n "-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----\n" |
+  gcloud secrets create GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY
+  --project=luknerlumina-firebase
+  --replication-policy="automatic"
   --data-file=-
 
-# Grant access to the service account
-gcloud secrets add-iam-policy-binding GMAIL_SERVICE_ACCOUNT_EMAIL \
-  --project=luknerlumina-firebase \
-  --member="serviceAccount:tebra-cloud-run-sa@luknerlumina-firebase.iam.gserviceaccount.com" \
+# Grant access to the service accoun
+gcloud secrets add-iam-policy-binding GMAIL_SERVICE_ACCOUNT_EMAIL
+  --project=luknerlumina-firebase
+  --member="serviceAccount:tebra-cloud-run-sa@luknerlumina-firebase.iam.gserviceaccount.com"
   --role="roles/secretmanager.secretAccessor"
 
-gcloud secrets add-iam-policy-binding GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY \
-  --project=luknerlumina-firebase \
-  --member="serviceAccount:tebra-cloud-run-sa@luknerlumina-firebase.iam.gserviceaccount.com" \
+gcloud secrets add-iam-policy-binding GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY
+  --project=luknerlumina-firebase
+  --member="serviceAccount:tebra-cloud-run-sa@luknerlumina-firebase.iam.gserviceaccount.com"
   --role="roles/secretmanager.secretAccessor"
 ```
 
 Then update the pull-secrets.js script to include these secrets:
 
-```javascript
+```javascrip
 // In scripts/pull-secrets.js, add to SECRETS_TO_PULL array
 const SECRETS_TO_PULL = [
   // ... existing entries

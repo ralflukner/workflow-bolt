@@ -62,7 +62,7 @@ Initialize Firebase in your project (if not already done):
 
 ```bash
 firebase login
-firebase use --add  # Select your Firebase project
+firebase use --add  # Select your Firebase projec
 
 ```
 
@@ -87,9 +87,9 @@ This deploys the following endpoints:
 
 - `tebraGetProviders` - Get all providers
 
-- `tebraCreateAppointment` - Create new appointment
+- `tebraCreateAppointment` - Create new appointmen
 
-- `tebraUpdateAppointment` - Update existing appointment
+- `tebraUpdateAppointment` - Update existing appointmen
 
 - `tebraSyncTodaysSchedule` - Sync today's schedule
 
@@ -132,7 +132,7 @@ Gets appointments for a specific date.
 
 **Parameters**:
 
-- `date: string` - Date in YYYY-MM-DD format
+- `date: string` - Date in YYYY-MM-DD forma
 
 **Returns**: `{ success: boolean, data?: TebraAppointment[] }`
 
@@ -177,7 +177,7 @@ The functions implement Tebra API rate limiting:
 
 Use the `TebraApiService` to call functions from your React app:
 
-```typescript
+```typescrip
 import { tebraApiService } from "../services/tebraApiService";
 
 // Test connection
@@ -229,7 +229,7 @@ Monitor your functions in the Firebase Console:
 
 Consider adding authentication to sensitive functions:
 
-```javascript
+```javascrip
 if (!request.auth) {
   throw new HttpsError("unauthenticated", "Authentication required");
 }
@@ -246,7 +246,7 @@ if (!request.auth) {
 
 - Check network connectivity from Firebase Functions
 
-- Ensure credentials are correct
+- Ensure credentials are correc
 
 #### "Rate limit exceeded"
 
@@ -256,7 +256,7 @@ if (!request.auth) {
 
 #### "Function timeout"
 
-- SOAP calls may take time; consider increasing timeout
+- SOAP calls may take time; consider increasing timeou
 
 - Monitor function execution time in Firebase Console
 
@@ -264,7 +264,7 @@ if (!request.auth) {
 
 Enable detailed logging:
 
-```javascript
+```javascrip
 console.log("Debug info:", {
   wsdlUrl: this.config.wsdlUrl,
   // Don't log credentials!
@@ -296,7 +296,7 @@ firebase functions:log
 3. **Monitor usage**: Check Firebase Console for function metrics
 4. **Set up alerting**: Configure alerts for function failures
 
-## Support
+## Suppor
 
 For issues:
 

@@ -7,7 +7,7 @@ Comprehensive monitoring and alerting has been configured for the Tebra SOAP pro
 
 ## Alert Policies Created
 
-### 1. High Latency Alert
+### 1. High Latency Aler
 
 - **Policy ID**: `18129142588318108102`
 
@@ -17,7 +17,7 @@ Comprehensive monitoring and alerting has been configured for the Tebra SOAP pro
 
 - **Email**: [lukner@luknerclinic.com](mailto:lukner@luknerclinic.com)
 
-### 2. High Error Count Alert
+### 2. High Error Count Aler
 
 - **Policy ID**: `9158751147478329485`
 
@@ -27,7 +27,7 @@ Comprehensive monitoring and alerting has been configured for the Tebra SOAP pro
 
 - **Email**: [lukner@luknerclinic.com](mailto:lukner@luknerclinic.com)
 
-### 3. Service Availability Alert
+### 3. Service Availability Aler
 
 - **Policy ID**: `14626826506718716196`
 
@@ -49,7 +49,7 @@ Comprehensive monitoring and alerting has been configured for the Tebra SOAP pro
 
 ## Dashboard Integration
 
-### MonitoringStatus Component
+### MonitoringStatus Componen
 
 Added to the main dashboard (`/src/components/MonitoringStatus.tsx`) that provides:
 
@@ -106,14 +106,14 @@ When alerts trigger, you will receive emails at `lukner@luknerclinic.com` with:
 
 # Create new notification channel
 
-gcloud alpha monitoring channels create \
-  --display-name="Additional Email" \
-  --type=email \
+gcloud alpha monitoring channels create
+  --display-name="Additional Email"
+  --type=email
   --channel-labels=email_address=new@email.com
 
 # Add to existing policy
 
-gcloud alpha monitoring policies update POLICY_ID \
+gcloud alpha monitoring policies update POLICY_ID
   --add-notification-channels=CHANNEL_ID
 
 ```
@@ -145,7 +145,7 @@ Use the manual refresh button in the MonitoringStatus component or directly test
 ### Manual Service Health Check
 
 ```bash
-curl -H "X-API-Key: UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=" \
+curl -H "X-API-Key: UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y="
   https://tebra-proxy-623450773640.us-central1.run.app/health
 
 ```
@@ -153,9 +153,9 @@ curl -H "X-API-Key: UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=" \
 ### Verify Appointment Retrieval
 
 ```bash
-curl -X POST -H "Content-Type: application/json" \
-  -H "X-API-Key: UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=" \
-  -d '{"fromDate": "2025-06-10", "toDate": "2025-06-10"}' \
+curl -X POST -H "Content-Type: application/json"
+  -H "X-API-Key: UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y="
+  -d '{"fromDate": "2025-06-10", "toDate": "2025-06-10"}'
   https://tebra-proxy-623450773640.us-central1.run.app/appointments
 
 ```
@@ -172,7 +172,7 @@ VITE_TEBRA_PROXY_API_KEY=UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=
 
 ```
 
-### API Key Management
+### API Key Managemen
 
 - **Secret Name**: `tebra-proxy-api-key`
 
@@ -194,11 +194,11 @@ The Tebra SOAP API can be inherently slow (5+ seconds response times). Multiple 
 
 - **Fast ping endpoint** (`/ping`) for health checks (~230ms vs 5s+)
 
-- **Cache status** visible in health endpoint
+- **Cache status** visible in health endpoin
 
 **Timeout Configuration:**
 
-- **SOAP Connection Timeout**: 30 seconds  
+- **SOAP Connection Timeout**: 30 seconds
 
 - **SOAP Socket Timeout**: 60 seconds
 

@@ -3,7 +3,8 @@
 This document explains **how to invoke the Firebase callable functions that front the Tebra Cloud Run service**, how to work with the `getSecret` helper, and how to test everything safely in each environment (local emulator, staging, production).
 
 ---
-## 1  Available Firebase callable functions
+
+## 1&nbsp;&nbsp;Available Firebase callable functions
 
 | Function name | Purpose | Region | Auth required | App Check enforced |
 |---------------|---------|--------|---------------|-------------------|
@@ -14,7 +15,8 @@ This document explains **how to invoke the Firebase callable functions that fron
 > ℹ️  All functions are declared with `onCall({ cors: true …})`, therefore **you must use `httpsCallable` (web / mobile) or the Admin SDK**. `gcloud functions call` & the legacy `firebase functions:call` CLI will _not_ work.
 
 ---
-## 2 Calling the functions from the web app
+
+## 2&nbsp;&nbsp;Calling the functions from the web app
 
 ```ts
 import { initializeApp } from 'firebase/app';
@@ -51,14 +53,17 @@ export async function testTebraConnection() {
 }
 ```
 
-**Local testing**  
+**Local testing**
+
 ```bash
 firebase emulators:start --only auth,functions
 ```
+
 The same code will automatically hit the local emulator when `FIREBASE_EMULATOR_HOST` env vars are set (the CLI injects them for you).
 
 ---
-## 3 Calling the functions from a server (Node.js) script
+
+## 3&nbsp;&nbsp;Calling the functions from a server (Node.js) script
 
 ```js
 import { initializeApp, cert } from 'firebase-admin/app';
@@ -75,10 +80,12 @@ async function main () {
 
 main().catch(console.error);
 ```
+
 The Admin SDK authenticates as the service-account, so `req.auth` is present and App Check is bypassed (per Firebase docs).
 
 ---
-## 4 Common pitfalls & how to avoid them
+
+## 4&nbsp;&nbsp;Common pitfalls & how to avoid them
 
 | Symptom | Likely Cause | Fix |
 |---------|--------------|-----|
@@ -88,14 +95,16 @@ The Admin SDK authenticates as the service-account, so `req.auth` is present and
 | 401 from Cloud Run | Incorrect `X-API-Key` env var or secret missing. | Verify `TEBRA_INTERNAL_API_KEY` in Secret Manager and Cloud Run env. |
 
 ---
-## 5 Updating the whitelist for `getSecret`
 
-1. Edit `functions/src/get-secret.ts` and add the secret name to the `ALLOWED` set.  
-2. Ensure the secret exists in Secret Manager (`gcloud secrets versions add …`).  
+## 5&nbsp;&nbsp;Updating the whitelist for `getSecret`
+
+1. Edit `functions/src/get-secret.ts` and add the secret name to the `ALLOWED` set.
+2. Ensure the secret exists in Secret Manager (`gcloud secrets versions add …`).
 3. Deploy: `firebase deploy --only functions:getSecret`.
 
 ---
-## 6 Sequence diagram (high-level)
+
+## 6&nbsp;&nbsp;Sequence diagram (high-level)
 
 ```mermaid
 sequenceDiagram
@@ -121,9 +130,10 @@ sequenceDiagram
 ```
 
 ---
-## 7 Further reading
 
-* `docs/tebra-cloudrun-design.md` – complete infrastructure & security design
-* `docs/MONITORING_SETUP.md` – how to wire logs and alerts into Cloud Logging & Slack
-* Firebase docs — Callable functions: <https://firebase.google.com/docs/functions/callable>
-* App Check overview: <https://firebase.google.com/docs/app-check> 
+## 7&nbsp;&nbsp;Further reading
+
+- `docs/tebra-cloudrun-design.md` – complete infrastructure & security design
+- `docs/MONITORING_SETUP.md` – how to wire logs and alerts into Cloud Logging & Slack
+- Firebase docs — Callable functions: <https://firebase.google.com/docs/functions/callable>
+- App Check overview: <https://firebase.google.com/docs/app-check>

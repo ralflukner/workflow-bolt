@@ -31,9 +31,9 @@
 
 ### Phase 1: Immediate Diagnostics (HIGH PRIORITY)
 
-#### 1.1 Create Firebase Persistence Diagnostic Component
+#### 1.1 Create Firebase Persistence Diagnostic Componen
 
-```typescript
+```typescrip
 // src/components/DiagnosticPanel.tsx
 // Real-time display of:
 // - Firebase auth status
@@ -44,12 +44,12 @@
 
 ```
 
-#### 1.2 Create Wait Time Diagnostic Component
+#### 1.2 Create Wait Time Diagnostic Componen
 
-```typescript
+```typescrip
 // src/components/WaitTimeDiagnostic.tsx
 // Real-time display of:
-// - getCurrentTime() output
+// - getCurrentTime() outpu
 // - tickCounter value
 // - Individual patient wait time calculations
 // - Time progression tracking
@@ -96,7 +96,7 @@
 
 **Potential Fixes**:
 
-```typescript
+```typescrip
 // In components displaying wait times
 const { tickCounter, getCurrentTime, getWaitTime } = usePatientContext();
 
@@ -119,7 +119,7 @@ const waitTime = useMemo(() => {
 
 **Implementation**:
 
-```typescript
+```typescrip
 // Add authentication status to diagnostic panel
 const { ensureFirebaseAuth } = useFirebaseAuth();
 const [authStatus, setAuthStatus] = useState('checking');
@@ -142,7 +142,7 @@ useEffect(() => {
 
 **Implementation**:
 
-```typescript
+```typescrip
 // In PatientContext, add logging
 console.log('Firebase configured:', isFirebaseConfigured);
 console.log('Using storage service:', storageType);
@@ -160,7 +160,7 @@ console.log('Service methods:', Object.keys(storageService));
 
 **Implementation**:
 
-```typescript
+```typescrip
 // Add save attempt logging
 useEffect(() => {
   if (!persistenceEnabled || isLoading || !hasRealData) {
@@ -178,7 +178,7 @@ useEffect(() => {
 
 #### 4.1 Fix Jest Mock Setup
 
-```typescript
+```typescrip
 // Proper mock structure for services
 const mockDailySessionService = {
   loadTodaysSession: jest.fn(),

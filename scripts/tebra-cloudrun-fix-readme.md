@@ -5,8 +5,8 @@
 When trying to update the Cloud Run service with a new API key using:
 
 ```bash
-gcloud run services update tebra-php-api \
-     --region us-central1 \
+gcloud run services update tebra-php-api
+     --region us-central1
      --set-env-vars TEBRA_INTERNAL_API_KEY="$NEW_KEY"
 ```
 
@@ -14,7 +14,7 @@ The deployment fails with the error:
 
 ```
 Deployment failed
-ERROR: (gcloud.run.services.update) Revision 'tebra-php-api-00007-gkx' is not ready and cannot serve traffic. 
+ERROR: (gcloud.run.services.update) Revision 'tebra-php-api-00007-gkx' is not ready and cannot serve traffic.
 spec.template.spec.containers[0].env[0].value_from.secret_key_ref.name: Secret projects/623450773640/secrets/tebra-username/versions/latest was not found
 spec.template.spec.containers[0].env[1].value_from.secret_key_ref.name: Secret projects/623450773640/secrets/tebra-password/versions/latest was not found
 spec.template.spec.containers[0].env[3].value_from.secret_key_ref.name: Secret projects/623450773640/secrets/tebra-customer-key/version/latest was not found
@@ -40,8 +40,8 @@ chmod +x scripts/create-tebra-secrets.sh
 2. After creating the secrets, you can update the Cloud Run service with your new API key:
 
 ```bash
-gcloud run services update tebra-php-api \
-     --region us-central1 \
+gcloud run services update tebra-php-api
+     --region us-central1
      --set-env-vars TEBRA_INTERNAL_API_KEY="$NEW_KEY"
 ```
 
@@ -59,8 +59,8 @@ chmod +x scripts/update-tebra-cloudrun-env.sh
 2. After updating the service, you can update the API key separately:
 
 ```bash
-gcloud run services update tebra-php-api \
-     --region us-central1 \
+gcloud run services update tebra-php-api
+     --region us-central1
      --set-env-vars INTERNAL_API_KEY="$NEW_KEY"
 ```
 
@@ -72,11 +72,11 @@ After applying either solution, verify that the Cloud Run service is working cor
 # Check the service status
 gcloud run services describe tebra-php-api --region us-central1
 
-# Test the service with a simple request
-curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
-     -H "Content-Type: application/json" \
-     -H "X-API-Key: YOUR_INTERNAL_API_KEY" \
-     -d '{"action":"health"}' \
+# Test the service with a simple reques
+curl -H "Authorization: Bearer $(gcloud auth print-identity-token)"
+     -H "Content-Type: application/json"
+     -H "X-API-Key: YOUR_INTERNAL_API_KEY"
+     -d '{"action":"health"}'
      https://tebra-php-api-HASH-REGION.a.run.app
 ```
 

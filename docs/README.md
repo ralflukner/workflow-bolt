@@ -12,4 +12,4 @@ Welcome to the **workflow-bolt** documentation folder.  Below is a curated table
 | HIPAA & compliance | Security requirements & checklists | `HIPAA_SETUP_GUIDE.md` |
 | Changelog | Human-readable list of all notable changes | `CHANGELOG.md` |
 
-_Need something else?  Check the sub-directories (`00-overview`, `01-compliance`, etc.) or run a text search._ 
+_Need something else?  Check the sub-directories (`00-overview`, `01-compliance`, etc.) or run a text search._

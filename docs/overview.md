@@ -45,13 +45,13 @@ Welcome to the Tebra EHR Integration documentation. This guide provides a compre
 
 ## Quick Links
 
-### Development
+### Developmen
 
 - [Testing Expansion Plan](../testing-expansion-plan.md) - Testing strategy and coverage
 
 - [Changes Summary](../CHANGES_SUMMARY.md) - Recent changes and updates
 
-### Support
+### Suppor
 
 - [Tebra Support](../tebra-support-ticket-revised.md) - Support ticket information
 
@@ -61,7 +61,7 @@ Welcome to the Tebra EHR Integration documentation. This guide provides a compre
 
 Please refer to the [README.md](../README.md) for contribution guidelines and development setup instructions.
 
-## Support
+## Suppor
 
 For support issues:
 

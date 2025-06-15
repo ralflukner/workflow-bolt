@@ -27,7 +27,7 @@ Before you begin, ensure you have the following installed:
 
    ```bash
    git clone <your-repository-url>
-   cd patient-flow-management
+   cd patient-flow-managemen
    ```
 
 2. Install dependencies:
@@ -36,7 +36,7 @@ Before you begin, ensure you have the following installed:
    npm install
    ```
 
-## Development Environment
+## Development Environmen
 
 ### Starting the Development Server
 
@@ -47,7 +47,7 @@ npm run dev
 
 ```
 
-The application will be available at
+The application will be available a
 [http://localhost:5173](http://localhost:5173) (or the port indicated in
 your terminal).
 
@@ -55,13 +55,13 @@ your terminal).
 
 Familiarize yourself with the code structure:
 
-```plaintext
+```plaintex
 src/
 ├── components/        # React components
 ├── context/           # Context providers
 ├── data/              # Mock data and data utilities
 ├── types/             # TypeScript type definitions
-└── main.tsx           # Application entry point
+└── main.tsx           # Application entry poin
 
 ```
 
@@ -69,13 +69,13 @@ src/
 
 We recommend using Visual Studio Code with the following extensions:
 
-- ESLint
+- ESLin
 
 - Tailwind CSS IntelliSense
 
 - TypeScript Vue Plugin (Volar)
 
-- PostCSS Language Support
+- PostCSS Language Suppor
 
 ## TypeScript Configuration
 
@@ -100,7 +100,7 @@ npm install @types/react @types/react-dom
 To run ESLint:
 
 ```bash
-npm run lint
+npm run lin
 
 ```
 
@@ -141,7 +141,7 @@ The application uses mock data located in `src/data/mockData.ts`. You can:
 
 1. Modify this file to create different test scenarios
 2. Use the ImportSchedule component to import custom schedules
-3. Add patients manually using the NewPatientForm component
+3. Add patients manually using the NewPatientForm componen
 
 ## Versioning and Tagging
 
