@@ -27,6 +27,30 @@ if ($method === 'GET' && ($path === '/' || $path === '/health')) {
     exit;
 }
 
+// Debug endpoint to check secret lengths
+if ($method === 'GET' && $path === '/debug/secrets') {
+    header('Content-Type: application/json');
+    $username = getenv('TEBRA_USERNAME') ?: '';
+    $password = getenv('TEBRA_PASSWORD') ?: '';
+    $customerKey = getenv('TEBRA_CUSTOMER_KEY') ?: '';
+    $internalKey = getenv('INTERNAL_API_KEY') ?: '';
+    
+    echo json_encode([
+        'status' => 'debug_info',
+        'timestamp' => date(DATE_ATOM),
+        'secrets' => [
+            'username_length' => strlen($username),
+            'username_first_chars' => substr($username, 0, 10) . '...',
+            'password_length' => strlen($password),
+            'password_first_chars' => substr($password, 0, 8) . '...',
+            'customer_key_length' => strlen($customerKey),
+            'customer_key_value' => $customerKey, // This one is safe to show
+            'internal_api_key_length' => strlen($internalKey)
+        ]
+    ]);
+    exit;
+}
+
 // Validate API key header for all non-health requests
 $internalApiKey = getenv('INTERNAL_API_KEY') ?: '';
 $clientApiKey   = $_SERVER['HTTP_X_API_KEY'] ?? '';

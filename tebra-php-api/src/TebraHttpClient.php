@@ -26,6 +26,14 @@ class TebraHttpClient {
         $this->wsdlUrl = 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl';
         $this->version = 'v2'; // Default version as per guide
         
+        // Debug logging with hashes for credential verification
+        error_log("Tebra credentials debug:");
+        error_log("  Username length: " . strlen($this->username) . ", hash: " . substr(md5($this->username), 0, 8));
+        error_log("  Password length: " . strlen($this->password) . ", hash: " . substr(md5($this->password), 0, 8));
+        error_log("  Customer key length: " . strlen($this->customerKey) . ", value: " . $this->customerKey);
+        error_log("  Expected username hash (first 8): " . substr(md5('pqpyiN-cAGRih@luknerclinic.com'), 0, 8));
+        error_log("  Expected password hash (first 8): " . substr(md5('WQJyt8-ABsW5Y-sgudYx-xV25V5-XJyFyb'), 0, 8));
+        
         $this->initializeClient();
     }
     

@@ -25,6 +25,8 @@
 - **Fix**: Corrected WSDL endpoint secret (`tebra-wsdl-url`) to use service endpoint instead of WSDL query string.
 - **Fix**: Updated `TebraHttpClient.php` to use proper `SOAPAction` namespace (`http://www.kareo.com/ServiceContracts/2.1/`) matching Tebra documentation.
 - **Security**: Removed legacy HTTP Basic Auth; authentication is now provided exclusively via SOAP headers.
+- **Enhancement**: Refactored `TebraHttpClient.php` methods (`getPatients`, `getProviders`, `getAppointments`) to follow the exact official Tebra PHP example pattern, validated against live API.
+- **Note**: Cloud Run deployment successful (revision `tebra-php-api-00019-xs8`); remaining "Unable to find user" error under investigation with Tebra support.
 
 ## [1.0.0] - 2024-03-20
 

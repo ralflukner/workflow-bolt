@@ -152,7 +152,20 @@ class TebraProxyClient {
         responseSize: response.data ? JSON.stringify(response.data).length : 0
       });
 
-      const result = response.data;
+      let result = response.data;
+      
+      // Handle double-JSON encoding from Cloud Run
+      if (typeof result === 'string') {
+        try {
+          result = JSON.parse(result);
+        } catch (parseError) {
+          requestLogger.error(`Failed to parse JSON response`, {
+            responseData: result,
+            parseError: parseError.message
+          });
+          throw new Error(`Invalid JSON response from Cloud Run: ${parseError.message}`);
+        }
+      }
       
       // Log the API response
       requestLogger.apiResponse(response.status, result);
@@ -168,12 +181,13 @@ class TebraProxyClient {
       }
 
       // Check for application-level errors
+      // Handle Cloud Run response structure: { success: true, data: { success: true, data: TebraResponse } }
       if (!result.success) {
         requestLogger.error(`Application error in response`, {
           success: result.success,
           error: result.error,
           data: result.data,
-          fullResponse: result
+          fullResponse: JSON.stringify(result)
         });
         
         // Special handling for known Tebra errors
@@ -189,14 +203,55 @@ class TebraProxyClient {
         throw new Error(result.error || 'Request failed');
       }
 
+      // Extract the actual Tebra response data
+      const tebraResponse = result.data;
+      
+      // Check if the inner Tebra response indicates failure
+      if (!tebraResponse || !tebraResponse.success) {
+        requestLogger.error(`Tebra service error`, {
+          tebraSuccess: tebraResponse?.success,
+          tebraError: tebraResponse?.error,
+          fullTebraResponse: JSON.stringify(tebraResponse)
+        });
+        throw new Error(tebraResponse?.error || 'Tebra service error');
+      }
+
+      // Check for Tebra-specific authentication/authorization failures
+      const tebraData = tebraResponse.data;
+      if (tebraData) {
+        // Check for Tebra SOAP response errors
+        const soapResult = Object.values(tebraData)[0]; // GetProvidersResult, GetPatientsResult, etc.
+        if (soapResult?.SecurityResponse) {
+          const security = soapResult.SecurityResponse;
+          if (!security.SecurityResultSuccess || !security.Authenticated || !security.Authorized) {
+            requestLogger.error(`Tebra authentication/authorization failed`, {
+              authenticated: security.Authenticated,
+              authorized: security.Authorized,
+              securityResult: security.SecurityResult,
+              customerKeyValid: security.CustomerKeyValid
+            });
+            throw new Error(`Tebra auth failed: ${security.SecurityResult || 'Unknown error'}`);
+          }
+        }
+        
+        // Check for Tebra SOAP errors
+        if (soapResult?.ErrorResponse?.IsError) {
+          requestLogger.error(`Tebra SOAP error`, {
+            errorMessage: soapResult.ErrorResponse.ErrorMessage,
+            stackTrace: soapResult.ErrorResponse.StackTrace
+          });
+          throw new Error(`Tebra SOAP error: ${soapResult.ErrorResponse.ErrorMessage}`);
+        }
+      }
+
       requestLogger.info(`Request completed successfully`, {
         action,
-        dataSize: result.data ? JSON.stringify(result.data).length : 0,
-        hasData: !!result.data
+        dataSize: tebraResponse ? JSON.stringify(tebraResponse).length : 0,
+        hasData: !!tebraResponse
       });
       
       timer.end();
-      return result.data;
+      return tebraResponse;
       
     } catch (error) {
       timer.end();
