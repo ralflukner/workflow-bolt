@@ -36,12 +36,13 @@ if (!admin.apps.length) {
 
 /** Verifies an Auth0 RS256 access / ID token and returns the decoded payload */
 async function verifyAuth0Jwt(token) {
-  // Get Auth0 config from environment variables
-  const domain = process.env.AUTH0_DOMAIN;
-  const audience = process.env.AUTH0_AUDIENCE;
+  // Get Auth0 config from Firebase Functions config or environment variables
+  const config = functions.config();
+  const domain = config.auth0?.domain || process.env.AUTH0_DOMAIN;
+  const audience = config.auth0?.audience || process.env.AUTH0_AUDIENCE;
 
   if (!domain || !audience) {
-    throw new Error('Missing Auth0 configuration in environment variables');
+    throw new Error('Missing Auth0 configuration in Firebase Functions config');
   }
 
   // Create JWKS client with Auth0 domain
