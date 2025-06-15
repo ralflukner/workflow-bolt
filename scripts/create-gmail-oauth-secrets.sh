@@ -10,7 +10,7 @@ PROJECT_ID="luknerlumina-firebase"
 SERVICE_ACCOUNT="tebra-cloud-run-sa@luknerlumina-firebase.iam.gserviceaccount.com"
 SECRET_ID_CLIENT_ID="GMAIL_CLIENT_ID"
 SECRET_ID_CLIENT_SECRET="GMAIL_CLIENT_SECRET"
-
+CLIENT_ID="read-from-Secret-Manager"
 # Status tracking
 STATUS_CLIENT_ID="NOT_PROCESSED"
 STATUS_CLIENT_SECRET="NOT_PROCESSED"
@@ -18,7 +18,7 @@ STATUS_IAM="NOT_PROCESSED"
 
 # Display header
 echo "=================================================="
-echo "  Gmail OAuth2 Secret Manager - Secure Edition"
+CLIENT_SECRET="read-from-Secret-Manager"
 echo "  Project: $PROJECT_ID"
 echo "=================================================="
 

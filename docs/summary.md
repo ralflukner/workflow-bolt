@@ -14,8 +14,6 @@ The implementation consists of three interconnected components:
 
 ## Security Architecture
 
-### 1. Enhanced Credential Management Tool
-
 The newly developed credential management tool (`scripts/create-gmail-oauth-secrets.sh`) implements multiple security layers:
 
 - **Zero-Knowledge Design**: The tool never stores credentials in source code
