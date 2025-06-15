@@ -21,6 +21,10 @@
   typed cast, satisfying ESLint rules.
 - **Infra**: Added Secure Secret Manager workflow; IAM binding instructions
   clarified in docs.
+- **Docs**: Updated `docs/README.md` index to include the Debugging Toolkit link for easier discovery.
+- **Fix**: Corrected WSDL endpoint secret (`tebra-wsdl-url`) to use service endpoint instead of WSDL query string.
+- **Fix**: Updated `TebraHttpClient.php` to use proper `SOAPAction` namespace (`http://www.kareo.com/ServiceContracts/2.1/`) matching Tebra documentation.
+- **Security**: Removed legacy HTTP Basic Auth; authentication is now provided exclusively via SOAP headers.
 
 ## [1.0.0] - 2024-03-20
 
