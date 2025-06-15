@@ -1,4 +1,4 @@
-import { httpsCallable } from 'firebase/functions';
+import { httpsCallable, Functions } from 'firebase/functions';
 import { functions } from '../config/firebase';
 
 interface FirebaseConfigFromGSM {
@@ -12,33 +12,29 @@ interface FirebaseConfigFromGSM {
 }
 
 /**
- * Fetch Firebase configuration from backend via Secret Manager
+ * Helper function to ensure Firebase Functions is initialized
+ */
+function getFunctionsInstance(): Functions {
+  if (!functions) {
+    throw new Error('Firebase Functions not initialized. Please ensure Firebase is properly initialized before calling fetchFirebaseConfig()');
+  }
+  return functions;
+}
+
+/**
+ * Fetch Firebase configuration from backend via single Cloud Function call
  */
 export async function fetchFirebaseConfig(): Promise<FirebaseConfigFromGSM> {
   try {
-    // Get all Firebase config values from GSM via backend
-    const getSecret = httpsCallable<{ secretKey: string }, { value: string }>(functions!, 'getSecret');
+    // Ensure Functions is initialized before proceeding
+    const functionsInstance = getFunctionsInstance();
     
-    const [apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId, measurementId] = 
-      await Promise.all([
-        getSecret({ secretKey: 'FIREBASE_API_KEY' }),
-        getSecret({ secretKey: 'FIREBASE_AUTH_DOMAIN' }),
-        getSecret({ secretKey: 'FIREBASE_PROJECT_ID' }),
-        getSecret({ secretKey: 'FIREBASE_STORAGE_BUCKET' }),
-        getSecret({ secretKey: 'FIREBASE_MESSAGING_SENDER_ID' }),
-        getSecret({ secretKey: 'FIREBASE_APP_ID' }),
-        getSecret({ secretKey: 'FIREBASE_MEASUREMENT_ID' }).catch(() => ({ data: { value: '' } }))
-      ]);
+    // Use the existing getFirebaseConfig function that returns the complete config
+    const getFirebaseConfig = httpsCallable<object, FirebaseConfigFromGSM>(functionsInstance, 'getFirebaseConfig');
     
-    return {
-      apiKey: apiKey.data.value,
-      authDomain: authDomain.data.value,
-      projectId: projectId.data.value,
-      storageBucket: storageBucket.data.value,
-      messagingSenderId: messagingSenderId.data.value,
-      appId: appId.data.value,
-      measurementId: measurementId.data.value || undefined
-    };
+    const result = await getFirebaseConfig({});
+    
+    return result.data;
   } catch (error) {
     console.error('Failed to fetch Firebase config from backend:', error);
     throw new Error('Failed to initialize Firebase configuration');

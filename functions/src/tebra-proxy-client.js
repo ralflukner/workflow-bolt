@@ -1,6 +1,10 @@
 const fetch = require('node-fetch');
 const { GoogleAuth } = require('google-auth-library');
-const functions = require('firebase-functions');
+// const functions = require('firebase-functions'); // Not needed for v2 functions
+
+// Shared initialization promise to prevent parallel secret fetches
+let sharedInitializationPromise = null;
+let sharedSecrets = null;
 
 class TebraProxyClient {
   constructor() {
@@ -17,44 +21,23 @@ class TebraProxyClient {
   async initialize() {
     if (this.initialized) return;
 
-    // 1️⃣  New preferred path: env vars
-    this.cloudRunUrl     = process.env.TEBRA_CLOUD_RUN_URL;
-    this.internalApiKey  = process.env.TEBRA_INTERNAL_API_KEY;
-
-    // 2️⃣  Skip functions.config() for v2 functions
-    // functions.config() is no longer available in Cloud Functions for Firebase v2
-
-    // 3️⃣  Ultimate fallback – fetch from Google Secret-Manager (keeps values out of env vars)
-    if (!this.cloudRunUrl || !this.internalApiKey) {
-      try {
-        if (!this.secretClient) {
-          const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
-          this.secretClient = new SecretManagerServiceClient();
-        }
-
-        const projectId = process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
-        if (!projectId) throw new Error('GCP project ID not set');
-
-        const fetchSecret = async (secretName) => {
-          const [version] = await this.secretClient.accessSecretVersion({
-            name: `projects/${projectId}/secrets/${secretName}/versions/latest`,
-          });
-          return version.payload?.data?.toString();
-        };
-
-        if (!this.cloudRunUrl) {
-          this.cloudRunUrl = await fetchSecret('tebra-cloud-run-url');
-        }
-        if (!this.internalApiKey) {
-          this.internalApiKey = await fetchSecret('tebra-internal-api-key');
-        }
-      } catch (err) {
-        console.error('Secret Manager fallback failed:', err);
+    // Use shared secrets if already fetched
+    if (sharedSecrets) {
+      this.cloudRunUrl = sharedSecrets.cloudRunUrl;
+      this.internalApiKey = sharedSecrets.internalApiKey;
+    } else {
+      // Ensure only one initialization happens at a time
+      if (!sharedInitializationPromise) {
+        sharedInitializationPromise = this._fetchSecretsOnce();
       }
+      
+      const secrets = await sharedInitializationPromise;
+      this.cloudRunUrl = secrets.cloudRunUrl;
+      this.internalApiKey = secrets.internalApiKey;
     }
 
     if (!this.cloudRunUrl || !this.internalApiKey) {
-      throw new Error('Missing Tebra Cloud-Run configuration (env vars or functions.config)');
+      throw new Error('Missing Tebra Cloud-Run configuration (GSM secrets or env vars)');
     }
 
     // Validate Cloud Run URL
@@ -72,6 +55,58 @@ class TebraProxyClient {
     console.log('Tebra Cloud Run client initialized successfully');
     console.log(`Cloud Run URL: ${this.cloudRunUrl}`);
     console.log(`Internal API Key: ${this.internalApiKey ? '[SET]' : '[NOT SET]'}`);
+  }
+
+  /**
+   * Fetch secrets only once and cache them for all instances
+   */
+  async _fetchSecretsOnce() {
+    console.log('[TebraProxyClient] Fetching secrets (shared initialization)');
+    
+    let cloudRunUrl = null;
+    let internalApiKey = null;
+
+    // 1️⃣  Preferred path: Google Secret Manager
+    try {
+      if (!this.secretClient) {
+        const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
+        this.secretClient = new SecretManagerServiceClient();
+      }
+
+      const projectId = process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'luknerlumina-firebase';
+      console.log(`[TebraProxyClient] Using project ID: ${projectId}`);
+
+      const fetchSecret = async (secretName) => {
+        try {
+          const [version] = await this.secretClient.accessSecretVersion({
+            name: `projects/${projectId}/secrets/${secretName}/versions/latest`,
+          });
+          return version.payload?.data?.toString();
+        } catch (err) {
+          console.error(`[TebraProxyClient] Failed to fetch secret ${secretName}:`, err.message);
+          return null;
+        }
+      };
+
+      cloudRunUrl = await fetchSecret('TEBRA_CLOUD_RUN_URL');
+      internalApiKey = await fetchSecret('TEBRA_INTERNAL_API_KEY');
+      
+      console.log(`[TebraProxyClient] Secrets loaded from GSM - Cloud Run URL: ${cloudRunUrl ? '[SET]' : '[NOT SET]'}, API Key: ${internalApiKey ? '[SET]' : '[NOT SET]'}`);
+    } catch (err) {
+      console.error('[TebraProxyClient] Secret Manager initialization failed:', err);
+    }
+
+    // 2️⃣  Fallback to env vars if GSM fails
+    if (!cloudRunUrl || !internalApiKey) {
+      cloudRunUrl = cloudRunUrl || process.env.TEBRA_CLOUD_RUN_URL;
+      internalApiKey = internalApiKey || process.env.TEBRA_INTERNAL_API_KEY;
+      console.log(`[TebraProxyClient] After env var fallback - Cloud Run URL: ${cloudRunUrl ? '[SET]' : '[NOT SET]'}, API Key: ${internalApiKey ? '[SET]' : '[NOT SET]'}`);
+    }
+
+    // Cache the secrets for future instances
+    sharedSecrets = { cloudRunUrl, internalApiKey };
+    
+    return sharedSecrets;
   }
 
   async makeRequest(action, params = {}) {

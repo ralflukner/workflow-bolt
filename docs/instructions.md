@@ -29,17 +29,17 @@ In this URL:
    ```
 6. Copy this entire URL
 
-## Using the URL in Firebase Functions Deployment
+## Using the URL in Firebase Functions Deploymen
 
 Once you have the Cloud Run URL, you can use it in the deployment command for Firebase Functions:
 
 ```bash
-gcloud functions deploy tebraTestConnection \
-  --gen2 \
-  --runtime=nodejs20 \
-  --region=us-central1 \
-  --source=. \
-  --entry-point=api \
+gcloud functions deploy tebraTestConnection
+  --gen2
+  --runtime=nodejs20
+  --region=us-central1
+  --source=.
+  --entry-point=api
   --set-env-vars="TEBRA_CLOUD_RUN_URL=https://tebra-php-api-HASH-REGION.a.run.app,TEBRA_INTERNAL_API_KEY=YOUR_KEY"
 ```
 
@@ -62,8 +62,8 @@ This will output the full URL of your Cloud Run service.
 After deployment, you can test the connection:
 
 ```bash
-curl -X POST -H "Content-Type: application/json" \
-     -d '{}' \
+curl -X POST -H "Content-Type: application/json"
+     -d '{}'
      "https://REGION-PROJECT.cloudfunctions.net/tebraTestConnection"
 ```
 

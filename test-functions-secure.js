@@ -2,17 +2,34 @@
 // This uses proper authentication via Firebase Admin SDK
 
 const admin = require('firebase-admin');
-const fetch = require('node-fetch');
+const { initializeApp } = require('firebase/app');
+const { getAuth, signInWithCustomToken } = require('firebase/auth');
 
 // Initialize admin with Application Default Credentials
 admin.initializeApp();
+
+// Initialize Firebase client app for authentication
+const clientApp = initializeApp({
+  apiKey: process.env.FIREBASE_API_KEY || "AIzaSyBQYtmqwuFnJcOWJL2MFJnYdSFo2xOMrSI",
+  authDomain: "luknerlumina-firebase.firebaseapp.com",
+  projectId: "luknerlumina-firebase"
+});
 
 async function testGetSecretFunction() {
   try {
     console.log('Testing getSecret function with proper authentication...\n');
     
     // Create a custom token for testing
-    const customToken = await admin.auth().createCustomToken('test-user-id');
+    const uid = 'test-user-id';
+    const customToken = await admin.auth().createCustomToken(uid);
+    
+    // Exchange custom token for ID token using client SDK
+    const clientAuth = getAuth(clientApp);
+    const userCredential = await signInWithCustomToken(clientAuth, customToken);
+    const idToken = await userCredential.user.getIdToken();
+    
+    // Generate App Check token for server-side calls
+    const appCheckToken = await admin.appCheck().createToken('luknerlumina-firebase');
     
     // Get the function URL
     const functionUrl = 'https://getsecret-xccvzgogwa-uc.a.run.app';
@@ -22,7 +39,8 @@ async function testGetSecretFunction() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${customToken}`
+        'Authorization': `Bearer ${idToken}`,
+        'X-Firebase-AppCheck': appCheckToken.token
       },
       body: JSON.stringify({
         data: {

@@ -2,25 +2,25 @@ name: Tebra Security Check
 
 on:
   push:
-    branches: 
+    branches:
       - main
       - master
       - 'feature/ehr-auth-data-retrieval'
   pull_request:
-    branches: 
+    branches:
       - main
       - master
       - 'feature/ehr-auth-data-retrieval'
   schedule:
-    - cron: '0 0 * * 1'  # Run weekly on Mondays at midnight
+    - cron: '0 0 * * 1'  # Run weekly on Mondays at midnigh
 
 jobs:
   security-check:
-    runs-on: ubuntu-latest
-    
+    runs-on: ubuntu-lates
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
@@ -37,10 +37,10 @@ jobs:
     - name: Configure gcloud
       run: |
         gcloud config set project "$GCP_PROJECT_ID"
-    
+
     - name: Security Check with GSM
       run: |
         chmod +x ./tebra-tools/scripts/security-check-gsm.sh
         ./tebra-tools/scripts/security-check-gsm.sh
       env:
-        GOOGLE_CLOUD_PROJECT: "$GCP_PROJECT_ID" 
+        GOOGLE_CLOUD_PROJECT: "$GCP_PROJECT_ID"

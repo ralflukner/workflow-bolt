@@ -312,9 +312,7 @@ DEBUG=tebra:* npm start
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Support
-
-## Firebase Callable Functions & Cloud-Run Proxy
+## Support – Firebase Callable Functions & Cloud-Run Proxy
 
 Detailed usage instructions, security notes, and troubleshooting tips for
 `getSecret`, `tebraTestConnection`, and the other proxy functions live in

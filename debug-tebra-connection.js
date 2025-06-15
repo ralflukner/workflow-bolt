@@ -5,7 +5,9 @@ async function testCloudRunDirectly() {
   console.log('Testing Cloud Run service directly...\n');
   
   const cloudRunUrl = 'https://tebra-php-api-xccvzgogwa-uc.a.run.app';
-  const internalApiKey = 'UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=';
+  const internalApiKey = process.env.TEBRA_INTERNAL_API_KEY ?? (() => {
+  throw new Error('TEBRA_INTERNAL_API_KEY env var missing');
+})();
   
   try {
     // First test: Health check

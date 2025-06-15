@@ -34,7 +34,7 @@ const getFirebaseConfig = onRequest({ cors: true }, async (req, res) => {
       apiKey,
       authDomain: 'luknerlumina-firebase.firebaseapp.com',
       projectId: 'luknerlumina-firebase',
-      storageBucket: 'luknerlumina-firebase.firebasestorage.app',
+      storageBucket: 'luknerlumina-firebase.appspot.com',
       messagingSenderId: '623450773640',
       appId: '1:623450773640:web:9afd63d3ccbb1fcb6fe73d',
       measurementId: 'G-W6TX8WRN2Z'

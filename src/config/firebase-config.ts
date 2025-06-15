@@ -35,5 +35,8 @@ export async function getFirebaseConfigAsync() {
     console.warn('Could not retrieve Firebase config from Secret Manager, using environment variables:', error);
   }
   
+  if (!firebaseConfig.apiKey) {
+    throw new Error('Missing Firebase API key; did Secret Manager or the /getFirebaseConfig endpoint fail?');
+  }
   return firebaseConfig;
 } 

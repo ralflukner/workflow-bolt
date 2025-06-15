@@ -30,7 +30,11 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
       throw new Error(`Failed to fetch Firebase config: ${response.status}`);
     }
 
-    const config = await response.json();
+    const responseData = await response.json();
+    
+    // Check if response has a data property (Firebase callable function wrapper)
+    const config = responseData.data ? responseData.data : responseData;
+    
     if (!config.apiKey) {
       throw new Error('Invalid Firebase configuration received');
     }
