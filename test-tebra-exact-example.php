@@ -4,9 +4,22 @@
  */
 
 try{
-    $user = 'pqpyiN-cAGRih@luknerclinic.com';
-    $password = 'WQJyt8-ABsW5Y-sgudYx-xV25V5-XJyFyb';
-    $customerKey = 'j57wt68dc39q';
+    $user        = getenv('TEBRA_USER');
+    $password    = getenv('TEBRA_PASSWORD');
+    $customerKey = getenv('TEBRA_CUSTOMER_KEY');
+
+    if (!$user || !$password || !$customerKey) {
+        throw new RuntimeException('Missing Tebra credentials – set TEBRA_* environment variables.');
+    }
+
+    // Helper to mask credentials (show first & last 2 chars, asterisk middle)
+    $maskSensitive = function($value) {
+        $len = strlen($value);
+        if ($len <= 4) {
+            return str_repeat('*', $len);
+        }
+        return substr($value, 0, 2) . str_repeat('*', $len - 4) . substr($value, -2);
+    };
 
     $wsdl = 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl';
     $client = new SoapClient($wsdl);
@@ -14,8 +27,8 @@ try{
     echo "🔍 Testing Exact Official Tebra PHP Example\n";
     echo "==========================================\n\n";
     echo "Credentials:\n";
-    echo "- User: " . $user . "\n";
-    echo "- Customer Key: " . $customerKey . "\n";
+    echo "- User: " . $maskSensitive($user) . "\n";
+    echo "- Customer Key: " . $maskSensitive($customerKey) . "\n";
     echo "- WSDL: " . $wsdl . "\n\n";
 
     $request = array (

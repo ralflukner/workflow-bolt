@@ -158,6 +158,11 @@ class TebraProxyClient {
       if (typeof result === 'string') {
         try {
           result = JSON.parse(result);
+          requestLogger.info(`Parsed JSON string response`, {
+            originalType: 'string',
+            parsedKeys: Object.keys(result),
+            success: result.success
+          });
         } catch (parseError) {
           requestLogger.error(`Failed to parse JSON response`, {
             responseData: result,
@@ -165,6 +170,12 @@ class TebraProxyClient {
           });
           throw new Error(`Invalid JSON response from Cloud Run: ${parseError.message}`);
         }
+      } else {
+        requestLogger.info(`Response already parsed`, {
+          type: typeof result,
+          keys: result ? Object.keys(result) : 'null',
+          success: result?.success
+        });
       }
       
       // Log the API response
@@ -182,7 +193,7 @@ class TebraProxyClient {
 
       // Check for application-level errors
       // Handle Cloud Run response structure: { success: true, data: { success: true, data: TebraResponse } }
-      if (!result.success) {
+      if (result.success === false) {
         requestLogger.error(`Application error in response`, {
           success: result.success,
           error: result.error,
@@ -203,11 +214,12 @@ class TebraProxyClient {
         throw new Error(result.error || 'Request failed');
       }
 
+
       // Extract the actual Tebra response data
       const tebraResponse = result.data;
       
       // Check if the inner Tebra response indicates failure
-      if (!tebraResponse || !tebraResponse.success) {
+      if (!tebraResponse || tebraResponse.success === false) {
         requestLogger.error(`Tebra service error`, {
           tebraSuccess: tebraResponse?.success,
           tebraError: tebraResponse?.error,
@@ -244,14 +256,17 @@ class TebraProxyClient {
         }
       }
 
+      // Return only the actual SOAP payload (inner data) to maintain compatibility with existing callers
+      const payload = tebraResponse.data;
+
       requestLogger.info(`Request completed successfully`, {
         action,
-        dataSize: tebraResponse ? JSON.stringify(tebraResponse).length : 0,
-        hasData: !!tebraResponse
+        dataSize: payload ? JSON.stringify(payload).length : 0,
+        hasData: !!payload
       });
       
       timer.end();
-      return tebraResponse;
+      return payload;
       
     } catch (error) {
       timer.end();
@@ -281,9 +296,12 @@ class TebraProxyClient {
   async testConnection() {
     try {
       console.log('[TebraProxyClient] Testing connection...');
-      const result = await this.makeRequest('getProviders');
-      console.log('[TebraProxyClient] Test connection result:', result ? 'Success' : 'Failed');
-      return Array.isArray(result);
+      const payload = await this.makeRequest('getProviders');
+      console.log('[TebraProxyClient] Test connection result:', payload ? 'Success' : 'Failed');
+      
+      // Check if we got valid provider data in the SOAP payload
+      const hasProviderData = payload?.GetProvidersResult?.Providers?.ProviderData;
+      return !!hasProviderData;
     } catch (e) {
       console.error('[TebraProxyClient] Test connection error:', e.message);
       return false;
