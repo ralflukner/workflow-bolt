@@ -49,6 +49,7 @@ flowchart LR
 | **2025-06-11** | Cloud Run PHP | `0` appointments, empty payload | WSDL caching + tight time-outs inside container env | **Fixed** (see docs/TEBRA_DEBUGGING_RESOLUTION.md) |
 | **2025-06-10** | SOAP API | `InternalServiceFault` on every operation | Tebra backend outage for account `work-flow@luknerclinic.com` (opened support ticket) | **External** – waiting on Tebra; temporary retry w/ Aledade credentials works |
 | **2025-05-28** | Secret Manager | 404 on `tebra-cloud-run-url` secret | Secret not yet created in project | **Fixed** – secret added + IAM binding for Cloud Run SA |
+| **2025-06-15** | Firebase callable → Cloud Run | `Tebra API request failed: Request failed` when hitting *tebraGetAppointments* for `2025-06-11` | Missing `fromDate`/`toDate` mapping: callable passed `{ date }` but Cloud-Run proxy expected `fromDate` & `toDate`.  Fixed in commit `proxy-payload-20250615` – callable now maps `date` to both params. | **Fixed** – redeployed functions & proxy |
 
 ---
 

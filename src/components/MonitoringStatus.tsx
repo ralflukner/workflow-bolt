@@ -55,13 +55,14 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
         }
         // Note: 2000-3500ms is normal for rate-limited Tebra API
         
-        setStatus({
-          proxy: proxyState,
-          lastCheck: new Date().toLocaleTimeString(),
-          responseTime,
-          latency: responseTime,
-          errors: 0
-        });
+setStatus({
+           proxy: proxyState,
+           lastCheck: new Date().toLocaleTimeString(),
+           responseTime,
+           latency: responseTime,
+          errors: 0,
+          performanceMetrics: result.performanceMetrics
+         });
       } else {
         setStatus({
           proxy: 'error',
