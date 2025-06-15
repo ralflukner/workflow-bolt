@@ -8,9 +8,10 @@ This toolkit provides enhanced debugging capabilities for the Tebra API integrat
 
 - **Correlation IDs**: Track requests across multiple components
 - **Timing Information**: Measure operation durations
-- **Structured Logging**: Consistent log format with metadata
+- **Structured Logging**: GCP Cloud Logging compatible with preserved fields
 - **Security**: Automatically redacts sensitive headers
 - **Context**: Child loggers inherit correlation IDs
+- **Cloud Logging Integration**: Structured fields for advanced filtering and monitoring
 
 ### 2. Enhanced Tebra Proxy Client
 
@@ -72,23 +73,34 @@ This will provide:
 
 ### Sample Enhanced Log Entry
 
+**Console Output:**
 ```
-[INFO] TebraProxyClient:makeRequest:a1b2c3d4:3 (+1250ms) Starting request {
-  action: 'getAppointments',
-  paramsKeys: ['fromDate', 'toDate'],
-  paramsSize: 45
+[INFO] TebraProxyClient:makeRequest:a1b2c3d4:3 (+1250ms) Starting request
+```
+
+**GCP Cloud Logging Structured Fields:**
+```json
+{
+  "timestamp": "2025-06-15T10:30:15.123Z",
+  "level": "INFO",
+  "component": "TebraProxyClient:makeRequest",
+  "correlationId": "a1b2c3d4",
+  "step": 3,
+  "elapsedMs": 1250,
+  "message": "Starting request",
+  "text": "[INFO] TebraProxyClient:makeRequest:a1b2c3d4:3 (+1250ms) Starting request",
+  "action": "getAppointments",
+  "paramsKeys": ["fromDate", "toDate"],
+  "paramsSize": 45
 }
 ```
 
-**Breakdown:**
+**Key Benefits:**
 
-- `[INFO]`: Log level
-- `TebraProxyClient:makeRequest`: Component and sub-component
-- `a1b2c3d4`: Correlation ID (tracks this request across all logs)
-- `3`: Step number in this operation
-- `+1250ms`: Time elapsed since operation started
-- `Starting request`: Human-readable message
-- `{ ... }`: Structured metadata
+- **Searchable Fields**: Filter by `correlationId`, `component`, `step`, etc.
+- **Performance Queries**: Find slow requests with `elapsedMs>5000`
+- **Error Correlation**: Trace entire request flows using correlation IDs
+- **Human Readable**: `text` field provides readable format for quick scanning
 
 ### Sample Analysis Output
 
@@ -112,6 +124,44 @@ This will provide:
    1. [HIGH] TEBRA_FAULTS: 45 Tebra InternalServiceFaults detected - implement retry logic with exponential backoff
    2. [MEDIUM] RATE_LIMITING: 8 rate limit errors - implement client-side throttling
 ```
+
+## 🏗️ Structured Logging Features
+
+### GCP Cloud Logging Integration
+
+The enhanced debug logger now emits structured log entries that preserve all metadata fields in GCP Cloud Logging, enabling advanced filtering and monitoring capabilities.
+
+**Advanced Filtering Examples:**
+
+```bash
+# Find all errors for a specific correlation ID
+correlationId="a1b2c3d4" AND level="ERROR"
+
+# Find slow operations (over 5 seconds)
+elapsedMs>5000
+
+# Find all Tebra API calls
+component="TebraProxyClient" AND message="API Call"
+
+# Find operations that took multiple steps
+step>10
+
+# Find recent errors in a specific component
+component="TebraProxyClient:makeRequest" AND level="ERROR" AND timestamp>="2025-06-15T00:00:00Z"
+```
+
+**Monitoring and Alerting:**
+
+- **Performance Monitoring**: Set up alerts when `elapsedMs` exceeds thresholds
+- **Error Rate Tracking**: Monitor error rates by `component` and `correlationId`
+- **Step Analysis**: Identify operations that require many steps (potential optimization targets)
+- **Correlation Tracking**: Trace complete request flows across multiple services
+
+### Security Features
+
+- **Automatic Header Sanitization**: Sensitive headers are automatically redacted
+- **Safe Structured Logging**: No sensitive data in structured fields
+- **Correlation Privacy**: Correlation IDs are random and don't contain sensitive information
 
 ## 🔍 Debugging Specific Issues
 

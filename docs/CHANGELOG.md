@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- **Enhancement**: Fixed structured logging in `functions/src/debug-logger.js` to preserve
+  all metadata fields in GCP Cloud Logging for advanced filtering and monitoring.
+- **Security**: Enhanced log analysis script (`analyze-logs.cjs`) to prevent shell injection
+  by replacing `execSync` with `spawnSync` and proper argument arrays.
+- **Reliability**: Fixed async/await handling in log analysis CLI to prevent premature
+  process exit before analysis completion.
 - **Docs**: Added `docs/tebra-functions-usage.md` – guide for calling Firebase callable
   functions and Cloud-Run proxy, with code samples, sequence diagram, and pitfalls.
 - **Docs**: Added `docs/tebra-api-failures.md` – consolidated failure catalogue and
@@ -15,9 +21,6 @@
   typed cast, satisfying ESLint rules.
 - **Infra**: Added Secure Secret Manager workflow; IAM binding instructions
   clarified in docs.
-- Added new feature X
-- Fixed bug Y
-- Improved performance Z
 
 ## [1.0.0] - 2024-03-20
 

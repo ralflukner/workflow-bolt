@@ -1,9 +1,11 @@
 FROM php:8.2-apache
 
-# Install required extensions
+# Install required extensions and tools
 RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libcurl4-openssl-dev \
+    git \
+    unzip \
     && docker-php-ext-install soap curl \
     && apt-get clean
 

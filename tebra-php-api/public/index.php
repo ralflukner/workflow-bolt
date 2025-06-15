@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use LuknerLumina\TebraApi\TebraHttpClient;
-use DateTime;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 

@@ -3,7 +3,7 @@
 
 ## Overview
 
-Comprehensive monitoring and alerting has been configured for the Tebra SOAP proxy service running on Google Cloud Run.
+Comprehensive monitoring and alerting has been configured for the Tebra SOAP proxy service running on Google Cloud Run. Enhanced structured logging provides advanced filtering and correlation capabilities in GCP Cloud Logging.
 
 ## Alert Policies Created
 
@@ -78,9 +78,38 @@ Added to the main dashboard (`/src/components/MonitoringStatus.tsx`) that provid
 
 - Integration with existing dashboard theme
 
+## Structured Logging Features
+
+### Advanced Log Filtering
+
+The enhanced debug logger now preserves structured fields in GCP Cloud Logging:
+
+```bash
+# Find all errors for a specific correlation ID
+correlationId="a1b2c3d4" AND level="ERROR"
+
+# Find slow operations (over 5 seconds)
+elapsedMs>5000
+
+# Find all Tebra API calls
+component="TebraProxyClient" AND message="API Call"
+
+# Find operations that took multiple steps
+step>10
+```
+
+### Performance Monitoring
+
+- **Response Time Tracking**: Use `elapsedMs` field for performance analysis
+- **Correlation Tracking**: Follow complete request flows using `correlationId`
+- **Component Analysis**: Filter by specific components for targeted debugging
+- **Step Analysis**: Identify complex operations requiring optimization
+
 ## Access Links
 
 - **Cloud Monitoring Console**: [https://console.cloud.google.com/monitoring/alerting/policies?project=luknerlumina-firebase](https://console.cloud.google.com/monitoring/alerting/policies?project=luknerlumina-firebase)
+
+- **Cloud Logging Console**: [https://console.cloud.google.com/logs/query?project=luknerlumina-firebase](https://console.cloud.google.com/logs/query?project=luknerlumina-firebase)
 
 - **Tebra Proxy Health Endpoint**: [https://tebra-proxy-623450773640.us-central1.run.app/health](https://tebra-proxy-623450773640.us-central1.run.app/health)
 

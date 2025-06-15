@@ -141,21 +141,10 @@ class TebraProxyClient {
       // Log the API call (headers will be sanitized)
       requestLogger.apiCall('POST', this.cloudRunUrl, requestOptions.headers, requestOptions.data);
 
-      // Make the request using fetch directly (not authClient) since Cloud Run service uses API key auth only
+      // Make the request using authClient for Google Auth + API key for internal auth
       const requestStart = Date.now();
-      const fetchResponse = await fetch(requestOptions.url, {
-        method: requestOptions.method,
-        headers: requestOptions.headers,
-        body: JSON.stringify(requestOptions.data)
-      });
-      const responseData = await fetchResponse.json();
+      const response = await this.authClient.request(requestOptions);
       const requestDuration = Date.now() - requestStart;
-      
-      // Format response to match authClient response structure
-      const response = {
-        status: fetchResponse.status,
-        data: responseData
-      };
       
       requestLogger.info(`HTTP request completed`, { 
         status: response.status,

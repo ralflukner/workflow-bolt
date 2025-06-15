@@ -25,6 +25,8 @@ class DebugLogger {
       step: this.stepCounter,
       elapsedMs: elapsed,
       message,
+      // Add human-readable text field for readability
+      text: `[${level.toUpperCase()}] ${this.component}:${this.correlationId}:${this.stepCounter} (+${elapsed}ms) ${message}`,
       ...data
     };
 
@@ -36,8 +38,8 @@ class DebugLogger {
       'debug': console.log
     }[level] || console.log;
 
-    logMethod(`[${level.toUpperCase()}] ${this.component}:${this.correlationId}:${this.stepCounter} (+${elapsed}ms) ${message}`, 
-              Object.keys(data).length > 0 ? data : '');
+    // Emit the entire logEntry object as the first argument to preserve structured fields
+    logMethod(logEntry);
   }
 
   info(message, data = {}) { this.log('info', message, data); }

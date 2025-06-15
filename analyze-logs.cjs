@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+
 /**
  * Log Analysis Script for Tebra API Failures
  * Analyzes Cloud Run logs to identify patterns and generate insights
@@ -8,7 +9,7 @@
  * node analyze-logs.js [--days=7] [--service=tebra-php-api]
  */
 
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 
 class LogAnalyzer {
@@ -65,15 +66,35 @@ class LogAnalyzer {
     `.trim();
 
     try {
-      const command = `gcloud logging read '${query}' --project=${this.project} --format=json --limit=1000`;
-      const output = execSync(command, { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
+      // Use spawnSync with argument array to prevent shell injection
+      const result = spawnSync('gcloud', [
+        'logging',
+        'read',
+        query,
+        `--project=${this.project}`,
+        '--format=json',
+        '--limit=1000'
+      ], {
+        encoding: 'utf8',
+        maxBuffer: 50 * 1024 * 1024, // Increased buffer size
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      if (result.status !== 0) {
+        throw new Error(`gcloud command failed with status ${result.status}: ${result.stderr}`);
+      }
       
-      const logs = JSON.parse(output || '[]');
+      const logs = JSON.parse(result.stdout || '[]');
       console.log(`📊 Retrieved ${logs.length} log entries\n`);
       
       return logs;
     } catch (error) {
       console.warn('⚠️  Could not fetch Cloud Logging data. Using sample analysis...');
+      console.warn(`Error details: ${error.message}`);
       return this.generateSampleLogs();
     }
   }
@@ -328,8 +349,16 @@ if (require.main === module) {
     }
   });
 
-  const analyzer = new LogAnalyzer(options);
-  analyzer.analyzeLogs();
+  // Make the CLI entrypoint async and await the analysis
+  (async () => {
+    try {
+      const analyzer = new LogAnalyzer(options);
+      await analyzer.analyzeLogs();
+    } catch (error) {
+      console.error('❌ Analysis failed:', error.message);
+      process.exit(1);
+    }
+  })();
 }
 
 module.exports = { LogAnalyzer }; 
