@@ -9,6 +9,9 @@ class TebraProxyClient {
     this.internalApiKey = null;
     this.auth = null;
     this.authClient = null;
+
+    // Lazy-load GSM client to avoid cold-start cost when env vars are already provided
+    this.secretClient = null;
   }
 
   async initialize() {
@@ -23,6 +26,35 @@ class TebraProxyClient {
       const cfg = functions.config().tebra || {};
       this.cloudRunUrl    = this.cloudRunUrl    || cfg.cloud_run_url;
       this.internalApiKey = this.internalApiKey || cfg.internal_api_key;
+    }
+
+    // 3️⃣  Ultimate fallback – fetch from Google Secret-Manager (keeps values out of env vars)
+    if (!this.cloudRunUrl || !this.internalApiKey) {
+      try {
+        if (!this.secretClient) {
+          const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
+          this.secretClient = new SecretManagerServiceClient();
+        }
+
+        const projectId = process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
+        if (!projectId) throw new Error('GCP project ID not set');
+
+        const fetchSecret = async (secretName) => {
+          const [version] = await this.secretClient.accessSecretVersion({
+            name: `projects/${projectId}/secrets/${secretName}/versions/latest`,
+          });
+          return version.payload?.data?.toString();
+        };
+
+        if (!this.cloudRunUrl) {
+          this.cloudRunUrl = await fetchSecret('tebra-cloud-run-url');
+        }
+        if (!this.internalApiKey) {
+          this.internalApiKey = await fetchSecret('tebra-internal-api-key');
+        }
+      } catch (err) {
+        console.error('Secret Manager fallback failed:', err);
+      }
     }
 
     if (!this.cloudRunUrl || !this.internalApiKey) {
@@ -42,6 +74,8 @@ class TebraProxyClient {
 
     this.initialized = true;
     console.log('Tebra Cloud Run client initialized successfully');
+    console.log(`Cloud Run URL: ${this.cloudRunUrl}`);
+    console.log(`Internal API Key: ${this.internalApiKey ? '[SET]' : '[NOT SET]'}`);
   }
 
   async makeRequest(action, params = {}) {
@@ -91,9 +125,12 @@ class TebraProxyClient {
 
   async testConnection() {
     try {
+      console.log('[TebraProxyClient] Testing connection...');
       const result = await this.makeRequest('getProviders');
+      console.log('[TebraProxyClient] Test connection result:', result ? 'Success' : 'Failed');
       return Array.isArray(result);
     } catch (e) {
+      console.error('[TebraProxyClient] Test connection error:', e.message);
       return false;
     }
   }

@@ -2,18 +2,17 @@ import { getEnvVar } from '../utils/envUtils';
 import { secretsService } from '../services/secretsService';
 
 /**
- * Get Firebase configuration from environment variables (fallback)
- * Note: Firebase config is generally not sensitive, but this pattern 
- * allows for secret manager integration if needed in the future
+ * Default Firebase configuration - will be overridden by GSM values
+ * These are public values and safe to include in code
  */
 export const firebaseConfig = {
-  apiKey: getEnvVar('VITE_FIREBASE_API_KEY') || '',
-  authDomain: getEnvVar('VITE_FIREBASE_AUTH_DOMAIN') || '',
-  projectId: getEnvVar('VITE_FIREBASE_PROJECT_ID') || '',
-  storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET') || '',
-  messagingSenderId: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID') || '',
-  appId: getEnvVar('VITE_FIREBASE_APP_ID') || '',
-  measurementId: getEnvVar('VITE_FIREBASE_MEASUREMENT_ID') || ''
+  apiKey: '', // Will be fetched from GSM
+  authDomain: 'luknerlumina-firebase.firebaseapp.com',
+  projectId: 'luknerlumina-firebase',
+  storageBucket: 'luknerlumina-firebase.firebasestorage.app',
+  messagingSenderId: '623450773640',
+  appId: '1:623450773640:web:9afd63d3ccbb1fcb6fe73d',
+  measurementId: 'G-W6TX8WRN2Z'
 };
 
 /**

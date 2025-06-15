@@ -3,7 +3,7 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFunctions, Functions } from 'firebase/functions';
 import { getAnalytics, Analytics } from 'firebase/analytics';
-import { firebaseConfig } from './firebase-config';
+import { getFirebaseConfigWithGSM } from './firebase-init';
 
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
@@ -37,6 +37,10 @@ export async function initializeFirebase(): Promise<void> {
   }
 
   try {
+    // Fetch configuration from backend
+    const firebaseConfig = await getFirebaseConfigWithGSM();
+    console.log('Firebase config loaded from GSM');
+    
     app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);

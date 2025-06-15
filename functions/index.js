@@ -38,7 +38,7 @@ async function verifyAuth0Jwt(token) {
   // Get Auth0 config from environment variables
   const domain = process.env.AUTH0_DOMAIN;
   const audience = process.env.AUTH0_AUDIENCE;
-  
+
   if (!domain || !audience) {
     throw new Error('Missing Auth0 configuration in environment variables');
   }
@@ -139,11 +139,11 @@ exports.testSecretRedaction = testSecretRedaction;
 // Tebra API Functions
 exports.tebraTestConnection = onCall({ cors: true }, async (request) => {
   console.log('Testing Tebra connection...');
-  
+
   try {
     // Test actual Tebra API connection
     const connected = await tebraProxyClient.testConnection();
-    
+
     return { 
       success: connected, 
       message: connected ? 'Tebra API connection test successful' : 'Tebra API connection failed',
@@ -168,29 +168,29 @@ exports.tebraGetPatient = onCall({
   if (!request.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required for patient data access');
   }
-  
+
   // HIPAA Monitoring: Track PHI access
   monitorPhiAccess(request.auth.uid, 'PATIENT_GET', { 
     endpoint: 'tebraGetPatient',
     timestamp: new Date().toISOString()
   });
-  
+
   try {
     // HIPAA Security: Validate and sanitize input
     const { patientId } = request.data;
     const validatedPatientId = validatePatientId(patientId);
     logValidationAttempt(request.auth.uid, 'PATIENT_ID_VALIDATION', true);
-    
+
     // Get actual patient data from Tebra
     const patientData = await tebraProxyClient.getPatientById(validatedPatientId);
-    
+
     if (!patientData) {
       return {
         success: false,
         message: 'Patient not found'
       };
     }
-    
+
     // Transform the data to our expected format
     return {
       success: true,
@@ -222,22 +222,22 @@ exports.tebraSearchPatients = onCall({ cors: true }, async (request) => {
   if (!request.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required for patient search');
   }
-  
+
   // HIPAA Monitoring: Track PHI access
   monitorPhiAccess(request.auth.uid, 'PATIENT_SEARCH', { 
     endpoint: 'tebraSearchPatients',
     timestamp: new Date().toISOString()
   });
-  
+
   try {
     // HIPAA Security: Validate and sanitize search criteria
     const { searchCriteria } = request.data;
     const validatedCriteria = validateSearchCriteria(searchCriteria);
     logValidationAttempt(request.auth.uid, 'PATIENT_SEARCH_VALIDATION', true);
-    
+
     // Search for patients using Tebra API
     const patients = await tebraProxyClient.searchPatients(validatedCriteria.lastName || '');
-    
+
     // Transform the results
     const transformedPatients = patients.map(patient => ({
       PatientId: patient.PatientId || patient.Id || '',
@@ -247,7 +247,7 @@ exports.tebraSearchPatients = onCall({ cors: true }, async (request) => {
       Phone: patient.Phone || patient.PhoneNumber || '',
       Email: patient.Email || patient.EmailAddress || ''
     }));
-    
+
     return {
       success: true,
       data: transformedPatients
@@ -268,22 +268,22 @@ exports.tebraGetAppointments = onCall({ cors: true }, async (request) => {
   if (!request.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required for appointment data access');
   }
-  
+
   // HIPAA Monitoring: Track PHI access
   monitorPhiAccess(request.auth.uid, 'APPOINTMENT_GET', { 
     endpoint: 'tebraGetAppointments',
     timestamp: new Date().toISOString()
   });
-  
+
   try {
     // HIPAA Security: Validate date input
     const { date } = request.data;
     const targetDate = date ? validateDate(date) : new Date().toISOString().split('T')[0];
     logValidationAttempt(request.auth.uid, 'APPOINTMENT_DATE_VALIDATION', true);
-    
+
     // Get appointments from Tebra
     const appointments = await tebraProxyClient.getAppointments(targetDate, targetDate);
-    
+
     // Return the appointments array directly
     return appointments;
   } catch (error) {
@@ -295,11 +295,11 @@ exports.tebraGetAppointments = onCall({ cors: true }, async (request) => {
 // Get providers
 exports.tebraGetProviders = onCall({ cors: true }, async (request) => {
   console.log('Getting providers...');
-  
+
   try {
     // Get actual providers from Tebra
     const providers = await tebraProxyClient.getProviders();
-    
+
     // Transform the results
     const transformedProviders = providers.map(provider => ({
       ProviderId: provider.ProviderId || provider.Id || '',
@@ -309,7 +309,7 @@ exports.tebraGetProviders = onCall({ cors: true }, async (request) => {
       Specialty: provider.Specialty || '',
       Email: provider.Email || ''
     }));
-    
+
     return {
       success: true,
       data: transformedProviders
@@ -333,15 +333,15 @@ exports.tebraTestAppointments = onCall({ cors: true }, async (request) => {
     );
   }
   console.log('Testing Tebra appointments endpoint...');
-  
+
   try {
     const { fromDate, toDate, date } = request.data || {};
     const startDate = fromDate || date || '2025-06-10';
     const endDate = toDate || date || '2025-06-11';
-    
+
     console.log(`Fetching raw appointments from ${startDate} to ${endDate}`);
     const response = await tebraProxyClient.getAppointments(startDate, endDate);
-    
+
     return {
       success: true,
       data: response,
@@ -362,13 +362,13 @@ exports.tebraCreateAppointment = onCall({ cors: true }, async (request) => {
   if (!request.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required for appointment creation');
   }
-  
+
   // Audit log for HIPAA compliance (no PHI logged)
   console.log(`Appointment creation requested by user: ${request.auth.uid}`);
-  
+
   try {
     const appointmentData = request.data;
-    
+
     // Mock response for now
     // In production, this would call the actual Tebra API
     return {
@@ -394,13 +394,13 @@ exports.tebraUpdateAppointment = onCall({ cors: true }, async (request) => {
   if (!request.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required for appointment updates');
   }
-  
+
   // Audit log for HIPAA compliance (no PHI logged)
   console.log(`Appointment update requested by user: ${request.auth.uid}`);
-  
+
   try {
     const { appointmentId, updates } = request.data;
-    
+
     // Mock response for now
     // In production, this would call the actual Tebra API
     return {
@@ -423,6 +423,15 @@ exports.tebraUpdateAppointment = onCall({ cors: true }, async (request) => {
 // Import the new refactored sync function
 const { tebraSyncTodaysSchedule } = require('./src/tebra-sync/index');
 exports.tebraSyncTodaysSchedule = tebraSyncTodaysSchedule;
+
+// Export getSecret callable (whitelisted secrets for frontend)
+const { getSecret } = require('./src/get-secret.js');
+exports.getSecret = getSecret;
+
+// Export public Firebase config endpoint
+const { getFirebaseConfig } = require('./src/get-firebase-config.js');
+exports.getFirebaseConfig = getFirebaseConfig;
+
 
 // Secure Auth0 token exchange function (HIPAA Compliant)
 exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
@@ -482,22 +491,22 @@ exports.getSecurityReport = onCall({
   if (!request.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required for security reports');
   }
-  
+
   // TODO: Add admin role check in production
   // if (!request.auth.token?.admin) {
   //   throw new functions.https.HttpsError('permission-denied', 'Admin access required');
   // }
-  
+
   try {
     const report = generateSecurityReport();
-    
+
     // Log security report access
     console.log('HIPAA_AUDIT:', JSON.stringify({
       type: 'SECURITY_REPORT_ACCESS',
       userId: request.auth.uid,
       timestamp: new Date().toISOString()
     }));
-    
+
     return {
       success: true,
       data: report

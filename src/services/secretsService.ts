@@ -31,7 +31,7 @@ export class SecretsService {
       envFallback: 'REACT_APP_PATIENT_ENCRYPTION_KEY',
       required: true
     },
-    
+
     // Tebra API credentials  
     TEBRA_USERNAME: {
       secretName: 'TEBRA_USERNAME',
@@ -53,14 +53,14 @@ export class SecretsService {
       envFallback: 'REACT_APP_TEBRA_WSDL_URL',
       required: true
     },
-    
+
     // API Keys
     TEBRA_PROXY_API_KEY: {
       secretName: 'tebra-proxy-api-key',
       envFallback: 'VITE_TEBRA_PROXY_API_KEY',
       required: true
     },
-    
+
     // Firebase config (for server-side usage)
     FIREBASE_API_KEY: {
       secretName: 'firebase-api-key',
@@ -79,7 +79,7 @@ export class SecretsService {
   }
 
   /**
-   * Get secret from Google Secret Manager with fallback to environment variables
+   * Get secret from Google Secret Manager with fallback to environment variables and backend callable
    */
   public async getSecret(secretKey: string): Promise<string> {
     const config = SecretsService.SECRET_CONFIGS[secretKey];
@@ -116,10 +116,20 @@ export class SecretsService {
         }
       }
 
+      // 1) cache → 2) env var (browser build) → 3) back-end callable
+      if (!secretValue && typeof window !== 'undefined') {
+        secretValue = await this.getFromBackend(secretKey);
+        if (secretValue) {
+          console.log(`🔒 Retrieved ${secretKey} from Firebase Function (secure)`);
+          this.cacheSecret(secretKey, secretValue);
+          return secretValue;
+        }
+      }
+
       // Handle missing required secrets
       if (config.required) {
         throw new Error(
-          `Required secret ${secretKey} not found in Secret Manager or environment variables. ` +
+          `Required secret ${secretKey} not found in Secret Manager, environment variables, or backend. ` +
           `Configure secret: gcloud secrets create ${config.secretName} --data-file=-`
         );
       }
@@ -127,11 +137,11 @@ export class SecretsService {
       return '';
     } catch (error) {
       console.error(`Failed to retrieve secret ${secretKey}:`, error);
-      
+
       if (config.required) {
         throw error;
       }
-      
+
       return '';
     }
   }
@@ -262,6 +272,33 @@ export class SecretsService {
    */
   public clearCache(): void {
     SecretsService.cache = {};
+  }
+
+  /**
+   * Retrieve secret from Firebase Function backend
+   * This is used as a fallback in browser environments
+   */
+  private async getFromBackend(secretKey: string): Promise<string | null> {
+    try {
+      // run only in the browser
+      if (typeof window === 'undefined') return null;
+
+      const [{ httpsCallable, getFunctions }, { getApps }] = await Promise.all([
+        import('firebase/functions'),
+        import('firebase/app')
+      ]);
+
+      // assumes initialiseFirebase() has already run
+      if (!getApps().length) return null;
+
+      const fn = httpsCallable(getFunctions(), 'getSecret');
+      const res = await fn({ secretKey });
+      const { value } = res.data as { value: string };
+      return value ?? null;
+    } catch (err) {
+      console.warn(`Callable getSecret failed for ${secretKey}:`, err);
+      return null;
+    }
   }
 
   /**

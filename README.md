@@ -1,4 +1,3 @@
-
 # Tebra EHR Integration
 
 A robust and well-documented integration with the Tebra EHR system using SOAP API.
@@ -314,3 +313,9 @@ DEBUG=tebra:* npm start
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
+
+## Firebase Callable Functions & Cloud-Run Proxy
+
+Detailed usage instructions, security notes, and troubleshooting tips for
+`getSecret`, `tebraTestConnection`, and the other proxy functions live in
+[`docs/tebra-functions-usage.md`](docs/tebra-functions-usage.md).
