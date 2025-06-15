@@ -262,4 +262,25 @@ class TebraProxyClient {
 // Create singleton instance
 const tebraProxyClient = new TebraProxyClient();
 
-module.exports = { tebraProxyClient };
+// Test function for connection verification
+async function tebraTestConnection() {
+  try {
+    await tebraProxyClient.initialize();
+    const result = await tebraProxyClient.getProviders();
+    return {
+      success: true,
+      message: 'Tebra connection test successful',
+      data: result,
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Tebra connection test failed: ' + error.message,
+      error: error.stack,
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
+module.exports = { tebraProxyClient, tebraTestConnection };
