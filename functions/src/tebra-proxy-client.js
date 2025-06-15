@@ -21,12 +21,8 @@ class TebraProxyClient {
     this.cloudRunUrl     = process.env.TEBRA_CLOUD_RUN_URL;
     this.internalApiKey  = process.env.TEBRA_INTERNAL_API_KEY;
 
-    // 2️⃣  Fallback for old v1 deployments
-    if ((!this.cloudRunUrl || !this.internalApiKey) && typeof functions.config === 'function') {
-      const cfg = functions.config().tebra || {};
-      this.cloudRunUrl    = this.cloudRunUrl    || cfg.cloud_run_url;
-      this.internalApiKey = this.internalApiKey || cfg.internal_api_key;
-    }
+    // 2️⃣  Skip functions.config() for v2 functions
+    // functions.config() is no longer available in Cloud Functions for Firebase v2
 
     // 3️⃣  Ultimate fallback – fetch from Google Secret-Manager (keeps values out of env vars)
     if (!this.cloudRunUrl || !this.internalApiKey) {

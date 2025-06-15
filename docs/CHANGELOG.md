@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+- **Docs**: Added `docs/tebra-functions-usage.md` – guide for calling Firebase callable
+  functions and Cloud-Run proxy, with code samples, sequence diagram, and pitfalls.
+- **Docs**: Added `docs/tebra-api-failures.md` – consolidated failure catalogue and
+  remediation roadmap.
+- **Docs**: Linked new guide from top-level `README.md` for quick discovery.
+- **Code**: Created `functions/src/get-secret.ts` and generated JS wrapper
+  to expose a secure, whitelisted secret-fetch callable (`getSecret`).
+- **Code**: Updated `functions/index.js` to export `getSecret` and improved
+  error handling in `tebra-proxy-client.js` (Secret-Manager fallback & logging).
+- **Code**: Refactored `src/utils/envUtils.ts` to remove `@ts-ignore` and use
+  typed cast, satisfying ESLint rules.
+- **Infra**: Added Secure Secret Manager workflow; IAM binding instructions
+  clarified in docs.
 - Added new feature X
 - Fixed bug Y
 - Improved performance Z
