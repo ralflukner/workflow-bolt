@@ -57,6 +57,12 @@ export const TebraConnectionDebuggerSimple: React.FC = () => {
         <div className="text-sm text-gray-300">
           Result: {testResult}
         </div>
+
+        {testResult.includes('ms') && !testResult.includes('Error') && (
+          <div className="mt-2 text-xs text-gray-400 italic">
+            Note: Tebra API is rate-limited. Response times of 2-4 seconds are normal.
+          </div>
+        )}
       </div>
     </div>
   );

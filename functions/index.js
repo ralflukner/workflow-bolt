@@ -138,7 +138,11 @@ exports.validateHIPAACompliance = validateHIPAACompliance;
 exports.testSecretRedaction = testSecretRedaction;
 
 // Tebra API Functions
-exports.tebraTestConnection = onCall({ cors: true }, async (request) => {
+exports.tebraTestConnection = onCall({ 
+  cors: true,
+  timeoutSeconds: 60,
+  memory: '1GiB' 
+}, async (request) => {
   const logger = new DebugLogger('tebraTestConnection');
   logger.info('Starting Tebra connection test', {
     userId: request.auth?.uid || 'anonymous',

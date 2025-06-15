@@ -53,10 +53,10 @@ class TebraHttpClient {
             'soap_version' => SOAP_1_1,
             'trace' => true,
             'exceptions' => true,
-            'cache_wsdl' => WSDL_CACHE_NONE,
+            'cache_wsdl' => WSDL_CACHE_MEMORY,
             'features' => SOAP_SINGLE_ELEMENT_ARRAYS,
             'user_agent' => 'TebraSOAP-PHP-Client/1.0',
-            'connection_timeout' => 30,
+            'connection_timeout' => 15,
             'stream_context' => stream_context_create([
                 'ssl' => [
                     'verify_peer' => true,
@@ -159,6 +159,9 @@ class TebraHttpClient {
      * Get providers (using verified working pattern)
      */
     public function getProviders() {
+        $startTime = microtime(true);
+        error_log("Starting GetProviders request");
+        
         try {
             $params = [
                 'request' => [
@@ -167,12 +170,23 @@ class TebraHttpClient {
                 ]
             ];
             
+            $soapStartTime = microtime(true);
             $response = $this->client->GetProviders($params);
+            $soapDuration = (microtime(true) - $soapStartTime) * 1000;
+            
+            error_log("SOAP GetProviders took: " . round($soapDuration, 2) . "ms");
+            
+            $totalDuration = (microtime(true) - $startTime) * 1000;
+            error_log("Total GetProviders request took: " . round($totalDuration, 2) . "ms");
             
             return [
                 'success' => true,
                 'data' => $response,
-                'timestamp' => date('c')
+                'timestamp' => date('c'),
+                'performance' => [
+                    'soap_duration_ms' => round($soapDuration, 2),
+                    'total_duration_ms' => round($totalDuration, 2)
+                ]
             ];
             
         } catch (\SoapFault $e) {

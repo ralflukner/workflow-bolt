@@ -222,6 +222,48 @@ export class TebraApiService {
   }
 
   /**
+   * Test connection with detailed response including performance metrics and error details
+   */
+  async testConnectionDetailed(): Promise<{
+    success: boolean;
+    message?: string;
+    timestamp?: string;
+    correlationId?: string;
+    performanceMetrics?: {
+      soap_duration_ms?: number;
+      total_duration_ms?: number;
+    };
+    cacheHit?: boolean;
+  }> {
+    try {
+      this.log('Testing Tebra API connection via Firebase Functions...');
+      const result = await this.tebraTestConnection();
+      const response = result.data;
+      
+      this.log('Connection test result:', response);
+      
+      // Return the full response with performance data
+      return {
+        success: response.success || false,
+        message: response.message,
+        timestamp: response.timestamp,
+        correlationId: response.correlationId,
+        performanceMetrics: response.performance,
+        cacheHit: response.cacheHit
+      };
+    } catch (error) {
+      this.log('Connection test failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return {
+        success: false,
+        message: errorMessage,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
+  /**
    * Get patient by ID
    */
   async getPatientById(patientId: string): Promise<TebraPatient | null> {
