@@ -9,6 +9,7 @@ Welcome to the **workflow-bolt** documentation folder.  Below is a curated table
 | Failures & incidents | Catalogue of past failures + roadmap | `tebra-api-failures.md` |
 | Design | End-to-end architecture & container details | `tebra-cloudrun-design.md` |
 | Monitoring | How to wire logs/alerts | `MONITORING_SETUP.md` |
+| Debugging toolkit | Structured logging, correlation IDs, log analysis | `../DEBUG-TOOLKIT.md` |
 | HIPAA & compliance | Security requirements & checklists | `HIPAA_SETUP_GUIDE.md` |
 | Changelog | Human-readable list of all notable changes | `CHANGELOG.md` |
 

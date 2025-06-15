@@ -43,10 +43,16 @@ class TebraHttpClient {
         // Create temporary stream for verbose output
         $verbose = fopen('php://temp', 'w+');
         
-        // Build SOAP envelope
+        // Build SOAP envelope with proper RequestHeader
         $soapEnvelope = '<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:kar="http://www.kareo.com/api/schemas/">
-    <soap:Header/>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:kar="http://www.kareo.com/ServiceContracts/2.1">
+    <soap:Header>
+        <kar:RequestHeader>
+            <kar:CustomerKey>' . htmlspecialchars($this->customerKey) . '</kar:CustomerKey>
+            <kar:User>' . htmlspecialchars($this->username) . '</kar:User>
+            <kar:Password>' . htmlspecialchars($this->password) . '</kar:Password>
+        </kar:RequestHeader>
+    </soap:Header>
     <soap:Body>
         ' . $soapBody . '
     </soap:Body>
@@ -59,10 +65,9 @@ class TebraHttpClient {
             CURLOPT_POSTFIELDS => $soapEnvelope,
             CURLOPT_HTTPHEADER => [
                 'Content-Type: text/xml; charset=utf-8',
-                'SOAPAction: "http://www.kareo.com/api/schemas/KareoServices/' . $action . '"',
+                'SOAPAction: "http://www.kareo.com/ServiceContracts/2.1/' . $action . '"',
                 'Content-Length: ' . strlen($soapEnvelope)
             ],
-            CURLOPT_USERPWD => $this->username . ':' . $this->password,
             CURLOPT_TIMEOUT => 60,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
@@ -108,11 +113,7 @@ class TebraHttpClient {
     public function testConnection() {
         try {
             // Try to get providers as a connection test
-            $soapBody = '<kar:GetProviders>
-                <kar:request>
-                    <kar:CustomerKey>' . htmlspecialchars($this->customerKey) . '</kar:CustomerKey>
-                </kar:request>
-            </kar:GetProviders>';
+            $soapBody = '<kar:GetProviders />';
             
             $response = $this->makeSOAPRequest('GetProviders', $soapBody);
             
@@ -141,7 +142,6 @@ class TebraHttpClient {
         try {
             $soapBody = '<kar:GetAppointments>
                 <kar:request>
-                    <kar:CustomerKey>' . htmlspecialchars($this->customerKey) . '</kar:CustomerKey>
                     <kar:FromDate>' . htmlspecialchars($fromDate) . '</kar:FromDate>
                     <kar:ToDate>' . htmlspecialchars($toDate) . '</kar:ToDate>
                 </kar:request>
@@ -170,11 +170,7 @@ class TebraHttpClient {
      */
     public function getProviders() {
         try {
-            $soapBody = '<kar:GetProviders>
-                <kar:request>
-                    <kar:CustomerKey>' . htmlspecialchars($this->customerKey) . '</kar:CustomerKey>
-                </kar:request>
-            </kar:GetProviders>';
+            $soapBody = '<kar:GetProviders />';
             
             $response = $this->makeSOAPRequest('GetProviders', $soapBody);
             
@@ -201,7 +197,6 @@ class TebraHttpClient {
         try {
             $soapBody = '<kar:SearchPatients>
                 <kar:request>
-                    <kar:CustomerKey>' . htmlspecialchars($this->customerKey) . '</kar:CustomerKey>
                     <kar:LastName>' . htmlspecialchars($lastName) . '</kar:LastName>
                 </kar:request>
             </kar:SearchPatients>';
