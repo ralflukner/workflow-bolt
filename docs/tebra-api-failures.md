@@ -79,12 +79,14 @@ flowchart LR
 - Disabled WSDL cache, extended timeouts, enabled GZIP (commit `prod-20250611`).
 - Added Secret-Manager fallback in `tebra-proxy-client.js` (lines 15-50).
 - Wrote comprehensive usage guide (`docs/tebra-functions-usage.md`).
+- Implemented enhanced debugging system with correlation IDs and automated log analysis.
 
 ### In Flight (June to July 2025)
 
-1. **Adaptive throttling** – Implement token-bucket limiter inside Firebase Functions wrapper, surface `retryAfter` in error payload.
-2. **Observability** – Cloud Logging metrics filter for `severity>=ERROR` on `tebra-php-api`; alert policy "error rate >5% for 5 min".
-3. **Integration tests in CI** – Use GitHub Actions to run a nightly end-to-end test hitting `tebraTestConnection` and alert Slack.
+1. **Enhanced debugging** – Implemented comprehensive logging with correlation IDs, timing, and automated analysis (see `DEBUG-TOOLKIT.md`).
+2. **Adaptive throttling** – Implement token-bucket limiter inside Firebase Functions wrapper, surface `retryAfter` in error payload.
+3. **Observability** – Cloud Logging metrics filter for `severity>=ERROR` on `tebra-php-api`; alert policy "error rate >5% for 5 min".
+4. **Integration tests in CI** – Use GitHub Actions to run a nightly end-to-end test hitting `tebraTestConnection` and alert Slack.
 
 ### Backlog
 
@@ -122,3 +124,4 @@ Run the minimal curl shown in `docs/tebra-support-ticket-revised.md` to verify o
 - **Design doc** – `docs/tebra-cloudrun-design.md`
 - **Debugging post-mortem** – `docs/TEBRA_DEBUGGING_RESOLUTION.md`
 - **Support ticket** – `docs/tebra-support-ticket-revised.md`
+- **Enhanced debugging toolkit** – `DEBUG-TOOLKIT.md`

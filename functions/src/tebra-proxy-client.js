@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const { GoogleAuth } = require('google-auth-library');
+const { DebugLogger } = require('./debug-logger');
 // const functions = require('firebase-functions'); // Not needed for v2 functions
 
 // Shared initialization promise to prevent parallel secret fetches
@@ -13,9 +14,12 @@ class TebraProxyClient {
     this.internalApiKey = null;
     this.auth = null;
     this.authClient = null;
+    this.logger = new DebugLogger('TebraProxyClient');
 
     // Lazy-load GSM client to avoid cold-start cost when env vars are already provided
     this.secretClient = null;
+    
+    this.logger.info('TebraProxyClient instance created');
   }
 
   async initialize() {
@@ -110,12 +114,20 @@ class TebraProxyClient {
   }
 
   async makeRequest(action, params = {}) {
-    await this.initialize();
+    const requestLogger = this.logger.child('makeRequest');
+    const timer = requestLogger.time(`${action} request`);
+    
+    requestLogger.info(`Starting request`, { 
+      action, 
+      paramsKeys: Object.keys(params),
+      paramsSize: JSON.stringify(params).length 
+    });
 
     try {
-      console.log(`[TebraCloudRun] 🌐 Making request: ${action}`);
-      
-      // Use Google Auth client to make the request with ID token
+      await this.initialize();
+      requestLogger.info('Initialization completed');
+
+      // Prepare request options
       const requestOptions = {
         url: this.cloudRunUrl,
         method: 'POST',
@@ -126,31 +138,99 @@ class TebraProxyClient {
         data: { action, params }
       };
 
-      const response = await this.authClient.request(requestOptions);
-      console.log(`[TebraCloudRun] 📡 HTTP Response status: ${response.status}`);
-      
-      const result = response.data;
-      console.log('[TebraCloudRun] 📥 Response received, processing...');
+      // Log the API call (headers will be sanitized)
+      requestLogger.apiCall('POST', this.cloudRunUrl, requestOptions.headers, requestOptions.data);
 
+      // Make the request using fetch directly (not authClient) since Cloud Run service uses API key auth only
+      const requestStart = Date.now();
+      const fetchResponse = await fetch(requestOptions.url, {
+        method: requestOptions.method,
+        headers: requestOptions.headers,
+        body: JSON.stringify(requestOptions.data)
+      });
+      const responseData = await fetchResponse.json();
+      const requestDuration = Date.now() - requestStart;
+      
+      // Format response to match authClient response structure
+      const response = {
+        status: fetchResponse.status,
+        data: responseData
+      };
+      
+      requestLogger.info(`HTTP request completed`, { 
+        status: response.status,
+        durationMs: requestDuration,
+        responseSize: response.data ? JSON.stringify(response.data).length : 0
+      });
+
+      const result = response.data;
+      
+      // Log the API response
+      requestLogger.apiResponse(response.status, result);
+
+      // Check for HTTP errors
       if (response.status < 200 || response.status >= 300) {
-        console.error(`[TebraCloudRun] ❌ HTTP Error: ${response.status}`, result);
+        requestLogger.error(`HTTP error response`, {
+          status: response.status,
+          error: result?.error,
+          fullResponse: result
+        });
         throw new Error(result?.error || `HTTP ${response.status}`);
       }
 
+      // Check for application-level errors
       if (!result.success) {
-        console.error('[TebraCloudRun] ❌ Request reported failure:', result);
+        requestLogger.error(`Application error in response`, {
+          success: result.success,
+          error: result.error,
+          data: result.data,
+          fullResponse: result
+        });
+        
+        // Special handling for known Tebra errors
+        if (result.error && result.error.includes('InternalServiceFault')) {
+          requestLogger.error(`Tebra InternalServiceFault detected`, {
+            action,
+            params,
+            tebraError: result.error,
+            timestamp: new Date().toISOString()
+          });
+        }
+        
         throw new Error(result.error || 'Request failed');
       }
 
-      console.log('[TebraCloudRun] ✅ Request completed successfully');
+      requestLogger.info(`Request completed successfully`, {
+        action,
+        dataSize: result.data ? JSON.stringify(result.data).length : 0,
+        hasData: !!result.data
+      });
+      
+      timer.end();
       return result.data;
+      
     } catch (error) {
-      console.error('Tebra Cloud Run request failed:', error.message);
-      if (error.response) {
-        console.error(`[TebraCloudRun] Response status: ${error.response.status}`);
-        console.error(`[TebraCloudRun] Response data:`, error.response.data);
-      }
-      throw new Error(`Tebra API request failed: ${error.message}`);
+      timer.end();
+      
+      requestLogger.error(`Request failed`, {
+        action,
+        error: error.message,
+        stack: error.stack,
+        responseStatus: error.response?.status,
+        responseData: error.response?.data,
+        isNetworkError: !error.response,
+        isHttpError: !!error.response,
+        isTebraError: error.message.includes('InternalServiceFault')
+      });
+      
+      // Enhanced error context
+      const enhancedError = new Error(`Tebra API request failed: ${error.message}`);
+      enhancedError.originalError = error;
+      enhancedError.action = action;
+      enhancedError.params = params;
+      enhancedError.correlationId = requestLogger.correlationId;
+      
+      throw enhancedError;
     }
   }
 

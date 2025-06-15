@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const jwksRsa = require('jwks-rsa');
 const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 const { tebraProxyClient } = require('./src/tebra-proxy-client');
+const { DebugLogger } = require('./src/debug-logger');
 const { 
   validatePatientId, 
   validateDate, 
@@ -138,23 +139,47 @@ exports.testSecretRedaction = testSecretRedaction;
 
 // Tebra API Functions
 exports.tebraTestConnection = onCall({ cors: true }, async (request) => {
-  console.log('Testing Tebra connection...');
+  const logger = new DebugLogger('tebraTestConnection');
+  logger.info('Starting Tebra connection test', {
+    userId: request.auth?.uid || 'anonymous',
+    userAgent: request.rawRequest?.headers?.['user-agent'],
+    ip: request.rawRequest?.ip
+  });
 
   try {
     // Test actual Tebra API connection
+    const timer = logger.time('connection test');
     const connected = await tebraProxyClient.testConnection();
+    timer.end();
 
-    return { 
+    const result = { 
       success: connected, 
       message: connected ? 'Tebra API connection test successful' : 'Tebra API connection failed',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      correlationId: logger.correlationId
     };
+
+    logger.info('Connection test completed', {
+      success: connected,
+      result
+    });
+
+    return result;
   } catch (error) {
-    console.error('Tebra connection test failed:', error);
+    logger.error('Tebra connection test failed', {
+      error: error.message,
+      stack: error.stack,
+      correlationId: error.correlationId,
+      action: error.action,
+      isTebraError: error.message.includes('InternalServiceFault')
+    });
+
     return { 
       success: false, 
       message: error.message || 'Connection test failed',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      correlationId: logger.correlationId,
+      errorType: error.message.includes('InternalServiceFault') ? 'TEBRA_FAULT' : 'UNKNOWN'
     };
   }
 });
