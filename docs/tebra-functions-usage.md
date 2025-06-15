@@ -63,7 +63,7 @@ The same code will automatically hit the local emulator when `FIREBASE_EMULATOR_
 
 ---
 
-## 3&nbsp;&nbsp;Calling the functions from a server (Node.js) script
+## 3&nbsp;&nbsp;Calling the functions from a server (Node.js) scrip
 
 ```js
 import { initializeApp, cert } from 'firebase-admin/app';

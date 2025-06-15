@@ -54,8 +54,8 @@ This document outlines our security-first approach to managing secrets in Fireba
 
 ```bash
 # Create a new secret with HIPAA-compliant data residency
-gcloud secrets create SECRET_NAME \
-    --replication-policy=user-managed \
+gcloud secrets create SECRET_NAME
+    --replication-policy=user-managed
     --locations=us-central1
 
 # Add secret value
@@ -66,7 +66,7 @@ echo "SECRET_VALUE" | gcloud secrets versions add SECRET_NAME --data-file=-
 
 ```bash
 # List all secrets
-gcloud secrets list
+gcloud secrets lis
 
 # View secret metadata (not the value)
 gcloud secrets describe SECRET_NAME
@@ -81,12 +81,12 @@ echo "NEW_VALUE" | gcloud secrets versions add SECRET_NAME --data-file=-
 # Encrypt .env file for secure backup
 ENV=.env
 STAMP=$(date +%Y%m%d)
-openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt \
+openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -sal
         -in "$ENV" -out "$ENV.$STAMP.enc"
         -k "$(whoami)-$(hostname)-HIPAA"
 
 # Decrypt when needed (NEVER commit decrypted files)
-openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -d \
+openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -d
         -in "$ENV.$STAMP.enc" -out "$ENV.temp"
         -k "$(whoami)-$(hostname)-HIPAA"
 ```

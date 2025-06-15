@@ -56,6 +56,7 @@ flowchart LR
 | **2025-06-13** | Functions Init | Race condition with Functions not initialized | Non-null assertion on potentially undefined functions | **Fixed** – added initialization check helper |
 | **2025-06-12** | Config Service | 7 separate network calls for Firebase config | Each secret fetched individually | **Fixed** – replaced with single getFirebaseConfig call |
 | **2025-06-11** | Build Process | TypeScript compilation errors during deploy | Unused imports and type mismatches | **Fixed** – cleaned up imports and fixed types |
+| **2025-06-15** | Test Runner | `AuthBridge Integration Tests` fail when un-skipped (`onAuthStateChanged` mock missing) | Jest mocks for `firebase/auth` outdated | **Open** – update mocks or move to e2e test harness |
 
 ---
 
@@ -78,6 +79,7 @@ flowchart LR
 | F-02 | Auth Tokens | ID tokens expire during long-running operations | LOW | Frontend | GH issue #88 |
 | F-03 | Error Handling | Generic error messages don't provide debugging context | MED | Backend | GH issue #89 |
 | F-04 | Local Dev | Firebase emulator inconsistent with production behavior | LOW | DevOps | – |
+| F-05 | Test Coverage | `AuthBridge Integration Tests` currently skipped; mocks need overhaul to pass | LOW | QA | GH issue #95 |
 
 ---
 
@@ -136,6 +138,7 @@ gcloud projects get-iam-policy luknerlumina-firebase
 ### 6.4 Functions Initialization Race Condition
 
 Look for error: "Firebase Functions not initialized"
+
 - Ensure Firebase is initialized before calling functions
 - Use the `getFunctionsInstance()` helper to validate initialization
 

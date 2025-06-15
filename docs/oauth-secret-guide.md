@@ -166,12 +166,12 @@ echo "Storing in Google Secret Manager..."
 echo -n "$CLIENT_ID" | gcloud secrets create google-oauth-client-id --data-file=- 2>/dev/null ||
     echo -n "$CLIENT_ID" | gcloud secrets versions add google-oauth-client-id --data-file=-
 
-echo -n "$CLIENT_SECRET" | gcloud secrets create google-oauth-client-secret --data-file=- 2>/dev/null || \
+echo -n "$CLIENT_SECRET" | gcloud secrets create google-oauth-client-secret --data-file=- 2>/dev/null ||
     echo -n "$CLIENT_SECRET" | gcloud secrets versions add google-oauth-client-secret --data-file=-
 
 # Store the entire file as backup
 
-gcloud secrets create google-oauth-config --data-file="$CLIENT_SECRET_FILE" 2>/dev/null || \
+gcloud secrets create google-oauth-config --data-file="$CLIENT_SECRET_FILE" 2>/dev/null ||
     gcloud secrets versions add google-oauth-config --data-file="$CLIENT_SECRET_FILE"
 
 echo "✅ OAuth credentials migrated to GSM"
