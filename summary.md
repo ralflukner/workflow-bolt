@@ -13,8 +13,8 @@ I've implemented a solution to securely store the OAuth2 secrets in Google Secre
 ### 1. Created Script to Store OAuth2 Secrets
 
 I created a script (`scripts/create-gmail-oauth-secrets.sh`) that:
-- Creates the `GMAIL_CLIENT_ID` secret with the value `623450773640-4dsrvor05a97cfuc68didco12sh76h04.apps.googleusercontent.com`
-- Creates the `GMAIL_CLIENT_SECRET` secret with the value `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`
+- Prompts the user to enter their OAuth2 Client ID and Client Secret
+- Creates the `GMAIL_CLIENT_ID` and `GMAIL_CLIENT_SECRET` secrets in Google Secret Manager
 - Grants access to the service account `tebra-cloud-run-sa@luknerlumina-firebase.iam.gserviceaccount.com`
 
 The script follows the same pattern as the existing `create-tebra-secrets.sh` script and uses the naming conventions observed in the project.
