@@ -3,16 +3,19 @@
 ## What is the Cloud Run URL Hash?
 
 When you deploy a service to Google Cloud Run, it gets assigned a unique URL in the format:
+
 ```
 https://SERVICE-NAME-HASH-REGION.a.run.app
 ```
 
 For example:
+
 ```
 https://tebra-php-api-a1b2c3d4e5-uc.a.run.app
 ```
 
 In this URL:
+
 - `tebra-php-api` is the service name
 - `a1b2c3d4e5` is the hash (a unique identifier)
 - `uc` is the region code (us-central1)
@@ -44,6 +47,7 @@ gcloud functions deploy tebraTestConnection
 ```
 
 Replace:
+
 - `https://tebra-php-api-HASH-REGION.a.run.app` with the actual URL you copied
 - `YOUR_KEY` with your internal API key
 
@@ -68,6 +72,7 @@ curl -X POST -H "Content-Type: application/json"
 ```
 
 You should receive a response like:
+
 ```json
 {"data":{"success":true}}
 ```

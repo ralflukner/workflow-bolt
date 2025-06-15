@@ -3,6 +3,7 @@
 ## Issue Description
 
 GitHub's push protection was blocking the push because it detected secrets in the commit history, specifically:
+
 - Google OAuth Client ID in `scripts/create-gmail-oauth-secrets.sh` and `summary.md`
 - Google OAuth Client Secret in `scripts/create-gmail-oauth-secrets.sh` and `summary.md`
 
@@ -53,8 +54,8 @@ The `--force-with-lease` option is safer than `--force` as it ensures you don't 
 
 If Option 1 doesn't work, you can follow the URLs provided in the error message to allow the secrets:
 
-1. Go to https://github.com/ralflukner/workflow-bolt/security/secret-scanning/unblock-secret/2yWie5Nphs5GeRRuwzvGav1LwWA
-2. Go to https://github.com/ralflukner/workflow-bolt/security/secret-scanning/unblock-secret/2yWie34oeWoGVVLXLysC8ciaLLv
+1. Go to <https://github.com/ralflukner/workflow-bolt/security/secret-scanning/unblock-secret/2yWie5Nphs5GeRRuwzvGav1LwWA>
+2. Go to <https://github.com/ralflukner/workflow-bolt/security/secret-scanning/unblock-secret/2yWie34oeWoGVVLXLysC8ciaLLv>
 3. Follow the instructions to allow the secrets
 
 However, this is less secure as it means the secrets will remain in the repository history.
