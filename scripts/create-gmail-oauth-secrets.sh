@@ -1,106 +1,170 @@
 #!/bin/bash
 set -euo pipefail
 
-# This script creates the necessary OAuth2 secrets in Google Secret Manager for Gmail integration
-# or updates existing secrets with new values
+# This script securely manages Gmail OAuth2 credentials in Google Secret Manager
+# Version 2.0 - Completely rewritten to follow security best practices
+# No hardcoded credentials - interactive prompts only
 
-# Set the project ID
+# Configuration
 PROJECT_ID="luknerlumina-firebase"
+SERVICE_ACCOUNT="tebra-cloud-run-sa@luknerlumina-firebase.iam.gserviceaccount.com"
+SECRET_ID_CLIENT_ID="GMAIL_CLIENT_ID"
+SECRET_ID_CLIENT_SECRET="GMAIL_CLIENT_SECRET"
 
-# Initialize status variables
-CLIENT_ID_CREATED=false
-CLIENT_SECRET_CREATED=false
-CLIENT_ID_UPDATED=false
-CLIENT_SECRET_UPDATED=false
-ACCESS_GRANTED=true
+# Status tracking
+STATUS_CLIENT_ID="NOT_PROCESSED"
+STATUS_CLIENT_SECRET="NOT_PROCESSED"
+STATUS_IAM="NOT_PROCESSED"
 
-# Prompt for the OAuth2 credentials
-echo "Please enter your OAuth2 credentials:"
-read -p "OAuth2 Client ID: " CLIENT_ID
-read -p "OAuth2 Client Secret: " CLIENT_SECRET
+# Display header
+echo "=================================================="
+echo "  Gmail OAuth2 Secret Manager - Secure Edition"
+echo "  Project: $PROJECT_ID"
+echo "=================================================="
 
-# Validate input
-if [ -z "$CLIENT_ID" ] || [ -z "$CLIENT_SECRET" ]; then
-  echo "Error: Both Client ID and Client Secret are required"
+# Collect credentials securely
+echo -e "\n📝 Please enter your Gmail OAuth2 credentials:"
+read -p "  OAuth2 Client ID: " CLIENT_ID
+read -s -p "  OAuth2 Client Secret: " CLIENT_SECRET
+echo ""
+
+# Input validation with detailed feedback
+if [ -z "$CLIENT_ID" ]; then
+  echo -e "❌ ERROR: OAuth2 Client ID cannot be empty"
+  echo -e "   Please obtain this from Google Cloud Console > APIs & Services > Credentials"
   exit 1
 fi
 
-echo "Managing OAuth2 secrets in Google Secret Manager..."
-
-# Check if GMAIL_CLIENT_ID exists
-if gcloud secrets describe GMAIL_CLIENT_ID --project=$PROJECT_ID &>/dev/null; then
-  echo "Secret GMAIL_CLIENT_ID already exists. Updating with new value..."
-  echo -n "$CLIENT_ID" | \
-    gcloud secrets versions add GMAIL_CLIENT_ID \
-    --project=$PROJECT_ID \
-    --data-file=- && CLIENT_ID_UPDATED=true
-else
-  echo "Creating GMAIL_CLIENT_ID secret..."
-  echo -n "$CLIENT_ID" | \
-    gcloud secrets create GMAIL_CLIENT_ID \
-    --project=$PROJECT_ID \
-    --replication-policy="automatic" \
-    --data-file=- && CLIENT_ID_CREATED=true
+if [ -z "$CLIENT_SECRET" ]; then
+  echo -e "❌ ERROR: OAuth2 Client Secret cannot be empty"
+  echo -e "   Please obtain this from Google Cloud Console > APIs & Services > Credentials"
+  exit 1
 fi
 
-# Check if GMAIL_CLIENT_SECRET exists
-if gcloud secrets describe GMAIL_CLIENT_SECRET --project=$PROJECT_ID &>/dev/null; then
-  echo "Secret GMAIL_CLIENT_SECRET already exists. Updating with new value..."
-  echo -n "$CLIENT_SECRET" | \
-    gcloud secrets versions add GMAIL_CLIENT_SECRET \
-    --project=$PROJECT_ID \
-    --data-file=- && CLIENT_SECRET_UPDATED=true
-else
-  echo "Creating GMAIL_CLIENT_SECRET secret..."
-  echo -n "$CLIENT_SECRET" | \
-    gcloud secrets create GMAIL_CLIENT_SECRET \
-    --project=$PROJECT_ID \
-    --replication-policy="automatic" \
-    --data-file=- && CLIENT_SECRET_CREATED=true
-fi
+echo -e "\n🔐 Managing secrets in Google Secret Manager..."
 
-# Grant access to the service account
-echo "Granting access to the service account..."
-SERVICE_ACCOUNT="tebra-cloud-run-sa@luknerlumina-firebase.iam.gserviceaccount.com"
+# Process Client ID
+echo -e "\n📋 Processing Client ID..."
+if gcloud secrets describe $SECRET_ID_CLIENT_ID --project=$PROJECT_ID &>/dev/null; then
+  echo -e "  ℹ️ Secret $SECRET_ID_CLIENT_ID already exists"
+  echo -e "  🔄 Updating with new version..."
 
-for SECRET_NAME in GMAIL_CLIENT_ID GMAIL_CLIENT_SECRET; do
-  if ! gcloud secrets add-iam-policy-binding $SECRET_NAME \
-    --project=$PROJECT_ID \
-    --member="serviceAccount:$SERVICE_ACCOUNT" \
-    --role="roles/secretmanager.secretAccessor" &>/dev/null; then
-    echo "Failed to grant access to $SECRET_NAME"
-    ACCESS_GRANTED=false
+  if echo -n "$CLIENT_ID" | gcloud secrets versions add $SECRET_ID_CLIENT_ID \
+      --project=$PROJECT_ID \
+      --data-file=- &>/dev/null; then
+    echo -e "  ✅ Successfully updated $SECRET_ID_CLIENT_ID"
+    STATUS_CLIENT_ID="UPDATED"
+  else
+    echo -e "  ❌ Failed to update $SECRET_ID_CLIENT_ID"
+    STATUS_CLIENT_ID="UPDATE_FAILED"
   fi
-done
-
-# Print summary
-echo ""
-echo "Summary:"
-if $CLIENT_ID_CREATED; then
-  echo "- GMAIL_CLIENT_ID: Created successfully"
-elif $CLIENT_ID_UPDATED; then
-  echo "- GMAIL_CLIENT_ID: Updated successfully"
 else
-  echo "- GMAIL_CLIENT_ID: Failed to create or update"
+  echo -e "  🆕 Creating new secret $SECRET_ID_CLIENT_ID..."
+
+  if echo -n "$CLIENT_ID" | gcloud secrets create $SECRET_ID_CLIENT_ID \
+      --project=$PROJECT_ID \
+      --replication-policy="automatic" \
+      --data-file=- &>/dev/null; then
+    echo -e "  ✅ Successfully created $SECRET_ID_CLIENT_ID"
+    STATUS_CLIENT_ID="CREATED"
+  else
+    echo -e "  ❌ Failed to create $SECRET_ID_CLIENT_ID"
+    STATUS_CLIENT_ID="CREATE_FAILED"
+  fi
 fi
 
-if $CLIENT_SECRET_CREATED; then
-  echo "- GMAIL_CLIENT_SECRET: Created successfully"
-elif $CLIENT_SECRET_UPDATED; then
-  echo "- GMAIL_CLIENT_SECRET: Updated successfully"
+# Process Client Secret
+echo -e "\n🔑 Processing Client Secret..."
+if gcloud secrets describe $SECRET_ID_CLIENT_SECRET --project=$PROJECT_ID &>/dev/null; then
+  echo -e "  ℹ️ Secret $SECRET_ID_CLIENT_SECRET already exists"
+  echo -e "  🔄 Updating with new version..."
+
+  if echo -n "$CLIENT_SECRET" | gcloud secrets versions add $SECRET_ID_CLIENT_SECRET \
+      --project=$PROJECT_ID \
+      --data-file=- &>/dev/null; then
+    echo -e "  ✅ Successfully updated $SECRET_ID_CLIENT_SECRET"
+    STATUS_CLIENT_SECRET="UPDATED"
+  else
+    echo -e "  ❌ Failed to update $SECRET_ID_CLIENT_SECRET"
+    STATUS_CLIENT_SECRET="UPDATE_FAILED"
+  fi
 else
-  echo "- GMAIL_CLIENT_SECRET: Failed to create or update"
+  echo -e "  🆕 Creating new secret $SECRET_ID_CLIENT_SECRET..."
+
+  if echo -n "$CLIENT_SECRET" | gcloud secrets create $SECRET_ID_CLIENT_SECRET \
+      --project=$PROJECT_ID \
+      --replication-policy="automatic" \
+      --data-file=- &>/dev/null; then
+    echo -e "  ✅ Successfully created $SECRET_ID_CLIENT_SECRET"
+    STATUS_CLIENT_SECRET="CREATED"
+  else
+    echo -e "  ❌ Failed to create $SECRET_ID_CLIENT_SECRET"
+    STATUS_CLIENT_SECRET="CREATE_FAILED"
+  fi
 fi
 
-if $ACCESS_GRANTED; then
-  echo "- Service account access: Granted successfully"
+# Configure IAM permissions
+echo -e "\n👮 Setting up IAM permissions..."
+echo -e "  🔑 Service Account: $SERVICE_ACCOUNT"
+
+# Process IAM permissions for Client ID
+echo -e "\n  🛡️ Configuring access for $SECRET_ID_CLIENT_ID..."
+if gcloud secrets add-iam-policy-binding $SECRET_ID_CLIENT_ID \
+  --project=$PROJECT_ID \
+  --member="serviceAccount:$SERVICE_ACCOUNT" \
+  --role="roles/secretmanager.secretAccessor" &>/dev/null; then
+  echo -e "  ✅ Successfully granted access to $SECRET_ID_CLIENT_ID"
+  STATUS_IAM_CLIENT_ID="SUCCESS"
 else
-  echo "- Service account access: Some permissions could not be granted"
+  echo -e "  ❌ Failed to grant access to $SECRET_ID_CLIENT_ID"
+  STATUS_IAM_CLIENT_ID="FAILED"
+  STATUS_IAM="PARTIAL_FAILURE"
 fi
 
-echo ""
-if ($CLIENT_ID_CREATED || $CLIENT_ID_UPDATED) && ($CLIENT_SECRET_CREATED || $CLIENT_SECRET_UPDATED) && $ACCESS_GRANTED; then
-  echo "✅ OAuth2 secrets managed and access granted successfully!"
+# Process IAM permissions for Client Secret
+echo -e "\n  🛡️ Configuring access for $SECRET_ID_CLIENT_SECRET..."
+if gcloud secrets add-iam-policy-binding $SECRET_ID_CLIENT_SECRET \
+  --project=$PROJECT_ID \
+  --member="serviceAccount:$SERVICE_ACCOUNT" \
+  --role="roles/secretmanager.secretAccessor" &>/dev/null; then
+  echo -e "  ✅ Successfully granted access to $SECRET_ID_CLIENT_SECRET"
+  STATUS_IAM_CLIENT_SECRET="SUCCESS"
 else
-  echo "⚠️ Some operations were not successful. Please check the logs above."
+  echo -e "  ❌ Failed to grant access to $SECRET_ID_CLIENT_SECRET"
+  STATUS_IAM_CLIENT_SECRET="FAILED"
+  STATUS_IAM="PARTIAL_FAILURE"
 fi
+
+if [ "$STATUS_IAM" = "NOT_PROCESSED" ]; then
+  if [ "$STATUS_IAM_CLIENT_ID" = "SUCCESS" ] && [ "$STATUS_IAM_CLIENT_SECRET" = "SUCCESS" ]; then
+    STATUS_IAM="SUCCESS"
+  else
+    STATUS_IAM="FAILED"
+  fi
+fi
+
+# Generate comprehensive report
+echo -e "\n📊 OPERATION SUMMARY"
+echo -e "=================================================="
+echo -e "  Client ID Secret ($SECRET_ID_CLIENT_ID):"
+echo -e "    Status: $STATUS_CLIENT_ID"
+echo -e "    IAM Access: $STATUS_IAM_CLIENT_ID"
+echo -e ""
+echo -e "  Client Secret ($SECRET_ID_CLIENT_SECRET):"
+echo -e "    Status: $STATUS_CLIENT_SECRET"
+echo -e "    IAM Access: $STATUS_IAM_CLIENT_SECRET"
+echo -e "=================================================="
+
+# Final status message
+echo -e ""
+if [ "$STATUS_CLIENT_ID" = "CREATED" ] || [ "$STATUS_CLIENT_ID" = "UPDATED" ] && \
+   [ "$STATUS_CLIENT_SECRET" = "CREATED" ] || [ "$STATUS_CLIENT_SECRET" = "UPDATED" ] && \
+   [ "$STATUS_IAM" = "SUCCESS" ]; then
+  echo -e "✅ SUCCESS: OAuth2 secrets successfully managed and secured!"
+  echo -e "   Your Gmail integration is now properly configured."
+else
+  echo -e "⚠️ WARNING: Some operations were not successful."
+  echo -e "   Please review the logs above and resolve any issues."
+  echo -e "   You may need to run this script again or perform manual steps."
+fi
+echo -e ""
