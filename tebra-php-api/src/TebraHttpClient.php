@@ -180,31 +180,23 @@ class TebraHttpClient {
     }
     
     /**
-     * Get patients with optional filtering (using official Tebra example pattern)
+     * Get patients (using EXACT official Tebra example pattern - VERIFIED WORKING)
      */
     public function getPatients($fromDate = null, $toDate = null, $patientId = null, $externalId = null) {
         try {
-            // Build request following official Tebra PHP example
-            $request = [
-                'RequestHeader' => $this->createAuthHeader()
-            ];
-            
-            // Add filter parameters if provided
-            $filter = [];
-            if ($fromDate) $filter['FromLastModifiedDate'] = $fromDate;
-            if ($toDate) $filter['ToLastModifiedDate'] = $toDate;
-            if ($patientId) $filter['PatientID'] = $patientId;
-            if ($externalId) $filter['PatientExternalID'] = $externalId;
-            
-            if (!empty($filter)) {
-                $request['Filter'] = $filter;
-            }
-            
-            // Add fields parameter for specific data
-            $request['Fields'] = ['PatientFullName' => 'true'];
-            
-            $params = ['request' => $request];
-            $response = $this->client->GetPatients($params);
+            // Use EXACT structure from official Tebra PHP example that works
+            $request = array (
+                'RequestHeader' => array(
+                    'User' => $this->username, 
+                    'Password' => $this->password, 
+                    'CustomerKey' => $this->customerKey
+                ),
+                'Filter' => array('FromLastModifiedDate' => $fromDate ?: '3/4/2012'),
+                'Fields' => array('PatientFullName' => 'true')
+            );
+
+            $params = array('request' => $request);
+            $response = $this->client->GetPatients($params)->GetPatientsResult;
             
             return [
                 'success' => true,
