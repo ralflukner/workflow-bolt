@@ -2,12 +2,43 @@ import React, { useEffect, useState } from 'react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { Database, Clock, Save, AlertCircle } from 'lucide-react';
+import { useAuth0 } from '@auth0/auth0-react';
+import { isFirebaseConfigured, auth } from '../config/firebase';
 
 export const PersistenceDiagnostic: React.FC = () => {
   const { patients, persistenceEnabled, hasRealData, tickCounter } = usePatientContext();
   const { getCurrentTime } = useTimeContext();
+  const { isAuthenticated } = useAuth0();
   const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [storageType, setStorageType] = useState<string>('unknown');
+  const [authStatus, setAuthStatus] = useState<string>('checking');
+
+  // Determine storage type and auth status
+  useEffect(() => {
+    const checkStatus = async () => {
+      const firebaseConfigured = isFirebaseConfigured();
+      const firebaseUser = auth?.currentUser;
+      
+      if (!isAuthenticated) {
+        setAuthStatus('No Auth0 login');
+        setStorageType('localStorage (no auth)');
+      } else if (!firebaseConfigured) {
+        setAuthStatus('Firebase not configured');
+        setStorageType('localStorage (no Firebase)');
+      } else if (!firebaseUser) {
+        setAuthStatus('Firebase auth failed');
+        setStorageType('localStorage (auth fallback)');
+      } else {
+        setAuthStatus('Authenticated');
+        setStorageType('Firebase');
+      }
+    };
+    
+    checkStatus();
+    const interval = setInterval(checkStatus, 5000); // Check every 5 seconds
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   // Track when saves happen
   useEffect(() => {
@@ -75,11 +106,18 @@ export const PersistenceDiagnostic: React.FC = () => {
           </span>
         </div>
         
+        <div className="flex justify-between">
+          <span className="text-gray-400">Auth Status:</span>
+          <span className={authStatus === 'Authenticated' ? 'text-green-400' : 'text-yellow-400'}>
+            {authStatus}
+          </span>
+        </div>
+        
         <div className="mt-3 p-2 bg-gray-700 rounded text-xs">
           <div className="text-gray-300">
             Auto-save: Every 2 seconds when data changes<br />
             Periodic save: Every 5 minutes in real-time mode<br />
-            Current Storage: localStorage (fallback due to auth issues)
+            Current Storage: {storageType}
           </div>
         </div>
       </div>

@@ -16,6 +16,7 @@ import { EnvDebugger } from './EnvDebugger';
 import { DiagnosticPanel } from './DiagnosticPanel';
 import { WaitTimeDiagnostic } from './WaitTimeDiagnostic';
 import { PersistenceDiagnostic } from './PersistenceDiagnostic';
+import { FirebaseDebugger } from './FirebaseDebugger';
 
 interface ReportModalProps {
   onClose: () => void;
@@ -459,6 +460,7 @@ const Dashboard: React.FC = () => {
         {showDebugPanels && (
           <>
             <EnvDebugger />
+            <FirebaseDebugger />
             <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
               <DiagnosticPanel />
               <WaitTimeDiagnostic />

@@ -126,16 +126,18 @@ class TebraHttpClient {
      */
     public function getAppointments($fromDate, $toDate) {
         try {
-            // Use EXACT structure from working getPatients method
+            // Use correct structure with Filter section as per Tebra XML
             $request = array (
                 'RequestHeader' => array(
                     'User' => $this->username, 
                     'Password' => $this->password, 
                     'CustomerKey' => $this->customerKey
                 ),
-                'PracticeName' => 'Lukner Clinic', // Required field per API guide
-                'StartDate' => $fromDate,
-                'EndDate' => $toDate
+                'Fields' => array(), // Empty to get all fields
+                'Filter' => array(
+                    'StartDate' => $fromDate,
+                    'EndDate' => $toDate
+                )
             );
 
             $params = array('request' => $request);

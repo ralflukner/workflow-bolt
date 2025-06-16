@@ -3,6 +3,17 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { FirebaseProvider } from './contexts/firebase';
+import { testTebraGetAppointments } from './utils/testTebraAppointments';
+import { testTebraGetAppointmentsViaFirebase } from './utils/testTebraViaFirebase';
+
+// Make test functions available globally for console testing
+if (typeof window !== 'undefined') {
+  (window as any).testTebraGetAppointments = testTebraGetAppointments;
+  (window as any).testTebraViaFirebase = testTebraGetAppointmentsViaFirebase;
+  console.log('✅ Tebra test functions loaded:');
+  console.log('   - testTebraGetAppointments() for direct SOAP (will fail due to CORS)');
+  console.log('   - testTebraViaFirebase() for Firebase Functions proxy (recommended)');
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

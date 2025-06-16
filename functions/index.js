@@ -36,13 +36,28 @@ if (!admin.apps.length) {
 
 /** Verifies an Auth0 RS256 access / ID token and returns the decoded payload */
 async function verifyAuth0Jwt(token) {
-  // Get Auth0 config from Firebase Functions config or environment variables
-  const config = functions.config();
-  const domain = config.auth0?.domain || process.env.AUTH0_DOMAIN;
-  const audience = config.auth0?.audience || process.env.AUTH0_AUDIENCE;
+  // Get Auth0 config from Google Secret Manager
+  const gsm = new SecretManagerServiceClient();
+  const PROJECT_ID = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || 'luknerlumina-firebase';
+  
+  let domain, audience;
+  try {
+    const [domainVersion] = await gsm.accessSecretVersion({ 
+      name: `projects/${PROJECT_ID}/secrets/AUTH0_DOMAIN/versions/latest` 
+    });
+    const [audienceVersion] = await gsm.accessSecretVersion({ 
+      name: `projects/${PROJECT_ID}/secrets/AUTH0_AUDIENCE/versions/latest` 
+    });
+    
+    domain = domainVersion.payload?.data?.toString();
+    audience = audienceVersion.payload?.data?.toString();
+  } catch (error) {
+    console.error('Failed to retrieve Auth0 secrets from GSM:', error);
+    throw new Error('Auth0 configuration not available');
+  }
 
   if (!domain || !audience) {
-    throw new Error('Missing Auth0 configuration in Firebase Functions config');
+    throw new Error('Missing Auth0 configuration in Google Secret Manager');
   }
 
   // Create JWKS client with Auth0 domain

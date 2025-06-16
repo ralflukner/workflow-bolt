@@ -277,16 +277,32 @@ export class TebraSoapClient {
       throw new Error('fromDate and toDate are required');
     }
     if (!this.isValidDateFormat(fromDate) || !this.isValidDateFormat(toDate)) {
-      throw new Error('Invalid date format. Expected YYYY-MM-DD');
+      throw new Error('Invalid date format. Expected YYYY-MM-DD or YYYY-MM-DDThh:mm:ss:Z');
     }
 
     try {
       await this.rateLimiter.waitForSlot('getAppointments');
-      const result = await this.client.GetAppointmentsAsync({
-        fromDate,
-        toDate
-      });
-      return result[0].GetAppointmentsResult;
+      
+      // Build the request matching Tebra's XML structure
+      const request = {
+        request: {
+          RequestHeader: {
+            CustomerKey: this.credentials.customerKey,
+            User: this.credentials.username,
+            Password: this.credentials.password
+          },
+          Fields: {
+            // We'll request all appointment fields by not specifying individual ones
+          },
+          Filter: {
+            StartDate: fromDate,
+            EndDate: toDate
+          }
+        }
+      };
+      
+      const result = await this.client.GetAppointmentsAsync(request);
+      return result[0]?.GetAppointmentsResult || [];
     } catch (error) {
       console.error('Failed to get appointments:', error);
       throw error;
@@ -357,8 +373,20 @@ export class TebraSoapClient {
   }
 
   private isValidDateFormat(date: string): boolean {
-    const regex = /^\d{4}-\d{2}-\d{2}$/;
-    return regex.test(date);
+    // Support both YYYY-MM-DD and Tebra's ISO 8601 format YYYY-MM-DDThh:mm:ss:Z
+    const simpleRegex = /^\d{4}-\d{2}-\d{2}$/;
+    const tebraIsoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}:Z$/;
+    const standardIsoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+    return simpleRegex.test(date) || tebraIsoRegex.test(date) || standardIsoRegex.test(date);
+  }
+
+  /**
+   * Converts a date to Tebra's expected ISO format: YYYY-MM-DDThh:mm:ssZ (no colon before Z)
+   */
+  public static formatDateForTebra(date: Date): string {
+    const isoString = date.toISOString(); // Returns YYYY-MM-DDTHH:mm:ss.sssZ
+    // Convert to Tebra's format by removing milliseconds
+    return isoString.replace(/\.\d{3}Z$/, 'Z');
   }
 }
 

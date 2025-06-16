@@ -14,6 +14,8 @@ export interface TebraCredentials {
   username: string;
   /** Password for authentication */
   password: string;
+  /** Customer key for API access */
+  customerKey: string;
 }
 
 /**

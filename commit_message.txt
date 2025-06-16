@@ -1,13 +1,18 @@
-docs: Move markdown files to docs directory
+feat(tebra): Implement Tebra API integration with debugging tools
 
-Reorganized the repository by moving all markdown (.md) files to the docs
-directory for better organization and maintainability. This change makes
-the repository structure cleaner and more consistent.
+This commit adds comprehensive integration with the Tebra EHR API via SOAP, 
+including appointment retrieval, patient data handling, and persistence improvements.
 
-Changes:
-- Moved all documentation files to the docs directory
-- Kept README.md in the root directory as it's conventionally used as the landing page
-- Maintained git history for all moved files
+Key changes:
+- Enhanced TebraSoapClient with robust error handling and rate limiting
+- Added type definitions for Tebra API entities (patients, appointments, providers)
+- Implemented Firebase debugging tools to diagnose persistence issues
+- Created utility functions for testing Tebra appointment retrieval
+- Added date debugging utilities to ensure proper date formatting
+- Updated Dashboard and DiagnosticPanel to include new debugging components
+- Improved PatientContext to better handle data from Tebra API
+- Added SOAP UI project file for API testing and documentation
 
-This implements the requested change to "move the .md files into the docs
-directory and put them in there from now on."
+These changes enable the application to reliably fetch and display patient 
+appointments from Tebra EHR, with proper error handling and debugging capabilities
+to ensure smooth integration in production environments.

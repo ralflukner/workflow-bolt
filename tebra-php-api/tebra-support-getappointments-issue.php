@@ -25,9 +25,9 @@ echo "GetAppointments ValidationHelper Bug\n";
 echo "Customer: Lukner Medical Clinic\n\n";
 
 // NOTE FOR TEBRA SUPPORT: Replace these with your test credentials
-$username = 'YOUR_TEST_USERNAME';
-$password = 'YOUR_TEST_PASSWORD';
-$customerKey = 'YOUR_TEST_CUSTOMER_KEY';
+$username = getenv('TEBRA_USERNAME') ?: 'YOUR_TEST_USERNAME';
+$password = getenv('TEBRA_PASSWORD') ?: 'YOUR_TEST_PASSWORD';
+$customerKey = getenv('TEBRA_CUSTOMER_KEY') ?: 'YOUR_TEST_CUSTOMER_KEY';
 $wsdlUrl = 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl';
 
 try {

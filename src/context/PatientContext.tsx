@@ -83,15 +83,11 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         console.log(`Using ${storageType} for data persistence`);
         const savedPatients = await storageService.loadTodaysSession();
         
-        if (savedPatients.length > 0) {
-          console.log(`Loaded ${savedPatients.length} patients from ${storageType}`);
-          setPatients(savedPatients);
-          setHasRealData(true);
-        } else {
-          console.log(`No saved session found in ${storageType}, starting with empty patient list`);
-          setPatients([]);
-          setHasRealData(false);
-        }
+        console.log(`Loaded ${savedPatients.length} patients from ${storageType}`);
+        setPatients(savedPatients);
+        // Consider it "real data" even if empty, because it's from persistence
+        // This allows users to start with an empty list and add patients
+        setHasRealData(true);
       } catch (error) {
         console.error(`Failed to load from ${storageType}:`, error);
         
@@ -101,14 +97,9 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
           setUseFirebase(false);
           try {
             const savedPatients = await localSessionService.loadTodaysSession();
-            if (savedPatients.length > 0) {
-              console.log(`Loaded ${savedPatients.length} patients from localStorage fallback`);
-              setPatients(savedPatients);
-              setHasRealData(true);
-            } else {
-              setPatients([]);
-              setHasRealData(false);
-            }
+            console.log(`Loaded ${savedPatients.length} patients from localStorage fallback`);
+            setPatients(savedPatients);
+            setHasRealData(true);
           } catch (localError) {
             console.error('localStorage fallback also failed:', localError);
             setPatients([]);
@@ -132,12 +123,19 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
 
   // Auto-save patients data periodically and when data changes
   useEffect(() => {
-    if (!persistenceEnabled || isLoading || !hasRealData) return;
+    if (!persistenceEnabled || isLoading) return;
+    
+    // Skip auto-save if we have no patients at all
+    if (patients.length === 0) {
+      console.log('Skipping auto-save: no patients to save');
+      return;
+    }
 
     const saveSession = async () => {
       try {
+        console.log(`Auto-saving ${patients.length} patients to ${storageType}...`);
         await storageService.saveTodaysSession(patients);
-        console.log(`Session auto-saved to ${storageType}`);
+        console.log(`Session auto-saved to ${storageType}: ${patients.length} patients`);
       } catch (error) {
         console.error(`Failed to auto-save to ${storageType}:`, error);
         
@@ -159,7 +157,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     const timeoutId = setTimeout(saveSession, 2000); // Debounce saves by 2 seconds
 
     return () => clearTimeout(timeoutId);
-  }, [patients, persistenceEnabled, isLoading, hasRealData, storageService, storageType, useFirebase]);
+  }, [patients, persistenceEnabled, isLoading, storageService, storageType, useFirebase]);
 
   // Set up an interval to force re-renders and periodic saves
   useEffect(() => {
@@ -170,9 +168,10 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
       setTickCounter(prev => prev + 1);
       saveCounter++;
       
-      // Periodic save every 5 minutes during real time mode (only real data)
+      // Periodic save every 5 minutes during real time mode
       // Since tick runs every minute in real time, save every 5 ticks
-      if (!timeMode.simulated && saveCounter >= 5 && persistenceEnabled && patients.length > 0 && hasRealData) {
+      // Save if we have any patients, regardless of their source
+      if (!timeMode.simulated && saveCounter >= 5 && persistenceEnabled && patients.length > 0) {
         saveCounter = 0; // Reset counter
         
         // Handle both sync (localStorage) and async (Firebase) saves
@@ -223,7 +222,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         clearInterval(intervalId);
       }
     };
-  }, [timeMode.simulated, persistenceEnabled, patients, hasRealData, storageService, storageType, useFirebase]);
+  }, [timeMode.simulated, persistenceEnabled, patients, storageService, storageType, useFirebase]);
 
   const clearPatients = () => {
     setPatients([]);
