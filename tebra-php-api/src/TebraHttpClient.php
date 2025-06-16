@@ -126,16 +126,25 @@ class TebraHttpClient {
      */
     public function getAppointments($fromDate, $toDate) {
         try {
-            $params = [
-                'request' => [
-                    'RequestHeader' => $this->createAuthHeader(),
-                    'FromDate' => $fromDate,
-                    'ToDate' => $toDate,
-                    'Fields' => null
-                ]
-            ];
+            // Use EXACT structure from working getPatients method
+            $request = array (
+                'RequestHeader' => array(
+                    'User' => $this->username, 
+                    'Password' => $this->password, 
+                    'CustomerKey' => $this->customerKey
+                ),
+                'PracticeName' => 'Lukner Clinic', // Required field per API guide
+                'StartDate' => $fromDate,
+                'EndDate' => $toDate
+            );
+
+            $params = array('request' => $request);
+            $response = $this->client->GetAppointments($params)->GetAppointmentsResult;
             
-            $response = $this->client->GetAppointments($params);
+            // Check for API errors (same pattern as getPatients would)
+            if (isset($response->ErrorResponse) && $response->ErrorResponse->IsError) {
+                throw new \Exception('Tebra API Error: ' . $response->ErrorResponse->ErrorMessage);
+            }
             
             return [
                 'success' => true,

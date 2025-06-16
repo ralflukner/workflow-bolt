@@ -44,10 +44,7 @@ apikeys.json
 *.crt
 
 # Tebra specific
-tebra-tools/test-tebra.php
-tebra-tools/test-tebra-env.php
-tebra-tools/check-setup.php
-tebra-tools/debug-proxy-dates.php
+t
 **/tebra-credentials*
 **/tebra-config*
 tebra_test.php

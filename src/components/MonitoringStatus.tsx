@@ -25,6 +25,17 @@ interface ServiceStatus {
   };
 }
 
+interface TestConnectionResult {
+  success: boolean;
+  data?: {
+    performanceMetrics?: {
+      soapDuration?: number;
+      totalDuration?: number;
+      cacheHit?: boolean;
+    };
+  };
+}
+
 const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) => {
   const [status, setStatus] = useState<ServiceStatus>({
     proxy: 'unknown',
@@ -40,12 +51,12 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
       const startTime = performance.now();
       
       // Call Firebase Function and capture detailed response
-      const result = await tebraApiService.testConnection();
+      const result = await tebraApiService.testConnection() as unknown as TestConnectionResult;
       
       const endTime = performance.now();
       const responseTime = Math.round(endTime - startTime);
       
-      if (result) {
+      if (result.success) {
         // Determine status based on response time thresholds (adjusted for rate limiting)
         let proxyState: 'healthy' | 'warning' = 'healthy';
         if (responseTime > 5000) {
@@ -55,14 +66,14 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
         }
         // Note: 2000-3500ms is normal for rate-limited Tebra API
         
-setStatus({
-           proxy: proxyState,
-           lastCheck: new Date().toLocaleTimeString(),
-           responseTime,
-           latency: responseTime,
+        setStatus({
+          proxy: proxyState,
+          lastCheck: new Date().toLocaleTimeString(),
+          responseTime,
+          latency: responseTime,
           errors: 0,
-          performanceMetrics: result.performanceMetrics
-         });
+          performanceMetrics: result.data?.performanceMetrics
+        });
       } else {
         setStatus({
           proxy: 'error',
@@ -120,7 +131,7 @@ setStatus({
     const interval = setInterval(checkProxyHealth, 300000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [checkProxyHealth]);
 
   const getStatusIcon = () => {
     switch (status.proxy) {
