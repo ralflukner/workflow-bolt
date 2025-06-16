@@ -79,4 +79,4 @@ Verify that **Env → Secrets** shows `…:latest` for the 4 secret refs.
 
 1. New GSM versions → 2. Grant proxy SA access → 3. `gcloud run services update` → 4. (optional) redeploy functions → 5. Update local/CI envs → 6. Verify → 7. Scan repo.
 
-Rotate ✔ – zero downtime, zero leaks. 
+Rotate ✔ – zero downtime, zero leaks.

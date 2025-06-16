@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Clock, Wifi, Activity, ExternalLink, AlertCircle } from 'lucide-react';
 import { tebraApiService } from '../services/tebraApiService';
 
@@ -46,7 +46,7 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
   });
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const checkProxyHealth = async () => {
+  const checkProxyHealth = useCallback(async () => {
     try {
       const startTime = performance.now();
       
@@ -105,7 +105,7 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
         }
       });
     }
-  };
+  }, []);
 
   const parseErrorType = (errorMessage: string): 'connection' | 'authentication' | 'tebra_service' | 'internal_service_fault' | 'unknown' => {
     const message = errorMessage.toLowerCase();
