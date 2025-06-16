@@ -11,25 +11,38 @@ export interface DashboardPatient {
   status: ReturnType<typeof tebraStatusToInternal>;
   phone?: string;
   email?: string;
+  checkInTime?: string;
 }
 
 export const toDashboardPatient = (
   appointment: TebraAppointment,
   patient: TebraPatient,
   provider: TebraProvider | undefined,
-): DashboardPatient => ({
-  id: patient.PatientId || patient.Id || '',
-  name: `${patient.FirstName} ${patient.LastName}`.trim(),
-  dob: patient.DateOfBirth || patient.DOB || '',
-  appointmentTime:
+): DashboardPatient => {
+  const status = tebraStatusToInternal(appointment.Status || appointment.status || '');
+  const appointmentTime = 
     appointment.StartTime ??
     appointment.AppointmentTime ??
-    `${appointment.Date || appointment.AppointmentDate || ''} ${appointment.Time || ''}`.trim(),
-  appointmentType: appointment.Type || appointment.AppointmentType || 'Office Visit',
-  provider: provider
-    ? `${provider.Title || provider.Degree || 'Dr.'} ${provider.FirstName} ${provider.LastName}`
-    : 'Unknown Provider',
-  status: tebraStatusToInternal(appointment.Status || appointment.status || ''),
-  phone: patient.Phone || patient.PhoneNumber,
-  email: patient.Email || patient.EmailAddress,
-}); 
+    `${appointment.Date || appointment.AppointmentDate || ''} ${appointment.Time || ''}`.trim();
+  
+  // Determine if patient should be marked as checked in
+  // Any status beyond Scheduled and Confirmed indicates the patient has arrived
+  const checkedInStatuses = ['Arrived', 'Roomed', 'Ready for MD', 'With Doctor', 'Seen by MD', 'Checked Out'];
+  const isCheckedIn = checkedInStatuses.includes(status);
+  
+  return {
+    id: patient.PatientId || patient.Id || '',
+    name: `${patient.FirstName} ${patient.LastName}`.trim(),
+    dob: patient.DateOfBirth || patient.DOB || '',
+    appointmentTime: appointmentTime,
+    appointmentType: appointment.Type || appointment.AppointmentType || 'Office Visit',
+    provider: provider
+      ? `${provider.Title || provider.Degree || 'Dr.'} ${provider.FirstName} ${provider.LastName}`
+      : 'Unknown Provider',
+    status: status,
+    phone: patient.Phone || patient.PhoneNumber,
+    email: patient.Email || patient.EmailAddress,
+    // Add checkInTime for patients who have arrived
+    checkInTime: isCheckedIn ? appointmentTime : undefined,
+  };
+}; 

@@ -31,6 +31,25 @@ const COLLECTION_NAME = 'daily_sessions';
 const MAX_RETENTION_DAYS = 1; // Only keep current day for HIPAA compliance
 const FIRESTORE_BATCH_LIMIT = 500; // Firestore's maximum batch size
 
+/**
+ * Utility – recursively remove properties whose value is `undefined`.
+ * Firestore rejects documents containing `undefined`, so we must sanitize
+ * our objects before calling `setDoc`.
+ */
+function stripUndefined<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) {
+    return (obj as unknown[]).map(item => stripUndefined(item)) as unknown as T;
+  }
+  const cleaned: Record<string, unknown> = {};
+  Object.entries(obj as Record<string, unknown>).forEach(([k, v]) => {
+    if (v !== undefined) {
+      cleaned[k] = stripUndefined(v);
+    }
+  });
+  return cleaned as T;
+}
+
 export class DailySessionService implements StorageService {
   
   /**
@@ -69,10 +88,11 @@ export class DailySessionService implements StorageService {
       // Encrypt sensitive patient data for HIPAA compliance
       const sanitizedPatients = patients.map(patient => {
         try {
-          return PatientEncryptionService.encryptPatient(patient);
+          const encrypted = PatientEncryptionService.encryptPatient(patient);
+          return stripUndefined(encrypted);
         } catch (error) {
           console.error('Error encrypting patient data:', error);
-          return patient;
+          return stripUndefined(patient);
         }
       });
 

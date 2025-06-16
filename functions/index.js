@@ -60,6 +60,41 @@ async function verifyAuth0Jwt(token) {
     throw new Error('Missing Auth0 configuration in Google Secret Manager');
   }
 
+  // Decode JWT header to inspect algorithm
+  let header;
+  try {
+    header = JSON.parse(Buffer.from(token.split('.')[0], 'base64').toString('utf-8'));
+  } catch (e) {
+    throw new Error('Invalid JWT format');
+  }
+
+  // If token is HS256 signed, verify with client secret
+  if (header.alg === 'HS256') {
+    let clientSecret;
+    try {
+      const [secretVersion] = await gsm.accessSecretVersion({
+        name: `projects/${PROJECT_ID}/secrets/AUTH0_CLIENT_SECRET/versions/latest`
+      });
+      clientSecret = secretVersion.payload?.data?.toString();
+    } catch (error) {
+      console.error('Failed to retrieve Auth0 client secret from GSM:', error);
+      throw new Error('Auth0 secret not available');
+    }
+
+    return new Promise((resolve, reject) => {
+      jwt.verify(
+        token,
+        clientSecret,
+        {
+          algorithms: ['HS256'],
+          audience: audience,
+          issuer: `https://${domain}/`
+        },
+        (err, decoded) => (err ? reject(err) : resolve(decoded))
+      );
+    });
+  }
+
   // Create JWKS client with Auth0 domain
   const jwksClient = jwksRsa({
     jwksUri: `https://${domain}/.well-known/jwks.json`,
@@ -524,7 +559,13 @@ exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
     timestamp: new Date().toISOString()
   }));
 
-  return { firebaseToken: customToken };
+  // Return full response expected by frontend AuthBridge
+  return {
+    success: true,
+    firebaseToken: customToken,
+    uid: firebaseUid,
+    message: 'Token exchange successful'
+  };
 });
 
 // Security monitoring endpoint for HIPAA compliance
