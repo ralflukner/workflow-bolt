@@ -51,7 +51,7 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
       const startTime = performance.now();
       
       // Call Firebase Function and capture detailed response
-      const result = await tebraApiService.testConnection() as unknown as TestConnectionResult;
+      const result = await tebraApiService.testConnectionDetailed();
       
       const endTime = performance.now();
       const responseTime = Math.round(endTime - startTime);
@@ -72,18 +72,21 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
           responseTime,
           latency: responseTime,
           errors: 0,
-          performanceMetrics: result.data?.performanceMetrics
+          performanceMetrics: result.performanceMetrics,
+          errorDetails: undefined // Clear any previous errors
         });
       } else {
+        // More detailed error information
         setStatus({
           proxy: 'error',
           lastCheck: new Date().toLocaleTimeString(),
           responseTime,
           errors: 1,
           errorDetails: {
-            type: 'unknown',
-            message: 'Connection test failed',
-            timestamp: new Date().toISOString()
+            type: parseErrorType(result.message || 'Unknown error'),
+            message: result.message || 'Connection test failed',
+            timestamp: result.timestamp || new Date().toISOString(),
+            correlationId: result.correlationId
           }
         });
       }
@@ -127,8 +130,8 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
     // Initial check
     checkProxyHealth();
     
-    // Check every 5 minutes (less aggressive due to rate limiting)
-    const interval = setInterval(checkProxyHealth, 300000);
+    // Check every 2 minutes for better responsiveness
+    const interval = setInterval(checkProxyHealth, 120000);
     
     return () => clearInterval(interval);
   }, [checkProxyHealth]);
@@ -376,6 +379,9 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
                     ID: {status.errorDetails.correlationId}
                   </div>
                 )}
+                <div className="text-xs text-gray-400 mt-2">
+                  Note: If you see rate limiting errors with 2-4 second response times, this is normal behavior from Tebra's API.
+                </div>
                 <div className="mt-2">
                   {getErrorActionButton(status.errorDetails.type)}
                 </div>
