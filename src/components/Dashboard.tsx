@@ -15,6 +15,7 @@ import { Patient } from '../types';
 import { EnvDebugger } from './EnvDebugger';
 import { DiagnosticPanel } from './DiagnosticPanel';
 import { WaitTimeDiagnostic } from './WaitTimeDiagnostic';
+import { PersistenceDiagnostic } from './PersistenceDiagnostic';
 
 interface ReportModalProps {
   onClose: () => void;
@@ -458,9 +459,10 @@ const Dashboard: React.FC = () => {
         {showDebugPanels && (
           <>
             <EnvDebugger />
-            <div className="mb-6">
+            <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
               <DiagnosticPanel />
               <WaitTimeDiagnostic />
+              <PersistenceDiagnostic />
             </div>
           </>
         )}

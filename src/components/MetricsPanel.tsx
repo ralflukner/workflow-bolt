@@ -3,8 +3,10 @@ import { usePatientContext } from '../hooks/usePatientContext';
 import { Users, Clock, AlertTriangle } from 'lucide-react';
 
 const MetricsPanel: React.FC = () => {
-  const { getMetrics } = usePatientContext();
+  const { getMetrics, tickCounter } = usePatientContext();
   const metrics = getMetrics();
+  
+  // tickCounter forces re-render when time updates
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

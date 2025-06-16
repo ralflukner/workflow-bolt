@@ -64,8 +64,9 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   const [hasRealData, setHasRealData] = useState(false);
   const { getCurrentTime, timeMode } = useTimeContext();
   const firebaseReady = isFirebaseConfigured();
-  const storageService = firebaseReady ? dailySessionService : localSessionService;
-  const storageType = firebaseReady ? 'Firebase' : 'LocalStorage';
+  const [useFirebase, setUseFirebase] = useState(firebaseReady);
+  const storageService = useFirebase ? dailySessionService : localSessionService;
+  const storageType = useFirebase ? 'Firebase' : 'LocalStorage';
 
   // Load today's data on mount and when persistence is toggled
   useEffect(() => {
@@ -92,16 +93,34 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
           setHasRealData(false);
         }
       } catch (error) {
-        console.error(`Failed to load from ${storageType}, starting with empty list:`, error);
-        setPatients([]);
-        setHasRealData(false);
+        console.error(`Failed to load from ${storageType}:`, error);
         
-        // Only disable persistence for localStorage errors, not Firebase network issues
-        if (!isFirebaseConfigured()) {
-          setPersistenceEnabled(false);
-          console.warn('localStorage persistence disabled due to data corruption');
+        // If Firebase fails, fall back to localStorage
+        if (useFirebase && firebaseReady) {
+          console.warn('Firebase load failed, falling back to localStorage');
+          setUseFirebase(false);
+          try {
+            const savedPatients = await localSessionService.loadTodaysSession();
+            if (savedPatients.length > 0) {
+              console.log(`Loaded ${savedPatients.length} patients from localStorage fallback`);
+              setPatients(savedPatients);
+              setHasRealData(true);
+            } else {
+              setPatients([]);
+              setHasRealData(false);
+            }
+          } catch (localError) {
+            console.error('localStorage fallback also failed:', localError);
+            setPatients([]);
+            setHasRealData(false);
+          }
         } else {
-          console.warn('Firebase load failed, but persistence remains enabled for retry');
+          setPatients([]);
+          setHasRealData(false);
+          if (!isFirebaseConfigured()) {
+            setPersistenceEnabled(false);
+            console.warn('localStorage persistence disabled due to data corruption');
+          }
         }
       } finally {
         setIsLoading(false);
@@ -109,7 +128,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     };
 
     loadTodaysData();
-  }, [persistenceEnabled, storageService, storageType]);
+  }, [persistenceEnabled, storageService, storageType, useFirebase]);
 
   // Auto-save patients data periodically and when data changes
   useEffect(() => {
@@ -121,6 +140,18 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         console.log(`Session auto-saved to ${storageType}`);
       } catch (error) {
         console.error(`Failed to auto-save to ${storageType}:`, error);
+        
+        // If Firebase save fails, fall back to localStorage
+        if (useFirebase && firebaseReady) {
+          console.warn('Firebase save failed, falling back to localStorage');
+          setUseFirebase(false);
+          try {
+            await localSessionService.saveTodaysSession(patients);
+            console.log('Session saved to localStorage fallback');
+          } catch (localError) {
+            console.error('localStorage fallback save also failed:', localError);
+          }
+        }
       }
     };
 
@@ -128,30 +159,55 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     const timeoutId = setTimeout(saveSession, 2000); // Debounce saves by 2 seconds
 
     return () => clearTimeout(timeoutId);
-  }, [patients, persistenceEnabled, isLoading, hasRealData, storageService, storageType]);
+  }, [patients, persistenceEnabled, isLoading, hasRealData, storageService, storageType, useFirebase]);
 
   // Set up an interval to force re-renders and periodic saves
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | undefined;
+    let saveCounter = 0;
 
     const tick = () => {
       setTickCounter(prev => prev + 1);
+      saveCounter++;
       
       // Periodic save every 5 minutes during real time mode (only real data)
-      if (!timeMode.simulated && persistenceEnabled && patients.length > 0 && hasRealData) {
-        const saveResult = storageService.saveTodaysSession(patients);
+      // Since tick runs every minute in real time, save every 5 ticks
+      if (!timeMode.simulated && saveCounter >= 5 && persistenceEnabled && patients.length > 0 && hasRealData) {
+        saveCounter = 0; // Reset counter
         
         // Handle both sync (localStorage) and async (Firebase) saves
-        try {
-          if (isFirebaseConfigured()) {
-            // Firebase service returns a Promise
-            (saveResult as Promise<void>).catch((error: unknown) => {
-              console.error(`Periodic save to ${storageType} failed:`, error);
-            });
+        const handlePeriodicSave = async () => {
+          try {
+            await storageService.saveTodaysSession(patients);
+            console.log(`Periodic save to ${storageType} successful`);
+          } catch (error) {
+            console.error(`Periodic save to ${storageType} failed:`, error);
+            
+            // If Firebase fails, fall back to localStorage
+            if (useFirebase && firebaseReady) {
+              console.warn('Firebase periodic save failed, falling back to localStorage');
+              setUseFirebase(false);
+              try {
+                await localSessionService.saveTodaysSession(patients);
+                console.log('Periodic save to localStorage fallback successful');
+              } catch (localError) {
+                console.error('localStorage fallback periodic save also failed:', localError);
+              }
+            }
           }
-          // localStorage service returns void - no additional handling needed
-        } catch (error) {
-          console.error(`Periodic save to ${storageType} failed:`, error);
+        };
+
+        // For async Firebase saves, handle the promise properly
+        if (useFirebase) {
+          handlePeriodicSave();
+        } else {
+          // localStorage is synchronous
+          try {
+            storageService.saveTodaysSession(patients);
+            console.log(`Periodic save to ${storageType} successful`);
+          } catch (error) {
+            console.error(`Periodic save to ${storageType} failed:`, error);
+          }
         }
       }
     };
@@ -159,7 +215,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     if (timeMode.simulated) {
       intervalId = setInterval(tick, 1000);
     } else {
-      intervalId = setInterval(tick, 300000); // 5 minutes for real time
+      intervalId = setInterval(tick, 60000); // 1 minute for real time - update wait times every minute
     }
 
     return () => {
@@ -167,7 +223,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         clearInterval(intervalId);
       }
     };
-  }, [timeMode.simulated, persistenceEnabled, patients, hasRealData, storageService, storageType]);
+  }, [timeMode.simulated, persistenceEnabled, patients, hasRealData, storageService, storageType, useFirebase]);
 
   const clearPatients = () => {
     setPatients([]);
@@ -273,7 +329,20 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         'No Show': getPatientsByStatus('No Show').length,
         Rescheduled: getPatientsByStatus('Rescheduled').length,
       },
-      averageWaitTime: patients.reduce((acc, patient) => acc + getWaitTime(patient), 0) / patients.length || 0,
+      averageWaitTime: (() => {
+        // Only calculate wait time for patients who are actually waiting (have checked in but not completed)
+        const waitingPatients = patients.filter(p => 
+          p.checkInTime && 
+          p.status !== 'completed' && 
+          p.status !== 'Cancelled' && 
+          p.status !== 'No Show' &&
+          p.status !== 'Rescheduled' &&
+          p.status !== 'scheduled'
+        );
+        if (waitingPatients.length === 0) return 0;
+        const totalWaitTime = waitingPatients.reduce((acc, patient) => acc + getWaitTime(patient), 0);
+        return totalWaitTime / waitingPatients.length;
+      })(),
       patientsSeenToday: patients.filter(p => p.completedTime && new Date(p.completedTime) >= today).length,
     };
   };

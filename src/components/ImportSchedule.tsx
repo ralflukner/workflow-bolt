@@ -90,33 +90,43 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
       let checkInTime = undefined;
       let room = undefined;
 
-      // Parse check-in time from import data if available
-      if (checkInTimeStr && ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'].includes(patientStatus)) {
-        // Parse the check-in time (format: "12:31 PM")
-        const checkInMatch = checkInTimeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-        if (checkInMatch) {
-          const [, checkInHours, checkInMinutes, checkInPeriod] = checkInMatch;
-          let checkInHour = parseInt(checkInHours);
-          const isCheckInPM = checkInPeriod.toUpperCase() === 'PM';
+      // Check if this patient has checked in (based on status)
+      const hasCheckedIn = ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'].includes(patientStatus);
+      
+      if (hasCheckedIn) {
+        if (checkInTimeStr) {
+          // Parse check-in time from import data if available (format: "12:31 PM")
+          const checkInMatch = checkInTimeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+          if (checkInMatch) {
+            const [, checkInHours, checkInMinutes, checkInPeriod] = checkInMatch;
+            let checkInHour = parseInt(checkInHours);
+            const isCheckInPM = checkInPeriod.toUpperCase() === 'PM';
 
-          if (isCheckInPM && checkInHour !== 12) {
-            checkInHour += 12;
-          } else if (!isCheckInPM && checkInHour === 12) {
-            checkInHour = 0;
+            if (isCheckInPM && checkInHour !== 12) {
+              checkInHour += 12;
+            } else if (!isCheckInPM && checkInHour === 12) {
+              checkInHour = 0;
+            }
+
+            // Create check-in time using the appointment date but with check-in time
+            const checkInDate = new Date(
+              parseInt(appointmentYear), 
+              parseInt(appointmentMonth) - 1,
+              parseInt(appointmentDay),
+              checkInHour,
+              parseInt(checkInMinutes),
+              0,
+              0
+            );
+
+            checkInTime = checkInDate.toISOString();
           }
-
-          // Create check-in time using the appointment date but with check-in time
-          const checkInDate = new Date(
-            parseInt(appointmentYear), 
-            parseInt(appointmentMonth) - 1,
-            parseInt(appointmentDay),
-            checkInHour,
-            parseInt(checkInMinutes),
-            0,
-            0
-          );
-
-          checkInTime = checkInDate.toISOString();
+        } else {
+          // If no explicit check-in time but patient has checked in status,
+          // set check-in time to 30 minutes before appointment for testing
+          const defaultCheckInTime = new Date(appointmentDate);
+          defaultCheckInTime.setMinutes(defaultCheckInTime.getMinutes() - 30);
+          checkInTime = defaultCheckInTime.toISOString();
         }
       }
 
