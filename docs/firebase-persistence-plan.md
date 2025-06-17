@@ -1,4 +1,3 @@
-
 # Firebase Data Persistence Implementation Plan
 
 ## Overview
@@ -23,7 +22,7 @@ management with cloud-based storage.
 
 ### 2.1 Firestore Collections Structure
 
-```typescrip
+```typescript
 /patients/{patientId}
   - id: string
   - firstName: string
@@ -58,7 +57,7 @@ management with cloud-based storage.
   - name: string
   - specialty: string
   - isActive: boolean
-  - schedule?: objec
+  - schedule?: object
   - createdAt: Timestamp
   - updatedAt: Timestamp
 
@@ -87,7 +86,7 @@ The system implements three primary user roles:
 
 #### Sample Firestore Security Rules
 
-```javascrip
+```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -199,7 +198,7 @@ service cloud.firestore {
 
 - [ ] Audit Log Service
 
-### 3.3 Offline Suppor
+### 3.3 Offline Support
 
 - [ ] Enable Firestore offline persistence
 
@@ -222,7 +221,7 @@ conflict detection:
 
 2. **Field-Level Conflict Detection**
 
-   ```typescrip
+   ```typescript
    interface ConflictResolution {
      strategy: "last-write-wins" | "merge" | "manual";
      conflictFields: string[];
@@ -246,7 +245,7 @@ conflict detection:
 
 5. **Conflict Resolution Workflow**
 
-   ```tex
+   ```text
    1. Detect conflict during sync
    2. Compare timestamps and field changes
    3. Apply resolution strategy
@@ -275,11 +274,11 @@ conflict detection:
 
 ### 4.2 New Context Providers
 
-- [ ] AppointmentContex
+- [ ] AppointmentContext
 
-- [ ] ProviderContex
+- [ ] ProviderContext
 
-- [ ] RoomContex
+- [ ] RoomContext
 
 - [ ] AuthContext (if not using Auth0)
 
@@ -293,7 +292,7 @@ conflict detection:
 
 - [ ] Set up custom claims for role-based access
 
-- [ ] Session managemen
+- [ ] Session management
 
 ### 5.2 Security Implementation
 
@@ -325,7 +324,7 @@ conflict detection:
 
 - [ ] System alerts
 
-## Phase 7: Data Migration & Import/Expor
+## Phase 7: Data Migration & Import/Export
 
 ### 7.1 Data Migration
 
@@ -335,7 +334,7 @@ conflict detection:
 
 - [ ] Backup and restore procedures
 
-### 7.2 Enhanced Import/Expor
+### 7.2 Enhanced Import/Export
 
 - [ ] Bulk import from various formats (CSV, JSON, HL7)
 
@@ -551,7 +550,7 @@ stateDiagram-v2
 
 1. Authentication and authorization
 2. Real-time features and notifications
-3. Data migration and enhanced import/expor
+3. Data migration and enhanced import/export
 
 ### Low Priority (Phase 8-11)
 

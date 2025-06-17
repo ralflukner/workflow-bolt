@@ -47,10 +47,11 @@ async function debugTebraProxyClient() {
   console.log('\n3. Simulating TebraProxyClient behavior...');
   
   // Check environment variables
-  console.log('Environment variables:');
-  console.log('- TEBRA_CLOUD_RUN_URL:', process.env.TEBRA_CLOUD_RUN_URL || 'NOT SET');
-  console.log('- TEBRA_INTERNAL_API_KEY:', process.env.TEBRA_INTERNAL_API_KEY || 'NOT SET');
-  console.log('- GCP_PROJECT:', process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'NOT SET');
+  console.log('Environment variables (redacted):');
+  const redact = (val) => (val ? '[SET]' : 'NOT SET');
+  console.log('- TEBRA_CLOUD_RUN_URL:', redact(process.env.TEBRA_CLOUD_RUN_URL));
+  console.log('- TEBRA_INTERNAL_API_KEY:', redact(process.env.TEBRA_INTERNAL_API_KEY));
+  console.log('- GCP_PROJECT:', redact(process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT));
   
   // Simulate the TebraProxyClient initialization
   const cloudRunUrl = process.env.TEBRA_CLOUD_RUN_URL || 'https://tebra-php-api-xccvzgogwa-uc.a.run.app';

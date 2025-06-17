@@ -1,4 +1,3 @@
-
 # Patient Data Persistence Implementation
 
 ## Overview
@@ -39,7 +38,7 @@ browser refreshes, restarts, and sessions.
 The system automatically chooses the appropriate storage service based on
 Firebase configuration:
 
-```typescrip
+```typescript
 // In PatientContext.tsx
 const storageService = isFirebaseConfigured
   ? dailySessionService
@@ -70,8 +69,8 @@ const storageType = isFirebaseConfigured ? "Firebase" : "LocalStorage";
 
 **Key Features**:
 
-```typescrip
-// Auto-load on moun
+```typescript
+// Auto-load on mount
 useEffect(() => {
   const loadTodaysData = async () => {
     try {
@@ -81,7 +80,7 @@ useEffect(() => {
         setHasRealData(true);
       }
     } catch (error) {
-      // Graceful fallback to empty lis
+      // Graceful fallback to empty list
       setPatients([]);
       setHasRealData(false);
     }
@@ -142,7 +141,7 @@ useEffect(() => {
 1. **App Initialize** → Check Firebase configuration
 2. **Select Storage** → Firebase (if configured) or LocalStorage (fallback)
 3. **Load Data** → Attempt to load today's session
-4. **Set State** → Load patients or start with empty lis
+4. **Set State** → Load patients or start with empty list
 5. **Enable Auto-save** → Only for real patient data
 
 #### Save Operations
@@ -169,9 +168,9 @@ useEffect(() => {
 
 **LocalStorage Session**:
 
-```typescrip
+```typescript
 interface LocalSession {
-  id: string; // YYYY-MM-DD forma
+  id: string; // YYYY-MM-DD format
   date: string; // ISO date string
   patients: Patient[]; // Array of patient data
   createdAt: string; // ISO timestamp
@@ -183,9 +182,9 @@ interface LocalSession {
 
 **Firebase Session**:
 
-```typescrip
+```typescript
 interface DailySession {
-  id: string; // YYYY-MM-DD forma
+  id: string; // YYYY-MM-DD format
   date: string; // ISO date string
   patients: Patient[]; // Array of patient data
   createdAt: Timestamp; // Firebase timestamp
@@ -210,7 +209,7 @@ interface DailySession {
 
    - Clear indication of which storage system is being used
    - Save/load operation confirmations
-   - Error messages with contex
+   - Error messages with context
 
 3. **Data Type Tracking**:
    - Green "Real Data" for user-entered/imported patients
@@ -225,7 +224,7 @@ interface DailySession {
 
 - ✅ Automatic daily purging at 2:00 AM UTC
 
-- ✅ Encrypted data in transit and at res
+- ✅ Encrypted data in transit and at rest
 
 - ✅ Audit logging for compliance tracking
 
@@ -269,7 +268,7 @@ interface DailySession {
 
 2. **Firebase Connection Issues**:
 
-   - Verify environment variables are se
+   - Verify environment variables are set
    - Check Firebase project configuration
    - System will automatically fall back to localStorage
 

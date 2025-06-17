@@ -1,4 +1,3 @@
-
 # Authentication
 
 This document explains the Auth0 authentication implementation in the
@@ -17,14 +16,14 @@ should **not** be committed to version control).
 
 The following variables are required:
 
-```plaintex
+```env
 
 # .env-local
 
 VITE_AUTH0_DOMAIN=YOUR_AUTH0_DOMAIN
 VITE_AUTH0_CLIENT_ID=YOUR_AUTH0_CLIENT_ID
 
-# e.g., http://localhost:5173 for developmen
+# e.g., http://localhost:5173 for development
 
 VITE_AUTH0_REDIRECT_URI=YOUR_APP_REDIRECT_URI
 
@@ -59,7 +58,7 @@ where the provider is initialized.
 The `AuthProvider` component wraps the entire application to provide
 authentication context:
 
-```typescrip
+```typescript
 // src/auth/AuthProvider.tsx
 import { Auth0Provider } from "@auth0/auth0-react";
 // ...
@@ -70,14 +69,14 @@ import { Auth0Provider } from "@auth0/auth0-react";
 
 Simple components for triggering authentication:
 
-```typescrip
+```typescript
 // src/components/LoginButton.tsx
 import { useAuth0 } from "@auth0/auth0-react";
 // ...
 
 ```
 
-```typescrip
+```typescript
 // src/components/LogoutButton.tsx
 import { useAuth0 } from "@auth0/auth0-react";
 // ...
@@ -89,7 +88,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 The `ProtectedRoute` component ensures content is only accessible to
 authenticated users:
 
-```typescrip
+```typescript
 // src/components/ProtectedRoute.tsx
 import { useAuth0 } from "@auth0/auth0-react";
 // ...
@@ -111,13 +110,13 @@ import { useAuth0 } from "@auth0/auth0-react";
 You can access authentication state and user information using the
 `useAuth0` hook:
 
-```typescrip
+```typescript
 import { useAuth0 } from "@auth0/auth0-react";
 
 function MyComponent() {
   const { user, isAuthenticated, isLoading } = useAuth0();
 
-  // Use authentication information in your componen
+  // Use authentication information in your component
 }
 
 ```

@@ -7,15 +7,10 @@ This guide provides detailed instructions for setting up the development environ
 ### Required Software
 
 - Node.js 18.x or higher
-
 - npm 9.x or higher
-
- - Git
-
+- Git
 - VS Code (recommended) or your preferred IDE
-
 - Firebase CLI
-
 - Postman (for API testing)
 
 ### Required Accounts

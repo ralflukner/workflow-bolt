@@ -44,12 +44,12 @@ This implementation provides a production-grade approach for sending emails thro
 
 ## How to Use This Implementation
 
-### 1. Set Up the Service Accoun
+### 1. Set Up the Service Account
 
 Follow the instructions in `functions/src/services/SERVICE_ACCOUNT_README.md` to:
 
 1. Create a service account in the Google Cloud Console
-2. Enable domain-wide delegation for the service accoun
+2. Enable domain-wide delegation for the service account
 3. Configure domain-wide delegation in the Google Workspace Admin Console
 
 ### 2. Store Service Account Credentials
@@ -71,10 +71,10 @@ The script will prompt you for:
 Deploy your functions with the service account credentials:
 
 ```bash
-gcloud functions deploy FUNCTION_NAME
-  --gen2
-  --runtime=nodejs20
-  --region=us-central1
+gcloud functions deploy FUNCTION_NAME \
+  --gen2 \
+  --runtime=nodejs20 \
+  --region=us-central1 \
   --set-env-vars="GMAIL_SERVICE_ACCOUNT_EMAIL=$(gcloud secrets versions access latest --secret=GMAIL_SERVICE_ACCOUNT_EMAIL),GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY=$(gcloud secrets versions access latest --secret=GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY)"
 ```
 

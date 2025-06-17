@@ -20,17 +20,17 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
 
 ### User Authentication
 
-- Firebase Authentication for user managemen
+- Firebase Authentication for user management
 
-- Multi-factor authentication suppor
+- Multi-factor authentication support
 
 - Session management with secure tokens
 
-- Automatic session timeou
+- Automatic session timeout
 
 ## Data Protection
 
-### Data in Transi
+### Data in Transit
 
 - All API communications use TLS 1.2 or higher
 
@@ -40,7 +40,7 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
 
 - Certificate pinning for API endpoints
 
-### Data at Res
+### Data at Rest
 
 - Firebase Firestore encryption
 
@@ -54,7 +54,7 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
 
 ### Protected Health Information (PHI)
 
-- PHI is encrypted at rest and in transi
+- PHI is encrypted at rest and in transit
 
 - Access to PHI is logged and audited
 
@@ -74,7 +74,7 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
 
 ## Security Best Practices
 
-### Developmen
+### Development
 
 1. **Code Security**
    - Regular dependency updates
@@ -108,9 +108,9 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
    - Communication protocols
    - Recovery procedures
 
-## Security Checklis
+## Security Checklist
 
-### Developmen
+### Development
 
 - [ ] Use environment variables for secrets
 
@@ -126,7 +126,7 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
 
 - [ ] Use secure dependencies
 
-### Deploymen
+### Deployment
 
 - [ ] Enable HTTPS
 
@@ -161,7 +161,7 @@ If you discover a security vulnerability, please:
 
 This security documentation is reviewed and updated:
 
-- Monthly for technical conten
+- Monthly for technical content
 
 - Quarterly for compliance requirements
 

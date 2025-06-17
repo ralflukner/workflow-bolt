@@ -66,9 +66,9 @@ This will output the full URL of your Cloud Run service.
 After deployment, you can test the connection:
 
 ```bash
-curl -X POST -H "Content-Type: application/json"
-     -d '{}'
-     "https://REGION-PROJECT.cloudfunctions.net/tebraTestConnection"
+curl -X POST -H "Content-Type: application/json" \
+  -d '{}' \
+  "https://REGION-PROJECT.cloudfunctions.net/tebraTestConnection"
 ```
 
 You should receive a response like:

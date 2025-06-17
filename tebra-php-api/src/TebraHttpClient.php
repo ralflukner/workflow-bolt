@@ -71,7 +71,8 @@ class TebraHttpClient {
             error_log("Tebra SOAP client initialized successfully with WSDL: " . $this->wsdlUrl);
         } catch (\SoapFault $e) {
             error_log("SOAP Client initialization failed: " . $e->getMessage());
-            throw new \Exception("SOAP Client initialization failed: " . $e->getMessage());
+            // Re-throw the original SoapFault to preserve faultcode and detail information
+            throw $e;
         }
     }
     
@@ -95,7 +96,8 @@ class TebraHttpClient {
             error_log("Last SOAP Request: " . $this->client->__getLastRequest());
             error_log("Last SOAP Response: " . $this->client->__getLastResponse());
         }
-        throw new \Exception("SOAP Error in {$method}: " . $e->getMessage());
+        // Re-throw a new SoapFault preserving original details to maintain full context
+        throw new \SoapFault($e->faultcode ?? 'Client', $e->getMessage(), null, $e->detail ?? null);
     }
     
     /**

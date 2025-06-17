@@ -1,4 +1,3 @@
-
 # 🔐 HIPAA-Compliant Tebra EHR Integration Setup Guide
 
 ## ✅ Completed Steps
@@ -48,7 +47,7 @@ echo -n "https://api.tebra.com" | gcloud secrets versions add TEBRA_API_URL --da
 
 ```bash
 
-# Get your Firebase Functions service accoun
+# Get your Firebase Functions service account
 
 export SERVICE_ACCOUNT="your-project@appspot.gserviceaccount.com"
 
@@ -66,7 +65,7 @@ Set your Google Cloud project ID:
 
 ```bash
 
-# In your .env file or environmen
+# In your .env file or environment
 
 export GOOGLE_CLOUD_PROJECT="your-project-id"
 
@@ -92,7 +91,7 @@ npm test -- src/services/__tests__/tebraConfiguration.test.ts
 
 Use the new method in your code:
 
-```typescrip
+```typescript
 import { TebraApiService } from './services/tebraApiService';
 
 const tebraService = new TebraApiService();
@@ -136,9 +135,9 @@ console.log('HIPAA Compliance Status:', compliance);
 
 ### ✅ Synthetic Data Testing
 
-- PHI-free testing environmen
+- PHI-free testing environment
 
-- Synthetic patient data for developmen
+- Synthetic patient data for development
 
 - Data minimization principles
 
