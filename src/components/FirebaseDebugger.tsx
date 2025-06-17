@@ -2,11 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { db, isFirebaseConfigured } from '../config/firebase';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { dailySessionService } from '../services/firebase/dailySessionService';
-import { Database, RefreshCw, AlertCircle, CheckCircle, Calendar } from 'lucide-react';
+import { Database, RefreshCw, AlertCircle, Calendar } from 'lucide-react';
 import { debugDateFormats } from '../utils/dateDebug';
 
+interface DebugInfo {
+  firebaseConfigured: boolean;
+  todayId: string;
+  collectionExists: boolean;
+  documentCount: number;
+  todayDocExists: boolean;
+  todayDocData: {
+    id: string;
+    date: string;
+    patientCount: number;
+    createdAt: string;
+    updatedAt: string;
+    version: number;
+  } | null;
+  lastError: string | null;
+  loading: boolean;
+}
+
 export const FirebaseDebugger: React.FC = () => {
-  const [debugInfo, setDebugInfo] = useState<any>({
+  const [debugInfo, setDebugInfo] = useState<DebugInfo>({
     firebaseConfigured: false,
     todayId: '',
     collectionExists: false,

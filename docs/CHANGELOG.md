@@ -28,6 +28,24 @@
 - **Enhancement**: Refactored `TebraHttpClient.php` methods (`getPatients`, `getProviders`, `getAppointments`) to follow the exact official Tebra PHP example pattern, validated against live API.
 - **Note**: Cloud Run deployment successful (revision `tebra-php-api-00019-xs8`); remaining "Unable to find user" error under investigation with Tebra support.
 
+### Fixed
+
+- **Cloud Functions**: `functions/index.js` now caches Auth0 domain, audience and JWKS client at module scope, avoiding repeated Secret-Manager calls on warm invocations.
+- **Status Mapping**: Added common variants (`no-show`, `checked-in`, `ready for m.d.` etc.) in `functions/src/tebra-sync/status-map.(ts|js)` to prevent silent mis-mappings.
+- **Compilation**: Added auto-generated `status-map.js` next to TypeScript file so Node (CommonJS) `require` succeeds during function deploy.
+- **Firestore Save**: `src/services/firebase/dailySessionService.ts` now strips `undefined` values and encrypts patient data, fixing "Unsupported field value" runtime errors.
+- **ReportModal**: Introduced local `escapeHtml` helper eliminating missing identifier error and improving XSS safety when printing reports.
+- **Type Safety**: Replaced `any` casts in `PatientSection.tsx`, `test-tebra-appointments.ts`, and tightened `patientSections` constant typing to `PatientApptStatus`.
+- **Lint**: Addressed ESLint `prefer-const` and `no-explicit-any` warnings across several files.
+
+### Security
+
+- **Credential Redaction**: Debug scripts `tebra-tools/test-tebra-env.php` and `test-tebra.php` now redact `<Password>` elements and gate verbose output behind `TEBRA_VERBOSE` env flag.
+
+### Docs
+
+- Updated CHANGELOG with these entries; remember to bump version when releasing.
+
 ## [1.0.0] - 2024-03-20
 
 - Initial release

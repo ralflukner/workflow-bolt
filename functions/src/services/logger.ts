@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 export interface Logger {
   info(msg: string, data?: unknown): void;
   warn(msg: string, data?: unknown): void;

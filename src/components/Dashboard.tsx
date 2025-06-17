@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import NewPatientForm from './NewPatientForm';
 import ImportSchedule from './ImportSchedule';
 import ImportJSON from './ImportJSON';
@@ -27,6 +27,9 @@ const Dashboard: React.FC = () => {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [showDebugPanels, setShowDebugPanels] = useState<boolean>(false);
 
+  // Guard against rapid export clicks
+  const isExporting = useRef(false);
+
   const { generateReport } = useReportGeneration(patients, getCurrentTime, timeMode, getWaitTime);
 
 
@@ -46,7 +49,7 @@ const handleExportSchedule = async (): Promise<void> => {
     setShowReportModal(true);
   } catch (err) {
     console.error('Failed to export schedule', err);
-    toast.error('Unable to export schedule. Please try again.');
+    alert('Unable to export schedule. Please try again.');
   } finally {
     isExporting.current = false;
   }
