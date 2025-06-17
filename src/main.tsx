@@ -6,10 +6,17 @@ import { FirebaseProvider } from './contexts/firebase';
 import { testTebraGetAppointments } from './utils/testTebraAppointments';
 import { testTebraGetAppointmentsViaFirebase } from './utils/testTebraViaFirebase';
 
+declare global {
+  interface Window {
+    testTebraGetAppointments: typeof testTebraGetAppointments;
+    testTebraViaFirebase: typeof testTebraGetAppointmentsViaFirebase;
+  }
+}
+
 // Make test functions available globally for console testing
 if (typeof window !== 'undefined') {
-  (window as any).testTebraGetAppointments = testTebraGetAppointments;
-  (window as any).testTebraViaFirebase = testTebraGetAppointmentsViaFirebase;
+  window.testTebraGetAppointments = testTebraGetAppointments;
+  window.testTebraViaFirebase = testTebraGetAppointmentsViaFirebase;
   console.log('✅ Tebra test functions loaded:');
   console.log('   - testTebraGetAppointments() for direct SOAP (will fail due to CORS)');
   console.log('   - testTebraViaFirebase() for Firebase Functions proxy (recommended)');
