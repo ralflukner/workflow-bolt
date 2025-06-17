@@ -59,7 +59,7 @@ export const mockPatients: Patient[] = [
     dob: '1992-06-30',
     appointmentTime: getAppointmentTime(10, 15),
     provider: 'Dr. Lukner',
-    status: 'with-doctor',
+    status: 'With Doctor',
     checkInTime: getCheckInTime(10, 15, 50), // Checked in 50 minutes before appointment
     withDoctorTime: getCheckInTime(10, 15, 10), // Went to doctor 10 minutes before appointment
     room: 'Room C',

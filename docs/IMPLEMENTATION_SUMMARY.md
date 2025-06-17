@@ -9,7 +9,7 @@ This implementation provides a production-grade approach for sending emails thro
 1. **Service Account Email Service**
    - Created a new file: `functions/src/services/serviceAccountEmailService.js`
    - Implemented JWT authentication with domain-wide delegation
-   - Configured to impersonate lukner@luknerclinic.com
+   - Configured to impersonate <lukner@luknerclinic.com>
 
 2. **Updated Monitoring System**
    - Modified `functions/src/monitoring.js` to use the new service account email service
@@ -47,6 +47,7 @@ This implementation provides a production-grade approach for sending emails thro
 ### 1. Set Up the Service Accoun
 
 Follow the instructions in `functions/src/services/SERVICE_ACCOUNT_README.md` to:
+
 1. Create a service account in the Google Cloud Console
 2. Enable domain-wide delegation for the service accoun
 3. Configure domain-wide delegation in the Google Workspace Admin Console
@@ -61,6 +62,7 @@ chmod +x scripts/create-gmail-service-account-secrets.sh
 ```
 
 The script will prompt you for:
+
 - The service account email address
 - The path to the service account private key JSON file
 
@@ -84,7 +86,7 @@ The monitoring system will now use the service account email service to send sec
 
 1. Triggering a security alert (e.g., by simulating excessive authentication failures)
 2. Checking the logs to verify that the email was sent successfully
-3. Confirming that the email was received at lukner@luknerclinic.com
+3. Confirming that the email was received at <lukner@luknerclinic.com>
 
 ## Comparison with Previous Approach
 

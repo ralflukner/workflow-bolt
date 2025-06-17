@@ -12,6 +12,7 @@ Key changes:
 - Updated Dashboard and DiagnosticPanel to include new debugging components
 - Improved PatientContext to better handle data from Tebra API
 - Added SOAP UI project file for API testing and documentation
+- Corrected an erroneous 't' entry in .gitignore
 
 These changes enable the application to reliably fetch and display patient 
 appointments from Tebra EHR, with proper error handling and debugging capabilities

@@ -1,4 +1,3 @@
-
 # Tebra EHR Integration Documentation
 
 Welcome to the Tebra EHR Integration documentation. This guide provides a comprehensive overview of the integration system, its architecture, and how to use it effectively.
@@ -45,23 +44,19 @@ Welcome to the Tebra EHR Integration documentation. This guide provides a compre
 
 ## Quick Links
 
- ### Development
+### Development
 
 - [Testing Expansion Plan](../testing-expansion-plan.md) - Testing strategy and coverage
 
 - [Changes Summary](../CHANGES_SUMMARY.md) - Recent changes and updates
 
- ### Support
+### Support
 
 - [Tebra Support](../tebra-support-ticket-revised.md) - Support ticket information
 
 - [Recommendations](../recommendation.md) - System recommendations
 
-## Contributing
-
-Please refer to the [README.md](../README.md) for contribution guidelines and development setup instructions.
-
- ## Support
+## Support
 
 For support issues:
 
