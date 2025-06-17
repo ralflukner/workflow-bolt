@@ -1,4 +1,3 @@
-
 # Environment Setup Guide
 
 This guide provides detailed instructions for setting up the development environment for the Tebra EHR Integration.
@@ -21,12 +20,9 @@ This guide provides detailed instructions for setting up the development environ
 
 ### Required Accounts
 
-- GitHub accoun
-
- - GitHub account
- - Firebase account
- - Tebra EHR account
-
+- GitHub account
+- Firebase account
+- Tebra EHR account
 - Auth0 account (for authentication)
 
 ## Installation Steps
@@ -101,7 +97,7 @@ firebase login
 3. Initialize Firebase:
 
 ```bash
-firebase initt
+firebase init
 
 ```
 
@@ -119,7 +115,7 @@ firebase initt
 
 #### VS Code Extensions
 
-- ESLin
+- ESLint
 
 - Prettier
 
@@ -150,7 +146,7 @@ npm run dev
 
 # Run all tests
 
-npm tes
+npm test
 
 # Run tests in watch mode
 
@@ -289,7 +285,7 @@ DEBUG=tebra:* npm start
 
 - [Auth0 Documentation](https://auth0.com/docs)
 
-## Suppor
+## Support
 
 For additional help:
 

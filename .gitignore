@@ -8,6 +8,7 @@
 env-example
 -env-example
 src/**/env*.ts
+src/**/env*.js
 src/**/env*.d.ts
 src/**/__tests__/env*.test.ts
 src/**/__mocks__/env*.ts
@@ -131,6 +132,8 @@ bfg-report/
 # Test files with environment variables
 src/**/__tests__/envVariables.test.ts
 src/**/__mocks__/env.ts
+src/**/envUtils.ts
+src/vite-env.d.ts
 
 # Security scripts should be tracked
 !tebra-tools/scripts/security-check-gsm.sh
@@ -138,6 +141,9 @@ src/**/__mocks__/env.ts
 !tebra-tools/scripts/git-cleanup.sh
 
 # ===== Keep These Files =====
+!tebra-tools/scripts/security-check-gsm.sh
+!tebra-tools/scripts/rotate-username-password.sh
+!tebra-tools/scripts/git-cleanup.sh
 !.gitignore
 
 # ===== Sensitive Data Patterns =====
@@ -152,4 +158,5 @@ src/**/__mocks__/env.ts
 
 # Credential rotation state
 tebra-tools/credential-rotation-state.json
+key.json
 key.json

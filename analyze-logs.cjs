@@ -96,9 +96,9 @@ class LogAnalyzer {
       
       return logs;
     } catch (error) {
-      console.warn('⚠️  Could not fetch Cloud Logging data. Using sample analysis...');
-      console.warn(`Error details: ${error.message}`);
-      return this.generateSampleLogs();
+      console.error('❌ Failed to fetch Cloud Logging data via gcloud CLI.');
+      console.error(`   ${error.message}`);
+      throw error;
     }
   }
 
