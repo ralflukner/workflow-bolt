@@ -32,7 +32,7 @@ In this URL:
    ```
 6. Copy this entire URL
 
-## Using the URL in Firebase Functions Deploymen
+## Using the URL in Firebase Functions Deployment
 
 Once you have the Cloud Run URL, you can use it in the deployment command for Firebase Functions:
 
