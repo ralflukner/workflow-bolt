@@ -144,12 +144,7 @@ const TimeControl: React.FC = () => {
           ) : (
             <div className="flex items-center gap-2">
               <p className="text-white whitespace-nowrap">
-                {currentTime.toLocaleDateString('en-US', { 
-                  timeZone: 'America/Chicago',
-                  month: 'numeric',
-                  day: 'numeric',
-                  year: 'numeric'
-                })}
+                {`${currentTime.getMonth() + 1}/${currentTime.getDate()}/${currentTime.getFullYear()}`}
               </p>
               <p className="text-xl font-bold text-white whitespace-nowrap">
                 {formatTime(currentTime)}

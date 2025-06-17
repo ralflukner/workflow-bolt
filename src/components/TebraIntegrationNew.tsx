@@ -225,8 +225,8 @@ const TebraIntegration: React.FC = () => {
       setStatusMessage(`Syncing schedule for ${dateToSync}...`);
       const result = await tebraApiService.syncTodaysSchedule(dateToSync);
       if (result.success) {
-        const patientCount = result.patients?.length || 0;
-        setStatusMessage(`✅ Sync completed. Found ${patientCount} appointments for ${dateToSync}.`);
+        const patientCount = result.patientCount || result.patients?.length || 0;
+        setStatusMessage(`✅ Sync completed. Imported ${patientCount} appointments for ${dateToSync}.`);
         setLastSyncResult({
           success: true,
           message: `Synced ${dateToSync}`,

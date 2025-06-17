@@ -109,6 +109,7 @@ export interface ApiResponse<T> {
 export interface SyncResponse {
   success: boolean;
   patients?: unknown[];
+  patientCount?: number;
   message?: string;
 }
 
@@ -396,11 +397,14 @@ export class TebraApiService {
       const result = await this.tebraSyncTodaysSchedule({ 
         date: syncDate
       });
-      const response = result.data as ApiResponse<unknown[]> & { message?: string };
+      const response = result.data as { success: boolean; imported: number; message: string };
+      
+      console.log('Sync response from Firebase:', response);
 
       return {
         success: response.success,
-        patients: response.data,
+        patients: [], // The sync doesn't return patients, just imports them to Firestore
+        patientCount: response.imported,
         message: response.message
       };
     } catch (error) {
