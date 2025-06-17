@@ -1,4 +1,3 @@
-
 # Recent Changes
 
 This document tracks significant recent changes to the Patient Flow
@@ -19,7 +18,7 @@ implemented and enhanced stability.
 - **Downgraded Vite to v5** for React plugin compatibility while
   maintaining performance
 
-- Fixed build system compatibility issues ensuring reliable developmen
+- Fixed build system compatibility issues ensuring reliable development
   and production builds
 
 - Maintained all performance optimizations while ensuring plugin
@@ -67,7 +66,7 @@ implemented and enhanced stability.
 
 - Implemented secure authentication using Auth0
 
-- Added protected routes to secure application conten
+- Added protected routes to secure application content
 
 - Configured proper session persistence and redirect handling
 
@@ -114,10 +113,10 @@ TypeScript errors:
 
 ### 1. Expanded AppointmentStatus Type
 
-The `AppointmentStatus` type was expanded to include a comprehensive se
+The `AppointmentStatus` type was expanded to include a comprehensive set
 of statuses:
 
-```typescrip
+```typescript
 // Before
 export type AppointmentStatus = "Scheduled" | "Confirmed" | "Cancelled";
 
@@ -139,7 +138,7 @@ export type AppointmentStatus =
 
 ```
 
-This change provides more granular status tracking and better alignmen
+This change provides more granular status tracking and better alignment
 with medical office workflows.
 
 ### 2. React Type Definitions
@@ -180,9 +179,9 @@ Enhanced type safety in the PatientCard component:
 
 - Added explicit type annotations for event handlers
 
-- Fixed dynamic color classes with a type-safe lookup objec
+- Fixed dynamic color classes with a type-safe lookup object
 
-```typescrip
+```typescript
 // Before (dynamic class generation, potential runtime issue)
 // className with dynamic color based on button.color
 // (e.g., "bg-amber-500 hover:bg-amber-600")
@@ -208,7 +207,7 @@ generation in Tailwind.
 Updated the PatientCard component to display appointment statuses with
 appropriate color coding:
 
-```typescrip
+```typescript
 patient.appointmentStatus === "Confirmed"
   ? "bg-blue-600 text-white"
   : patient.appointmentStatus === "Reminder Sent"
@@ -238,7 +237,7 @@ are planned:
 2. **Backend API Integration**: Connect to a real API for data
    persistence and synchronization
 3. **Enhanced Authentication**: Add role-based access control and user
-   managemen
+   management
 4. **Performance Monitoring**: Add application performance monitoring
    and analytics
 5. **Mobile Optimization**: Further enhance mobile user experience and

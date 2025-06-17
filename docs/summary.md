@@ -26,7 +26,7 @@ The newly developed credential management tool (`scripts/create-gmail-oauth-secr
 
 A detailed technical documentation suite has been created to support secure implementation:
 
-- **Security Rationale**: Explains the security implications of credential managemen
+- **Security Rationale**: Explains the security implications of credential management
 - **Implementation Guide**: Step-by-step instructions for initial setup and configuration
 - **Operational Procedures**: Guidelines for ongoing management and rotation
 - **Integration Reference**: Details on integrating with Firebase Functions and other services
@@ -41,7 +41,7 @@ The implementation leverages Google Secret Manager with several advanced feature
 - **Version Control**: Full support for secret versioning and rotation
 - **Fine-grained Access Control**: IAM policies restrict access to authorized service accounts only
 - **Audit Logging**: All access attempts are logged for security monitoring
-- **Automatic Environment Integration**: Seamless integration with application environmen
+- **Automatic Environment Integration**: Seamless integration with application environment
 
 ## Deployment Workflow
 

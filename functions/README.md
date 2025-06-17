@@ -5,13 +5,13 @@ This repository contains Firebase Cloud Functions that have been updated to work
 ## Changes Made
 
 1. Added initialization guard to `src/monitoring.js`:
-   ```javascrip
+   ```javascript
    const admin = require('firebase-admin');
    if (!admin.apps.length) admin.initializeApp();
    ```
 
 2. Added initialization guard to `src/services/firestoreDailySession.ts`:
-   ```typescrip
+   ```typescript
    import * as admin from 'firebase-admin';
    if (!admin.apps.length) admin.initializeApp();
    ```
@@ -29,13 +29,14 @@ Error: The default Firebase app does not exist. Make sure you call initializeApp
 To redeploy the fixed functions, use the following command:
 
 ```bash
-gcloud functions deploy tebraTestConnection
-  --gen2 --region us-central1 --project luknerlumina-firebase
-  --runtime nodejs20 --entry-point=tebraTestConnection
-  --source functions
-  --set-env-vars
-TEBRA_CLOUD_RUN_URL=https://tebra-php-api-623450773640.us-central1.run.app,
-TEBRA_INTERNAL_API_KEY=$KEY
+gcloud functions deploy tebraTestConnection \
+  --gen2 \
+  --region=us-central1 \
+  --project=luknerlumina-firebase \
+  --runtime=nodejs20 \
+  --entry-point=tebraTestConnection \
+  --source=functions \
+  --set-env-vars="TEBRA_CLOUD_RUN_URL=https://tebra-php-api-623450773640.us-central1.run.app,TEBRA_INTERNAL_API_KEY=$KEY"
 ```
 
 Replace `$KEY` with your actual API key.
@@ -44,13 +45,14 @@ To deploy all four callables, you can use a loop:
 
 ```bash
 for FUNCTION in tebraTestConnection tebraGetProviders tebraSyncTodaysSchedule tebraGetAppointments; do
-  gcloud functions deploy $FUNCTION
-    --gen2 --region us-central1 --project luknerlumina-firebase
-    --runtime nodejs20 --entry-point=$FUNCTION
-    --source functions
-    --set-env-vars
-  TEBRA_CLOUD_RUN_URL=https://tebra-php-api-623450773640.us-central1.run.app,
-  TEBRA_INTERNAL_API_KEY=$KEY
+  gcloud functions deploy "$FUNCTION" \
+    --gen2 \
+    --region=us-central1 \
+    --project=luknerlumina-firebase \
+    --runtime=nodejs20 \
+    --entry-point="$FUNCTION" \
+    --source=functions \
+    --set-env-vars="TEBRA_CLOUD_RUN_URL=https://tebra-php-api-623450773640.us-central1.run.app,TEBRA_INTERNAL_API_KEY=$KEY"
 done
 ```
 
