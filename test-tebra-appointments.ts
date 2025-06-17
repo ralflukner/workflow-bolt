@@ -54,10 +54,11 @@ async function testGetAppointments() {
           status: appointments[0].Status
         });
       }
-    } catch (error: any) {
-      console.error(`   ❌ Failed: ${error.message}`);
-      if (error.response) {
-        console.error('   Response:', error.response.data);
+    } catch (error: unknown) {
+      const err = error as { message?: string; response?: { data?: unknown } };
+      console.error(`   ❌ Failed: ${err?.message ?? 'Unknown error'}`);
+      if (err?.response?.data) {
+        console.error('   Response:', err.response.data);
       }
     }
   }
@@ -81,8 +82,9 @@ async function testGetAppointments() {
         console.log(`   ${index + 1}. ${appt.AppointmentTime || appt.Time} - ${appt.Status} - Patient ID: ${appt.PatientId}`);
       });
     }
-  } catch (error: any) {
-    console.error(`   ❌ Failed: ${error.message}`);
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    console.error(`   ❌ Failed: ${err?.message ?? 'Unknown error'}`);
   }
 }
 

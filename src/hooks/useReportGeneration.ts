@@ -66,10 +66,10 @@ export const useReportGeneration = (
       ];
 
       const escapedRow = row.map(field => {
-        if (field && field.includes(',')) {
-          return `"${field}"`;
-        }
-        return field;
+ if (field == null) return '';
+ const needsQuotes = /[,"\n]/.test(field);
+ const safe = String(field).replace(/"/g, '""');
+ return needsQuotes ? `"${safe}"` : safe;
       });
 
       csvContent += escapedRow.join(',') + '\n';

@@ -37,12 +37,12 @@ const Dashboard: React.FC = () => {
 
   const isExpanded = (section: string) => expandedSection === section;
 
-  const handleExportSchedule = () => {
-    generateReport('csv');
-    const report = generateReport();
-    setReportContent(report);
-    setShowReportModal(true);
-  };
+const handleExportSchedule = async () => {
+  // Assuming the CSV string is returned; adjust if the hook downloads a file.
+  const report = await generateReport('csv');
+  setReportContent(report);
+  setShowReportModal(true);
+};
 
 
   return (

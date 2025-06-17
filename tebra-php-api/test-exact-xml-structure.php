@@ -82,8 +82,9 @@ try {
     } catch (SoapFault $e) {
         echo "❌ SOAP Fault: " . $e->getMessage() . "\n";
         echo "\nActual SOAP Request:\n";
-$xml = preg_replace('#(<(Password|CustomerKey|User)>)[^<]*(</\\2>)#', '$1***REDACTED***$3', $client->__getLastRequest());
- echo htmlspecialchars($xml);
+        $xml = preg_replace('#(<(Password|CustomerKey|User)>)[^<]*(</\\2>)#', '$1***REDACTED***$3', $client->__getLastRequest());
+        echo htmlspecialchars($xml);
+    }
     
     echo "\n" . str_repeat("=", 60) . "\n\n";
     

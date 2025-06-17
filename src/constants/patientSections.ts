@@ -1,7 +1,9 @@
+import { PatientApptStatus } from '../types';
+
 export interface PatientSection {
   id: string;
   title: string;
-  status: string;
+  status: PatientApptStatus;
 }
 
 export const PATIENT_SECTIONS: PatientSection[] = [

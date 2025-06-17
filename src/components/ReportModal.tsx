@@ -7,6 +7,15 @@ interface ReportModalProps {
 }
 
 export const ReportModal: React.FC<ReportModalProps> = ({ onClose, reportContent }) => {
+  // Simple HTML escaping to prevent break-out in print window
+  const escapeHtml = (unsafe: string): string =>
+    unsafe
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
   const handleDownload = () => {
     const blob = new Blob([reportContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -35,7 +44,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, reportContent
             </style>
           </head>
           <body>
-            ${reportContent.replace(/\n/g, '<br>')}
+            ${escapeHtml(reportContent).replace(/\n/g, '<br>')}
           </body>
         </html>
       `);
