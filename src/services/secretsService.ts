@@ -187,7 +187,7 @@ export class SecretsService {
   private async getFromSecretManager(secretName: string): Promise<string | null> {
     try {
       // Lazy-load the client so the browser bundle is not affected
-      // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
       const client = new SecretManagerServiceClient();
 
