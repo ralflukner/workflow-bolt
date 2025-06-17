@@ -36,7 +36,10 @@ try {
     function testCall($client, $description, $method, $params) {
         echo "Testing: $description\n";
         echo "Method: $method\n";
-        echo "Params: " . json_encode($params, JSON_PRETTY_PRINT) . "\n";
+        // Mask sensitive values before logging
+$safeParams = $params;
+$safeParams['request']['RequestHeader']['Password'] = '***';
+echo "Params: " . json_encode($safeParams, JSON_PRETTY_PRINT) . "\n";
         
         // Rate limiting
         sleep(2);

@@ -4,32 +4,42 @@
  * @returns Mapped internal status
  * @throws Error if status is unrecognized
  */
-export const tebraStatusToInternal = (raw: string): 'Scheduled' | 'Confirmed' | 'Cancelled' | 'Rescheduled' | 'No Show' | 'Arrived' | 'Roomed' | 'Ready for MD' | 'With Doctor' | 'Seen by MD' | 'Checked Out' => {
+export const tebraStatusToInternal = (raw: string): 'scheduled' | 'cancelled' | 'rescheduled' | 'no-show' | 'arrived' | 'appt-prep' | 'ready-for-md' | 'with-doctor' | 'seen-by-md' | 'completed' => {
   const key = raw.trim().toLowerCase();
   
   // Log the raw status for debugging
   console.log('Mapping Tebra status:', { raw, normalized: key });
   
   switch (key) {
-    case 'scheduled':   return 'Scheduled';
-    case 'confirmed':   return 'Confirmed';
-    case 'cancelled':   return 'Cancelled';
-    case 'rescheduled': return 'Rescheduled';
-    case 'no show':     return 'No Show';
-    case 'arrived':     return 'Arrived';
-    case 'roomed':      return 'Roomed';
-    case 'ready for md': return 'Ready for MD';
-    case 'with doctor': return 'With Doctor';
-    case 'seen by md':  return 'Seen by MD';
-    case 'checked out': return 'Checked Out';
+    case 'scheduled':    return 'scheduled';
+    case 'confirmed':    return 'scheduled';
+    case 'cancelled':    return 'cancelled';
+    case 'rescheduled':  return 'rescheduled';
+    case 'no show':      return 'no-show';
+    case 'arrived':      return 'arrived';
+    case 'roomed':       return 'appt-prep';
+    case 'ready for md': return 'ready-for-md';
+    case 'with doctor':  return 'with-doctor';
+    case 'seen by md':   return 'seen-by-md';
+    case 'checked out':  return 'completed';
     default: {
-      // Default to 'Scheduled' instead of throwing error for unknown statuses
-      console.warn('Unknown appointment status, defaulting to Scheduled:', {
+      // Default to 'scheduled' instead of throwing error for unknown statuses
+      console.warn('Unknown appointment status, defaulting to scheduled:', {
         raw,
         normalized: key,
         timestamp: new Date().toISOString()
       });
-      return 'Scheduled';
+      return 'scheduled';
     }
   }
+};
+
+/**
+ * Determines if a patient status indicates they have checked in
+ * @param status - Internal status from tebraStatusToInternal
+ * @returns True if patient has checked in (arrived or beyond)
+ */
+export const isCheckedIn = (status: ReturnType<typeof tebraStatusToInternal>): boolean => {
+  const checkedInStatuses = ['arrived', 'appt-prep', 'ready-for-md', 'with-doctor', 'seen-by-md', 'completed'];
+  return checkedInStatuses.includes(status);
 }; 

@@ -317,6 +317,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
               <option value="Lab">Lab</option>
               <option value="Lobby">Lobby</option>
               <option value="Waiting">Waiting</option>
+              <option value="Televisit">Televisit</option>
             </select>
           ) : (
             <p className="text-white">{patient.room || 'N/A'}</p>

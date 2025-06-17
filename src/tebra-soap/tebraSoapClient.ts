@@ -289,7 +289,7 @@ export class TebraSoapClient {
           RequestHeader: {
             CustomerKey: this.credentials.customerKey,
             User: this.credentials.username,
-            Password: this.credentials.password
+            Password: this.credentials.password  // ⚠︎ Do **not** log this object verbatim
           },
           Fields: {
             // We'll request all appointment fields by not specifying individual ones

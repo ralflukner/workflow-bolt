@@ -3,12 +3,17 @@ require('dotenv').config();
 
 async function testGetAppointments() {
   console.log('🔧 Testing Tebra getAppointments with correct date format...\n');
+const client = new TebraSoapClient({
+  username: process.env.VITE_TEBRA_USERNAME ?? '',
+  password: process.env.VITE_TEBRA_PASSWORD ?? '',
+  customerKey: process.env.VITE_TEBRA_CUSTOMER_KEY ?? '',
+   …
+ });
 
-  // Initialize client with credentials from environment
-  const client = new TebraSoapClient({
-    username: process.env.VITE_TEBRA_USERNAME || '',
-    password: process.env.VITE_TEBRA_PASSWORD || '',
-    customerKey: process.env.VITE_TEBRA_CUSTOMER_KEY || '',
+if (!client.config.username || !client.config.password || !client.config.customerKey) {
+  console.error('❌ Missing Tebra credentials in environment. Aborting.');
+  process.exit(1);
+}
     wsdlUrl: process.env.VITE_TEBRA_WSDL_URL || 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl'
   });
 

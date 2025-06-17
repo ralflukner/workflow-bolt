@@ -48,10 +48,20 @@ try {
     $result = $client->GetProviders($request);
     echo "SUCCESS! Response received:\n";
     print_r($result);
+
+    // Debug output is optional; enable by setting TEBRA_VERBOSE=true
+    $verbose = getenv('TEBRA_VERBOSE') === 'true';
+    if ($verbose && isset($client)) {
+        // Redact sensitive credentials before printing
+        $sanitize = function (string $xml): string {
+            return preg_replace('/<Password>.*?<\/Password>/is', '<Password>[REDACTED]</Password>', $xml);
+        };
+
+        echo "\nLast Request (sanitized):\n" . $sanitize($client->__getLastRequest()) . "\n";
+        echo "\nLast Response:\n" . $sanitize($client->__getLastResponse()) . "\n";
+    } elseif (!$verbose) {
+        echo "(Enable TEBRA_VERBOSE=true to see sanitized SOAP request/response)\n";
+    }
 } catch (SoapFault $e) {
     echo "SOAP ERROR: " . $e->getMessage() . "\n";
-    if (isset($client)) {
-        echo "\nLast Request:\n" . $client->__getLastRequest() . "\n";
-        echo "\nLast Response:\n" . $client->__getLastResponse() . "\n";
-    }
 } 

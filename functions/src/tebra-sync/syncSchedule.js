@@ -1,19 +1,21 @@
 const pLimit = require('p-limit');
+const { isCheckedIn } = require('./status-map');
 
 const tebraStatusToInternal = (raw) => {
   const key = raw.trim().toLowerCase();
   switch (key) {
-    case 'confirmed':   return 'Confirmed';
-    case 'cancelled':   return 'Cancelled';
-    case 'rescheduled': return 'Rescheduled';
-    case 'no show':     return 'No Show';
-    case 'arrived':     return 'Arrived';
-    case 'roomed':      return 'Roomed';
-    case 'ready for md': return 'Ready for MD';
-    case 'with doctor': return 'With Doctor';
-    case 'seen by md':  return 'Seen by MD';
-    case 'checked out': return 'Checked Out';
-    default:            return 'Scheduled';
+    case 'scheduled':    return 'scheduled';
+    case 'confirmed':    return 'scheduled';
+    case 'cancelled':    return 'cancelled';
+    case 'rescheduled':  return 'rescheduled';
+    case 'no show':      return 'no-show';
+    case 'arrived':      return 'arrived';
+    case 'roomed':       return 'appt-prep';
+    case 'ready for md': return 'ready-for-md';
+    case 'with doctor':  return 'with-doctor';
+    case 'seen by md':   return 'seen-by-md';
+    case 'checked out':  return 'completed';
+    default:             return 'scheduled';
   }
 };
 
@@ -25,9 +27,8 @@ const toDashboardPatient = (appointment, patient, provider) => {
     `${appointment.Date || appointment.AppointmentDate || ''} ${appointment.Time || ''}`.trim();
   
   // Determine if patient should be marked as checked in
-  // Any status beyond Scheduled and Confirmed indicates the patient has arrived
-  const checkedInStatuses = ['Arrived', 'Roomed', 'Ready for MD', 'With Doctor', 'Seen by MD', 'Checked Out'];
-  const isCheckedIn = checkedInStatuses.includes(status);
+  // Any status beyond scheduled indicates the patient has arrived
+  const checkedInStatus = isCheckedIn(status);
   
   return {
     id: patient.PatientId || patient.Id || '',
@@ -42,7 +43,7 @@ const toDashboardPatient = (appointment, patient, provider) => {
     phone: patient.Phone || patient.PhoneNumber,
     email: patient.Email || patient.EmailAddress,
     // Add checkInTime for patients who have arrived
-    checkInTime: isCheckedIn ? appointmentTime : undefined,
+    checkInTime: checkedInStatus ? appointmentTime : undefined,
   };
 };
 

@@ -1,5 +1,5 @@
 import { TebraAppointment, TebraPatient, TebraProvider } from '../types/tebra';
-import { tebraStatusToInternal } from './status-map';
+import { tebraStatusToInternal, isCheckedIn } from './status-map';
 
 export interface DashboardPatient {
   id: string;
@@ -26,9 +26,8 @@ export const toDashboardPatient = (
     `${appointment.Date || appointment.AppointmentDate || ''} ${appointment.Time || ''}`.trim();
   
   // Determine if patient should be marked as checked in
-  // Any status beyond Scheduled and Confirmed indicates the patient has arrived
-  const checkedInStatuses = ['Arrived', 'Roomed', 'Ready for MD', 'With Doctor', 'Seen by MD', 'Checked Out'];
-  const isCheckedIn = checkedInStatuses.includes(status);
+  // Any status beyond scheduled indicates the patient has arrived
+  const checkedInStatus = isCheckedIn(status);
   
   return {
     id: patient.PatientId || patient.Id || '',
@@ -43,6 +42,6 @@ export const toDashboardPatient = (
     phone: patient.Phone || patient.PhoneNumber,
     email: patient.Email || patient.EmailAddress,
     // Add checkInTime for patients who have arrived
-    checkInTime: isCheckedIn ? appointmentTime : undefined,
+    checkInTime: checkedInStatus ? appointmentTime : undefined,
   };
 }; 

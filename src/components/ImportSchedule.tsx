@@ -7,6 +7,15 @@ interface ImportScheduleProps {
   onClose: () => void;
 }
 
+// Status constants to prevent string drift
+const STATUS_CONFIRMED = ['confirmed', 'scheduled', 'reminder sent'];
+const STATUS_ARRIVED = ['arrived', 'checked in'];
+const STATUS_APPT_PREP = ['roomed', 'appt prep started'];
+const STATUS_CHECKED_OUT = ['checked out', 'checkedout'];
+const STATUS_CANCELLED = ['cancelled', 'canceled'];
+const HAS_CHECKED_IN = ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'];
+const STATUS_IN_ROOM = ['appt-prep', 'ready-for-md', 'With Doctor'];
+
 const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
   const { addPatient, clearPatients } = usePatientContext();
   const [scheduleText, setScheduleText] = useState('');
@@ -64,11 +73,11 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
       let patientStatus: PatientApptStatus = 'scheduled';
       const statusLower = externalStatus.toLowerCase();
       
-      if (['confirmed', 'scheduled', 'reminder sent'].includes(statusLower)) {
+      if (STATUS_CONFIRMED.includes(statusLower)) {
         patientStatus = 'scheduled';
-      } else if (['arrived', 'checked in'].includes(statusLower)) {
+      } else if (STATUS_ARRIVED.includes(statusLower)) {
         patientStatus = 'arrived';
-      } else if (['roomed', 'appt prep started'].includes(statusLower)) {
+      } else if (STATUS_APPT_PREP.includes(statusLower)) {
         patientStatus = 'appt-prep';
       } else if (statusLower === 'ready for md') {
         patientStatus = 'ready-for-md';
@@ -76,11 +85,11 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
         patientStatus = 'With Doctor';
       } else if (statusLower === 'seen by md') {
         patientStatus = 'seen-by-md';
-      } else if (['checked out', 'checkedout'].includes(statusLower)) {
+      } else if (STATUS_CHECKED_OUT.includes(statusLower)) {
         patientStatus = 'completed';
       } else if (statusLower === 'rescheduled') {
         patientStatus = 'Rescheduled';
-      } else if (['cancelled', 'canceled'].includes(statusLower)) {
+      } else if (STATUS_CANCELLED.includes(statusLower)) {
         patientStatus = 'Cancelled';
       } else if (statusLower === 'no show') {
         patientStatus = 'No Show';
@@ -91,7 +100,7 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
       let room = undefined;
 
       // Check if this patient has checked in (based on status)
-      const hasCheckedIn = ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'].includes(patientStatus);
+      const hasCheckedIn = HAS_CHECKED_IN.includes(patientStatus);
       
       if (hasCheckedIn) {
         if (checkInTimeStr) {
@@ -120,6 +129,12 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
             );
 
             checkInTime = checkInDate.toISOString();
+          } else {
+            // Fallback: If checkInTimeStr exists but regex fails, 
+            // set check-in time to 30 minutes before appointment
+            const fallbackCheckInTime = new Date(appointmentDate);
+            fallbackCheckInTime.setMinutes(fallbackCheckInTime.getMinutes() - 30);
+            checkInTime = fallbackCheckInTime.toISOString();
           }
         } else {
           // If no explicit check-in time but patient has checked in status,
@@ -133,7 +148,7 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
       // Use room from import data if available, otherwise assign a default room for patients who are in a room
       if (roomStr) {
         room = roomStr.trim();
-      } else if (['appt-prep', 'ready-for-md', 'With Doctor'].includes(patientStatus)) {
+      } else if (STATUS_IN_ROOM.includes(patientStatus)) {
         room = 'Waiting'; // Default room assignment
       }
 

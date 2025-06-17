@@ -41,18 +41,24 @@ export const PersistenceDiagnostic: React.FC = () => {
   }, [isAuthenticated]);
 
   // Track when saves happen
-  useEffect(() => {
-    if (patients.length > 0 && persistenceEnabled && hasRealData) {
-      setSaveStatus('saving');
-      setLastSaveTime(new Date());
-      
-      // Simulate save completion
-      setTimeout(() => {
-        setSaveStatus('success');
-        setTimeout(() => setSaveStatus('idle'), 2000);
-      }, 500);
+useEffect(() => {
+    if (!(patients.length > 0 && persistenceEnabled && hasRealData)) {
+      return;
     }
-  }, [patients.length, persistenceEnabled, hasRealData]);
+
+    setSaveStatus('saving');
+    setLastSaveTime(new Date());
+
+    const successTimer = setTimeout(() => {
+      setSaveStatus('success');
+      const idleTimer = setTimeout(() => setSaveStatus('idle'), 2000);
+      // clear idleTimer on unmount
+      return () => clearTimeout(idleTimer);
+    }, 500);
+
+    // clear successTimer on unmount
+    return () => clearTimeout(successTimer);
+   }, [patients.length, persistenceEnabled, hasRealData]);
 
   const formatTime = (date: Date | null) => {
     if (!date) return 'Never';

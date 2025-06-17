@@ -25,17 +25,6 @@ interface ServiceStatus {
   };
 }
 
-interface TestConnectionResult {
-  success: boolean;
-  data?: {
-    performanceMetrics?: {
-      soapDuration?: number;
-      totalDuration?: number;
-      cacheHit?: boolean;
-    };
-  };
-}
-
 const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) => {
   const [status, setStatus] = useState<ServiceStatus>({
     proxy: 'unknown',
@@ -72,7 +61,11 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
           responseTime,
           latency: responseTime,
           errors: 0,
-          performanceMetrics: result.performanceMetrics,
+          performanceMetrics: result.performanceMetrics ? {
+            soapDuration: result.performanceMetrics.soap_duration_ms,
+            totalDuration: result.performanceMetrics.total_duration_ms,
+            cacheHit: 'cacheHit' in result.performanceMetrics ? (result.performanceMetrics as { cacheHit: boolean }).cacheHit : undefined
+          } : undefined,
           errorDetails: undefined // Clear any previous errors
         });
       } else {

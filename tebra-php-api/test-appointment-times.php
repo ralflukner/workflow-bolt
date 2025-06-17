@@ -140,7 +140,10 @@ try {
             
             // Check the actual response structure
             if (isset($result['data']) && is_object($result['data'])) {
-                $appointmentsResult = $result['data']->GetAppointmentsResult ?? null;
+                // Avoid “Undefined property” notice when GetAppointmentsResult is absent
+$appointmentsResult = isset($result['data']->GetAppointmentsResult)
+    ? $result['data']->GetAppointmentsResult
+    : null;
                 
                 if ($appointmentsResult) {
                     // Check for error in response

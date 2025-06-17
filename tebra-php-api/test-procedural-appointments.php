@@ -46,8 +46,10 @@ try {
         'PracticeName' => 'Lukner Clinic'
     );
     
-    echo "Request structure:\n";
-    print_r($request);
+echo "Request structure (credentials redacted):\n";
+$safe = $request;
+$safe['Password'] = '*****';
+print_r($safe);
     echo "\n";
     
     try {

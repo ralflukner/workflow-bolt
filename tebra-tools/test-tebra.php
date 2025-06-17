@@ -17,6 +17,71 @@ use Google\Cloud\SecretManager\V1\AccessSecretVersionRequest;
 
 echo "=== Tebra API Test (Secure Version with GSM) ===\n";
 
+/**
+ * Safely logs XML by obfuscating sensitive information
+ * @param string $xml Raw XML string
+ * @param string $type Type of XML (request/response) for logging
+ * @return string Sanitized XML
+ */
+function logXmlSafely($xml, $type = 'XML') {
+    if (empty($xml)) {
+        return "[$type] No content to display\n";
+    }
+    
+    try {
+        // Parse XML
+        $dom = new DOMDocument();
+        $dom->preserveWhiteSpace = false;
+        $dom->formatOutput = true;
+        
+        if (!$dom->loadXML($xml)) {
+            return "[$type] Failed to parse XML - showing raw (potentially unsafe) content\n";
+        }
+        
+        // Create XPath for finding sensitive elements
+        $xpath = new DOMXPath($dom);
+        
+        // Obfuscate sensitive elements - both in request headers and SOAP envelope
+        $sensitiveElements = [
+            '//User',
+            '//Password', 
+            '//CustomerKey',
+            '//user',
+            '//password',
+            '//customerKey',
+            '//Authorization',
+            '//authorization'
+        ];
+        
+        foreach ($sensitiveElements as $element) {
+            $nodes = $xpath->query($element);
+            foreach ($nodes as $node) {
+                $node->nodeValue = '***REDACTED***';
+            }
+        }
+        
+        // Also check for HTTP basic auth in headers
+        $xml = $dom->saveXML();
+        $xml = preg_replace('/Authorization:\s*Basic\s+[A-Za-z0-9+\/=]+/i', 'Authorization: Basic ***REDACTED***', $xml);
+        
+        return "[$type] Sanitized XML:\n" . $xml . "\n";
+        
+    } catch (Exception $e) {
+        return "[$type] Error parsing XML for sanitization: " . $e->getMessage() . "\n";
+    }
+}
+
+// Parse command line arguments
+$options = getopt('', ['insecure']);
+$allowInsecure = isset($options['insecure']);
+
+if ($allowInsecure) {
+    echo "⚠️  WARNING: Running in insecure mode - TLS verification disabled!\n";
+} else {
+    echo "🔒 Running in secure mode - TLS verification enabled\n";
+}
+echo "\n";
+
 try {
     // Initialize Secret Manager client
     $secretManager = new SecretManagerServiceClient();
@@ -87,19 +152,34 @@ try {
     echo "WSDL: {$wsdl}\n";
     echo "Creating SOAP client...\n";
 
+    // Configure TLS security - secure by default
+    $sslOptions = [];
+    if ($allowInsecure) {
+        echo "⚠️  Disabling TLS verification (insecure mode)\n";
+        $sslOptions = [
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+        ];
+    } else {
+        echo "🔒 Using secure TLS verification\n";
+        // When not specified, PHP defaults to secure settings:
+        // verify_peer => true, verify_peer_name => true
+    }
+
     $soapOptions = [
         'trace' => 1,
         'exceptions' => 1,
         'login' => $username,
         'password' => $password,
         'cache_wsdl' => WSDL_CACHE_NONE,
-        'stream_context' => stream_context_create([
-            'ssl' => [
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-            ]
-        ])
     ];
+    
+    // Only add stream context if we need to override security settings
+    if (!empty($sslOptions)) {
+        $soapOptions['stream_context'] = stream_context_create([
+            'ssl' => $sslOptions
+        ]);
+    }
 
     $client = new SoapClient($wsdl, $soapOptions);
     echo "SOAP client created successfully.\n\n";
@@ -129,8 +209,8 @@ try {
 } catch (SoapFault $e) {
     echo "SOAP ERROR: " . $e->getMessage() . "\n";
     if (isset($client)) {
-        echo "\nLast Request:\n" . $client->__getLastRequest() . "\n";
-        echo "\nLast Response:\n" . $client->__getLastResponse() . "\n";
+        echo logXmlSafely($client->__getLastRequest(), 'SOAP Request');
+        echo logXmlSafely($client->__getLastResponse(), 'SOAP Response');
     }
 } catch (Exception $e) {
     echo "ERROR: " . $e->getMessage() . "\n";

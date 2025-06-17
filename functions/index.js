@@ -34,79 +34,103 @@ if (!admin.apps.length) {
 
 // Note: Secrets management moved to environment variables for this deployment
 
-/** Verifies an Auth0 RS256 access / ID token and returns the decoded payload */
-async function verifyAuth0Jwt(token) {
-  // Get Auth0 config from Google Secret Manager
-  const gsm = new SecretManagerServiceClient();
-  const PROJECT_ID = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || 'luknerlumina-firebase';
-  
-  let domain, audience;
-  try {
-    const [domainVersion] = await gsm.accessSecretVersion({ 
-      name: `projects/${PROJECT_ID}/secrets/AUTH0_DOMAIN/versions/latest` 
+// -----------------------------------------------------------------------------
+// Auth0 configuration & JWKS client – cached per Cloud Functions instance
+// -----------------------------------------------------------------------------
+let auth0Domain = null;
+let auth0Audience = null;
+let auth0ClientSecret = null;
+let jwksClientInstance = null;
+let auth0InitPromise = null;
+
+/**
+ * Initialise Auth0 secrets and the JWKS client once per cold start.
+ * Subsequent calls await the same promise, avoiding repeat Secret Manager I/O.
+ */
+function initAuth0Config() {
+  if (auth0InitPromise) return auth0InitPromise;
+
+  auth0InitPromise = (async () => {
+    const gsm = new SecretManagerServiceClient();
+    const PROJECT_ID = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || 'luknerlumina-firebase';
+
+    // Mandatory secrets
+    const [domainVersion] = await gsm.accessSecretVersion({
+      name: `projects/${PROJECT_ID}/secrets/AUTH0_DOMAIN/versions/latest`
     });
-    const [audienceVersion] = await gsm.accessSecretVersion({ 
-      name: `projects/${PROJECT_ID}/secrets/AUTH0_AUDIENCE/versions/latest` 
+    const [audienceVersion] = await gsm.accessSecretVersion({
+      name: `projects/${PROJECT_ID}/secrets/AUTH0_AUDIENCE/versions/latest`
     });
-    
-    domain = domainVersion.payload?.data?.toString();
-    audience = audienceVersion.payload?.data?.toString();
-  } catch (error) {
-    console.error('Failed to retrieve Auth0 secrets from GSM:', error);
-    throw new Error('Auth0 configuration not available');
-  }
 
-  if (!domain || !audience) {
-    throw new Error('Missing Auth0 configuration in Google Secret Manager');
-  }
+    auth0Domain = domainVersion.payload?.data?.toString();
+    auth0Audience = audienceVersion.payload?.data?.toString();
 
-  // Decode JWT header to inspect algorithm
-  let header;
-  try {
-    header = JSON.parse(Buffer.from(token.split('.')[0], 'base64').toString('utf-8'));
-  } catch (e) {
-    throw new Error('Invalid JWT format');
-  }
+    if (!auth0Domain || !auth0Audience) {
+      throw new Error('Missing Auth0 configuration in Secret Manager');
+    }
 
-  // If token is HS256 signed, verify with client secret
-  if (header.alg === 'HS256') {
-    let clientSecret;
+    // Optional – only needed for HS256 tenants
     try {
       const [secretVersion] = await gsm.accessSecretVersion({
         name: `projects/${PROJECT_ID}/secrets/AUTH0_CLIENT_SECRET/versions/latest`
       });
-      clientSecret = secretVersion.payload?.data?.toString();
-    } catch (error) {
-      console.error('Failed to retrieve Auth0 client secret from GSM:', error);
-      throw new Error('Auth0 secret not available');
+      auth0ClientSecret = secretVersion.payload?.data?.toString();
+    } catch (err) {
+      console.info('AUTH0_CLIENT_SECRET not found – assuming RS256-signed tokens.');
+    }
+
+    // JWKS client (RS256 path)
+    jwksClientInstance = jwksRsa({
+      jwksUri: `https://${auth0Domain}/.well-known/jwks.json`,
+      cache: true,
+      cacheMaxEntries: 5,
+      cacheMaxAge: 10 * 60 * 1000, // 10 min
+      rateLimit: true,
+      jwksRequestsPerMinute: 10
+    });
+  })();
+
+  return auth0InitPromise;
+}
+
+/**
+ * Verify Auth0 JWT (supports RS256 via JWKS & HS256 via client secret).
+ * Secrets and JWKS client are cached by initAuth0Config().
+ */
+async function verifyAuth0Jwt(token) {
+  await initAuth0Config();
+
+  // Decode header to determine algorithm
+  let header;
+  try {
+    header = JSON.parse(Buffer.from(token.split('.')[0], 'base64').toString('utf-8'));
+  } catch {
+    throw new Error('Invalid JWT format');
+  }
+
+  // HS256 path
+  if (header.alg === 'HS256') {
+    if (!auth0ClientSecret) {
+      throw new Error('AUTH0_CLIENT_SECRET not configured – cannot verify HS256 token');
     }
 
     return new Promise((resolve, reject) => {
       jwt.verify(
         token,
-        clientSecret,
+        auth0ClientSecret,
         {
           algorithms: ['HS256'],
-          audience: audience,
-          issuer: `https://${domain}/`
+          audience: auth0Audience,
+          issuer: `https://${auth0Domain}/`
         },
         (err, decoded) => (err ? reject(err) : resolve(decoded))
       );
     });
   }
 
-  // Create JWKS client with Auth0 domain
-  const jwksClient = jwksRsa({
-    jwksUri: `https://${domain}/.well-known/jwks.json`,
-    cache: true,
-    cacheMaxEntries: 5,
-    cacheMaxAge: 10 * 60 * 1000,      // 10 min
-    rateLimit: true,
-    jwksRequestsPerMinute: 10
-  });
-
-  const getSigningKey = (header, cb) =>
-    jwksClient.getSigningKey(header.kid, (err, key) => {
+  // RS256 path
+  const getSigningKey = (kidHeader, cb) =>
+    jwksClientInstance.getSigningKey(kidHeader.kid, (err, key) => {
       if (err) return cb(err);
       cb(null, key.getPublicKey());
     });
@@ -117,8 +141,8 @@ async function verifyAuth0Jwt(token) {
       getSigningKey,
       {
         algorithms: ['RS256'],
-        audience: audience,
-        issuer: `https://${domain}/`
+        audience: auth0Audience,
+        issuer: `https://${auth0Domain}/`
       },
       (err, decoded) => (err ? reject(err) : resolve(decoded))
     );

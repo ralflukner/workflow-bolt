@@ -7,7 +7,7 @@ async function testGetAppointments() {
 
   // Initialize client with credentials from environment
   const client = new TebraSoapClient({
-    username: process.env.VITE_TEBRA_USERNAME || '',
+    username: process.env.TEBRA_USERNAME ?? process.env.VITE_TEBRA_USERNAME ?? '',
     password: process.env.VITE_TEBRA_PASSWORD || '',
     customerKey: process.env.VITE_TEBRA_CUSTOMER_KEY || '',
     wsdlUrl: process.env.VITE_TEBRA_WSDL_URL || 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl'

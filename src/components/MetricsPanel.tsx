@@ -6,7 +6,7 @@ const MetricsPanel: React.FC = () => {
   const { getMetrics, tickCounter } = usePatientContext();
   const metrics = getMetrics();
   
-  // tickCounter forces re-render when time updates
+  // tickCounter forces re-render when time updates {/* hidden {tickCounter} */}
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
