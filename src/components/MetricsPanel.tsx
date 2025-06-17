@@ -3,7 +3,7 @@ import { usePatientContext } from '../hooks/usePatientContext';
 import { Users, Clock, AlertTriangle } from 'lucide-react';
 
 const MetricsPanel: React.FC = () => {
-  const { getMetrics, tickCounter } = usePatientContext();
+  const { getMetrics } = usePatientContext();
   const metrics = getMetrics();
   
   // tickCounter forces re-render when time updates {/* hidden {tickCounter} */}
