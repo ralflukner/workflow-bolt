@@ -218,6 +218,10 @@ const TebraIntegration: React.FC = () => {
       }
 
       const dateToSync = specificDate || new Date().toLocaleDateString('en-CA');
+      console.log(`[TebraIntegrationNew] Manual sync requested for date: ${dateToSync}`);
+      console.log(`[TebraIntegrationNew] Current local time: ${new Date().toISOString()}`);
+      console.log(`[TebraIntegrationNew] Specific date parameter: ${specificDate || 'not provided'}`);
+      
       setStatusMessage(`Syncing schedule for ${dateToSync}...`);
       const result = await tebraApiService.syncTodaysSchedule(dateToSync);
       if (result.success) {

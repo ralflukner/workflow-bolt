@@ -377,6 +377,10 @@ export class TebraApiService {
     try {
       const syncDate = date || new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format
       console.log(`Syncing schedule from Tebra for date: ${syncDate}`);
+      console.log(`Current local time: ${new Date().toISOString()}`);
+      console.log(`Current local date string: ${new Date().toLocaleDateString('en-CA')}`);
+      console.log(`Date parameter received: ${date || 'not provided (using today)'}`);
+      console.log(`Date being sent to backend: ${syncDate}`);
 
       // Ensure Firebase Auth is available and user is signed in
       if (!functionsInstance) {

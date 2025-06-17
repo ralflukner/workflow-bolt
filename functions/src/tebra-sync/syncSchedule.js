@@ -63,12 +63,26 @@ const syncSchedule = async (
     }
   } else {
     // Default to today
-    const today = new Date(now().toLocaleString('en-US', { timeZone: timezone }))
-      .toISOString().split('T')[0];
+    const currentTime = now();
+    const localTimeString = currentTime.toLocaleString('en-US', { timeZone: timezone });
+    const today = new Date(localTimeString).toISOString().split('T')[0];
+    
+    logger.info('📅 Date calculation debug:', {
+      currentTime: currentTime.toISOString(),
+      timezone: timezone,
+      localTimeString: localTimeString,
+      calculatedToday: today
+    });
+    
     fromDate = toDate = today;
   }
 
-  logger.info('🔍 Syncing appointments for date range:', { fromDate, toDate });
+  logger.info('🔍 Syncing appointments for date range:', { 
+    fromDate, 
+    toDate,
+    dateOverride: dateOverride || 'none',
+    timezone: timezone
+  });
 
   // Add detailed debugging for the Tebra API call
   logger.info('📞 Calling tebra.getAppointments with dates:', { fromDate, toDate });

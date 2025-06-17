@@ -1,3 +1,5 @@
+// @ts-nocheck
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { tebraApiService } from '../services/tebraApiService';
 
 export async function testTebraGetAppointmentsViaFirebase() {

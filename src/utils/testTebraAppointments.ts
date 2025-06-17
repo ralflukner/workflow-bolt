@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TebraSoapClient } from '../tebra-soap/tebraSoapClient';
 
 export async function testTebraGetAppointments() {
