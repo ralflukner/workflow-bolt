@@ -7,28 +7,32 @@ This wiki contains comprehensive security documentation for the Lukner Clinic Wo
 ## 📚 Quick Links
 
 ### Incident Response
+
 - [Incident Response Plan](Incident-Response)
 - [Security Contacts](Security-Contacts)
 - [Emergency Procedures](Emergency-Procedures)
 
 ### Compliance
+
 - [HIPAA Compliance](HIPAA-Compliance)
 - [Data Protection](Data-Protection)
 - [Audit Requirements](Audit-Requirements)
 
 ### Procedures
+
 - [Access Control](Access-Control)
 - [Credential Management](Credential-Management)
 - [Data Backup](Data-Backup)
 
 ### Training
+
 - [Security Training](Security-Training)
 - [HIPAA Training](HIPAA-Training)
 - [Incident Response Training](Incident-Response-Training)
 
 ## 🚨 Emergency Contacts
 
-- **Security Team**: lukner@luknerclinic.com
+- **Security Team**: <lukner@luknerclinic.com>
 - **Emergency Phone**: 806-329-3050
 - **On-Call Engineer**: [On-Call Schedule](On-Call-Schedule)
 
@@ -36,7 +40,7 @@ This wiki contains comprehensive security documentation for the Lukner Clinic Wo
 
 - 2024-03-20: Updated credential rotation procedures
 - 2024-03-19: Enhanced audit logging requirements
-- 2024-03-18: Added new HIPAA compliance checklis
+- 2024-03-18: Added new HIPAA compliance checklist
 
 ## 🔒 Security Features
 
@@ -57,4 +61,4 @@ This wiki contains comprehensive security documentation for the Lukner Clinic Wo
 
 ## 🔄 Maintenance
 
-This wiki is maintained by the security team. For updates or corrections, please contact lukner@luknerclinic.com.
+This wiki is maintained by the security team. For updates or corrections, please contact <lukner@luknerclinic.com>.

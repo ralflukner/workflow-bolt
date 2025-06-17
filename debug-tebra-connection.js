@@ -1,5 +1,5 @@
 const { GoogleAuth } = require('google-auth-library');
-const fetch = require('node-fetch');
+// Node 18+ includes global fetch; remove ESM-only node-fetch dependency
 
 async function testCloudRunDirectly() {
   console.log('Testing Cloud Run service directly...\n');

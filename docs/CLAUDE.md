@@ -1,4 +1,3 @@
-
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working
@@ -6,7 +5,7 @@ with code in this repository.
 
 ## Commands
 
-### Developmen
+### Development
 
 ```bash
 
@@ -22,9 +21,9 @@ npm run build
 
 npm run preview
 
-# Run ESLin
+# Run ESLint
 
-npm run lin
+npm run lint
 
 ```
 
@@ -33,7 +32,7 @@ npm run lin
 ### Project Overview
 
 This is a Patient Flow Management dashboard built with Vite, React,
-TypeScript, and Tailwind CSS. It provides an interface for managing patien
+TypeScript, and Tailwind CSS. It provides an interface for managing patient
 appointments and workflow in a clinical setting.
 
 ### Core Technologies
@@ -48,7 +47,7 @@ appointments and workflow in a clinical setting.
 
 - Auth0 for authentication
 
-### State Managemen
+### State Management
 
 The application uses React Context API for state management:
 
@@ -78,7 +77,7 @@ The application uses React Context API for state management:
 
 ### Component Hierarchy
 
-```tex
+```text
 App
 ├── TimeProvider
 │   └── PatientProvider

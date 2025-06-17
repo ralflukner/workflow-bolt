@@ -37,8 +37,8 @@ gcloud secrets create TEBRA_API_URL --project=$PROJECT_ID
 
 # Add secret values (replace with your actual credentials)
 
-echo -n "your-tebra-username" | gcloud secrets create TEBRA_USERNAME --data-file=-
-echo -n "your-tebra-password" | gcloud secrets create TEBRA_PASSWORD --data-file=-
+echo -n "your-tebra-username" | gcloud secrets versions add TEBRA_USERNAME --data-file=-
+echo -n "your-tebra-password" | gcloud secrets versions add TEBRA_PASSWORD --data-file=-
 echo -n "https://api.tebra.com" | gcloud secrets versions add TEBRA_API_URL --data-file=-
 
 ```
@@ -117,7 +117,7 @@ console.log('HIPAA Compliance Status:', compliance);
 
 - Configurable redaction patterns
 
-### ✅ Secure Credential Managemen
+### ✅ Secure Credential Management
 
 - Credentials stored in Google Secret Manager
 
@@ -168,7 +168,7 @@ If tests fail, check:
 4. **Secrets exist** in Secret Manager
 5. **Network connectivity** to Google Cloud
 
-## 🎯 Next Phase: Production Deploymen
+## 🎯 Next Phase: Production Deployment
 
 Once all tests pass and secrets are configured:
 

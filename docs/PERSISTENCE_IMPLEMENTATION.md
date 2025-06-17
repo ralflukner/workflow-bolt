@@ -21,7 +21,7 @@ browser refreshes, restarts, and sessions.
   - Automatic daily purging of old data
   - Cross-device data synchronization
   - Audit logging and health monitoring
-  - Session statistics and managemen
+  - Session statistics and management
 
 #### 2. LocalStorage Service (`src/services/localStorage/localSessionService.ts`)
 
@@ -297,7 +297,7 @@ Console messages provide detailed information:
 
 - [ ] Backup/restore functionality
 
-- [ ] Multi-day session managemen
+- [ ] Multi-day session management
 
 - [ ] Enhanced audit logging
 

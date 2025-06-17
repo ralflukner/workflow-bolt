@@ -145,13 +145,13 @@ The Tebra EHR Integration implements multiple layers of security to protect sens
 If you discover a security vulnerability, please:
 
 1. **Do Not** disclose it publicly
-2. Email security@yourdomain.com
+2. Email <security@yourdomain.com>
 3. Include detailed information about the vulnerability
 4. Wait for our response before taking further action
 
 ## Security Contacts
 
-- Security Team: security@yourdomain.com
+- Security Team: <security@yourdomain.com>
 
 - Emergency Contact: +1-XXX-XXX-XXXX
 
@@ -195,9 +195,9 @@ The system is designed to comply with:
 
 ### Emergency Contacts
 
-- **Security Team**: lukner@luknerclinic.com
+- **Security Team**: <lukner@luknerclinic.com>
 - **Emergency Phone**: 806-329-3050
-- **Security Documentation**: https://github.com/ralflukner/workflow-bolt/wiki
+- **Security Documentation**: <https://github.com/ralflukner/workflow-bolt/wiki>
 
 ### Incident Response
 

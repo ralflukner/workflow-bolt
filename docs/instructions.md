@@ -37,12 +37,12 @@ In this URL:
 Once you have the Cloud Run URL, you can use it in the deployment command for Firebase Functions:
 
 ```bash
-gcloud functions deploy tebraTestConnection
-  --gen2
-  --runtime=nodejs20
-  --region=us-central1
-  --source=.
-  --entry-point=api
+gcloud functions deploy tebraTestConnection \
+  --gen2 \
+  --runtime=nodejs20 \
+  --region=us-central1 \
+  --source=. \
+  --entry-point=api \
   --set-env-vars="TEBRA_CLOUD_RUN_URL=https://tebra-php-api-HASH-REGION.a.run.app,TEBRA_INTERNAL_API_KEY=YOUR_KEY"
 ```
 

@@ -28,7 +28,7 @@ class TebraSOAPAPI {
         $this->version = $version;
         
         // Tebra SOAP API endpoints
-        $this->wsdlUrl = "https://api.kareo.com/service{$version}/kateb/services/KareoServices?wsdl";
+        $this->wsdlUrl = "https://api.kareo.com/service/{$version}/kareo/services/KareoServices?wsdl";
         
         $this->initializeClient();
     }
@@ -397,8 +397,11 @@ try {
     
     // For debugging, you can also check the raw SOAP request/response
     if (isset($tebraAPI)) {
-        echo "\nLast SOAP Request:\n" . $tebraAPI->getLastRequest() . "\n";
-        echo "\nLast SOAP Response:\n" . $tebraAPI->getLastResponse() . "\n";
+        if (getenv('DEBUG_SOAP') === 'true') {
+            // Printing full SOAP envelopes can leak PHI; only enable in secure debugging sessions
+            echo "\nLast SOAP Request:\n" . $tebraAPI->getLastRequest() . "\n";
+            echo "\nLast SOAP Response:\n" . $tebraAPI->getLastResponse() . "\n";
+        }
     }
 }
 
