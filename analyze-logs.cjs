@@ -67,7 +67,12 @@ class LogAnalyzer {
 
     try {
       // Use spawnSync with argument array to prevent shell injection
-      const result = spawnSync('gcloud', [
+import { execFile } from 'node:child_process';
+const result = await new Promise((res, rej) =>
+  execFile('gcloud', [...], { maxBuffer: 50*1024*1024 }, (err, stdout, stderr) =>
+    err ? rej(err) : res({ stdout, stderr })
+  )
+);
         'logging',
         'read',
         query,

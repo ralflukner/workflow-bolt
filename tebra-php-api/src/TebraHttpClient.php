@@ -122,9 +122,9 @@ class TebraHttpClient {
     }
     
     /**
-     * Get appointments for a date range (using verified working pattern)
+     * Get appointments for a date range
      */
-    public function getAppointments($fromDate, $toDate) {
+    public function getAppointments($fromDate = null, $toDate = null) {
         try {
             // Use correct structure with Filter section as per Tebra XML
             $request = array (
@@ -135,15 +135,15 @@ class TebraHttpClient {
                 ),
                 'Fields' => array(), // Empty to get all fields
                 'Filter' => array(
-                    'StartDate' => $fromDate,
-                    'EndDate' => $toDate
+                    'StartDate' => $fromDate ?: date('n/j/Y'),
+                    'EndDate' => $toDate ?: date('n/j/Y')
                 )
             );
 
             $params = array('request' => $request);
             $response = $this->client->GetAppointments($params)->GetAppointmentsResult;
             
-            // Check for API errors (same pattern as getPatients would)
+            // Check for API errors
             if (isset($response->ErrorResponse) && $response->ErrorResponse->IsError) {
                 throw new \Exception('Tebra API Error: ' . $response->ErrorResponse->ErrorMessage);
             }

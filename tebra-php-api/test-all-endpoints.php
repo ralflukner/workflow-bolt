@@ -54,7 +54,10 @@ try {
     // Helper function to test an endpoint with rate limiting
     function testEndpoint($client, $endpointName, $params, $description = '') {
         echo "Testing: $endpointName" . ($description ? " - $description" : "") . "\n";
-        echo "Parameters: " . json_encode($params, JSON_PRETTY_PRINT) . "\n";
+        $safe = $params;
+$safe['request']['RequestHeader']['Password']   = '***';
+$safe['request']['RequestHeader']['CustomerKey'] = '***';
+echo "Parameters: " . json_encode($safe, JSON_PRETTY_PRINT) . "\n";
         
         // Rate limiting: 2 second delay between requests
         echo "  [Rate limiting: waiting 2 seconds...]\n";

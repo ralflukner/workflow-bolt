@@ -116,6 +116,8 @@ if (!isRealApiRun) {
 
   jest.mock('firebase/auth', () => ({
     getAuth: jest.fn(() => ({})),
+    onAuthStateChanged: jest.fn(),
+    signInWithCustomToken: jest.fn(),
   }));
 }
 

@@ -10,7 +10,7 @@
 
 $requiredEnv = ['TEBRA_USERNAME', 'TEBRA_PASSWORD', 'TEBRA_CUSTOMER_KEY'];
 foreach ($requiredEnv as $var) {
-    if (false === getenv($var)) {
+    if (empty(getenv($var))) {
         fwrite(STDERR, "Environment variable {$var} is not set.\n");
         exit(1);
     }
@@ -54,7 +54,9 @@ try {
     if ($verbose && isset($client)) {
         // Redact sensitive credentials before printing
         $sanitize = function (string $xml): string {
-            return preg_replace('/<Password>.*?<\/Password>/is', '<Password>[REDACTED]</Password>', $xml);
+            $xml = preg_replace('/<Password>.*?<\/Password>/is', '<Password>[REDACTED]</Password>', $xml);
+            $xml = preg_replace('/<CustomerKey>.*?<\/CustomerKey>/is', '<CustomerKey>[REDACTED]</CustomerKey>', $xml);
+            return preg_replace('/<User>.*?<\/User>/is', '<User>[REDACTED]</User>', $xml);
         };
 
         echo "\nLast Request (sanitized):\n" . $sanitize($client->__getLastRequest()) . "\n";

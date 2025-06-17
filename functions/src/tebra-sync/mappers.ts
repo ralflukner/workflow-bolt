@@ -31,7 +31,7 @@ export const toDashboardPatient = (
   
   return {
     id: patient.PatientId || patient.Id || '',
-    name: `${patient.FirstName} ${patient.LastName}`.trim(),
+    name: `${(patient.FirstName || '').trim()} ${(patient.LastName || '').trim()}`.trim(),
     dob: patient.DateOfBirth || patient.DOB || '',
     appointmentTime: appointmentTime,
     appointmentType: appointment.Type || appointment.AppointmentType || 'Office Visit',
@@ -40,7 +40,7 @@ export const toDashboardPatient = (
       : 'Unknown Provider',
     status: status,
     phone: patient.Phone || patient.PhoneNumber,
-    email: patient.Email || patient.EmailAddress,
+    email: (patient.Email || patient.EmailAddress || '').trim(),
     // Add checkInTime for patients who have arrived
     checkInTime: checkedInStatus ? appointmentTime : undefined,
   };

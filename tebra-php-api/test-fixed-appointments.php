@@ -7,10 +7,14 @@ require_once __DIR__ . '/vendor/autoload.php';
 // Load environment variables
 if (file_exists(__DIR__ . '/.env')) {
     $envVars = parse_ini_file(__DIR__ . '/.env');
-    foreach ($envVars as $key => $value) {
-        putenv("$key=$value");
+    if ($envVars === false) {
+        fwrite(STDERR, "[env] Could not parse .env file\n");
+    } else {
+        foreach ($envVars as $key => $value) {
+            putenv("$key=$value");
+        }
     }
-}
+ }
 
 use LuknerLumina\TebraApi\TebraHttpClient;
 

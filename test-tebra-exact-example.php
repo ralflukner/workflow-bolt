@@ -22,7 +22,7 @@ try{
     };
 
     $wsdl = 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl';
-    $client = new SoapClient($wsdl);
+    $client = new SoapClient($wsdl, ['trace' => 1, 'exceptions' => true]);
 
     echo "🔍 Testing Exact Official Tebra PHP Example\n";
     echo "==========================================\n\n";

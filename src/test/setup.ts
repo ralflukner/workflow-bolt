@@ -31,6 +31,8 @@ jest.mock('firebase/firestore', () => ({
 
 jest.mock('firebase/auth', () => ({
   getAuth: jest.fn(() => ({})),
+  onAuthStateChanged: jest.fn(),
+  signInWithCustomToken: jest.fn(),
 }));
 
 // Mock URL APIs

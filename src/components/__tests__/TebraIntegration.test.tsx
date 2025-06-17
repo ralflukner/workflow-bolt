@@ -98,8 +98,8 @@ describe('TebraIntegration Component', () => {
     const importButton = screen.getByText('Import from Tebra');
     fireEvent.click(importButton);
 
-    // In fallback mode, clicking import shows the missing credentials message
-    expect(screen.getByText('Tebra credentials not configured - environment variables missing')).toBeInTheDocument();
+    // In fallback mode, clicking import shows the integration not initialized message
+    expect(screen.getByText('Integration service not initialized. Please check environment variables and reload.')).toBeInTheDocument();
   });
 
   it('handles import failure gracefully', async () => {

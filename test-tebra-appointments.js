@@ -1,4 +1,4 @@
-const { TebraSoapClient } = require('./dist/tebra-soap/tebraSoapClient');
+const { TebraSoapClient } = require('./src/tebra-soap/tebraSoapClient'); // or trigger a build before running
 require('dotenv').config();
 
 async function testGetAppointments() {
@@ -13,8 +13,7 @@ const client = new TebraSoapClient({
 });
 
 if (!client.config.username || !client.config.password || !client.config.customerKey) {
-  console.error('❌ Missing Tebra credentials in environment. Aborting.');
-  process.exit(1);
+  throw new Error('Missing Tebra credentials: VITE_TEBRA_USERNAME / PASSWORD / CUSTOMER_KEY');
 }
 
   // Test with today's date

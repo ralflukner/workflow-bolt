@@ -48,7 +48,11 @@ try {
     
 echo "Request structure (credentials redacted):\n";
 $safe = $request;
-$safe['Password'] = '*****';
+foreach (['User', 'Password', 'CustomerKey'] as $k) {
+    if (isset($safe[$k])) {
+        $safe[$k] = '*****';
+    }
+}
 print_r($safe);
     echo "\n";
     

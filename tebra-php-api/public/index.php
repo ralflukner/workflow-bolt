@@ -27,8 +27,8 @@ if ($method === 'GET' && ($path === '/' || $path === '/health')) {
     exit;
 }
 
-// Debug endpoint to check secret lengths
-if ($method === 'GET' && $path === '/debug/secrets') {
+// Debug endpoint – disabled in production
+if ($method === 'GET' && $path === '/debug/secrets' && false /* remove or protect */) {
     header('Content-Type: application/json');
     $username = getenv('TEBRA_USERNAME') ?: '';
     $password = getenv('TEBRA_PASSWORD') ?: '';

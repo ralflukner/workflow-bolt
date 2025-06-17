@@ -9,7 +9,7 @@ I've implemented a solution to send HIPAA security alert emails through Google W
 1. **Created Email Service Module**
    - Created a new file: `functions/src/services/emailService.js`
    - Implemented OAuth2 authentication with Gmail
-   - Added a function to send emails using Nodemailer with Gmail transpor
+   - Added a function to send emails using Nodemailer with Gmail transport
 
 2. **Updated Monitoring Module**
    - Modified the `sendEmailAlert` method in `functions/src/monitoring.js`
@@ -45,9 +45,8 @@ Before the email service can work, you need to:
    - `GMAIL_REFRESH_TOKEN`
 
 Detailed setup instructions are available in the README.md file.
-
-## Deploymen
-
+## Deployment
+...
 After configuring the OAuth2 credentials and environment variables, deploy the functions with:
 
 ```bash

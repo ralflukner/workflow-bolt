@@ -10,7 +10,7 @@ admin.initializeApp();
 
 // Initialize Firebase client app for authentication
 const clientApp = initializeApp({
-  apiKey: process.env.FIREBASE_API_KEY || "AIzaSyBQYtmqwuFnJcOWJL2MFJnYdSFo2xOMrSI",
+  apiKey: process.env.FIREBASE_API_KEY ?? (() => { throw new Error('FIREBASE_API_KEY env var missing'); })(),
   authDomain: "luknerlumina-firebase.firebaseapp.com",
   projectId: "luknerlumina-firebase"
 });
@@ -29,7 +29,7 @@ async function testGetSecretFunction() {
     const idToken = await userCredential.user.getIdToken();
     
     // Generate App Check token for server-side calls
-    const appCheckToken = await admin.appCheck().createToken('luknerlumina-firebase');
+    const appCheckToken = await admin.appCheck().createToken(process.env.FIREBASE_APP_ID);
     
     // Get the function URL
     const functionUrl = 'https://getsecret-xccvzgogwa-uc.a.run.app';

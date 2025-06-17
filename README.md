@@ -210,14 +210,14 @@ interface TebraAppointment {
 ### Running Tests
 
 ```bash
-npm tes
+npm test
 
 ```
 
 ### Linting
 
 ```bash
-npm run lin
+npm run lint
 
 ```
 

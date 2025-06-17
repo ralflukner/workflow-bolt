@@ -14,7 +14,7 @@ declare global {
 }
 
 // Make test functions available globally for console testing
-if (typeof window !== 'undefined') {
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   window.testTebraGetAppointments = testTebraGetAppointments;
   window.testTebraViaFirebase = testTebraGetAppointmentsViaFirebase;
   console.log('✅ Tebra test functions loaded:');
