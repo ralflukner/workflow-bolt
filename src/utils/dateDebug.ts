@@ -23,9 +23,11 @@ export const debugDateFormats = () => {
   console.log('End of Day ISO:', endOfDay.toISOString());
   console.log('End of Day Date Key:', endOfDay.toISOString().split('T')[0]);
   
+  const toDateKey = (d: Date) =>
+    d.toLocaleDateString('en-CA', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+
   return {
-const toDateKey = (d: Date) =>
-  d.toLocaleDateString('en-CA', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+    toDateKey,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     offset: now.getTimezoneOffset()
   };
