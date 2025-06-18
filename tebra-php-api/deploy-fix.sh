@@ -40,6 +40,8 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "🚀 Deploying to Cloud Run..."
+# Note: Environment variables are already configured as secrets in Cloud Run
+# Do not attempt to update them as string literals
 gcloud run deploy $SERVICE_NAME \
     --image gcr.io/$PROJECT_ID/$SERVICE_NAME \
     --platform managed \
@@ -48,8 +50,7 @@ gcloud run deploy $SERVICE_NAME \
     --allow-unauthenticated \
     --memory 512Mi \
     --timeout 300 \
-    --max-instances 10 \
-    --set-env-vars="TEBRA_USERNAME=${TEBRA_USERNAME},TEBRA_PASSWORD=${TEBRA_PASSWORD},TEBRA_CUSTOMER_KEY=${TEBRA_CUSTOMER_KEY},INTERNAL_API_KEY=${INTERNAL_API_KEY}"
+    --max-instances 10
 
 if [ $? -ne 0 ]; then
     echo "❌ Deployment failed. Please check the error messages above."
