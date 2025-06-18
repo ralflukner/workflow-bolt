@@ -13,8 +13,10 @@ async function testCloudRunDirectly() {
     // First test: Health check
     console.log('1. Testing health endpoint...');
     const healthResponse = await fetch(`${cloudRunUrl}/health`);
-    const healthData = await healthResponse.text();
-    console.log(`Health check response (${healthResponse.status}):`, healthData);
+if (!healthResponse.ok) {
+  throw new Error(`Health endpoint returned ${healthResponse.status}`);
+}
+console.log(`Health check response (200):`, await healthResponse.text());
     
     // Second test: Test with API key
     console.log('\n2. Testing with API key and getProviders action...');

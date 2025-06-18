@@ -27,6 +27,27 @@ if ($method === 'GET' && ($path === '/' || $path === '/health')) {
     exit;
 }
 
+// Comprehensive health status endpoint with request logs
+if ($method === 'GET' && $path === '/health/status') {
+    header('Content-Type: application/json');
+    try {
+        $client = new TebraHttpClient();
+        $healthStatus = $client->getHealthStatus();
+        echo json_encode([
+            'status' => 'operational',
+            'timestamp' => date(DATE_ATOM),
+            'health_metrics' => $healthStatus
+        ]);
+    } catch (\Exception $e) {
+        echo json_encode([
+            'status' => 'error',
+            'timestamp' => date(DATE_ATOM),
+            'error' => 'Failed to retrieve health status: ' . $e->getMessage()
+        ]);
+    }
+    exit;
+}
+
 // Debug endpoint – disabled in production
 if ($method === 'GET' && $path === '/debug/secrets' && false /* remove or protect */) {
     header('Content-Type: application/json');
@@ -127,6 +148,12 @@ try {
             break;
         case 'health':
             $responseData = ['status' => 'healthy'];
+            break;
+        case 'testConnection':
+            $responseData = $client->testConnection();
+            break;
+        case 'getHealthStatus':
+            $responseData = $client->getHealthStatus();
             break;
         default:
             throw new InvalidArgumentException('Unknown action: ' . $action);

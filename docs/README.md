@@ -10,6 +10,8 @@ Welcome to the **workflow-bolt** documentation folder.  Below is a curated table
 | Design | End-to-end architecture & container details | `tebra-cloudrun-design.md` |
 | Monitoring | How to wire logs/alerts | `MONITORING_SETUP.md` |
 | Debugging toolkit | Structured logging, correlation IDs, log analysis | `../DEBUG-TOOLKIT.md` |
+| **🆕 Debugging strategy** | **Complete guide to debugging improvements & workflows** | `tebra-debugging-strategy-guide.md` |
+| Debugging flow example | Walkthrough of tools in action | `debugging-tools-summary.md` |
 | HIPAA & compliance | Security requirements & checklists | `HIPAA_SETUP_GUIDE.md` |
 | Changelog | Human-readable list of all notable changes | `CHANGELOG.md` |
 

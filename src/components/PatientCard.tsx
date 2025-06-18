@@ -9,7 +9,7 @@ interface PatientCardProps {
 }
 
 const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
-  const { updatePatientStatus, assignRoom, updateCheckInTime, getWaitTime } = usePatientContext();
+  const { updatePatientStatus, assignRoom, updateCheckInTime, getWaitTime, deletePatient } = usePatientContext();
   const { formatDateTime, getCurrentTime } = useTimeContext();
   const [isEditingCheckIn, setIsEditingCheckIn] = useState(false);
   const [checkInDateInput, setCheckInDateInput] = useState('');
@@ -179,6 +179,14 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
     setIsStatusDropdownOpen(false);
   };
 
+  const handleDeletePatient = (e: React.MouseEvent): void => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to delete ${patient.name}?`)) {
+      deletePatient(patient.id);
+    }
+  };
+
   const buttonColors: Record<string, string> = {
     amber: 'bg-amber-500 hover:bg-amber-600',
     purple: 'bg-purple-500 hover:bg-purple-600',
@@ -201,6 +209,13 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={handleDeletePatient}
+            className="text-gray-400 hover:text-red-400 transition-colors p-1"
+            title="Delete patient"
+          >
+            ✕
+          </button>
           <div 
             className={`${getStatusColor(patient.status)} text-white text-xs px-2 py-1 rounded-full uppercase font-semibold ${patient.status === 'scheduled' ? 'cursor-pointer hover:opacity-80' : ''} relative`}
             onClick={toggleStatusDropdown}

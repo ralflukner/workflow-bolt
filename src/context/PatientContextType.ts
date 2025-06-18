@@ -3,6 +3,7 @@ import { Patient, PatientApptStatus, Metrics } from '../types';
 export interface PatientContextType {
   patients: Patient[];
   addPatient: (patient: Omit<Patient, 'id'>) => void;
+  deletePatient: (id: string) => void;
   updatePatientStatus: (id: string, status: PatientApptStatus) => void;
   assignRoom: (id: string, room: string) => void;
   updateCheckInTime: (id: string, checkInTime: string) => void;

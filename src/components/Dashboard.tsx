@@ -4,7 +4,7 @@ import ImportSchedule from './ImportSchedule';
 import ImportJSON from './ImportJSON';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
-import { EnvDebugger } from './EnvDebugger';
+
 import { DiagnosticPanel } from './DiagnosticPanel';
 import { WaitTimeDiagnostic } from './WaitTimeDiagnostic';
 import { PersistenceDiagnostic } from './PersistenceDiagnostic';
@@ -70,15 +70,17 @@ const handleExportSchedule = async (): Promise<void> => {
         onShowNewPatient={() => setShowNewPatientForm(true)}
         onShowImportSchedule={() => setShowImportSchedule(true)}
         onShowImportJSON={() => setShowImportJSON(true)}
-        onExportJSON={exportPatientsToJSON}
+        onExportJSON={() => exportPatientsToJSON()}
         onExportSchedule={handleExportSchedule}
       />
 
       <main>
         {showDebugPanels && (
           <>
-            <EnvDebugger />
             <FirebaseDebugger />
+            <div className="mb-6">
+              <TebraDebugDashboard />
+            </div>
             <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
               <DiagnosticPanel />
               <WaitTimeDiagnostic />

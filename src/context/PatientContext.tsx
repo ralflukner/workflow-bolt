@@ -257,6 +257,10 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     setHasRealData(true); // Mark as real data when user adds patients
   };
 
+  const deletePatient = (id: string) => {
+    setPatients(prev => prev.filter(patient => patient.id !== id));
+  };
+
   // Load mock data manually (for development/testing)
   const loadMockData = () => {
     setPatients(mockPatients);
@@ -461,6 +465,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     tickCounter,
     clearPatients,
     addPatient,
+    deletePatient,
     loadMockData,
     updatePatientStatus,
     assignRoom,

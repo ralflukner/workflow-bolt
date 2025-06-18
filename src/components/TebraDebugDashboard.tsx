@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, AlertTriangle, CheckCircle, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle, Wifi, WifiOff, RefreshCw, Users, Calendar } from 'lucide-react';
+import { usePatientContext } from '../hooks/usePatientContext';
 
 interface DataFlowStep {
   id: string;
@@ -17,9 +18,15 @@ interface TebraMetrics {
   averageResponseTime: number;
   errorCount: number;
   lastSuccessfulSync: Date | null;
+  patientCount: number;
+  dateRange: {
+    start: Date | null;
+    end: Date | null;
+  };
 }
 
 export const TebraDebugDashboard: React.FC = () => {
+  const { patients } = usePatientContext();
   const [dataFlowSteps, setDataFlowSteps] = useState<DataFlowStep[]>([
     {
       id: 'frontend',
@@ -77,7 +84,12 @@ export const TebraDebugDashboard: React.FC = () => {
     successRate: 0,
     averageResponseTime: 0,
     errorCount: 0,
-    lastSuccessfulSync: null
+    lastSuccessfulSync: null,
+    patientCount: 0,
+    dateRange: {
+      start: null,
+      end: null
+    }
   });
 
   const [recentErrors, setRecentErrors] = useState<Array<{
@@ -89,6 +101,26 @@ export const TebraDebugDashboard: React.FC = () => {
 
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+
+  // Update patient count and date range when patients change
+  useEffect(() => {
+    if (patients && patients.length > 0) {
+      // Find the date range from appointment times
+      const appointmentTimes = patients
+        .map(p => p.appointmentTime)
+        .filter(time => time instanceof Date)
+        .sort((a, b) => a.getTime() - b.getTime());
+      
+      setMetrics(prev => ({
+        ...prev,
+        patientCount: patients.length,
+        dateRange: {
+          start: appointmentTimes.length > 0 ? appointmentTimes[0] : null,
+          end: appointmentTimes.length > 0 ? appointmentTimes[appointmentTimes.length - 1] : null
+        }
+      }));
+    }
+  }, [patients]);
 
   // Simulate real-time monitoring (in production, this would connect to actual monitoring APIs)
   useEffect(() => {
@@ -253,6 +285,31 @@ export const TebraDebugDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Patient Data Info */}
+      <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Users className="w-5 h-5 text-blue-400" />
+            <div>
+              <span className="text-white font-medium">Patients in Firebase:</span>
+              <span className="text-2xl font-bold text-blue-400 ml-2">{metrics.patientCount}</span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Calendar className="w-5 h-5 text-blue-400" />
+            <div>
+              <span className="text-white font-medium">Date Range:</span>
+              <span className="text-sm text-blue-300 ml-2">
+                {metrics.dateRange.start && metrics.dateRange.end ? 
+                  `${metrics.dateRange.start.toLocaleDateString()} - ${metrics.dateRange.end.toLocaleDateString()}` :
+                  'No appointments'
+                }
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Overall Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-gray-700 p-4 rounded border">
@@ -346,6 +403,24 @@ export const TebraDebugDashboard: React.FC = () => {
           <p>• Use the enhanced debugging system (DEBUG-TOOLKIT.md) for deeper analysis</p>
         </div>
       </div>
+
+      {/* Advanced Debugging Tools Toggle */}
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={() => setShowAdvancedTools(!showAdvancedTools)}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors"
+        >
+          {showAdvancedTools ? 'Hide' : 'Show'} Advanced Debugging Tools
+        </button>
+      </div>
+
+      {/* Advanced Debugging Tools */}
+      {showAdvancedTools && (
+        <div className="mt-6 space-y-6">
+          <LiveLogViewer />
+          <RequestReplayTool />
+        </div>
+      )}
     </div>
   );
 };
