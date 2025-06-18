@@ -5,6 +5,8 @@ declare(strict_types=1);
 use LuknerLumina\TebraApi\TebraHttpClient;
 
 require_once __DIR__ . '/../vendor/autoload.php';
+// Initialise OpenTelemetry tracing (safe-no-op if disabled)
+require_once __DIR__ . '/../src/tracing.php';
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');

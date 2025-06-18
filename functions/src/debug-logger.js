@@ -10,9 +10,31 @@ class DebugLogger {
     this.stepCounter = 0;
 
     // --- OpenTelemetry ---
-    this.span = tracer.startSpan(this.component, {
-      attributes: { correlationId: this.correlationId }
-    });
+    // Convert 16-char correlationId to a 32-char traceId (pad with zeros)
+    const traceId32 = (this.correlationId.padEnd(32, '0')).slice(0, 32);
+    try {
+      const spanContext = {
+        traceId: traceId32,
+        spanId: crypto.randomBytes(8).toString('hex'),
+        traceFlags: 1 /* sampled */,
+        isRemote: false,
+      };
+
+      // If the API exposes setSpanContext (OTel >=1.7), use it, otherwise fall back
+      let spanCtx = context.active();
+      if (typeof trace.setSpanContext === 'function') {
+        spanCtx = trace.setSpanContext(spanCtx, spanContext);
+      }
+
+      this.span = tracer.startSpan(this.component, {
+        attributes: { correlationId: this.correlationId }
+      }, spanCtx);
+    } catch (err) {
+      // Fallback – create span without custom traceId
+      this.span = tracer.startSpan(this.component, {
+        attributes: { correlationId: this.correlationId }
+      });
+    }
   }
 
   generateCorrelationId() {

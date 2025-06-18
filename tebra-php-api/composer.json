@@ -10,7 +10,8 @@
         "ext-ctype": "*",
         "ext-dom": "*",
         "guzzlehttp/guzzle": "^7.0",
-        "monolog/monolog": "^3.0"
+        "monolog/monolog": "^3.0",
+        "open-telemetry/opentelemetry": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0",
