@@ -15,6 +15,7 @@ import { PatientSection } from './PatientSection';
 import { DebugTextWindow } from './DebugTextWindow';
 import { useReportGeneration } from '../hooks/useReportGeneration';
 import { PATIENT_SECTIONS } from '../constants/patientSections';
+import TebraDebugDashboard from './TebraDebugDashboard';
 
 
 const Dashboard: React.FC = () => {
