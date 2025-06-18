@@ -123,169 +123,173 @@ class TebraProxyClient {
     });
 
     try {
-      await this.initialize();
-      requestLogger.info('Initialization completed');
+      const { runWithCorrelation } = require('../otel-init');
 
-      // Prepare request options
-      const requestOptions = {
-        url: this.cloudRunUrl,
-        method: 'POST',
-        headers: {
-          'X-API-Key': this.internalApiKey,
-          'Content-Type': 'application/json',
-        },
-        data: { action, params }
-      };
+      return await runWithCorrelation(this.logger.correlationId, async () => {
+        await this.initialize();
+        requestLogger.info('Initialization completed');
 
-      // Log the API call (headers will be sanitized)
-      requestLogger.apiCall('POST', this.cloudRunUrl, requestOptions.headers, requestOptions.data);
+        // Prepare request options
+        const requestOptions = {
+          url: this.cloudRunUrl,
+          method: 'POST',
+          headers: {
+            'X-API-Key': this.internalApiKey,
+            'Content-Type': 'application/json',
+            'X-Correlation-Id': this.logger.correlationId,
+          },
+          data: { action, params }
+        };
 
-      // Make the request using authClient for Google Auth + API key for internal auth
-      const requestStart = Date.now();
-      const response = await this.authClient.request(requestOptions);
-      const requestDuration = Date.now() - requestStart;
-      
-      requestLogger.info(`HTTP request completed`, { 
-        status: response.status,
-        durationMs: requestDuration,
-        responseSize: response.data ? JSON.stringify(response.data).length : 0
-      });
+        // Log the API call (headers will be sanitized)
+        requestLogger.apiCall('POST', this.cloudRunUrl, requestOptions.headers, requestOptions.data);
 
-      let result = response.data;
-      
-      // Handle double-JSON encoding from Cloud Run
-      if (typeof result === 'string') {
-        try {
-          result = JSON.parse(result);
-          requestLogger.info(`Parsed JSON string response`, {
-            originalType: 'string',
-            parsedKeys: Object.keys(result),
-            success: result.success
-          });
-        } catch (parseError) {
-          requestLogger.error(`Failed to parse JSON response`, {
-            responseData: result,
-            parseError: parseError.message
-          });
-          // Re-throw with enhanced context
-          throw Object.assign(parseError, {
-            responseData: result,
-            action: action
-          });
-        }
-      } else {
-        requestLogger.info(`Response already parsed`, {
-          type: typeof result,
-          keys: result ? Object.keys(result) : 'null',
-          success: result?.success
-        });
-      }
-      
-      // Log the API response
-      requestLogger.apiResponse(response.status, result);
-
-      // Check for HTTP errors
-      if (response.status < 200 || response.status >= 300) {
-        requestLogger.error(`HTTP error response`, {
+        // Make the request using authClient for Google Auth + API key for internal auth
+        const requestStart = Date.now();
+        const response = await this.authClient.request(requestOptions);
+        const requestDuration = Date.now() - requestStart;
+        
+        requestLogger.info(`HTTP request completed`, { 
           status: response.status,
-          error: result?.error,
-          fullResponse: result
+          durationMs: requestDuration,
+          responseSize: response.data ? JSON.stringify(response.data).length : 0
         });
-        throw Object.assign(
-          new Error(result?.error || `HTTP ${response.status}`),
-          { status: response.status }
-        );
-      }
 
-      // Check for application-level errors
-      // Handle Cloud Run response structure: { success: true, data: { success: true, data: TebraResponse } }
-      if (result.success === false) {
-        requestLogger.error(`Application error in response`, {
-          success: result.success,
-          error: result.error,
-          data: result.data,
-          fullResponse: JSON.stringify(result)
-        });
+        let result = response.data;
         
-        // Special handling for known Tebra errors
-        if (result.error && result.error.includes('InternalServiceFault')) {
-          requestLogger.error(`Tebra InternalServiceFault detected`, {
-            action,
-            params,
-            tebraError: result.error,
-            timestamp: new Date().toISOString()
+        // Handle double-JSON encoding from Cloud Run
+        if (typeof result === 'string') {
+          try {
+            result = JSON.parse(result);
+            requestLogger.info(`Parsed JSON string response`, {
+              originalType: 'string',
+              parsedKeys: Object.keys(result),
+              success: result.success
+            });
+          } catch (parseError) {
+            requestLogger.error(`Failed to parse JSON response`, {
+              responseData: result,
+              parseError: parseError.message
+            });
+            // Re-throw with enhanced context
+            throw Object.assign(parseError, {
+              responseData: result,
+              action: action
+            });
+          }
+        } else {
+          requestLogger.info(`Response already parsed`, {
+            type: typeof result,
+            keys: result ? Object.keys(result) : 'null',
+            success: result?.success
           });
         }
         
-        throw Object.assign(
-          new Error(result.error || 'Request failed'),
-          { type: 'APPLICATION_ERROR' }
-        );
-      }
+        // Log the API response
+        requestLogger.apiResponse(response.status, result);
+
+        // Check for HTTP errors
+        if (response.status < 200 || response.status >= 300) {
+          requestLogger.error(`HTTP error response`, {
+            status: response.status,
+            error: result?.error,
+            fullResponse: result
+          });
+          throw Object.assign(
+            new Error(result?.error || `HTTP ${response.status}`),
+            { status: response.status }
+          );
+        }
+
+        // Check for application-level errors
+        // Handle Cloud Run response structure: { success: true, data: { success: true, data: TebraResponse } }
+        if (result.success === false) {
+          requestLogger.error(`Application error in response`, {
+            success: result.success,
+            error: result.error,
+            data: result.data,
+            fullResponse: JSON.stringify(result)
+          });
+          
+          // Special handling for known Tebra errors
+          if (result.error && result.error.includes('InternalServiceFault')) {
+            requestLogger.error(`Tebra InternalServiceFault detected`, {
+              action,
+              params,
+              tebraError: result.error,
+              timestamp: new Date().toISOString()
+            });
+          }
+          
+          throw Object.assign(
+            new Error(result.error || 'Request failed'),
+            { type: 'APPLICATION_ERROR' }
+          );
+        }
 
 
-      // Extract the actual Tebra response data
-      const tebraResponse = result.data;
-      
-      // Check if the inner Tebra response indicates failure
-      if (!tebraResponse || tebraResponse.success === false) {
-        requestLogger.error(`Tebra service error`, {
-          tebraSuccess: tebraResponse?.success,
-          tebraError: tebraResponse?.error,
-          fullTebraResponse: JSON.stringify(tebraResponse)
-        });
-        throw Object.assign(
-          new Error(tebraResponse?.error || 'Tebra service error'),
-          { type: 'TEBRA_SERVICE_ERROR' }
-        );
-      }
+        // Extract the actual Tebra response data
+        const tebraResponse = result.data;
+        
+        // Check if the inner Tebra response indicates failure
+        if (!tebraResponse || tebraResponse.success === false) {
+          requestLogger.error(`Tebra service error`, {
+            tebraSuccess: tebraResponse?.success,
+            tebraError: tebraResponse?.error,
+            fullTebraResponse: JSON.stringify(tebraResponse)
+          });
+          throw Object.assign(
+            new Error(tebraResponse?.error || 'Tebra service error'),
+            { type: 'TEBRA_SERVICE_ERROR' }
+          );
+        }
 
-      // Check for Tebra-specific authentication/authorization failures
-      const tebraData = tebraResponse.data;
-      if (tebraData) {
-        // Check for Tebra SOAP response errors
-        const soapResult = Object.values(tebraData)[0]; // GetProvidersResult, GetPatientsResult, etc.
-        if (soapResult?.SecurityResponse) {
-          const security = soapResult.SecurityResponse;
-          if (!security.SecurityResultSuccess || !security.Authenticated || !security.Authorized) {
-            requestLogger.error(`Tebra authentication/authorization failed`, {
-              authenticated: security.Authenticated,
-              authorized: security.Authorized,
-              securityResult: security.SecurityResult,
-              customerKeyValid: security.CustomerKeyValid
+        // Check for Tebra-specific authentication/authorization failures
+        const tebraData = tebraResponse.data;
+        if (tebraData) {
+          // Check for Tebra SOAP response errors
+          const soapResult = Object.values(tebraData)[0]; // GetProvidersResult, GetPatientsResult, etc.
+          if (soapResult?.SecurityResponse) {
+            const security = soapResult.SecurityResponse;
+            if (!security.SecurityResultSuccess || !security.Authenticated || !security.Authorized) {
+              requestLogger.error(`Tebra authentication/authorization failed`, {
+                authenticated: security.Authenticated,
+                authorized: security.Authorized,
+                securityResult: security.SecurityResult,
+                customerKeyValid: security.CustomerKeyValid
+              });
+              throw Object.assign(
+                new Error(`Tebra auth failed: ${security.SecurityResult || 'Unknown error'}`),
+                { type: 'TEBRA_AUTH_ERROR' }
+              );
+            }
+          }
+          
+          // Check for Tebra SOAP errors
+          if (soapResult?.ErrorResponse?.IsError) {
+            requestLogger.error(`Tebra SOAP error`, {
+              errorMessage: soapResult.ErrorResponse.ErrorMessage,
+              stackTrace: soapResult.ErrorResponse.StackTrace
             });
             throw Object.assign(
-              new Error(`Tebra auth failed: ${security.SecurityResult || 'Unknown error'}`),
-              { type: 'TEBRA_AUTH_ERROR' }
+              new Error(`Tebra SOAP error: ${soapResult.ErrorResponse.ErrorMessage}`),
+              { type: 'TEBRA_SOAP_ERROR' }
             );
           }
         }
+
+        // Return only the actual SOAP payload (inner data) to maintain compatibility with existing callers
+        const payload = tebraResponse.data;
+
+        requestLogger.info(`Request completed successfully`, {
+          action,
+          dataSize: payload ? JSON.stringify(payload).length : 0,
+          hasData: !!payload
+        });
         
-        // Check for Tebra SOAP errors
-        if (soapResult?.ErrorResponse?.IsError) {
-          requestLogger.error(`Tebra SOAP error`, {
-            errorMessage: soapResult.ErrorResponse.ErrorMessage,
-            stackTrace: soapResult.ErrorResponse.StackTrace
-          });
-          throw Object.assign(
-            new Error(`Tebra SOAP error: ${soapResult.ErrorResponse.ErrorMessage}`),
-            { type: 'TEBRA_SOAP_ERROR' }
-          );
-        }
-      }
-
-      // Return only the actual SOAP payload (inner data) to maintain compatibility with existing callers
-      const payload = tebraResponse.data;
-
-      requestLogger.info(`Request completed successfully`, {
-        action,
-        dataSize: payload ? JSON.stringify(payload).length : 0,
-        hasData: !!payload
+        timer.end();
+        return payload;
       });
-      
-      timer.end();
-      return payload;
-      
     } catch (error) {
       timer.end();
       

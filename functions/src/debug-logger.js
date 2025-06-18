@@ -1,4 +1,6 @@
 const crypto = require('crypto');
+const { SpanStatusCode, trace, context } = require('@opentelemetry/api');
+const { tracer } = require('./tracing');
 
 class DebugLogger {
   constructor(component = 'Unknown') {
@@ -6,6 +8,11 @@ class DebugLogger {
     this.correlationId = this.generateCorrelationId();
     this.startTime = Date.now();
     this.stepCounter = 0;
+
+    // --- OpenTelemetry ---
+    this.span = tracer.startSpan(this.component, {
+      attributes: { correlationId: this.correlationId }
+    });
   }
 
   generateCorrelationId() {
@@ -40,6 +47,14 @@ class DebugLogger {
 
     // Emit the entire logEntry object as the first argument to preserve structured fields
     logMethod(logEntry);
+
+    if (this.span) {
+      const eventName = `${level.toUpperCase()} ${message}`;
+      this.span.addEvent(eventName, { ...data, step: this.stepCounter, elapsedMs: elapsed });
+      if (level === 'error') {
+        this.span.setStatus({ code: SpanStatusCode.ERROR, message });
+      }
+    }
   }
 
   info(message, data = {}) { this.log('info', message, data); }
@@ -106,7 +121,20 @@ class DebugLogger {
   child(subComponent) {
     const child = new DebugLogger(`${this.component}:${subComponent}`);
     child.correlationId = this.correlationId; // Inherit correlation ID
+
+    // Child span in same trace
+    if (this.span) {
+      const ctx = trace.setSpan(context.active(), this.span);
+      child.span = tracer.startSpan(subComponent, { attributes: { correlationId: child.correlationId } }, ctx);
+    }
     return child;
+  }
+
+  // Ensure the span is ended when done (optional manual call)
+  end() {
+    if (this.span && !this.span.ended) {
+      this.span.end();
+    }
   }
 }
 

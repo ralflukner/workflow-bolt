@@ -263,16 +263,81 @@ class TebraHttpClient {
     }
     
     /**
-     * Handle SOAP faults and errors (from official guide)
+     * Handle SOAP faults and errors with detailed context
      */
     private function handleSoapFault($e, $method) {
-        error_log("SOAP Error in {$method}: " . $e->getMessage());
+        $errorContext = [
+            'method' => $method,
+            'fault_code' => $e->faultcode ?? 'Unknown',
+            'message' => $e->getMessage(),
+            'timestamp' => date('c')
+        ];
+        
+        // Log detailed error information
+        error_log("[TEBRA_SOAP_FAULT] Method: {$method}");
+        error_log("[TEBRA_SOAP_FAULT] Code: " . ($e->faultcode ?? 'Unknown'));
+        error_log("[TEBRA_SOAP_FAULT] Message: " . $e->getMessage());
+        
         if ($this->client) {
-            error_log("Last SOAP Request: " . $this->client->__getLastRequest());
-            error_log("Last SOAP Response: " . $this->client->__getLastResponse());
+            $lastRequest = $this->client->__getLastRequest();
+            $lastResponse = $this->client->__getLastResponse();
+            
+            // Redact sensitive data from request before logging
+            $redactedRequest = $this->redactSoapXml($lastRequest);
+            error_log("[TEBRA_SOAP_FAULT] Last Request: " . $redactedRequest);
+            error_log("[TEBRA_SOAP_FAULT] Last Response: " . $lastResponse);
+            
+            $errorContext['request_headers'] = $this->client->__getLastRequestHeaders();
+            $errorContext['response_headers'] = $this->client->__getLastResponseHeaders();
         }
-        // Re-throw a new SoapFault preserving original details to maintain full context
-        throw new \SoapFault($e->faultcode ?? 'Client', $e->getMessage(), null, $e->detail ?? null);
+        
+        // Create detailed error message based on known Tebra issues
+        $detailedMessage = $e->getMessage();
+        
+        if (strpos($e->getMessage(), 'ValidationHelper') !== false) {
+            $detailedMessage = "Tebra server bug in {$method}: ValidationHelper.ValidateDateTimeFields null reference. This is a known Tebra issue (ticket #112623).";
+        } elseif (strpos($e->getMessage(), 'Could not connect to host') !== false) {
+            $detailedMessage = "Cannot connect to Tebra SOAP API at {$this->wsdlUrl}. Network or firewall issue.";
+        } elseif (strpos($e->getMessage(), 'Unauthorized') !== false) {
+            $detailedMessage = "Tebra authentication failed for user: " . $this->partialRedact($this->username, 'username') . ". Check account activation.";
+        }
+        
+        // Log to request history
+        $this->logRequest($method, ['soap_fault' => true], false, $detailedMessage, null);
+        
+        // Re-throw with enhanced details
+        throw new \SoapFault(
+            $e->faultcode ?? 'Client', 
+            $detailedMessage,
+            null,
+            array_merge((array)($e->detail ?? []), ['context' => $errorContext])
+        );
+    }
+    
+    /**
+     * Redact sensitive data from SOAP XML
+     */
+    private function redactSoapXml($xml) {
+        if (empty($xml)) return '[EMPTY]';
+        
+        // Redact password
+        $xml = preg_replace('/<([^>]*Password[^>]*)>([^<]+)<\//', '<$1>[REDACTED]</', $xml);
+        
+        // Partially redact username (show first 3 chars)
+        $xml = preg_replace_callback('/<([^>]*User[^>]*)>([^<]+)<\//', function($matches) {
+            $value = $matches[2];
+            $redacted = $this->partialRedact($value, 'username');
+            return "<{$matches[1]}>{$redacted}</";
+        }, $xml);
+        
+        // Partially redact customer key
+        $xml = preg_replace_callback('/<([^>]*CustomerKey[^>]*)>([^<]+)<\//', function($matches) {
+            $value = $matches[2];
+            $redacted = $this->partialRedact($value, 'customerkey');
+            return "<{$matches[1]}>{$redacted}</";
+        }, $xml);
+        
+        return $xml;
     }
     
     /**

@@ -164,9 +164,81 @@ try {
 } catch (InvalidArgumentException $e) {
     http_response_code(400);
     header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode([
+        'success' => false, 
+        'error' => $e->getMessage(),
+        'type' => 'validation_error',
+        'timestamp' => date(DATE_ATOM)
+    ]);
+} catch (\SoapFault $e) {
+    http_response_code(503);
+    header('Content-Type: application/json');
+    
+    // Provide specific SOAP error details
+    $errorMessage = 'Tebra SOAP API Error: ' . $e->getMessage();
+    $errorDetails = [
+        'success' => false,
+        'error' => $errorMessage,
+        'type' => 'soap_fault',
+        'fault_code' => $e->faultcode ?? 'Unknown',
+        'fault_string' => $e->faultstring ?? $e->getMessage(),
+        'timestamp' => date(DATE_ATOM)
+    ];
+    
+    // Add specific error context based on common Tebra errors
+    if (strpos($e->getMessage(), 'Object reference not set') !== false) {
+        $errorDetails['error'] = 'Tebra API Error: Server-side null reference exception (ValidationHelper bug)';
+        $errorDetails['suggestion'] = 'This is a known Tebra server issue. Try a different date range or contact Tebra support.';
+        $errorDetails['tebra_ticket'] = '#112623';
+    } elseif (strpos($e->getMessage(), 'Unable to find user') !== false) {
+        $errorDetails['error'] = 'Tebra Authentication Error: User account not found or inactive';
+        $errorDetails['suggestion'] = 'Verify Tebra account activation for work-flow@luknerclinic.com';
+    } elseif (strpos($e->getMessage(), 'InternalServiceFault') !== false) {
+        $errorDetails['error'] = 'Tebra Backend Error: Internal service fault';
+        $errorDetails['suggestion'] = 'Tebra backend is experiencing issues. Retry in a few minutes.';
+    }
+    
+    error_log('[TEBRA_SOAP_FAULT] ' . json_encode($errorDetails));
+    echo json_encode($errorDetails);
+} catch (\RuntimeException $e) {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    
+    $errorDetails = [
+        'success' => false,
+        'error' => 'Configuration Error: ' . $e->getMessage(),
+        'type' => 'configuration_error',
+        'timestamp' => date(DATE_ATOM)
+    ];
+    
+    // Check for specific configuration issues
+    if (strpos($e->getMessage(), 'Required environment variable') !== false) {
+        $errorDetails['suggestion'] = 'Check Cloud Run environment variables configuration';
+    }
+    
+    error_log('[TEBRA_CONFIG_ERROR] ' . json_encode($errorDetails));
+    echo json_encode($errorDetails);
 } catch (Throwable $e) {
     http_response_code(500);
     header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'error' => 'An internal server error occurred']);
+    
+    // Log the full error details for debugging
+    $errorDetails = [
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+        'message' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+    ];
+    error_log('[TEBRA_FATAL_ERROR] ' . json_encode($errorDetails));
+    
+    // Return specific error information
+    echo json_encode([
+        'success' => false,
+        'error' => 'PHP Service Error: ' . $e->getMessage(),
+        'type' => 'internal_error',
+        'error_class' => get_class($e),
+        'error_location' => basename($e->getFile()) . ':' . $e->getLine(),
+        'timestamp' => date(DATE_ATOM),
+        'correlation_id' => uniqid('error_', true)
+    ]);
 } 
