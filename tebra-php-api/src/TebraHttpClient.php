@@ -308,6 +308,79 @@ class TebraHttpClient {
     public function getLastResponse() {
         return $this->client ? $this->client->__getLastResponse() : null;
     }
+    
+    /**
+     * Generic SOAP method caller - handles any SOAP operation
+     * This method was missing and causing the fatal error in Cloud Run
+     */
+    public function callSoapMethod($method, $params = []) {
+        $startTime = microtime(true);
+        error_log("Starting {$method} SOAP request");
+        
+        try {
+            // Ensure SOAP client is initialized
+            if (!$this->client) {
+                throw new \Exception("SOAP client not initialized");
+            }
+            
+            // Build request with authentication header
+            $request = [
+                'request' => array_merge(
+                    ['RequestHeader' => $this->createAuthHeader()],
+                    $params
+                )
+            ];
+            
+            // Call the SOAP method dynamically
+            $soapStartTime = microtime(true);
+            $response = $this->client->__soapCall($method, [$request]);
+            $soapDuration = (microtime(true) - $soapStartTime) * 1000;
+            
+            error_log("SOAP {$method} took: " . round($soapDuration, 2) . "ms");
+            
+            // Extract the result based on the method name
+            $resultProperty = $method . 'Result';
+            $result = isset($response->$resultProperty) ? $response->$resultProperty : $response;
+            
+            // Check for API errors in the response
+            if (isset($result->ErrorResponse) && $result->ErrorResponse->IsError) {
+                throw new \Exception('Tebra API Error: ' . $result->ErrorResponse->ErrorMessage);
+            }
+            
+            $totalDuration = (microtime(true) - $startTime) * 1000;
+            error_log("Total {$method} request took: " . round($totalDuration, 2) . "ms");
+            
+            return [
+                'success' => true,
+                'data' => $result,
+                'timestamp' => date('c'),
+                'performance' => [
+                    'soap_duration_ms' => round($soapDuration, 2),
+                    'total_duration_ms' => round($totalDuration, 2)
+                ]
+            ];
+            
+        } catch (\SoapFault $e) {
+            error_log("SOAP Fault in {$method}: " . $e->getMessage());
+            if ($this->client) {
+                error_log("Last SOAP Request: " . $this->client->__getLastRequest());
+                error_log("Last SOAP Response: " . $this->client->__getLastResponse());
+            }
+            return [
+                'success' => false,
+                'error' => 'SOAP Fault: ' . $e->getMessage(),
+                'faultcode' => $e->faultcode ?? 'Unknown',
+                'timestamp' => date('c')
+            ];
+        } catch (\Exception $e) {
+            error_log("Error in {$method}: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'timestamp' => date('c')
+            ];
+        }
+    }
 }
 
 ?>

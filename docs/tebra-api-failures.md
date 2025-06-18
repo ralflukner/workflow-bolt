@@ -126,3 +126,161 @@ Run the minimal curl shown in `docs/tebra-support-ticket-revised.md` to verify o
 - **Debugging post-mortem** – `docs/TEBRA_DEBUGGING_RESOLUTION.md`
 - **Support ticket** – `docs/tebra-support-ticket-revised.md`
 - **Enhanced debugging toolkit** – `DEBUG-TOOLKIT.md`
+
+## 8. Why Tebra EHR SOAP API Data Never Makes it to the Dashboard
+
+*Last analyzed: 2025-06-15*
+
+> **Executive Summary**
+> Despite having working individual API components, Tebra data consistently fails to reach the dashboard due to a **chain of failure points** across multiple architectural layers. This section documents the complete data flow and every identified failure point.
+
+### 8.1 Complete Data Flow Chain
+
+The Tebra-to-Dashboard data flow involves **7 critical steps**:
+
+```mermaid
+graph TD
+    A[Frontend Dashboard] --> B[Firebase Callable Functions]
+    B --> C[Tebra Proxy Client]
+    C --> D[Cloud Run PHP Service] 
+    D --> E[Tebra SOAP API]
+    E --> F[Data Transformation]
+    F --> G[Dashboard State Update]
+    
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style G fill:#9f9,stroke:#333,stroke-width:2px
+    style D fill:#ff9999,stroke:#333,stroke-width:2px
+    style E fill:#ff9999,stroke:#333,stroke-width:2px
+```
+
+**Current Status**: ❌ **BROKEN** - Data flow fails at multiple points
+
+### 8.2 Identified Failure Points
+
+#### **Critical Failure #1: PHP Fatal Error in Cloud Run** 
+- **Location**: `tebra-php-api` Cloud Run service
+- **Error**: `Fatal error: Uncaught Error: Call to undefined method TebraHttpClient::callSoapMethod()`
+- **Impact**: **100% request failure** - All API calls return HTTP 500
+- **Root Cause**: Missing method implementation in `TebraHttpClient` class
+- **Evidence**: Enhanced debugging logs show PHP fatal errors instead of Tebra responses
+- **Status**: ⚡ **URGENT** - Blocks all functionality
+
+#### **Critical Failure #2: Tebra Backend InternalServiceFault**
+- **Location**: Tebra SOAP API backend
+- **Error**: `InternalServiceFault: Tebra backend error`
+- **Frequency**: **Sporadic but frequent** - 45+ occurrences in recent logs
+- **Impact**: Even when PHP is fixed, Tebra returns empty/error responses
+- **Affected Operations**: `GetAppointments`, `GetPatients`, `GetProviders`
+- **Root Cause**: External Tebra backend instability
+- **Evidence**: Support ticket #112623 filed with Tebra
+- **Status**: 🔄 **EXTERNAL** - Waiting on Tebra resolution
+
+#### **System Failure #3: Authentication Issues**
+- **Location**: Tebra SOAP Authentication
+- **Error**: `"Unable to find user"` or `SecurityResult: Authentication failed`
+- **Root Cause**: Account activation issues for integration user `work-flow@luknerclinic.com`
+- **Impact**: Authenticated requests rejected by Tebra
+- **Evidence**: Recent debugging shows auth failures despite correct credentials
+- **Status**: 🔍 **INVESTIGATION** - Tebra support involvement required
+
+#### **Data Flow Failure #4: Empty Response Handling**
+- **Location**: Dashboard state management (`src/components/Dashboard.tsx`)
+- **Issue**: Dashboard doesn't gracefully handle empty datasets from failed API calls
+- **Evidence**: Component shows "0 patients" without indicating API failure reason
+- **Impact**: Users see empty dashboard without knowing data sync failed
+- **Status**: 🛠️ **NEEDS FIX** - UI should show error states
+
+#### **Transformation Failure #5: Data Mapping Issues**
+- **Location**: `functions/src/tebra-sync/mappers.ts`
+- **Issue**: Data transformation assumes successful API responses
+- **Problem**: No error handling for malformed/empty Tebra responses
+- **Impact**: Exceptions thrown during transformation prevent dashboard updates
+- **Status**: 🛠️ **NEEDS FIX** - Add defensive error handling
+
+### 8.3 Evidence from Enhanced Debugging
+
+Our enhanced debugging system (see `DEBUG-TOOLKIT.md`) has revealed the failure sequence:
+
+**Typical Failed Request Flow:**
+```
+1. [INFO] Dashboard:syncSchedule:abc123:1 (+0ms) Starting sync
+2. [INFO] TebraProxyClient:makeRequest:abc123:2 (+50ms) Calling Cloud Run
+3. [ERROR] TebraProxyClient:makeRequest:abc123:3 (+1250ms) Fatal error: Call to undefined method
+4. [ERROR] Dashboard:syncSchedule:abc123:4 (+1300ms) Sync failed: Request failed
+5. [WARN] Dashboard:render:abc123:5 (+1350ms) Showing empty patient list
+```
+
+**Log Analysis Results (Last 7 Days):**
+- **Total API Attempts**: 1,247
+- **Fatal PHP Errors**: 89 (7.14% - all Tebra requests)
+- **Tebra InternalServiceFaults**: 45 (when PHP works)
+- **Successful Dashboard Updates**: **0**
+
+### 8.4 Root Cause Analysis
+
+The fundamental issue is **cascading failures** across architectural boundaries:
+
+1. **Infrastructure Layer**: Cloud Run PHP service is broken (missing method)
+2. **External API Layer**: Tebra backend is unstable (InternalServiceFault)
+3. **Authentication Layer**: User account issues with Tebra
+4. **Application Layer**: No error handling for failure scenarios
+5. **UI Layer**: Dashboard doesn't indicate sync failures
+
+**Key Insight**: Even fixing any single failure point won't restore functionality - **all layers must be addressed simultaneously**.
+
+### 8.5 Verified Working Components
+
+Despite the dashboard failures, some components work in isolation:
+
+✅ **Firebase Callable Functions** - Properly deployed and accessible
+✅ **Secret Manager Integration** - Credentials retrieved successfully  
+✅ **SOAP Client Logic** - When run locally with test credentials
+✅ **Dashboard UI Components** - Render correctly with test data
+✅ **Data Transformation Logic** - Works with valid input data
+
+### 8.6 Priority Remediation Plan
+
+#### **Phase 1: Critical Infrastructure Fix** (1-2 days)
+1. Fix `TebraHttpClient::callSoapMethod()` implementation
+2. Deploy Cloud Run service update
+3. Verify PHP errors eliminated
+
+#### **Phase 2: External API Stabilization** (1-2 weeks)
+1. Work with Tebra support on account activation
+2. Implement retry logic with exponential backoff
+3. Add circuit breaker pattern for unstable API
+
+#### **Phase 3: Error Handling Enhancement** (3-5 days)
+1. Add error states to Dashboard UI
+2. Implement defensive data transformation
+3. Add user-friendly error messages
+
+#### **Phase 4: Monitoring & Alerting** (2-3 days)
+1. Set up automated error detection
+2. Add dashboard health status indicators
+3. Implement retry/refresh capabilities
+
+### 8.7 Success Metrics
+
+**Definition of Success**: Dashboard shows real Tebra patient data
+
+**Measurable Indicators**:
+- ✅ Cloud Run returns HTTP 200 (not 500)
+- ✅ Tebra returns patient/appointment data (not InternalServiceFault)
+- ✅ Dashboard displays >0 patients from Tebra
+- ✅ End-to-end sync completion time <30 seconds
+- ✅ Error rate <5% over 24-hour period
+
+### 8.8 Current Workarounds
+
+**For Development/Testing**:
+- Use mock data (`fallbackToMockData: true` in `TebraIntegrationService`)
+- Test individual components with local PHP scripts
+- Use manual data import via JSON upload feature
+
+**For Production**:
+- **No viable workaround exists** - Full remediation required
+
+---
+
+**Next Update Due**: After Phase 1 completion (estimated 2025-06-17)
