@@ -13,7 +13,7 @@
     "test:watch": "jest --watch"
   },
   "engines": {
-    "node": "22"
+    "node": "20"
   },
   "main": "index.js",
   "dependencies": {
@@ -37,7 +37,7 @@
     "@opentelemetry/resources": "^1.17.0",
     "@opentelemetry/semantic-conventions": "^1.17.0",
     "@opentelemetry/instrumentation": "^0.46.0",
-    "@google-cloud/opentelemetry-cloud-trace-exporter": "^3.7.0",
+    "@google-cloud/opentelemetry-cloud-trace-exporter": "^2.4.1",
     "@opentelemetry/auto-instrumentations-node": "^0.46.0",
     "@opentelemetry/exporter-jaeger": "^1.18.0"
   },
