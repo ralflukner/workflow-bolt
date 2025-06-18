@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { PatientApptStatus } from '../types';
 import { usePatientContext } from '../hooks/usePatientContext';
 import PatientCard from './PatientCard';
@@ -6,11 +6,14 @@ import PatientCard from './PatientCard';
 interface PatientListProps {
   status: PatientApptStatus;
   title: string;
+  scrollPosition?: number;
+  onScroll?: (position: number) => void;
 }
 
-const PatientList: React.FC<PatientListProps> = ({ status, title }) => {
+const PatientList: React.FC<PatientListProps> = ({ status, title, scrollPosition, onScroll }) => {
   const { getPatientsByStatus } = usePatientContext();
   const patients = getPatientsByStatus(status);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const getHeaderColor = () => {
     switch (status) {
