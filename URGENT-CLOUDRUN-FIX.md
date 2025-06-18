@@ -22,22 +22,22 @@ Add this method to your `TebraHttpClient` class in your Cloud Run PHP code:
 ```php
 class TebraHttpClient {
     // ... existing code ...
-    
+
     public function callSoapMethod($method, $params = []) {
         try {
             // Initialize SOAP client if not already done
             if (!$this->soapClient) {
                 $this->initializeSoapClient();
             }
-            
+
             // Call the SOAP method
             $result = $this->soapClient->__soapCall($method, $params);
-            
+
             return [
                 'success' => true,
                 'data' => $result
             ];
-            
+
         } catch (SoapFault $e) {
             error_log("SOAP Fault: " . $e->getMessage());
             return [
@@ -52,7 +52,7 @@ class TebraHttpClient {
             ];
         }
     }
-    
+
     private function initializeSoapClient() {
         if (!$this->soapClient) {
             $wsdlUrl = $this->getWsdlUrl();
@@ -64,7 +64,7 @@ class TebraHttpClient {
                 'connection_timeout' => 30,
                 'user_agent' => 'Tebra-Proxy/1.0'
             ];
-            
+
             $this->soapClient = new SoapClient($wsdlUrl, $options);
         }
     }

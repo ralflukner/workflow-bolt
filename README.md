@@ -296,7 +296,7 @@ The integration is built with a modular architecture:
 Enable debug logging by setting the environment variable:
 
 ```bash
- DEBUG=tebra:* npm start
+ DEBUG=tebra:* npm startt
 
 ```
 

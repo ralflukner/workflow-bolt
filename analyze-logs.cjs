@@ -9,7 +9,7 @@
  * node analyze-logs.js [--days=7] [--service=tebra-php-api]
  */
 
-const { spawnSync } = require('child_process');
+const { spawn } = require('child_process');
 const fs = require('fs');
 
 class LogAnalyzer {
@@ -66,34 +66,64 @@ class LogAnalyzer {
     `.trim();
 
     try {
-      // Use spawnSync with argument array to prevent shell injection
-      const result = spawnSync(
-        'gcloud',
-        [
+      // Use spawn with argument array to prevent shell injection
+      const logs = await new Promise((resolve, reject) => {
+        const gcloudProcess = spawn('gcloud', [
           'logging',
           'read',
           query,
           `--project=${this.project}`,
           '--format=json',
           '--limit=1000'
-        ],
-        {
-          encoding: 'utf8',
-          maxBuffer: 50 * 1024 * 1024
-        }
-      );
+        ]);
 
-      if (result.error) {
-        throw result.error;
-      }
+        let stdout = '';
+        let stderr = '';
 
-      if (result.status !== 0) {
-        throw new Error(`gcloud command failed with status ${result.status}: ${result.stderr}`);
-      }
-      
-      const logs = JSON.parse(result.stdout || '[]');
-      console.log(`📊 Retrieved ${logs.length} log entries\n`);
-      
+        // Handle stdout data streaming
+        gcloudProcess.stdout.on('data', (chunk) => {
+          stdout += chunk.toString();
+          // Optional: Log progress for large datasets
+          process.stdout.write('.');
+        });
+
+        // Handle stderr data streaming
+        gcloudProcess.stderr.on('data', (chunk) => {
+          stderr += chunk.toString();
+        });
+
+        // Handle process completion
+        gcloudProcess.on('close', (code) => {
+          if (code !== 0) {
+            reject(new Error(`gcloud command failed with status ${code}: ${stderr}`));
+            return;
+          }
+
+          try {
+            const parsedLogs = JSON.parse(stdout || '[]');
+            resolve(parsedLogs);
+          } catch (parseError) {
+            reject(new Error(`Failed to parse JSON output: ${parseError.message}`));
+          }
+        });
+
+        // Handle process errors
+        gcloudProcess.on('error', (error) => {
+          reject(new Error(`Failed to start gcloud process: ${error.message}`));
+        });
+
+        // Optional: Set timeout for long-running commands
+        const timeout = setTimeout(() => {
+          gcloudProcess.kill('SIGTERM');
+          reject(new Error('gcloud command timed out after 5 minutes'));
+        }, 5 * 60 * 1000); // 5 minutes
+
+        gcloudProcess.on('close', () => {
+          clearTimeout(timeout);
+        });
+      });
+
+      console.log(`\n📊 Retrieved ${logs.length} log entries\n`);
       return logs;
     } catch (error) {
       console.error('❌ Failed to fetch Cloud Logging data via gcloud CLI.');
