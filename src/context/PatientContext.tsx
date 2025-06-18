@@ -119,7 +119,25 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     };
 
     loadTodaysData();
-  }, [persistenceEnabled, storageService, storageType, useFirebase]);
+
+    // Setup real-time listener for Firebase updates
+    let unsubscribe: (() => void) | undefined;
+    if (useFirebase && firebaseReady && !isLoading) {
+      console.log('Setting up Firebase real-time listener');
+      unsubscribe = dailySessionService.subscribeToDailySession((updatedPatients) => {
+        console.log(`Real-time update: ${updatedPatients.length} patients from Firebase`);
+        setPatients(updatedPatients);
+        setHasRealData(true);
+      });
+    }
+
+    return () => {
+      if (unsubscribe) {
+        console.log('Cleaning up Firebase real-time listener');
+        unsubscribe();
+      }
+    };
+  }, [persistenceEnabled, storageService, storageType, useFirebase, firebaseReady]);
 
   // Auto-save patients data periodically and when data changes
   useEffect(() => {
@@ -393,6 +411,48 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     setPersistenceEnabled(prev => !prev);
   };
 
+  const refreshFromFirebase = async () => {
+    if (!useFirebase || !firebaseReady) {
+      console.warn('Cannot refresh: Firebase not configured');
+      return;
+    }
+    
+    try {
+      console.log('Manually refreshing patient data from Firebase');
+      
+      // Load today's patients
+      const todayPatients = await dailySessionService.loadTodaysSession();
+      console.log(`Found ${todayPatients.length} patients for today`);
+      
+      // Also check tomorrow's date to handle "Sync Tomorrow" functionality
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowId = tomorrow.toISOString().split('T')[0];
+      
+      try {
+        const tomorrowPatients = await dailySessionService.loadSessionForDate(tomorrowId);
+        console.log(`Found ${tomorrowPatients.length} patients for tomorrow (${tomorrowId})`);
+        
+        // If tomorrow has data but today doesn't, use tomorrow's data
+        // This handles the "Sync Tomorrow" case where users want to see tomorrow's appointments
+        if (tomorrowPatients.length > 0 && todayPatients.length === 0) {
+          console.log('Using tomorrow\'s data as no data exists for today');
+          setPatients(tomorrowPatients);
+          setHasRealData(true);
+          return;
+        }
+      } catch (err) {
+        console.log('No data for tomorrow, using today\'s data');
+      }
+      
+      // Default to today's data
+      setPatients(todayPatients);
+      setHasRealData(true);
+    } catch (error) {
+      console.error('Failed to refresh from Firebase:', error);
+    }
+  };
+
   const value = {
     patients,
     isLoading,
@@ -412,6 +472,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     importPatientsFromJSON,
     saveCurrentSession,
     togglePersistence,
+    refreshFromFirebase,
   };
 
   return (

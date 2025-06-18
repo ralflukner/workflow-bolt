@@ -6,7 +6,10 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 
 const gsm = new SecretManagerServiceClient();
-const PROJECT_ID = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || 'luknerlumina-firebase';
+const PROJECT_ID = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT;
+if (!PROJECT_ID) {
+  throw new Error('GCP project ID not set; cannot access Secret Manager.');
+}
 
 // Only these secret IDs can be requested from the client.
 const ALLOWED_SECRETS = new Set([

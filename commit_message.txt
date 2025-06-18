@@ -1,7 +1,12 @@
 feat(tebra): Implement Tebra API integration with debugging tools
+feat(ui): Implement synchronized scrolling for patient lists
+fix(docs): Fix typos in README.md
+fix(debug): Enhance debugging capabilities
 
 This commit adds comprehensive integration with the Tebra EHR API via SOAP, 
 including appointment retrieval, patient data handling, and persistence improvements.
+This commit adds scroll synchronization functionality to the patient list components,
+improving the user experience when viewing multiple patient lists simultaneously.
 
 Key changes:
 - Enhanced TebraSoapClient with robust error handling and rate limiting
@@ -13,7 +18,19 @@ Key changes:
 - Improved PatientContext to better handle data from Tebra API
 - Added SOAP UI project file for API testing and documentation
 - Corrected an erroneous 't' entry in .gitignore
+- Added scroll position tracking and synchronization to PatientList component
+- Implemented relative scroll position calculation for consistent behavior
+- Updated PatientSection component to pass scroll props to PatientList
+- Added event handlers to capture and propagate scroll events
+- Fixed typos in README.md (npm start command and Pull Request text)
+- Enhanced DebugTextWindow with additional console logging for better debugging
+- Fixed date format regex in TebraSoapClient to correctly validate ISO 8601 timestamps
 
 These changes enable the application to reliably fetch and display patient 
 appointments from Tebra EHR, with proper error handling and debugging capabilities
 to ensure smooth integration in production environments.
+
+These changes ensure that when a user scrolls one patient list, other lists can
+be synchronized to maintain the same relative scroll position, creating a more
+cohesive and intuitive interface for healthcare providers managing multiple
+patient categories.

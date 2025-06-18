@@ -8,6 +8,7 @@
         "ext-soap": "*",
         "ext-json": "*",
         "ext-ctype": "*",
+        "ext-dom": "*",
         "guzzlehttp/guzzle": "^7.0",
         "monolog/monolog": "^3.0"
     },

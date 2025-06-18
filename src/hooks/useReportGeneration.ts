@@ -1,4 +1,4 @@
-import { Patient } from '../types';
+import type { Patient } from '../types';
 import { formatPatientData, formatDate, formatDateForFilename } from '../utils/patientFormatting';
 
 export const useReportGeneration = (
@@ -7,10 +7,12 @@ export const useReportGeneration = (
   timeMode: { simulated: boolean },
   getWaitTime: (patient: Patient) => number
 ) => {
-  const generateReport = (format: 'text' | 'csv' = 'text') => {
+  function generateReport(format: 'csv'): void;
+  function generateReport(format?: 'text'): string;
+  function generateReport(format: 'text' | 'csv' = 'text'): string | void {
     const currentDate = getCurrentTime();
     const formattedDate = formatDate(currentDate);
-    
+
     const patientsForDate = [...patients];
     patientsForDate.sort((a, b) => 
       new Date(a.appointmentTime).getTime() - new Date(b.appointmentTime).getTime()
@@ -31,7 +33,7 @@ export const useReportGeneration = (
     if (format === 'csv') {
       return generateCSVReport(patientsForDate, currentDate);
     }
-    
+
     return generateTextReport(
       patientsForDate, 
       checkedInPatients, 
@@ -41,7 +43,7 @@ export const useReportGeneration = (
       maxWaitTime, 
       getWaitTime
     );
-  };
+  }
 
   const generateCSVReport = (patientsForDate: Patient[], currentDate: Date) => {
     const headers = [

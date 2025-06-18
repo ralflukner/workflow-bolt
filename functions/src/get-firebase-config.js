@@ -17,7 +17,11 @@ let cachedConfig;          // <-- module-level cache
 const getFirebaseConfig = onRequest({ cors: true }, async (req, res) => {
   try {
      // Only allow GET requests
-    if (!cachedConfig) {
+    if (req.method !== 'GET') {
+  return res.status(405).json({ error: 'Method Not Allowed' });
+}
+
+if (!cachedConfig) {
       const name = `projects/${PROJECT_ID}/secrets/FIREBASE_API_KEY/versions/latest`;
       const [version] = await gsm.accessSecretVersion({ name });
       const apiKey = version.payload?.data?.toString() || '';

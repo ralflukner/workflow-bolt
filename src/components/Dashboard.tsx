@@ -12,6 +12,7 @@ import { FirebaseDebugger } from './FirebaseDebugger';
 import { ReportModal } from './ReportModal';
 import { DashboardHeader } from './DashboardHeader';
 import { PatientSection } from './PatientSection';
+import { DebugTextWindow } from './DebugTextWindow';
 import { useReportGeneration } from '../hooks/useReportGeneration';
 import { PATIENT_SECTIONS } from '../constants/patientSections';
 
@@ -26,6 +27,8 @@ const Dashboard: React.FC = () => {
   const [reportContent, setReportContent] = useState('');
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [showDebugPanels, setShowDebugPanels] = useState<boolean>(false);
+  const [showDebugTextWindow, setShowDebugTextWindow] = useState<boolean>(false);
+  const [scrollPosition, setScrollPosition] = useState<number>(0);
 
   // Guard against rapid export clicks
   const isExporting = useRef(false);
@@ -61,6 +64,8 @@ const handleExportSchedule = async (): Promise<void> => {
       <DashboardHeader
         showDebugPanels={showDebugPanels}
         onToggleDebug={() => setShowDebugPanels(prev => !prev)}
+        showDebugTextWindow={showDebugTextWindow}
+        onToggleDebugTextWindow={() => setShowDebugTextWindow(prev => !prev)}
         onShowNewPatient={() => setShowNewPatientForm(true)}
         onShowImportSchedule={() => setShowImportSchedule(true)}
         onShowImportJSON={() => setShowImportJSON(true)}
@@ -81,18 +86,43 @@ const handleExportSchedule = async (): Promise<void> => {
           </>
         )}
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {PATIENT_SECTIONS.map(section => (
-            <PatientSection
-              key={section.id}
-              id={section.id}
-              title={section.title}
-              status={section.status}
-              isExpanded={isExpanded(section.id)}
-              onToggle={toggleSection}
-            />
-          ))}
-        </div>
+        {showDebugTextWindow ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
+              {PATIENT_SECTIONS.map(section => (
+                <PatientSection
+                  key={section.id}
+                  id={section.id}
+                  title={section.title}
+                  status={section.status}
+                  isExpanded={isExpanded(section.id)}
+                  onToggle={toggleSection}
+                  scrollPosition={scrollPosition}
+                  onScroll={setScrollPosition}
+                />
+              ))}
+            </div>
+            <div className="lg:sticky lg:top-4" style={{ height: 'fit-content' }}>
+              <DebugTextWindow 
+                scrollPosition={scrollPosition}
+                onScroll={setScrollPosition}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {PATIENT_SECTIONS.map(section => (
+              <PatientSection
+                key={section.id}
+                id={section.id}
+                title={section.title}
+                status={section.status}
+                isExpanded={isExpanded(section.id)}
+                onToggle={toggleSection}
+              />
+            ))}
+          </div>
+        )}
       </main>
 
       {showNewPatientForm && (

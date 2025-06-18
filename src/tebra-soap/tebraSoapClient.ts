@@ -375,7 +375,7 @@ export class TebraSoapClient {
   private isValidDateFormat(date: string): boolean {
     // Support both YYYY-MM-DD and Tebra's ISO 8601 format YYYY-MM-DDThh:mm:ss:Z
     const simpleRegex = /^\d{4}-\d{2}-\d{2}$/;
-    const tebraIsoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}:Z$/;
+    const tebraIsoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
     const standardIsoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
     return simpleRegex.test(date) || tebraIsoRegex.test(date) || standardIsoRegex.test(date);
   }

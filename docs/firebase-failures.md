@@ -105,12 +105,12 @@ flowchart LR
      - Removed hardcoded `TEBRA_INTERNAL_API_KEY` environment variable from Cloud Run
      - Verified Cloud Run is using `INTERNAL_API_KEY` from `tebra-internal-api-key` secret
    - **Current Status**: ✅ **ROOT CAUSE IDENTIFIED** - Cloud Run PHP service has fatal error: `Call to undefined method TebraHttpClient::callSoapMethod()`
-   - **Next Steps**: Fix missing PHP method in Cloud Run service (see URGENT-CLOUDRUN-FIX.md)
+   - **Next Steps**: Fix missing PHP method in Cloud Run service (see [URGENT-CLOUDRUN-FIX.md](../URGENT-CLOUDRUN-FIX.md))
 
 ### High Priority (Week 2-3)
 
 2. **F-01: Cold Start Optimization** (MED → HIGH due to user impact)
-   - **Actions**: 
+   - **Actions**:
      - Implement keep-warm Cloud Scheduler jobs
      - Optimize bundle size and reduce dependencies
      - Add connection pooling for external services
@@ -161,7 +161,7 @@ graph TD
     B --> D[F-02: Token Refresh]
     C --> E[F-06: Test Coverage]
     F[F-04: Emulator Parity] --> E
-    
+
     style A fill:#ff6b6b
     style B fill:#ffa726
     style C fill:#ffa726

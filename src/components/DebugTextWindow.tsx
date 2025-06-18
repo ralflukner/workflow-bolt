@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-import { Patient } from '../types';
+import type { Patient } from '../types';
 import { usePatientContext } from '../hooks/usePatientContext';
-import { useTimeContext } from '../hooks/useTimeContext';
 
 interface DebugTextWindowProps {
   scrollPosition?: number;
@@ -13,15 +12,19 @@ export const DebugTextWindow: React.FC<DebugTextWindowProps> = ({
   onScroll 
 }) => {
   const { patients, getWaitTime } = usePatientContext();
-  const { getCurrentTime } = useTimeContext();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[DebugTextWindow] Patients updated:', patients.length, 'patients');
+    console.log('[DebugTextWindow] Patient data:', patients);
+  }, [patients]);
 
   // Sync scroll position when it changes from parent
   useEffect(() => {
     if (textAreaRef.current && scrollPosition !== undefined) {
       const maxScroll = textAreaRef.current.scrollHeight - textAreaRef.current.clientHeight;
-      const relativeScroll = scrollPosition * maxScroll;
-      textAreaRef.current.scrollTop = relativeScroll;
+      textAreaRef.current.scrollTop = scrollPosition * maxScroll;
     }
   }, [scrollPosition]);
 
@@ -35,7 +38,7 @@ export const DebugTextWindow: React.FC<DebugTextWindowProps> = ({
   };
 
   const formatPatientData = (patient: Patient): string => {
-    const waitTime = getWaitTime(patient, getCurrentTime());
+    const waitTime = getWaitTime(patient);
     const waitTimeStr = waitTime ? `Wait: ${waitTime}min` : '';
     
     return [

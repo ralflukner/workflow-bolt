@@ -25,12 +25,16 @@ echo "=== Testing GetAppointments with EXACT Tebra XML Structure ===\n\n";
 
 try {
     // Create SOAP client with trace enabled
-    $options = array(
-        'soap_version' => SOAP_1_1,
-        'trace' => true,
-        'exceptions' => true,
-        'cache_wsdl' => WSDL_CACHE_NONE
-    );
+$options = [
+   'soap_version'      => SOAP_1_1,
+   'trace'             => true,
+   'exceptions'        => true,
+   'cache_wsdl'        => WSDL_CACHE_NONE,
+  'connection_timeout'=> 10,                // seconds
+  'stream_context'    => stream_context_create([
+        'ssl' => ['verify_peer' => true, 'verify_peer_name' => true],
+  ]),
+];
     
     $client = new SoapClient($wsdlUrl, $options);
     echo "✓ SOAP client created successfully\n\n";
@@ -82,7 +86,7 @@ try {
     } catch (SoapFault $e) {
         echo "❌ SOAP Fault: " . $e->getMessage() . "\n";
         echo "\nActual SOAP Request:\n";
-        $xml = preg_replace('#(<(Password|CustomerKey|User)>)[^<]*(</\\2>)#', '$1***REDACTED***$3', $client->__getLastRequest());
+        $xml = preg_replace('#(<(Password|CustomerKey|User)>)[^<]*(</\2>)#', '$1***REDACTED***$3', $client->__getLastRequest());
         echo htmlspecialchars($xml);
     }
     

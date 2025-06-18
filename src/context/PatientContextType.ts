@@ -19,4 +19,5 @@ export interface PatientContextType {
   togglePersistence: () => void; // Toggle persistence on/off
   hasRealData: boolean; // Whether current data is real patient data or mock data
   loadMockData: () => void; // Manually load mock data for development/testing
+  refreshFromFirebase: () => Promise<void>; // Manually refresh data from Firebase
 }

@@ -394,9 +394,11 @@ export class TebraApiService {
       // For HIPAA compliance, we need to ensure the user is authenticated
       // This will fail with 'unauthenticated' error if user is not properly signed in
       // Use the specified date or today
+      console.log('[TebraApiService] Calling tebraSyncTodaysSchedule Firebase function with date:', syncDate);
       const result = await this.tebraSyncTodaysSchedule({ 
         date: syncDate
       });
+      console.log('[TebraApiService] Firebase function returned:', result);
       const response = result.data as { success: boolean; imported: number; message: string };
       
       console.log('Sync response from Firebase:', response);

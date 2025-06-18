@@ -107,12 +107,14 @@ $result = $tebraClient->executeSoapCall($action, $params);
 
 After deploying, the enhanced logging should show:
 
-✅ **Success logs:**
+**Success logs:**
+
 ```
 [INFO] TebraProxyClient:makeRequest:xxxxx:5 (+XXXms) Request completed successfully
 ```
 
-❌ **Instead of error logs:**
+**Instead of error logs:**
+
 ```
 [ERROR] Application error in response { 
   fullResponse: 'Fatal error: Uncaught Error: Call to undefined method...'
@@ -133,4 +135,4 @@ After deploying, the enhanced logging should show:
 
 ---
 
-**Priority**: 🔥 **CRITICAL** - This blocks all Tebra API functionality 
+**Priority**: 🔥 **CRITICAL** - This blocks all Tebra API functionality

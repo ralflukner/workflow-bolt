@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTimeContext } from '../hooks/useTimeContext';
+import { usePatientContext } from '../hooks/usePatientContext';
 import { tebraApiService } from '../services/tebraApiService';
 import { TebraConnectionDebuggerSimple } from './TebraConnectionDebuggerSimple';
 import { doc, onSnapshot, getFirestore } from 'firebase/firestore';
@@ -41,6 +42,7 @@ interface TebraIntegrationResponse {
 
 const TebraIntegration: React.FC = () => {
   const { getCurrentTime } = useTimeContext();
+  const { refreshFromFirebase } = usePatientContext();
   const { ensureFirebaseAuth } = useFirebaseAuth();
   
   const [isConnected, setIsConnected] = useState(false);
@@ -233,6 +235,10 @@ const TebraIntegration: React.FC = () => {
           patientCount,
           lastSync: new Date()
         });
+        
+        // Refresh patient data from Firebase after successful sync
+        console.log('[TebraIntegrationNew] Refreshing patient data after sync...');
+        await refreshFromFirebase();
       } else {
         setStatusMessage(`❌ Sync failed: ${result.message}`);
       }

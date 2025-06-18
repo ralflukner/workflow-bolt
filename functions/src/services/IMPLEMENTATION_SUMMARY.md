@@ -51,9 +51,9 @@ Detailed setup instructions are available in the README.md file.
 After configuring the OAuth2 credentials and environment variables, deploy the functions with:
 
 ```bash
-gcloud functions deploy FUNCTION_NAME
-  --gen2
-  --runtime=nodejs20
+gcloud functions deploy FUNCTION_NAME \
+  --gen2 \
+  --runtime=nodejs20 \
   --region=us-central1
   --set-env-vars="GMAIL_CLIENT_ID=YOUR_CLIENT_ID,GMAIL_CLIENT_SECRET=YOUR_CLIENT_SECRET,GMAIL_REFRESH_TOKEN=YOUR_REFRESH_TOKEN"
 ```

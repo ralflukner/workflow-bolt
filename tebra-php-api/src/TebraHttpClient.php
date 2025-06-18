@@ -15,7 +15,6 @@ class TebraHttpClient {
     private $password;
     private $customerKey;
     private $client;
-    private $version;
     
     public function __construct() {
         // Read from environment variables
@@ -24,15 +23,12 @@ class TebraHttpClient {
         $this->customerKey = $this->getRequiredEnv('TEBRA_CUSTOMER_KEY');
         // Use the working WSDL URL regardless of environment variable
         $this->wsdlUrl = 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl';
-        $this->version = 'v2'; // Default version as per guide
         
-        // Debug logging with hashes for credential verification
+        // Debug logging with hashes for credential verification (sensitive data removed)
         error_log("Tebra credentials debug:");
         error_log("  Username length: " . strlen($this->username) . ", hash: " . substr(md5($this->username), 0, 8));
         error_log("  Password length: " . strlen($this->password) . ", hash: " . substr(md5($this->password), 0, 8));
-        error_log("  Customer key length: " . strlen($this->customerKey) . ", value: " . $this->customerKey);
-        error_log("  Expected username hash (first 8): " . substr(md5('pqpyiN-cAGRih@luknerclinic.com'), 0, 8));
-        error_log("  Expected password hash (first 8): " . substr(md5('WQJyt8-ABsW5Y-sgudYx-xV25V5-XJyFyb'), 0, 8));
+        error_log("  Customer key length: " . strlen($this->customerKey));
         
         $this->initializeClient();
     }
@@ -259,9 +255,13 @@ class TebraHttpClient {
             // Note: This may need to be adjusted based on actual Tebra API
             // The guide doesn't show a specific SearchPatients method
             $params = [
-                'request' => array_merge($this->createAuthHeader(), [
-                    'LastName' => $lastName
-                ])
+                'request' => [
+                    'RequestHeader' => $this->createAuthHeader(),
+                    'Filter' => [
+                        'LastName' => $lastName
+                    ],
+                    'Fields' => null
+                ]
             ];
             
             $response = $this->client->GetPatients($params);

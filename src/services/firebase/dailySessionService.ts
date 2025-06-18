@@ -11,7 +11,8 @@ import {
   orderBy,
   serverTimestamp,
   increment,
-  Firestore
+  Firestore,
+  onSnapshot
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { Patient } from '../../types';
@@ -128,23 +129,27 @@ export class DailySessionService implements StorageService {
   }
 
   /**
-   * Load today's patient session data
+   * Load patient session data for a specific date
    */
-  async loadTodaysSession(): Promise<Patient[]> {
-    const sessionId = this.getTodayId();
-    
+  async loadSessionForDate(date: string): Promise<Patient[]> {
     try {
-      const todayRef = doc(this.getDb(), COLLECTION_NAME, sessionId);
-      const todayDoc = await getDoc(todayRef);
+      const docRef = doc(this.getDb(), COLLECTION_NAME, date);
+      const docSnapshot = await getDoc(docRef);
       
-      if (todayDoc.exists()) {
-        const sessionData = todayDoc.data() as DailySession;
-        console.log(`Firebase session loaded for ${sessionId}`);
-        
+      if (!docSnapshot.exists()) {
+        console.log(`No Firebase session found for ${date}`);
+        return [];
+      }
+      
+      const sessionData = docSnapshot.data();
+      console.log(`Firebase session loaded for ${date}`);
+      
+      // Decrypt patients if encrypted
+      if (sessionData.encryptedPatients) {
         try {
-          const decryptedPatients = sessionData.patients?.map(patient => 
-            PatientEncryptionService.decryptPatient(patient)
-          ) || [];
+          const decryptedPatients = sessionData.encryptedPatients.map((encPatient: any) => {
+            return PatientEncryptionService.decryptPatient(encPatient);
+          });
           return decryptedPatients;
         } catch (error) {
           console.error('Error decrypting patient data:', error);
@@ -152,13 +157,19 @@ export class DailySessionService implements StorageService {
         }
       }
       
-      console.log(`No Firebase session found for ${sessionId}`);
-      return [];
-      
+      return sessionData.patients || [];
     } catch (error) {
-      console.error('Error loading Firebase session:', error);
+      console.error(`Error loading Firebase session for ${date}:`, error);
       throw new Error('Failed to load Firebase session');
     }
+  }
+
+  /**
+   * Load today's patient session data
+   */
+  async loadTodaysSession(): Promise<Patient[]> {
+    const sessionId = this.getTodayId();
+    return this.loadSessionForDate(sessionId);
   }
 
   /**
@@ -314,6 +325,44 @@ export class DailySessionService implements StorageService {
       console.error('Error clearing Firebase session:', error);
       throw new Error('Failed to clear Firebase session');
     }
+  }
+
+  /**
+   * Subscribe to real-time updates for today's session
+   */
+  subscribeToDailySession(callback: (patients: Patient[]) => void): () => void {
+    const sessionId = this.getTodayId();
+    const docRef = doc(this.getDb(), COLLECTION_NAME, sessionId);
+    
+    const unsubscribe = onSnapshot(docRef, 
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const sessionData = snapshot.data();
+          
+          // Decrypt patients if encrypted
+          if (sessionData.encryptedPatients) {
+            try {
+              const decryptedPatients = sessionData.encryptedPatients.map((encPatient: any) => {
+                return PatientEncryptionService.decryptPatient(encPatient);
+              });
+              callback(decryptedPatients);
+            } catch (error) {
+              console.error('Error decrypting patient data in real-time update:', error);
+              callback(sessionData.patients || []);
+            }
+          } else {
+            callback(sessionData.patients || []);
+          }
+        } else {
+          callback([]);
+        }
+      },
+      (error) => {
+        console.error('Error in Firebase real-time listener:', error);
+      }
+    );
+    
+    return unsubscribe;
   }
 }
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { PlusCircle, FileDown, Upload, Download, Bug } from 'lucide-react';
+import { PlusCircle, FileDown, Upload, Download, Bug, FileText } from 'lucide-react';
 import AuthNav from './AuthNav';
 import MetricsPanel from './MetricsPanel';
 import TimeControl from './TimeControl';
@@ -9,6 +9,8 @@ import MonitoringStatus from './MonitoringStatus';
 interface DashboardHeaderProps {
   showDebugPanels: boolean;
   onToggleDebug: () => void;
+  showDebugTextWindow?: boolean;
+  onToggleDebugTextWindow?: () => void;
   onShowNewPatient: () => void;
   onShowImportSchedule: () => void;
   onShowImportJSON: () => void;
@@ -19,6 +21,8 @@ interface DashboardHeaderProps {
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   showDebugPanels,
   onToggleDebug,
+  showDebugTextWindow,
+  onToggleDebugTextWindow,
   onShowNewPatient,
   onShowImportSchedule,
   onShowImportJSON,
@@ -77,6 +81,15 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               <Bug size={18} className="mr-1" />
               {showDebugPanels ? 'Hide' : 'Show'} Debug
             </button>
+            {onToggleDebugTextWindow && (
+              <button 
+                onClick={onToggleDebugTextWindow}
+                className="flex items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
+              >
+                <FileText size={18} className="mr-1" />
+                {showDebugTextWindow ? 'Hide' : 'Show'} Text View
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -1,7 +1,6 @@
-import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import PatientList from './PatientList';
-import { PatientApptStatus } from '../types';
+import type { PatientApptStatus } from '../types';
 
 interface PatientSectionProps {
   id: string;
@@ -9,6 +8,8 @@ interface PatientSectionProps {
   status: PatientApptStatus;
   isExpanded: boolean;
   onToggle: (sectionId: string) => void;
+  scrollPosition?: number;
+  onScroll?: (position: number) => void;
 }
 
 export const PatientSection: React.FC<PatientSectionProps> = ({
@@ -16,7 +17,9 @@ export const PatientSection: React.FC<PatientSectionProps> = ({
   title,
   status,
   isExpanded,
-  onToggle
+  onToggle,
+  scrollPosition,
+  onScroll
 }) => {
   return (
     <div>
@@ -32,7 +35,12 @@ export const PatientSection: React.FC<PatientSectionProps> = ({
       </button>
       {/* Small-screens: toggle; ≥md: always shown */}
  <div className={`${isExpanded ? 'block' : 'hidden'} md:block`}>
-        <PatientList status={status} title={title} />
+        <PatientList 
+          status={status} 
+          title={title} 
+          scrollPosition={scrollPosition}
+          onScroll={onScroll}
+        />
       </div>
     </div>
   );

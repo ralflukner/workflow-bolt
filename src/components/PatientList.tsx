@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from 'react';
-import { PatientApptStatus } from '../types';
+import { useRef, useEffect } from 'react';
+import type { PatientApptStatus } from '../types';
 import { usePatientContext } from '../hooks/usePatientContext';
 import PatientCard from './PatientCard';
 
@@ -32,6 +32,23 @@ const PatientList: React.FC<PatientListProps> = ({ status, title, scrollPosition
     }
   };
 
+  // Sync scroll position when it changes from parent
+  useEffect(() => {
+    if (scrollContainerRef.current && scrollPosition !== undefined) {
+      const maxScroll = scrollContainerRef.current.scrollHeight - scrollContainerRef.current.clientHeight;
+      scrollContainerRef.current.scrollTop = scrollPosition * maxScroll;
+    }
+  }, [scrollPosition]);
+
+  // Handle local scroll and notify parent
+  const handleScroll = () => {
+    if (scrollContainerRef.current && onScroll) {
+      const maxScroll = scrollContainerRef.current.scrollHeight - scrollContainerRef.current.clientHeight;
+      const relativePosition = maxScroll > 0 ? scrollContainerRef.current.scrollTop / maxScroll : 0;
+      onScroll(relativePosition);
+    }
+  };
+
   return (
     <div className="bg-gray-800 rounded-lg shadow-md mb-6 overflow-hidden">
       <div className={`${getHeaderColor()} px-4 py-3`}>
@@ -42,7 +59,11 @@ const PatientList: React.FC<PatientListProps> = ({ status, title, scrollPosition
           </span>
         </h2>
       </div>
-      <div className="p-4 max-h-[400px] overflow-y-auto">
+      <div 
+        ref={scrollContainerRef}
+        className="p-4 max-h-[400px] overflow-y-auto"
+        onScroll={handleScroll}
+      >
         {patients.length > 0 ? (
           patients.map((patient) => (
             <PatientCard key={patient.id} patient={patient} />

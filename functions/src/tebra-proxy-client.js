@@ -1,4 +1,3 @@
-const fetch = require('node-fetch');
 const { GoogleAuth } = require('google-auth-library');
 const { DebugLogger } = require('./debug-logger');
 // const functions = require('firebase-functions'); // Not needed for v2 functions
@@ -53,19 +52,19 @@ class TebraProxyClient {
     // Initialize Google Auth for Cloud Run authentication
     this.auth = new GoogleAuth();
     this.authClient = await this.auth.getIdTokenClient(this.cloudRunUrl);
-    console.log('Google Auth initialized for Cloud Run authentication');
+    this.logger.info('Google Auth initialized for Cloud Run authentication');
 
     this.initialized = true;
-    console.log('Tebra Cloud Run client initialized successfully');
-    console.log(`Cloud Run URL: ${this.cloudRunUrl}`);
-    console.log(`Internal API Key: ${this.internalApiKey ? '[SET]' : '[NOT SET]'}`);
+    this.logger.info('Tebra Cloud Run client initialized successfully');
+    this.logger.info(`Cloud Run URL: ${this.cloudRunUrl}`);
+    this.logger.info(`Internal API Key: ${this.internalApiKey ? '[SET]' : '[NOT SET]'}`);
   }
 
   /**
    * Fetch secrets only once and cache them for all instances
    */
   async _fetchSecretsOnce() {
-    console.log('[TebraProxyClient] Fetching secrets (shared initialization)');
+    this.logger.info('Fetching secrets (shared initialization)');
     
     let cloudRunUrl = null;
     let internalApiKey = null;
@@ -78,7 +77,7 @@ class TebraProxyClient {
       }
 
       const projectId = process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'luknerlumina-firebase';
-      console.log(`[TebraProxyClient] Using project ID: ${projectId}`);
+      this.logger.info(`Using project ID: ${projectId}`);
 
       const fetchSecret = async (secretName) => {
         try {
@@ -87,7 +86,7 @@ class TebraProxyClient {
           });
           return version.payload?.data?.toString();
         } catch (err) {
-          console.error(`[TebraProxyClient] Failed to fetch secret ${secretName}:`, err.message);
+          this.logger.error(`Failed to fetch secret ${secretName}:`, err.message);
           return null;
         }
       };
@@ -95,16 +94,16 @@ class TebraProxyClient {
       cloudRunUrl = await fetchSecret('TEBRA_CLOUD_RUN_URL');
       internalApiKey = await fetchSecret('TEBRA_INTERNAL_API_KEY');
       
-      console.log(`[TebraProxyClient] Secrets loaded from GSM - Cloud Run URL: ${cloudRunUrl ? '[SET]' : '[NOT SET]'}, API Key: ${internalApiKey ? '[SET]' : '[NOT SET]'}`);
+      this.logger.info(`Secrets loaded from GSM - Cloud Run URL: ${cloudRunUrl ? '[SET]' : '[NOT SET]'}, API Key: ${internalApiKey ? '[SET]' : '[NOT SET]'}`);
     } catch (err) {
-      console.error('[TebraProxyClient] Secret Manager initialization failed:', err);
+      this.logger.error('Secret Manager initialization failed:', err);
     }
 
     // 2️⃣  Fallback to env vars if GSM fails
     if (!cloudRunUrl || !internalApiKey) {
       cloudRunUrl = cloudRunUrl || process.env.TEBRA_CLOUD_RUN_URL;
       internalApiKey = internalApiKey || process.env.TEBRA_INTERNAL_API_KEY;
-      console.log(`[TebraProxyClient] After env var fallback - Cloud Run URL: ${cloudRunUrl ? '[SET]' : '[NOT SET]'}, API Key: ${internalApiKey ? '[SET]' : '[NOT SET]'}`);
+      this.logger.info(`After env var fallback - Cloud Run URL: ${cloudRunUrl ? '[SET]' : '[NOT SET]'}, API Key: ${internalApiKey ? '[SET]' : '[NOT SET]'}`);
     }
 
     // Cache the secrets for future instances
@@ -168,7 +167,11 @@ class TebraProxyClient {
             responseData: result,
             parseError: parseError.message
           });
-          throw new Error(`Invalid JSON response from Cloud Run: ${parseError.message}`);
+          // Re-throw with enhanced context
+          throw Object.assign(parseError, {
+            responseData: result,
+            action: action
+          });
         }
       } else {
         requestLogger.info(`Response already parsed`, {
@@ -188,7 +191,10 @@ class TebraProxyClient {
           error: result?.error,
           fullResponse: result
         });
-        throw new Error(result?.error || `HTTP ${response.status}`);
+        throw Object.assign(
+          new Error(result?.error || `HTTP ${response.status}`),
+          { status: response.status }
+        );
       }
 
       // Check for application-level errors
@@ -211,7 +217,10 @@ class TebraProxyClient {
           });
         }
         
-        throw new Error(result.error || 'Request failed');
+        throw Object.assign(
+          new Error(result.error || 'Request failed'),
+          { type: 'APPLICATION_ERROR' }
+        );
       }
 
 
@@ -225,7 +234,10 @@ class TebraProxyClient {
           tebraError: tebraResponse?.error,
           fullTebraResponse: JSON.stringify(tebraResponse)
         });
-        throw new Error(tebraResponse?.error || 'Tebra service error');
+        throw Object.assign(
+          new Error(tebraResponse?.error || 'Tebra service error'),
+          { type: 'TEBRA_SERVICE_ERROR' }
+        );
       }
 
       // Check for Tebra-specific authentication/authorization failures
@@ -242,7 +254,10 @@ class TebraProxyClient {
               securityResult: security.SecurityResult,
               customerKeyValid: security.CustomerKeyValid
             });
-            throw new Error(`Tebra auth failed: ${security.SecurityResult || 'Unknown error'}`);
+            throw Object.assign(
+              new Error(`Tebra auth failed: ${security.SecurityResult || 'Unknown error'}`),
+              { type: 'TEBRA_AUTH_ERROR' }
+            );
           }
         }
         
@@ -252,7 +267,10 @@ class TebraProxyClient {
             errorMessage: soapResult.ErrorResponse.ErrorMessage,
             stackTrace: soapResult.ErrorResponse.StackTrace
           });
-          throw new Error(`Tebra SOAP error: ${soapResult.ErrorResponse.ErrorMessage}`);
+          throw Object.assign(
+            new Error(`Tebra SOAP error: ${soapResult.ErrorResponse.ErrorMessage}`),
+            { type: 'TEBRA_SOAP_ERROR' }
+          );
         }
       }
 
@@ -283,27 +301,29 @@ class TebraProxyClient {
       });
       
       // Enhanced error context
-      const enhancedError = new Error(`Tebra API request failed: ${error.message}`);
-      enhancedError.originalError = error;
-      enhancedError.action = action;
-      enhancedError.params = params;
-      enhancedError.correlationId = requestLogger.correlationId;
-      
-      throw enhancedError;
+      throw Object.assign(
+        new Error(`Tebra API request failed: ${error.message}`),
+        {
+          originalError: error,
+          action: action,
+          params: params,
+          correlationId: requestLogger.correlationId
+        }
+      );
     }
   }
 
   async testConnection() {
     try {
-      console.log('[TebraProxyClient] Testing connection...');
+      this.logger.info('Testing connection...');
       const payload = await this.makeRequest('getProviders');
-      console.log('[TebraProxyClient] Test connection result:', payload ? 'Success' : 'Failed');
+      this.logger.info('Test connection result:', payload ? 'Success' : 'Failed');
       
       // Check if we got valid provider data in the SOAP payload
       const hasProviderData = payload?.GetProvidersResult?.Providers?.ProviderData;
       return !!hasProviderData;
     } catch (e) {
-      console.error('[TebraProxyClient] Test connection error:', e.message);
+      this.logger.error('Test connection error:', e.message);
       return false;
     }
   }
@@ -316,7 +336,7 @@ class TebraProxyClient {
       throw new Error('fromDate must be before or equal to toDate');
     }
     
-    console.log(`[TebraCloudRun] 🔍 Getting appointments for ${fromDate} to ${toDate}`);
+    this.logger.info(`Getting appointments for ${fromDate} to ${toDate}`);
     return this.makeRequest('getAppointments', { fromDate, toDate });
   }
 

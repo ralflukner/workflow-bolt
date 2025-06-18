@@ -53,9 +53,9 @@ export SERVICE_ACCOUNT="your-project@appspot.gserviceaccount.com"
 
 # Grant Secret Manager access
 
-gcloud projects add-iam-policy-binding $PROJECT_ID
-    --member="serviceAccount:$SERVICE_ACCOUNT"
-    --role="roles/secretmanager.secretAccessor"
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:$SERVICE_ACCOUNT" \
+  --role="roles/secretmanager.secretAccessor"
 
 ```
 

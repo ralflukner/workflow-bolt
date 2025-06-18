@@ -13,7 +13,7 @@ This service enables sending security alert emails through Google Workspace (Gma
 5. Select "Web application" as the application type
 6. Add a name (e.g., "HIPAA Security Alerts")
 7. Add authorized redirect URIs:
-   - https://developers.google.com/oauthplayground (for testing)
+   - `https://developers.google.com/oauthplayground` (for testing)
    - Your application's redirect URI (if applicable)
 8. Click "Create"
 9. Note the Client ID and Client Secre
@@ -25,9 +25,9 @@ This service enables sending security alert emails through Google Workspace (Gma
 3. Check "Use your own OAuth credentials"
 4. Enter your Client ID and Client Secre
 5. Close the settings
-6. Select "Gmail API v1" > "https://mail.google.com/" from the lis
+6. Select "Gmail API v1" > `https://mail.google.com/` from the list
 7. Click "Authorize APIs"
-8. Sign in with the Google Workspace account (lukner@luknerclinic.com)
+8. Sign in with the Google Workspace account (`lukner@luknerclinic.com`)
 9. Grant the requested permissions
 10. Click "Exchange authorization code for tokens"
 11. Note the Refresh Token
@@ -43,11 +43,11 @@ firebase functions:config:set gmail.client_id="YOUR_CLIENT_ID" gmail.client_secr
 Or, for Cloud Functions v2, deploy with environment variables:
 
 ```bash
-gcloud functions deploy FUNCTION_NAME
-  --gen2
-  --runtime=nodejs20
-  --region=us-central1
-  --set-env-vars="GMAIL_CLIENT_ID=YOUR_CLIENT_ID,GMAIL_CLIENT_SECRET=YOUR_CLIENT_SECRET,GMAIL_REFRESH_TOKEN=YOUR_REFRESH_TOKEN"
+gcloud functions deploy FUNCTION_NAME \
+  --gen2 \
+  --runtime=nodejs20 \
+  --region=us-central1 \
+   --set-env-vars="GMAIL_CLIENT_ID=…,GMAIL_CLIENT_SECRET=…,GMAIL_REFRESH_TOKEN=…"
 ```
 
 ### 4. Install Dependencies

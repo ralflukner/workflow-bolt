@@ -9,32 +9,32 @@ This wiki contains comprehensive security documentation for the Lukner Clinic Wo
 ### Incident Response
 
 - [Incident Response Plan](Incident-Response)
-- [Security Contacts](Security-Contacts)
-- [Emergency Procedures](Emergency-Procedures)
+- Security Contacts (see Emergency Contacts below)
+- Emergency Procedures (see Incident Response Plan)
 
 ### Compliance
 
-- [HIPAA Compliance](HIPAA-Compliance)
-- [Data Protection](Data-Protection)
-- [Audit Requirements](Audit-Requirements)
+- HIPAA Compliance (see main documentation)
+- Data Protection (see main documentation)
+- Audit Requirements (see main documentation)
 
 ### Procedures
 
-- [Access Control](Access-Control)
-- [Credential Management](Credential-Management)
-- [Data Backup](Data-Backup)
+- Access Control (see main documentation)
+- Credential Management (see main documentation)
+- Data Backup (see main documentation)
 
 ### Training
 
-- [Security Training](Security-Training)
-- [HIPAA Training](HIPAA-Training)
-- [Incident Response Training](Incident-Response-Training)
+- Security Training (see main documentation)
+- HIPAA Training (see main documentation)
+- Incident Response Training (see main documentation)
 
 ## 🚨 Emergency Contacts
 
 - **Security Team**: <lukner@luknerclinic.com>
 - **Emergency Phone**: 806-329-3050
-- **On-Call Engineer**: [On-Call Schedule](On-Call-Schedule)
+- **On-Call Engineer**: Contact security team for current schedule
 
 ## 📋 Recent Updates
 

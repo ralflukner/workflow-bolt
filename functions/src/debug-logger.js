@@ -53,7 +53,9 @@ class DebugLogger {
       method,
       url,
       headers: this.sanitizeHeaders(headers),
-      bodySize: body ? JSON.stringify(body).length : 0,
+      bodySize: typeof body === 'string'
+  ? Buffer.byteLength(body)
+  : Buffer.byteLength(JSON.stringify(body ?? {})),
       hasBody: !!body
     });
   }

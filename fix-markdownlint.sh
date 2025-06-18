@@ -39,7 +39,15 @@ for file in "${FILES[@]}"; do
 
   # Fix MD022/blanks-around-headings: Headings should be surrounded by blank lines
   # Add blank line before headings if not already present
-  sed -i.tmp -E 's/^([^#\n][^\n]*)\n(#+ )/\1\n\n\2/g' "$file"
+  # Detect GNU vs BSD sed
+  if sed --version >/dev/null 2>&1; then
+    # GNU
+    SED_INPLACE=(-i.tmp -E)
+  else
+    # BSD
+    SED_INPLACE=(-i '' -E)
+  fi
+  sed "${SED_INPLACE[@]}" 's/^([^#\n][^\n]*)\n(#+ )/\1\n\n\2/g' "$file"
   # Add blank line after headings if not already present
   sed -i.tmp -E 's/^(#+ [^\n]*)\n([^#\n][^\n]*)/\1\n\n\2/g' "$file"
 

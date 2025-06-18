@@ -13,13 +13,38 @@ interface FirebaseConfigType {
   measurementId?: string;
 }
 
+// Configuration constants
+const FIREBASE_CONFIG_ENDPOINT = import.meta.env.VITE_FIREBASE_CONFIG_ENDPOINT || 
+  'https://us-central1-luknerlumina-firebase.cloudfunctions.net/getFirebaseConfig';
+
+/**
+ * Validate Firebase configuration completeness
+ */
+function validateFirebaseConfig(config: unknown): config is FirebaseConfigType {
+  if (!config || typeof config !== 'object') {
+    return false;
+  }
+
+  const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+
+  for (const field of requiredFields) {
+    const record = config as Record<string, unknown>;
+    if (!record[field] || typeof record[field] !== 'string' || (record[field] as string).trim() === '') {
+      console.error(`Invalid or missing Firebase config field: ${field}`);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 /**
  * Fetch Firebase configuration from backend
  */
 async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
   try {
-    // Fetch from the public getFirebaseConfig endpoint
-    const response = await fetch('https://us-central1-luknerlumina-firebase.cloudfunctions.net/getFirebaseConfig', {
+    // Fetch from the configurable getFirebaseConfig endpoint
+    const response = await fetch(FIREBASE_CONFIG_ENDPOINT, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -27,16 +52,22 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch Firebase config: ${response.status}`);
+      throw Object.assign(
+        new Error(`Failed to fetch Firebase config: ${response.status}`),
+        { status: response.status }
+      );
     }
 
     const responseData = await response.json();
-    
+
     // Check if response has a data property (Firebase callable function wrapper)
     const config = responseData.data ? responseData.data : responseData;
-    
-    if (!config.apiKey) {
-      throw new Error('Invalid Firebase configuration received');
+
+    if (!validateFirebaseConfig(config)) {
+      throw Object.assign(
+        new Error('Invalid Firebase configuration received - missing required fields'),
+        { type: 'VALIDATION_ERROR' }
+      );
     }
 
     return config;
@@ -45,7 +76,7 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
     // Fall back to environment variables if available
     if (import.meta.env?.VITE_FIREBASE_API_KEY) {
       console.warn('Using Firebase config from environment variables as fallback');
-      return {
+      const fallbackConfig = {
         apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
         authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'luknerlumina-firebase.firebaseapp.com',
         projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'luknerlumina-firebase',
@@ -54,6 +85,15 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
         appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:623450773640:web:9afd63d3ccbb1fcb6fe73d',
         measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-W6TX8WRN2Z'
       };
+
+      if (!validateFirebaseConfig(fallbackConfig)) {
+        throw Object.assign(
+          new Error('Invalid Firebase configuration in environment variables'),
+          { type: 'FALLBACK_VALIDATION_ERROR' }
+        );
+      }
+
+      return fallbackConfig;
     }
     throw error;
   }
@@ -64,8 +104,7 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
  */
 export async function getFirebaseConfigWithGSM(): Promise<FirebaseConfigType> {
   try {
-    const config = await fetchFirebaseConfigFromBackend();
-    return config;
+    return await fetchFirebaseConfigFromBackend();
   } catch (error) {
     console.error('Failed to get Firebase config:', error);
     throw error;
