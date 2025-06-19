@@ -1,5 +1,5 @@
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { SimpleSpanProcessor, TraceExporter } = require('@opentelemetry/sdk-trace-base');
+const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { Resource } = require('@opentelemetry/resources');
