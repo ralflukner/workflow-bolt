@@ -17,6 +17,7 @@ Management application.
 - **Composer Dependencies**: Updated `tebra-php-api/composer.json` to include OpenTelemetry packages
 
 **Files Modified**:
+
 - `functions/src/debug-logger.js` (28 lines added/modified)
 - `tebra-php-api/composer.json` (3 lines modified)
 - `tebra-php-api/deploy-fix.sh` (73 lines added)
@@ -35,6 +36,7 @@ Management application.
 - **Backend Fault Detection**: Enhanced detection and reporting of backend service faults
 
 **Files Modified**:
+
 - `functions/index.js` (1 line added)
 - `functions/otel-init.js` (66 lines added)
 - `functions/package.json` (11 lines modified)
@@ -54,6 +56,7 @@ Management application.
 - **Error Prevention**: This fix prevents the deployment error: "Cannot update environment variable [TEBRA_USERNAME] to string literal because it has already been set with a different type"
 
 **Files Modified**:
+
 - `tebra-php-api/deploy-fix.sh` (5 lines modified)
 
 ### 4. Enhanced Debugging Capabilities and Health Checks

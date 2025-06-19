@@ -13,6 +13,7 @@ ERROR: (gcloud.run.deploy) Cannot update environment variable [TEBRA_USERNAME] t
 ```
 
 ### Root Cause
+
 The deployment script was attempting to set environment variables as string literals using the `--set-env-vars` option, but these variables were already configured as secrets in Cloud Run. This created a conflict between the two configuration methods.
 
 ## Solution Implementation

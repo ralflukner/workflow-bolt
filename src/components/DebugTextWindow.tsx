@@ -83,13 +83,17 @@ export const DebugTextWindow: React.FC<DebugTextWindowProps> = ({
         <h3 className="text-white font-semibold">Debug Text View</h3>
       </div>
       <div className="flex-1 p-4">
+        <label htmlFor="debug-textarea" className="sr-only">
+          Debug patient data text view
+        </label>
         <textarea
+          id="debug-textarea"
           ref={textAreaRef}
           value={allPatientsText}
           readOnly
           onScroll={handleScroll}
           className="w-full h-full bg-gray-900 text-gray-300 font-mono text-xs p-3 rounded border border-gray-700 resize-none min-h-[400px]"
-          style={{ minHeight: '400px' }}
+          aria-label="Debug patient data text view"
         />
       </div>
     </div>
