@@ -51,7 +51,11 @@ const getSecret = onCall({ enforceAppCheck: true }, async (request) => {
   }
 
   // Build the GSM resource path
-  const name = `projects/${PROJECT_ID}/secrets/${secretKey}/versions/latest`;
+  const projectId = resolveProjectId();
+  if (!projectId) {
+    throw new HttpsError('internal', 'GCP project ID not configured');
+  }
+  const name = `projects/${projectId}/secrets/${secretKey}/versions/latest`;
   try {
     const [version] = await gsm.accessSecretVersion({ name });
     const payload = version.payload && version.payload.data && version.payload.data.toString();
