@@ -88,7 +88,7 @@ export const DebugTextWindow: React.FC<DebugTextWindowProps> = ({
           value={allPatientsText}
           readOnly
           onScroll={handleScroll}
-          className="w-full h-full bg-gray-900 text-gray-300 font-mono text-xs p-3 rounded border border-gray-700 resize-none"
+          className="w-full h-full bg-gray-900 text-gray-300 font-mono text-xs p-3 rounded border border-gray-700 resize-none min-h-[400px]"
           style={{ minHeight: '400px' }}
         />
       </div>
