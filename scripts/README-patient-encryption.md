@@ -122,4 +122,4 @@ If you were using the previous hardcoded version:
 ./create-patient-encryption-secret.sh 'your-key' 'your-project-id'
 # or
 PROJECT_ID='your-project-id' ./create-patient-encryption-secret.sh 'your-key'
-``` 
+```
