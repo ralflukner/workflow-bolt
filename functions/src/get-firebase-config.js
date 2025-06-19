@@ -14,7 +14,7 @@ const PROJECT_ID = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJEC
  */
 let cachedConfig;          // <-- module-level cache
 
-const getFirebaseConfig = onRequest({ cors: true }, async (req, res) => {
+const getFirebaseConfig = onRequest({ cors: true, memory: '1GiB' }, async (req, res) => {
   try {
      // Only allow GET requests
     if (req.method !== 'GET') {

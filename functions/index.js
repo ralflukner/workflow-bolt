@@ -1,7 +1,7 @@
 require('./otel-init');
 const functions = require('firebase-functions');
 const functionsV1 = require('firebase-functions/v1');
-const { onCall } = require('firebase-functions/v2/https');
+const { onCall, onRequest } = require('firebase-functions/v2/https');
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -214,55 +214,61 @@ exports.validateHIPAACompliance = validateHIPAACompliance;
 exports.testSecretRedaction = testSecretRedaction;
 
 // Tebra API Functions
-exports.tebraTestConnection = onCall({ 
-  cors: true,
-  timeoutSeconds: 60,
-  memory: '1GiB' 
-}, async (request) => {
-  const logger = new DebugLogger('tebraTestConnection');
-  logger.info('Starting Tebra connection test', {
-    userId: request.auth?.uid || 'anonymous',
-    userAgent: request.rawRequest?.headers?.['user-agent'],
-    ip: request.rawRequest?.ip
-  });
-
-  try {
-    // Test actual Tebra API connection
-    const timer = logger.time('connection test');
-    const connected = await tebraProxyClient.testConnection();
-    timer.end();
-
-    const result = { 
-      success: connected, 
-      message: connected ? 'Tebra API connection test successful' : 'Tebra API connection failed',
-      timestamp: new Date().toISOString(),
-      correlationId: logger.correlationId
-    };
-
-    logger.info('Connection test completed', {
-      success: connected,
-      result
+exports.tebraTestConnection = onRequest(
+  { memory: '2GiB', cors: true },
+  async (req, res) => {
+    const logger = new DebugLogger('tebraTestConnection');
+    logger.info('Starting Tebra PHP service connectivity test', {
+      userId: req.auth?.uid || 'anonymous',
+      userAgent: req.rawRequest?.headers?.['user-agent'],
+      ip: req.rawRequest?.ip
     });
 
-    return result;
-  } catch (error) {
-    logger.error('Tebra connection test failed', {
-      error: error.message,
-      stack: error.stack,
-      correlationId: error.correlationId,
-      action: error.action,
-      isTebraError: error.message.includes('InternalServiceFault')
-    });
+    try {
+      // Test connectivity to the PHP Cloud Run service (which handles SOAP)
+      const timer = logger.time('php service test');
+      
+      // Test basic connectivity to Cloud Run PHP service
+      const cloudRunUrl = process.env.TEBRA_CLOUD_RUN_URL || 'https://tebra-php-api-xccvzgogwa-uc.a.run.app';
+      const healthResponse = await fetch(`${cloudRunUrl}/health`);
+      
+      timer.end();
 
-    return { 
-      success: false, 
-      message: error.message || 'Connection test failed',
-      timestamp: new Date().toISOString(),
-      correlationId: logger.correlationId,
-      errorType: error.message.includes('InternalServiceFault') ? 'TEBRA_FAULT' : 'UNKNOWN'
-    };
+      const isHealthy = healthResponse.ok;
+      const result = { 
+        success: isHealthy, 
+        message: isHealthy ? 'Tebra PHP service connectivity test successful' : 'Tebra PHP service connectivity failed',
+        timestamp: new Date().toISOString(),
+        correlationId: logger.correlationId,
+        cloudRunStatus: healthResponse.status,
+        cloudRunUrl: cloudRunUrl,
+        note: 'This tests connectivity to the PHP service that handles SOAP communication with Tebra'
+      };
+
+      logger.info('PHP service connectivity test completed', {
+        success: isHealthy,
+        result
+      });
+
+      res.status(200).json(result);
+    } catch (error) {
+      logger.error('PHP service connectivity test failed', {
+        error: error.message,
+        stack: error.stack,
+        correlationId: logger.correlationId
+      });
+
+      const result = { 
+        success: false, 
+        message: error.message || 'PHP service connectivity test failed',
+        timestamp: new Date().toISOString(),
+        correlationId: logger.correlationId
+      };
+
+      res.status(500).json(result);
+    }
   }
-});
+);
 
 // Get patient by ID
 exports.tebraGetPatient = onCall({ 
