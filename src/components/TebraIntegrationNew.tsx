@@ -68,6 +68,47 @@ const TebraIntegration: React.FC = () => {
     }
   }, [connectionTested]);
 
+  // Refresh appointment counts periodically when connected
+  useEffect(() => {
+    if (isConnected) {
+      // Fetch immediately when connected
+      fetchAppointmentCounts();
+      
+      // Then refresh every 5 minutes
+      const interval = setInterval(fetchAppointmentCounts, 5 * 60 * 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isConnected]);
+
+  const fetchAppointmentCounts = async () => {
+    setAppointmentCountLoading(true);
+    try {
+      // Get today's date
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      
+      // Get tomorrow's date
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+      
+      // Fetch appointment counts from Tebra
+      const [todayAppointments, tomorrowAppointments] = await Promise.all([
+        tebraApiService.getAppointments(todayStr),
+        tebraApiService.getAppointments(tomorrowStr)
+      ]);
+      
+      setTodayAppointmentCount(todayAppointments.length);
+      setTomorrowAppointmentCount(tomorrowAppointments.length);
+    } catch (error) {
+      console.error('Failed to fetch appointment counts:', error);
+      // Don't update counts on error, keep them as null
+    } finally {
+      setAppointmentCountLoading(false);
+    }
+  };
+
   const testConnection = async () => {
     setIsLoading(true);
     setStatusMessage('Testing Tebra API connection...');
@@ -96,6 +137,8 @@ const TebraIntegration: React.FC = () => {
       
       if (connected) {
         setStatusMessage('✅ Connected to Tebra API via Firebase Functions');
+        // Fetch appointment counts when connected
+        fetchAppointmentCounts();
       } else {
         const errorMessage = data.message || 'Check configuration';
         setStatusMessage(`❌ Failed to connect to Tebra API. ${errorMessage}`);
@@ -242,6 +285,9 @@ const TebraIntegration: React.FC = () => {
         // Refresh patient data from Firebase after successful sync
         console.log('[TebraIntegrationNew] Refreshing patient data after sync...');
         await refreshFromFirebase();
+        
+        // Refresh appointment counts after successful sync
+        fetchAppointmentCounts();
       } else {
         setStatusMessage(`❌ Sync failed: ${result.message}`);
       }
@@ -288,6 +334,32 @@ const TebraIntegration: React.FC = () => {
       {/* Manual Sync */}
       <div className="border-t border-gray-700 pt-4 mb-4">
         <h3 className="text-lg font-medium text-white mb-2">Manual Sync</h3>
+        
+        {/* Appointment Counts from Tebra */}
+        <div className="mb-3 text-sm text-gray-300">
+          <div className="text-xs text-gray-400 mb-1">Appointments in Tebra EHR:</div>
+          {appointmentCountLoading ? (
+            <span>Loading appointment counts...</span>
+          ) : (
+            <div className="space-y-1">
+              <div>
+                Today: {todayAppointmentCount !== null ? (
+                  <span className="font-semibold text-white">{todayAppointmentCount} appointments</span>
+                ) : (
+                  <span className="text-gray-500">--</span>
+                )}
+              </div>
+              <div>
+                Tomorrow: {tomorrowAppointmentCount !== null ? (
+                  <span className="font-semibold text-white">{tomorrowAppointmentCount} appointments</span>
+                ) : (
+                  <span className="text-gray-500">--</span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        
         <div className="flex space-x-2 flex-wrap gap-2">
           <button
             onClick={() => handleManualSync()}

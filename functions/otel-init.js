@@ -4,8 +4,9 @@ const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { Resource } = require('@opentelemetry/resources');
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
-const { CloudTraceExporter } = require('@google-cloud/opentelemetry-cloud-trace-exporter');
+const { TraceExporter } = require('@opentelemetry/sdk-trace-base');
 const api = require('@opentelemetry/api');
+const { CloudTraceExporter } = require('@google-cloud/opentelemetry-cloud-trace-exporter');
 
 // ---------------------------------------------------------------------------
 // Custom ID generator – if a correlationId is present on global.otelCorrelationId,
@@ -38,7 +39,7 @@ const provider = new NodeTracerProvider({
   }),
   idGenerator: new CorrelationIdGenerator(),
 });
-provider.addSpanProcessor(new SimpleSpanProcessor(new CloudTraceExporter()));
+provider.addSpanProcessor(new SimpleSpanProcessor(new TraceExporter()));
 provider.register();
 
 registerInstrumentations({
