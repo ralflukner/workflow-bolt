@@ -7,6 +7,7 @@ This document describes the OpenTelemetry integration implemented in the Tebra A
 ## Implementation Details
 
 ### Commit Information
+
 - **Commit**: `2ad8229` - feat(tracing): Integrate OpenTelemetry for enhanced tracing and debugging
 - **Date**: June 18, 2025
 - **Author**: Ralf B Lukner MD PhD
@@ -22,12 +23,13 @@ This document describes the OpenTelemetry integration implemented in the Tebra A
 
 ### PHP API Integration (`tebra-php-api/`)
 
-#### Files Modified:
+#### Files Modified
+
 - `tebra-php-api/src/tracing.php` (107 lines) - Core OpenTelemetry implementation
 - `tebra-php-api/public/index.php` (2 lines) - Tracing initialization
 - `tebra-php-api/composer.json` (3 lines) - OpenTelemetry dependencies
 
-#### Key Components:
+#### Key Components
 
 ```php
 // Custom ID generator for correlation
@@ -37,7 +39,7 @@ class CustomIdGenerator implements IdGeneratorInterface
     {
         return sprintf('%016x%016x', mt_rand(), mt_rand());
     }
-    
+
     public function generateSpanId(): string
     {
         return sprintf('%016x', mt_rand());
@@ -47,12 +49,13 @@ class CustomIdGenerator implements IdGeneratorInterface
 
 ### Node.js Cloud Functions Integration (`functions/`)
 
-#### Files Modified:
+#### Files Modified
+
 - `functions/src/debug-logger.js` (28 lines) - Enhanced logging with correlation IDs
 - `functions/src/tracing.js` (82 lines) - Node.js tracing implementation
 - `functions/otel-init.js` (66 lines) - OpenTelemetry initialization
 
-#### Key Components:
+#### Key Components
 
 ```javascript
 // Enhanced debug logger with correlation ID support
@@ -75,6 +78,7 @@ const logger = {
 ### Deployment Script (`tebra-php-api/deploy-fix.sh`)
 
 The deployment script includes:
+
 - OpenTelemetry configuration setup
 - Environment variable management
 - Health check configuration
@@ -83,6 +87,7 @@ The deployment script includes:
 ### Environment Variables
 
 Required environment variables for OpenTelemetry:
+
 - `OTEL_SERVICE_NAME`: Service identifier
 - `OTEL_TRACES_EXPORTER`: Trace exporter configuration
 - `OTEL_METRICS_EXPORTER`: Metrics exporter configuration
@@ -137,6 +142,7 @@ try {
 ### Debug Dashboard
 
 The TebraDebugDashboard component provides:
+
 - Real-time trace visualization
 - Correlation ID tracking
 - Error rate monitoring
@@ -145,21 +151,25 @@ The TebraDebugDashboard component provides:
 ## Best Practices
 
 ### 1. Correlation ID Management
+
 - Always propagate correlation IDs across service boundaries
 - Use consistent ID format across PHP and Node.js
 - Include correlation IDs in all log entries
 
 ### 2. Span Naming
+
 - Use descriptive span names that indicate the operation
 - Include service name prefix for clarity
 - Add relevant attributes for filtering and analysis
 
 ### 3. Error Handling
+
 - Always record exceptions in spans
 - Include error context and stack traces
 - Set appropriate error attributes
 
 ### 4. Performance Monitoring
+
 - Monitor span duration for performance bottlenecks
 - Track resource usage and memory consumption
 - Set up alerts for slow operations
@@ -208,4 +218,4 @@ gcloud logging read "severity>=ERROR" --limit=20
 - [Tebra Debugging Strategy Guide](tebra-debugging-strategy-guide.md)
 - [Tebra Debug Dashboard Guide](tebra-debug-dashboard-guide.md)
 - [Recent Changes](recent-changes.md)
-- [CHANGELOG](CHANGELOG.md) 
+- [CHANGELOG](CHANGELOG.md)

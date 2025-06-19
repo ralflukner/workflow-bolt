@@ -3,6 +3,75 @@
 This document tracks significant recent changes to the Patient Flow
 Management application.
 
+## Latest Updates (June 18, 2025)
+
+### 1. OpenTelemetry Integration for Enhanced Tracing and Debugging
+
+**Commit**: `2ad8229` - feat(tracing): Integrate OpenTelemetry for enhanced tracing and debugging
+
+- **OpenTelemetry Implementation**: Added comprehensive tracing support in the PHP API to improve observability and debugging capabilities
+- **Custom ID Generator**: Implemented correlation ID generation to align PHP and Node.js traces for seamless debugging across services
+- **Enhanced Debug Logger**: Updated `functions/src/debug-logger.js` to handle correlation IDs and span context for better trace management
+- **Deployment Script**: Created `tebra-php-api/deploy-fix.sh` to streamline deployment processes and ensure proper configuration
+- **Tracing Infrastructure**: Added `tebra-php-api/src/tracing.php` with 107 lines of OpenTelemetry implementation
+- **Composer Dependencies**: Updated `tebra-php-api/composer.json` to include OpenTelemetry packages
+
+**Files Modified**:
+- `functions/src/debug-logger.js` (28 lines added/modified)
+- `tebra-php-api/composer.json` (3 lines modified)
+- `tebra-php-api/deploy-fix.sh` (73 lines added)
+- `tebra-php-api/public/index.php` (2 lines added)
+- `tebra-php-api/src/tracing.php` (107 lines added)
+
+### 2. Enhanced Error Handling with Specific Error Messages and Partial Redaction
+
+**Commit**: `869de34` - fix: Enhanced error handling with specific error messages and partial redaction
+
+- **Specific SOAP Fault Handling**: Added detailed error handling for known Tebra SOAP faults with actionable error messages
+- **Partial Data Redaction**: Implemented intelligent redaction that shows partial data (e.g., "joh***@example.com (len: 20)") instead of complete redaction
+- **Correlation ID Integration**: Enhanced error context with correlation IDs and timestamps for better debugging
+- **ValidationHelper Bug Detection**: Added specific handlers for the known Tebra server bug "ValidationHelper null reference"
+- **Authentication Error Handling**: Improved handling of authentication errors with specific remediation suggestions
+- **Backend Fault Detection**: Enhanced detection and reporting of backend service faults
+
+**Files Modified**:
+- `functions/index.js` (1 line added)
+- `functions/otel-init.js` (66 lines added)
+- `functions/package.json` (11 lines modified)
+- `functions/src/debug-logger.js` (28 lines added)
+- `functions/src/tebra-proxy-client.js` (292 lines modified)
+- `functions/src/tracing.js` (82 lines added)
+- `tebra-php-api/public/index.php` (76 lines added/modified)
+- `tebra-php-api/src/TebraHttpClient.php` (77 lines added/modified)
+
+### 3. Deployment Script Fix for Environment Variable Management
+
+**Commit**: `11938ab` - fix(deploy): Update deployment script to prevent environment variable updates
+
+- **Environment Variable Fix**: Resolved Cloud Run deployment issue where environment variables were being set as string literals instead of using configured secrets
+- **Deployment Optimization**: Removed `--set-env-vars` option from deployment command to prevent conflicts with existing secret configuration
+- **Documentation Enhancement**: Added clear comments explaining that environment variables are configured as secrets in Cloud Run
+- **Error Prevention**: This fix prevents the deployment error: "Cannot update environment variable [TEBRA_USERNAME] to string literal because it has already been set with a different type"
+
+**Files Modified**:
+- `tebra-php-api/deploy-fix.sh` (5 lines modified)
+
+### 4. Enhanced Debugging Capabilities and Health Checks
+
+**Commit**: `3c1d2a6` - feat(debug): Enhance debugging capabilities with new tools and health checks
+
+- **New Debug Tools**: Added comprehensive debugging tools for better system monitoring
+- **Health Check Improvements**: Enhanced health check functionality with detailed status reporting
+- **Monitoring Enhancements**: Improved system monitoring capabilities for better operational visibility
+
+### 5. TebraDebugDashboard Component Integration
+
+**Commit**: `bf8258d` - feat: Add TebraDebugDashboard component to Dashboard
+
+- **Debug Dashboard**: Integrated TebraDebugDashboard component into the main Dashboard for real-time debugging
+- **UI Enhancement**: Added user-friendly interface for monitoring Tebra API interactions
+- **Real-time Monitoring**: Provides live feedback on API calls and system status
+
 ## Version 0.1.0-alpha.5 Release (May 2025)
 
 The latest alpha release includes significant improvements to Vite

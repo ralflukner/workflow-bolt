@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- **Enhancement**: Integrated OpenTelemetry tracing for enhanced observability and debugging across PHP API and Node.js services
+- **Enhancement**: Added comprehensive error handling with specific SOAP fault messages and partial data redaction for better debugging
+- **Fix**: Resolved Cloud Run deployment issue with environment variable management by removing `--set-env-vars` option
+- **Enhancement**: Enhanced debugging capabilities with new tools, health checks, and TebraDebugDashboard component
 - **Enhancement**: Fixed structured logging in `functions/src/debug-logger.js` to preserve
   all metadata fields in GCP Cloud Logging for advanced filtering and monitoring.
 - **Security**: Enhanced log analysis script (`analyze-logs.cjs`) to prevent shell injection

@@ -12,7 +12,10 @@ Welcome to the **workflow-bolt** documentation folder.  Below is a curated table
 | Debugging toolkit | Structured logging, correlation IDs, log analysis | `../DEBUG-TOOLKIT.md` |
 | **🆕 Debugging strategy** | **Complete guide to debugging improvements & workflows** | `tebra-debugging-strategy-guide.md` |
 | Debugging flow example | Walkthrough of tools in action | `debugging-tools-summary.md` |
+| **🆕 OpenTelemetry integration** | **Enhanced tracing and debugging across PHP and Node.js** | `opentelemetry-integration.md` |
+| **🆕 Deployment fixes** | **Cloud Run deployment and environment variable management** | `deployment-fix-guide.md` |
 | HIPAA & compliance | Security requirements & checklists | `HIPAA_SETUP_GUIDE.md` |
 | Changelog | Human-readable list of all notable changes | `CHANGELOG.md` |
+| Recent changes | Latest updates and improvements | `recent-changes.md` |
 
 _Need something else?  Check the sub-directories (`00-overview`, `01-compliance`, etc.) or run a text search._
