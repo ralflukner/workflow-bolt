@@ -51,6 +51,9 @@ const TebraIntegration: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [connectionTested, setConnectionTested] = useState(false);
+  const [todayAppointmentCount, setTodayAppointmentCount] = useState<number | null>(null);
+  const [tomorrowAppointmentCount, setTomorrowAppointmentCount] = useState<number | null>(null);
+  const [appointmentCountLoading, setAppointmentCountLoading] = useState(false);
 
   useEffect(() => {
     // Set default date to current time
