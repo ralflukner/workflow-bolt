@@ -32,6 +32,8 @@ const SECRETS_TO_PULL = [
   // Gmail Service Account secrets (for Domain-Wide Delegation)
   { name: 'GMAIL_SERVICE_ACCOUNT_EMAIL', envVar: 'GMAIL_SERVICE_ACCOUNT_EMAIL' },
   { name: 'GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY', envVar: 'GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY' },
+  // Patient encryption key
+  { name: 'patient-encryption-key', envVar: 'REACT_APP_PATIENT_ENCRYPTION_KEY' },
 ];
 
 async function readSecret(secretName) {
