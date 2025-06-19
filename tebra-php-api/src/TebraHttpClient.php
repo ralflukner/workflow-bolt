@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace LuknerLumina\TebraApi;
 
+use LuknerLumina\TebraApi\SecretManager;
+
 /**
  * Tebra HTTP Client for PHP
  * Based on official Tebra API Integration Technical Guide
@@ -21,11 +23,11 @@ class TebraHttpClient {
     private $maxLogEntries = 100;
     
     public function __construct() {
-        // Read from environment variables
-        $this->username = $this->getRequiredEnv('TEBRA_USERNAME');
-        $this->password = $this->getRequiredEnv('TEBRA_PASSWORD');
-        $this->customerKey = $this->getRequiredEnv('TEBRA_CUSTOMER_KEY');
-        // Use the working WSDL URL regardless of environment variable
+        // Read from Google Secret Manager with environment variable fallback
+        $this->username = SecretManager::getRequiredSecret('tebra-username', 'TEBRA_USERNAME');
+        $this->password = SecretManager::getRequiredSecret('tebra-password', 'TEBRA_PASSWORD');
+        $this->customerKey = SecretManager::getRequiredSecret('tebra-customer-key', 'TEBRA_CUSTOMER_KEY');
+        // Use the working WSDL URL
         $this->wsdlUrl = 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl';
         
         // Debug logging with hashes for credential verification (sensitive data removed)
@@ -36,14 +38,6 @@ class TebraHttpClient {
         
         $this->initializeClient();
         $this->initializeHealthStatus();
-    }
-    
-    private function getRequiredEnv($key) {
-        $value = getenv($key);
-        if ($value === false) {
-            throw new \RuntimeException("Required environment variable {$key} is not set");
-        }
-        return $value;
     }
     
     /**
@@ -575,6 +569,81 @@ class TebraHttpClient {
     }
     
     /**
+     * Get a single patient by ID
+     */
+    public function getPatient($patientId) {
+        $startTime = microtime(true);
+        
+        try {
+            error_log("Getting patient with ID: {$patientId}");
+            
+            // Use GetPatients with specific patient ID filter
+            $request = [
+                'request' => [
+                    'RequestHeader' => [
+                        'User' => $this->username,
+                        'Password' => $this->password,
+                        'CustomerKey' => $this->customerKey
+                    ],
+                    'Filter' => [
+                        'PatientID' => $patientId,
+                        'PatientExternalID' => '',
+                        'FromLastModifiedDate' => '',
+                        'ToLastModifiedDate' => ''
+                    ]
+                ]
+            ];
+            
+            $response = $this->client->GetPatients($request);
+            $duration = round((microtime(true) - $startTime) * 1000);
+            
+            // Process response
+            if (isset($response->GetPatientsResult)) {
+                $result = $response->GetPatientsResult;
+                
+                // Check security response
+                if (isset($result->SecurityResponse) && !$result->SecurityResponse->Authenticated) {
+                    throw new \Exception('Authentication failed');
+                }
+                
+                // Check for errors
+                if (isset($result->ErrorResponse) && $result->ErrorResponse->IsError) {
+                    throw new \Exception('API Error: ' . $result->ErrorResponse->ErrorMessage);
+                }
+                
+                // Extract patient data
+                $patient = null;
+                if (isset($result->Patients) && isset($result->Patients->PatientData)) {
+                    $data = $result->Patients->PatientData;
+                    // Should return single patient, but handle array case
+                    $patient = is_array($data) ? $data[0] : $data;
+                }
+                
+                $this->logRequest('GetPatient', ['patientId' => $patientId], true, null, $duration);
+                
+                return [
+                    'success' => true,
+                    'patient' => $patient,
+                    'request_time_ms' => $duration,
+                    'timestamp' => date('c')
+                ];
+            }
+            
+            throw new \Exception('Unexpected response format from GetPatients');
+            
+        } catch (\SoapFault $e) {
+            $this->handleSoapFault($e, 'GetPatient');
+        } catch (\Exception $e) {
+            error_log("Failed to get patient: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to get patient: ' . $e->getMessage(),
+                'timestamp' => date('c')
+            ];
+        }
+    }
+    
+    /**
      * Search for patients by last name
      */
     public function searchPatients($lastName) {
@@ -634,6 +703,144 @@ class TebraHttpClient {
      */
     public function getLastResponse() {
         return $this->client ? $this->client->__getLastResponse() : null;
+    }
+    
+    /**
+     * Create a new appointment
+     */
+    public function createAppointment($appointmentData) {
+        $startTime = microtime(true);
+        
+        try {
+            error_log("Creating appointment with data: " . json_encode($this->redactSensitiveData($appointmentData)));
+            
+            // Prepare request with authentication headers
+            $request = [
+                'request' => [
+                    'RequestHeader' => [
+                        'User' => $this->username,
+                        'Password' => $this->password,
+                        'CustomerKey' => $this->customerKey
+                    ],
+                    'Create' => [$appointmentData]
+                ]
+            ];
+            
+            $response = $this->client->CreateAppointments($request);
+            $duration = round((microtime(true) - $startTime) * 1000);
+            
+            // Process response
+            if (isset($response->CreateAppointmentsResult)) {
+                $result = $response->CreateAppointmentsResult;
+                
+                // Check security response
+                if (isset($result->SecurityResponse) && !$result->SecurityResponse->Authenticated) {
+                    throw new \Exception('Authentication failed');
+                }
+                
+                // Check for errors
+                if (isset($result->ErrorResponse) && $result->ErrorResponse->IsError) {
+                    throw new \Exception('API Error: ' . $result->ErrorResponse->ErrorMessage);
+                }
+                
+                // Extract created appointments
+                $appointments = [];
+                if (isset($result->Appointments) && isset($result->Appointments->AppointmentData)) {
+                    $data = $result->Appointments->AppointmentData;
+                    $appointments = is_array($data) ? $data : [$data];
+                }
+                
+                $this->logRequest('CreateAppointments', $appointmentData, true, null, $duration);
+                
+                return [
+                    'success' => true,
+                    'appointments' => $appointments,
+                    'request_time_ms' => $duration,
+                    'timestamp' => date('c')
+                ];
+            }
+            
+            throw new \Exception('Unexpected response format from CreateAppointments');
+            
+        } catch (\SoapFault $e) {
+            $this->handleSoapFault($e, 'CreateAppointments');
+        } catch (\Exception $e) {
+            error_log("Failed to create appointment: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to create appointment: ' . $e->getMessage(),
+                'timestamp' => date('c')
+            ];
+        }
+    }
+    
+    /**
+     * Update an existing appointment
+     */
+    public function updateAppointment($appointmentData) {
+        $startTime = microtime(true);
+        
+        try {
+            error_log("Updating appointment with data: " . json_encode($this->redactSensitiveData($appointmentData)));
+            
+            // Prepare request with authentication headers
+            $request = [
+                'request' => [
+                    'RequestHeader' => [
+                        'User' => $this->username,
+                        'Password' => $this->password,
+                        'CustomerKey' => $this->customerKey
+                    ],
+                    'Update' => [$appointmentData]
+                ]
+            ];
+            
+            $response = $this->client->UpdateAppointments($request);
+            $duration = round((microtime(true) - $startTime) * 1000);
+            
+            // Process response
+            if (isset($response->UpdateAppointmentsResult)) {
+                $result = $response->UpdateAppointmentsResult;
+                
+                // Check security response
+                if (isset($result->SecurityResponse) && !$result->SecurityResponse->Authenticated) {
+                    throw new \Exception('Authentication failed');
+                }
+                
+                // Check for errors
+                if (isset($result->ErrorResponse) && $result->ErrorResponse->IsError) {
+                    throw new \Exception('API Error: ' . $result->ErrorResponse->ErrorMessage);
+                }
+                
+                // Extract updated appointments
+                $appointments = [];
+                if (isset($result->Appointments) && isset($result->Appointments->AppointmentData)) {
+                    $data = $result->Appointments->AppointmentData;
+                    $appointments = is_array($data) ? $data : [$data];
+                }
+                
+                $this->logRequest('UpdateAppointments', $appointmentData, true, null, $duration);
+                
+                return [
+                    'success' => true,
+                    'appointments' => $appointments,
+                    'request_time_ms' => $duration,
+                    'timestamp' => date('c')
+                ];
+            }
+            
+            throw new \Exception('Unexpected response format from UpdateAppointments');
+            
+        } catch (\SoapFault $e) {
+            $this->handleSoapFault($e, 'UpdateAppointments');
+        } catch (\Exception $e) {
+            error_log("Failed to update appointment: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to update appointment: ' . $e->getMessage(),
+                'timestamp' => date('c')
+            ];
+        }
     }
     
     /**

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { usePatientContext } from '../hooks/usePatientContext';
-import { tebraApiService } from '../services/tebraApiService';
+import tebraApi from '../services/tebraApi';
 import { TebraConnectionDebuggerSimple } from './TebraConnectionDebuggerSimple';
 import { doc, onSnapshot, getFirestore } from 'firebase/firestore';
 import { useFirebaseAuth } from '../services/authBridge';
@@ -95,8 +95,8 @@ const TebraIntegration: React.FC = () => {
       
       // Fetch appointment counts from Tebra
       const [todayAppointments, tomorrowAppointments] = await Promise.all([
-        tebraApiService.getAppointments(todayStr),
-        tebraApiService.getAppointments(tomorrowStr)
+        tebraApi.getAppointments({ fromDate: todayStr, toDate: todayStr }),
+        tebraApi.getAppointments({ fromDate: tomorrowStr, toDate: tomorrowStr })
       ]);
       
       setTodayAppointmentCount(todayAppointments.length);
@@ -188,7 +188,7 @@ const TebraIntegration: React.FC = () => {
     setStatusMessage('Testing patient search...');
 
     try {
-      const patients = await tebraApiService.searchPatients({ lastName: 'Test' });
+      const patients = await tebraApi.searchPatients({ lastName: 'Test' });
       setStatusMessage(`✅ Patient search test completed. Found ${patients.length} patients.`);
     } catch (error) {
       console.error('Patient search test failed:', error);
@@ -208,7 +208,7 @@ const TebraIntegration: React.FC = () => {
     setStatusMessage('Getting providers...');
 
     try {
-      const providers = await tebraApiService.getProviders();
+      const providers = await tebraApi.getProviders();
       setStatusMessage(`✅ Retrieved ${providers.length} providers from Tebra.`);
       console.log('Providers:', providers);
     } catch (error) {
@@ -229,7 +229,7 @@ const TebraIntegration: React.FC = () => {
     setStatusMessage(`Testing raw appointments for ${date}...`);
 
     try {
-      const result = await tebraApiService.testAppointments(date) as TestAppointmentsResponse;
+      const result = await tebraApi.testAppointments() as TestAppointmentsResponse;
       console.log('Raw Tebra response:', result);
       setStatusMessage(`✅ Test complete. Check console for raw data.`);
       if (result.success && result.data) {
@@ -271,7 +271,9 @@ const TebraIntegration: React.FC = () => {
       console.log(`[TebraIntegrationNew] Specific date parameter: ${specificDate || 'not provided'}`);
       
       setStatusMessage(`Syncing schedule for ${dateToSync}...`);
-      const result = await tebraApiService.syncTodaysSchedule(dateToSync);
+      // TODO: Implement sync functionality in PHP API
+      // const result = await tebraApi.syncTodaysSchedule(dateToSync);
+      const result = { data: { success: false, message: 'Sync not yet implemented in PHP API' } };
       if (result.success) {
         const patientCount = result.patientCount || result.patients?.length || 0;
         setStatusMessage(`✅ Sync completed. Imported ${patientCount} appointments for ${dateToSync}.`);

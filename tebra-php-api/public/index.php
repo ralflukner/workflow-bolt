@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use LuknerLumina\TebraApi\TebraHttpClient;
+use LuknerLumina\TebraApi\SecretManager;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 // Initialise OpenTelemetry tracing (safe-no-op if disabled)
@@ -75,17 +76,16 @@ if ($method === 'GET' && $path === '/debug/secrets' && false /* remove or protec
 }
 
 // Validate API key header for all non-health requests
-$internalApiKey = getenv('INTERNAL_API_KEY') ?: '';
+$internalApiKey = SecretManager::getSecret('tebra-internal-api-key', 'INTERNAL_API_KEY');
 $clientApiKey   = $_SERVER['HTTP_X_API_KEY'] ?? '';
-if ($internalApiKey === '') {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Server misconfiguration']);
-    exit;
-}
-if (!hash_equals($internalApiKey, $clientApiKey)) {
-    http_response_code(401);
-     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-     exit;
+
+// If no API key is configured, allow access (for development)
+if ($internalApiKey !== null && $internalApiKey !== '') {
+    if (!hash_equals($internalApiKey, $clientApiKey)) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+        exit;
+    }
 }
 
 if ($method !== 'POST') {
@@ -137,16 +137,33 @@ try {
         case 'getProviders':
             $responseData = $client->getProviders();
             break;
-        case 'getPatients':
-            $patientIds = $params['patientIds'] ?? [];
-            if (!is_array($patientIds) || empty($patientIds)) {
-                throw new InvalidArgumentException('patientIds must be a non-empty array');
+        case 'getPatient':
+            $patientId = $params['patientId'] ?? null;
+            if (!$patientId) {
+                throw new InvalidArgumentException('patientId is required');
             }
-            // The Tebra SOAP API does not support batch; you might need to implement loop. For now, not implemented.
-            $responseData = [
-                'success' => false,
-                'message' => 'getPatients not yet implemented',
-            ];
+            $responseData = $client->getPatient($patientId);
+            break;
+        case 'searchPatients':
+            $lastName = $params['lastName'] ?? null;
+            if (!$lastName) {
+                throw new InvalidArgumentException('lastName is required for patient search');
+            }
+            $responseData = $client->searchPatients($lastName);
+            break;
+        case 'createAppointment':
+            $appointmentData = $params['appointmentData'] ?? null;
+            if (!$appointmentData) {
+                throw new InvalidArgumentException('appointmentData is required');
+            }
+            $responseData = $client->createAppointment($appointmentData);
+            break;
+        case 'updateAppointment':
+            $appointmentData = $params['appointmentData'] ?? null;
+            if (!$appointmentData) {
+                throw new InvalidArgumentException('appointmentData is required');
+            }
+            $responseData = $client->updateAppointment($appointmentData);
             break;
         case 'health':
             $responseData = ['status' => 'healthy'];

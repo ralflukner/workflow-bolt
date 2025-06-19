@@ -12,14 +12,32 @@ export class PatientEncryptionService {
    * Get encryption key from Google Secret Manager or environment variables
    */
   private static async getEncryptionKey(): Promise<string> {
-    return await secretsService.getSecret('PATIENT_ENCRYPTION_KEY');
+    try {
+      const key = await secretsService.getSecret('PATIENT_ENCRYPTION_KEY');
+      if (!key || key.trim() === '') {
+        throw new Error('Encryption key is empty or invalid');
+      }
+      return key;
+    } catch (error) {
+      console.error('Failed to retrieve encryption key from GSM:', error);
+      throw new Error('Unable to retrieve encryption key - HIPAA compliance compromised');
+    }
   }
 
   /**
    * Synchronous wrapper for getEncryptionKey
    */
   private static getEncryptionKeySync(): string {
-    return secretsService.getSecretSync('PATIENT_ENCRYPTION_KEY');
+    try {
+      const key = secretsService.getSecretSync('PATIENT_ENCRYPTION_KEY');
+      if (!key || key.trim() === '') {
+        throw new Error('Encryption key is empty or invalid');
+      }
+      return key;
+    } catch (error) {
+      console.error('Failed to retrieve encryption key synchronously:', error);
+      throw new Error('Unable to retrieve encryption key - HIPAA compliance compromised');
+    }
   }
 
   /**

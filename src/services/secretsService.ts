@@ -25,7 +25,7 @@ export class SecretsService {
 
   // Secret configuration mapping
   private static readonly SECRET_CONFIGS: Record<string, SecretConfig> = {
-    // Encryption keys
+    // Encryption keys - prioritize GSM for HIPAA compliance
     PATIENT_ENCRYPTION_KEY: {
       secretName: 'patient-encryption-key',
       envFallback: 'REACT_APP_PATIENT_ENCRYPTION_KEY',
@@ -96,11 +96,24 @@ export class SecretsService {
     let secretValue: string | null = null;
 
     try {
+      // For encryption keys, prioritize GSM for HIPAA compliance
+      const isEncryptionKey = secretKey === 'PATIENT_ENCRYPTION_KEY';
+      
       // Try Google Secret Manager first (server-side only)
       if (typeof window === 'undefined') {
         secretValue = await this.getFromSecretManager(config.secretName);
         if (secretValue) {
           console.log(`✅ Retrieved ${secretKey} from Google Secret Manager`);
+          this.cacheSecret(secretKey, secretValue);
+          return secretValue;
+        }
+      }
+
+      // For encryption keys, try backend callable before environment variables
+      if (isEncryptionKey && typeof window !== 'undefined') {
+        secretValue = await this.getFromBackend(secretKey);
+        if (secretValue) {
+          console.log(`🔒 Retrieved ${secretKey} from Firebase Function (secure)`);
           this.cacheSecret(secretKey, secretValue);
           return secretValue;
         }
@@ -116,8 +129,8 @@ export class SecretsService {
         }
       }
 
-      // 1) cache → 2) env var (browser build) → 3) back-end callable
-      if (!secretValue && typeof window !== 'undefined') {
+      // For non-encryption keys, try backend callable as last resort
+      if (!isEncryptionKey && !secretValue && typeof window !== 'undefined') {
         secretValue = await this.getFromBackend(secretKey);
         if (secretValue) {
           console.log(`🔒 Retrieved ${secretKey} from Firebase Function (secure)`);

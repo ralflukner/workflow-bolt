@@ -50,7 +50,7 @@ Replace `FUNCTION_NAME` with the name of your function.
 
 The email service (`functions/src/services/emailService.js`) is already configured to use these environment variables:
 
-```javascrip
+```javascript
 const clientId = process.env.GMAIL_CLIENT_ID;
 const clientSecret = process.env.GMAIL_CLIENT_SECRET;
 ```

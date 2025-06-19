@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { tebraApiService } from '../services/tebraApiService';
+import { tebraTestConnection, getApiInfo } from '../services/tebraApi';
 
 export const TebraConnectionDebuggerSimple: React.FC = () => {
   const [testResult, setTestResult] = useState<string>('Not tested');
@@ -10,7 +10,7 @@ export const TebraConnectionDebuggerSimple: React.FC = () => {
     
     try {
       const startTime = Date.now();
-      const result = await tebraApiService.testConnection();
+      const result = await tebraTestConnection();
       const duration = Date.now() - startTime;
       
       if (result) {

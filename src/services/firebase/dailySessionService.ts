@@ -23,6 +23,8 @@ export interface DailySession {
   id: string; // Format: YYYY-MM-DD
   date: string; // ISO date string
   patients: Patient[];
+  encryptedPatients?: Patient[]; // Encrypted version of patients
+  isEncrypted?: boolean; // Flag to indicate if data is encrypted
   createdAt: Timestamp;
   updatedAt: Timestamp;
   version: number; // For conflict resolution
@@ -101,6 +103,7 @@ export class DailySessionService implements StorageService {
         id: sessionId,
         date: sessionId,
         patients: sanitizedPatients,
+        isEncrypted: true, // Flag to indicate data is encrypted
         // Use server timestamp for created time if this is a new document
         createdAt: serverTimestamp(),
         updatedAt: now,
@@ -110,7 +113,7 @@ export class DailySessionService implements StorageService {
       const docRef = doc(this.getDb(), COLLECTION_NAME, sessionId);
       await setDoc(docRef, sessionData, { merge: true });
       
-      console.log(`Firebase session saved for ${sessionId}`);
+      console.log(`Firebase session saved for ${sessionId} with encryption`);
       
       // Automatically purge old data after saving - don't let purge errors affect save success
       setTimeout(async () => {
@@ -144,19 +147,21 @@ export class DailySessionService implements StorageService {
       const sessionData = docSnapshot.data();
       console.log(`Firebase session loaded for ${date}`);
       
-      // Decrypt patients if encrypted
-      if (sessionData.encryptedPatients) {
+      // Check if data is encrypted and decrypt if necessary
+      if (sessionData.isEncrypted && sessionData.patients) {
         try {
-          const decryptedPatients = sessionData.encryptedPatients.map((encPatient: any) => {
+          const decryptedPatients = sessionData.patients.map((encPatient: Patient) => {
             return PatientEncryptionService.decryptPatient(encPatient);
           });
           return decryptedPatients;
         } catch (error) {
           console.error('Error decrypting patient data:', error);
+          // Fall back to unencrypted data if decryption fails
           return sessionData.patients || [];
         }
       }
       
+      // Handle legacy unencrypted data
       return sessionData.patients || [];
     } catch (error) {
       console.error(`Error loading Firebase session for ${date}:`, error);
@@ -339,18 +344,20 @@ export class DailySessionService implements StorageService {
         if (snapshot.exists()) {
           const sessionData = snapshot.data();
           
-          // Decrypt patients if encrypted
-          if (sessionData.encryptedPatients) {
+          // Check if data is encrypted and decrypt if necessary
+          if (sessionData.isEncrypted && sessionData.patients) {
             try {
-              const decryptedPatients = sessionData.encryptedPatients.map((encPatient: any) => {
+              const decryptedPatients = sessionData.patients.map((encPatient: Patient) => {
                 return PatientEncryptionService.decryptPatient(encPatient);
               });
               callback(decryptedPatients);
             } catch (error) {
               console.error('Error decrypting patient data in real-time update:', error);
+              // Fall back to unencrypted data if decryption fails
               callback(sessionData.patients || []);
             }
           } else {
+            // Handle legacy data (unencrypted)
             callback(sessionData.patients || []);
           }
         } else {

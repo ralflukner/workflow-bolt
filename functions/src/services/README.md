@@ -16,14 +16,14 @@ This service enables sending security alert emails through Google Workspace (Gma
    - `https://developers.google.com/oauthplayground` (for testing)
    - Your application's redirect URI (if applicable)
 8. Click "Create"
-9. Note the Client ID and Client Secre
+9. Note the Client ID and Client Secret
 
 ### 2. Generate a Refresh Token
 
 1. Go to the [OAuth 2.0 Playground](https://developers.google.com/oauthplayground/)
 2. Click the gear icon (⚙️) in the top right corner
 3. Check "Use your own OAuth credentials"
-4. Enter your Client ID and Client Secre
+4. Enter your Client ID and Client Secret
 5. Close the settings
 6. Select "Gmail API v1" > `https://mail.google.com/` from the list
 7. Click "Authorize APIs"
