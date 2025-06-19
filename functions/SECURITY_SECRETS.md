@@ -18,7 +18,7 @@ This document outlines our security-first approach to managing secrets in Fireba
 
 - `tebra-api-url` - Tebra API endpoint URL (future)
 
-### Local Developmen
+### Local Development
 
 - Encrypted `.env` files for local development only
 
@@ -85,8 +85,6 @@ STAMP=$(date +%Y%m%d)
      -in "$ENV" -out "$ENV.$STAMP.enc" \
      -k "$(whoami)-$(hostname)-HIPAA"
 
- openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -d \
-     -in "$ENV.$STAMP.enc" -out "$ENV.temp" \
-     -k "$(whoami)-$(hostname)-HIPAA"
-        -k "$(whoami)-$(hostname)-HIPAA"
-```
+openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -d \
+    -in "$ENV.$STAMP.enc" -out "$ENV.temp" \
+    -k "$(whoami)-$(hostname)-HIPAA"

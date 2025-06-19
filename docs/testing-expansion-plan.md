@@ -1,5 +1,5 @@
 
-# Testing Expansion Plan for Patient Flow Managemen
+# Testing Expansion Plan for Patient Flow Management
 
 Based on a thorough examination of the codebase, this document outlines a comprehensive testing strategy to improve code quality, reduce bugs, and make future development more efficient.
 
@@ -9,7 +9,7 @@ Based on a thorough examination of the codebase, this document outlines a compre
 
 - **Test Files**: 10 test suites with 33 tests
 
-- **Testing Framework**: Jest with TypeScript suppor
+- **Testing Framework**: Jest with TypeScript support
 
 - **Current Focus**: Primarily unit tests for data operations and schedule import functionality
 
@@ -277,7 +277,7 @@ describe('PatientCard', () => {
 
 ```
 
-## Example Test Implementation for TimeContex
+## Example Test Implementation for TimeContext
 
 ```typescrip
 // src/context/__tests__/TimeContext.test.ts

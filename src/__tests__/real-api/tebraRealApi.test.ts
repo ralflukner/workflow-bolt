@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { TebraApiService } from '../../services/tebraApiService';
+import tebraApi from '../../services/tebraApi';
 
 /**
  * REAL API INTEGRATION TESTS
@@ -17,10 +17,7 @@ const realApiEnabled = process.env.RUN_REAL_API_TESTS === 'true';
 const realDescribe: any = realApiEnabled ? describe : describe.skip;
 
 realDescribe('🚨 REAL Tebra API Integration Tests (Expected to FAIL when API is down)', () => {
-  let tebraService: TebraApiService;
-
   beforeEach(() => {
-    tebraService = new TebraApiService();
     console.log('🔍 Testing REAL Tebra API - These tests may fail if API is unreachable');
   });
 
@@ -29,7 +26,7 @@ realDescribe('🚨 REAL Tebra API Integration Tests (Expected to FAIL when API i
       console.log('🧪 Testing actual Tebra API connection...');
       
       // This test calls the ACTUAL Tebra API via Firebase Functions
-      const result = await tebraService.testConnection();
+      const result = await tebraApi.testConnection();
       
       if (!result) {
         console.error('❌ Tebra API connection failed - this explains the "Disconnected" status in UI');
@@ -46,7 +43,7 @@ realDescribe('🚨 REAL Tebra API Integration Tests (Expected to FAIL when API i
       console.log('🧪 Testing provider retrieval from actual Tebra API...');
       
       // This test calls the ACTUAL Tebra API
-      const providers = await tebraService.getProviders();
+      const providers = await tebraApi.getProviders();
       
       if (!Array.isArray(providers) || providers.length === 0) {
         console.error('❌ Provider retrieval failed - API may be unreachable');
@@ -64,7 +61,7 @@ realDescribe('🚨 REAL Tebra API Integration Tests (Expected to FAIL when API i
       
       // This test calls the ACTUAL Tebra API
       const searchCriteria = { lastName: 'Test' };
-      const patients = await tebraService.searchPatients(searchCriteria);
+      const patients = await tebraApi.searchPatients(searchCriteria);
       
       // Even if no patients found, the API should return an array
       expect(Array.isArray(patients)).toBe(true);
@@ -76,7 +73,7 @@ realDescribe('🚨 REAL Tebra API Integration Tests (Expected to FAIL when API i
   describe('API Response Structure Validation', () => {
     it('should return valid response structure even when connection fails', async () => {
       try {
-        const result = await tebraService.testConnection();
+        const result = await tebraApi.testConnection();
         
         // Response should always be a boolean
         expect(typeof result).toBe('boolean');
@@ -109,16 +106,16 @@ realDescribe('🚨 REAL Tebra API Integration Tests (Expected to FAIL when API i
 
       try {
         // Test connection
-        diagnostics.connectionTest = await tebraService.testConnection();
+        diagnostics.connectionTest = await tebraApi.testConnection();
         console.log(`Connection test: ${diagnostics.connectionTest ? '✅ PASS' : '❌ FAIL'}`);
 
         // Test providers
-        const providers = await tebraService.getProviders();
+        const providers = await tebraApi.getProviders();
         diagnostics.providersAvailable = Array.isArray(providers) && providers.length > 0;
         console.log(`Providers available: ${diagnostics.providersAvailable ? '✅ PASS' : '❌ FAIL'}`);
 
         // Test patient search
-        const patients = await tebraService.searchPatients({ lastName: 'Test' });
+        const patients = await tebraApi.searchPatients({ lastName: 'Test' });
         diagnostics.patientsSearchable = Array.isArray(patients);
         console.log(`Patient search: ${diagnostics.patientsSearchable ? '✅ PASS' : '❌ FAIL'}`);
 

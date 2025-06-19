@@ -1,5 +1,5 @@
 import { DailySessionService } from '../services/firebase/dailySessionService';
-import { TebraApiService } from '../tebra-soap/tebra-api-service';
+import tebraApi from '../services/tebraApi';
 import { TebraIntegrationService, createTebraConfig } from '../tebra-soap/tebra-integration-service';
 import { Patient } from '../types';
 
@@ -9,7 +9,6 @@ import { Patient } from '../types';
  */
 export class IntegrationTestUtility {
   private firebaseService: DailySessionService;
-  private tebraApiService: TebraApiService;
   private tebraIntegrationService: TebraIntegrationService;
 
   constructor() {
@@ -22,8 +21,6 @@ export class IntegrationTestUtility {
       customerKey: process.env.REACT_APP_TEBRA_CUSTKEY || '',
       wsdlUrl: process.env.REACT_APP_TEBRA_WSDL_URL || ''
     };
-
-    this.tebraApiService = new TebraApiService(credentials);
     
     const config = createTebraConfig(credentials, {
       syncInterval: 5, // 5 minutes for testing
@@ -77,7 +74,7 @@ export class IntegrationTestUtility {
     
     try {
       // Test connection first
-      const isConnected = await this.tebraApiService.testConnection();
+      const isConnected = await tebraApi.testConnection();
       if (!isConnected) {
         console.log('❌ Tebra connection failed');
         return;
@@ -86,7 +83,9 @@ export class IntegrationTestUtility {
 
       // Search for patients with last name "Test"
       console.log('🏥 Searching for Test patients in Tebra...');
-      const allPatients = await this.tebraApiService.getAllPatients();
+      // Note: getAllPatients is not available in the new tebraApi
+      // Using searchPatients instead
+      const allPatients = await tebraApi.searchPatients({ lastName: '' });
       console.log(`✅ Retrieved ${allPatients.length} total patients from Tebra`);
 
       // Filter for Test Test patient
@@ -209,11 +208,8 @@ export class IntegrationTestUtility {
    */
   getTebraStats(): void {
     try {
-      const stats = this.tebraApiService.getRateLimiterStats();
-      console.log('⏱️ Tebra Rate Limiter Statistics:');
-      Object.entries(stats).forEach(([method, limit]) => {
-        console.log(`  - ${method}: ${limit}ms`);
-      });
+      // Note: Rate limiter stats are not available in the new tebraApi
+      console.log('⏱️ Tebra Rate Limiter Statistics: Not available in new API');
     } catch (error) {
       console.error('❌ Failed to get Tebra stats:', error);
     }
@@ -244,5 +240,5 @@ export async function testTebraOperations(): Promise<void> {
   console.log('🏥 Testing Tebra Operations Only\n');
   
   await testUtil.searchTebraForTestPatient();
-  testUtil.getTebraStats();
+  // testUtil.getTebraStats(); // Not available in new API
 } 

@@ -28,8 +28,7 @@ use OpenTelemetry\SDK\Resource\ResourceInfoFactory;
 use OpenTelemetry\SDK\Trace\TracerProvider;
 use OpenTelemetry\SDK\Trace\SpanProcessor\SimpleSpanProcessor;
 use OpenTelemetry\SDK\Trace\IdGeneratorInterface;
-use OpenTelemetry\SDK\Trace\SpanExporter\JaegerExporter;
-use OpenTelemetry\SDK\Trace\SpanExporter\OtlpHttpExporter;
+use OpenTelemetry\SDK\Trace\SpanExporter\ConsoleSpanExporter;
 use OpenTelemetry\API\Globals;
 
 // -------------------------------------------------------------
@@ -62,24 +61,16 @@ class CorrelationIdGenerator implements IdGeneratorInterface
     }
 }
 
+// Create resource with service name
 $resource = ResourceInfoFactory::defaultResource()->merge(
     ResourceInfoFactory::create([
         'service.name' => getenv('OTEL_SERVICE_NAME') ?: 'workflow-bolt-php',
     ])
 );
 
-// Choose exporter
-switch ($exporterType) {
-    case 'otlp':
-        $endpoint = getenv('OTEL_COLLECTOR_ENDPOINT') ?: 'http://localhost:4318/v1/traces';
-        $exporter = new OtlpHttpExporter('default', $endpoint);
-        break;
-    case 'jaeger':
-    default:
-        $endpoint = getenv('OTEL_COLLECTOR_ENDPOINT') ?: 'http://localhost:14268/api/traces';
-        $exporter = new JaegerExporter('workflow-bolt', $endpoint);
-        break;
-}
+// For now, use Console exporter as it's guaranteed to be available
+// In production, you would configure proper exporters based on environment
+$exporter = new ConsoleSpanExporter();
 
 $tracerProvider = new TracerProvider(
     new SimpleSpanProcessor($exporter),
@@ -96,7 +87,7 @@ function autoloadTracingShutdown(): void
     register_shutdown_function(function () {
         try {
             $provider = Globals::tracerProvider();
-            if (method_exists($provider, 'shutdown')) {
+            if ($provider && method_exists($provider, 'shutdown')) {
                 $provider->shutdown();
             }
         } catch (\Throwable $e) {

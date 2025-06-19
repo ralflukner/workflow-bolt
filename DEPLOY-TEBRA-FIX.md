@@ -9,6 +9,7 @@ The missing `callSoapMethod()` method has been added to the `TebraHttpClient` cl
 ### File Modified: `tebra-php-api/src/TebraHttpClient.php`
 
 Added the `callSoapMethod()` method that:
+
 - Accepts any SOAP method name and parameters
 - Handles authentication headers automatically
 - Provides consistent error handling
@@ -18,11 +19,13 @@ Added the `callSoapMethod()` method that:
 ## 🚀 Deployment Steps
 
 ### 1. Navigate to the PHP service directory
+
 ```bash
 cd tebra-php-api
 ```
 
 ### 2. Test locally (optional but recommended)
+
 ```bash
 # Load environment variables first
 export TEBRA_USERNAME="your-username"
@@ -34,6 +37,7 @@ php test-callSoapMethod.php
 ```
 
 ### 3. Deploy to Cloud Run
+
 ```bash
 # Deploy the updated service
 gcloud run deploy tebra-php-api \
@@ -44,6 +48,7 @@ gcloud run deploy tebra-php-api \
 ```
 
 ### 4. Verify the deployment
+
 ```bash
 # Test the health endpoint
 curl https://tebra-php-api-[YOUR-PROJECT-ID].a.run.app/health
@@ -55,12 +60,14 @@ node test-debug-logging.cjs
 
 ## ✅ Expected Results After Deployment
 
-### Before Fix:
+### Before Fix
+
 ```
 [ERROR] TebraProxyClient:makeRequest:xxxxx:3 (+1250ms) Fatal error: Call to undefined method TebraHttpClient::callSoapMethod()
 ```
 
-### After Fix:
+### After Fix
+
 ```
 [INFO] TebraProxyClient:makeRequest:xxxxx:5 (+XXXms) Request completed successfully
 ```
@@ -68,6 +75,7 @@ node test-debug-logging.cjs
 ## 🔍 Monitoring
 
 After deployment, monitor the logs:
+
 ```bash
 gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=tebra-php-api" \
   --limit=50 \

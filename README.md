@@ -72,7 +72,7 @@ VITE_FIREBASE_APP_ID="your-app-id"
 
 ### Basic Usage
 
-```typescrip
+```typescript
 import { TebraApiService } from './src/tebra-soap/tebra-api-service';
 
 // Create API service instance
@@ -128,7 +128,7 @@ The main service class for interacting with the Tebra EHR system.
 
 The integration includes built-in rate limiting to prevent API abuse:
 
-```typescrip
+```typescript
 // Rate limiting is handled automatically
 const patientData = await apiService.getPatientData('patient-id');
 
@@ -143,7 +143,7 @@ const waitTime = apiService.getRemainingWaitTime('getPatientData');
 
 The integration includes comprehensive error handling:
 
-```typescrip
+```typescript
 try {
   const patientData = await apiService.getPatientData('patient-id');
 } catch (error) {
@@ -160,7 +160,7 @@ try {
 
 #### TebraPatien
 
-```typescrip
+```typescript
 interface TebraPatient {
   PatientId: string;
   FirstName: string;
@@ -189,7 +189,7 @@ interface TebraPatient {
 
 #### TebraAppointmen
 
-```typescrip
+```typescript
 interface TebraAppointment {
   AppointmentId: string;
   PatientId: string;

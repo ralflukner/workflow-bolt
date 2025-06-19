@@ -7,9 +7,11 @@ Based on analysis of the data flow and correlation IDs, I've implemented two pow
 ## 1. Live Log Viewer
 
 ### Purpose
+
 Provides real-time visibility into API calls, errors, and data transformations as they happen across all components.
 
 ### Key Features
+
 - **Real-time streaming**: Shows logs as they occur with timestamps
 - **Correlation ID tracking**: Click any log to highlight all related entries
 - **Advanced filtering**: Filter by text, component, or log level
@@ -18,12 +20,14 @@ Provides real-time visibility into API calls, errors, and data transformations a
 - **Pause/Resume**: Freeze the stream to analyze specific events
 
 ### Usage Example
+
 ```
 [12:54:37.245] [ERROR  ] [CloudRun] SOAP fault: Object reference not set to an instance of an object
                           ID: 3yo0fgwv Duration: 3247ms Status: 500
 ```
 
 ### Benefits
+
 - Instantly see what's happening in the system
 - Trace requests across components using correlation IDs
 - Identify patterns in errors and performance bottlenecks
@@ -32,9 +36,11 @@ Provides real-time visibility into API calls, errors, and data transformations a
 ## 2. Request Replay Tool
 
 ### Purpose
+
 Reproduce failed requests and compare them with successful ones to identify root causes.
 
 ### Key Features
+
 - **Request history**: Browse recent API calls with their outcomes
 - **One-click replay**: Re-execute any previous request
 - **Comparison mode**: Side-by-side comparison of two requests
@@ -42,12 +48,14 @@ Reproduce failed requests and compare them with successful ones to identify root
 - **Correlation ID search**: Find specific requests by their ID
 
 ### Usage Example
+
 1. Enter correlation ID `3yo0fgwv` to find the failed GetAppointments request
 2. View the exact parameters, error message, and duration
 3. Replay the request to see if the issue persists
 4. Compare with a successful request to identify differences
 
 ### Benefits
+
 - Reproduce intermittent issues on demand
 - Compare successful vs failed requests
 - Test fixes without affecting production data
@@ -56,31 +64,38 @@ Reproduce failed requests and compare them with successful ones to identify root
 ## 3. Partial Redaction System
 
 ### Purpose
+
 Show enough sensitive information to debug issues while maintaining security.
 
 ### Redaction Examples
 
 #### Password
+
 - Full: `MySecretPass123!`
 - Redacted: `My************** (len: 16)`
 
 #### Username
+
 - Full: `john.doe@example.com`
 - Redacted: `joh***************om (len: 20)`
 
 #### Customer Key
+
 - Full: `a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6`
 - Redacted: `a1b2...o5p6 (len: 36)`
 
 #### SSN
+
 - Full: `123-45-6789`
 - Redacted: `***-**-6789`
 
 #### Date of Birth
+
 - Full: `1990-05-15`
 - Redacted: `1990-**-**`
 
 ### Benefits
+
 - Debug authentication issues (see username format, password length)
 - Verify customer key format without exposing the full key
 - Confirm data is being sent correctly

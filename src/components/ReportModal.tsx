@@ -63,6 +63,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, reportContent
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors"
+            aria-label="Close report"
+            title="Close report"
           >
             <X size={24} />
           </button>

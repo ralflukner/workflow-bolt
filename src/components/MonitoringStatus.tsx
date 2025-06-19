@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Clock, Wifi, Activity, ExternalLink, AlertCircle } from 'lucide-react';
-import { tebraApiService } from '../services/tebraApiService';
+import { tebraTestConnection } from '../services/tebraApi';
 
 interface MonitoringStatusProps {
   className?: string;
@@ -40,7 +40,7 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
       const startTime = performance.now();
       
       // Call Firebase Function and capture detailed response
-      const result = await tebraApiService.testConnectionDetailed();
+      const result = await tebraTestConnection();
       
       const endTime = performance.now();
       const responseTime = Math.round(endTime - startTime);

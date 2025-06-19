@@ -46,9 +46,9 @@ class ConfigService {
       return this.config;
     }
 
-    // Default configuration
+    // Default configuration - ALWAYS use PHP API
     let config: AppConfig = {
-      useTebraPhpApi: true,
+      useTebraPhpApi: true, // ALWAYS true - Node.js is not supported for Tebra
       tebraPhpApiUrl: 'https://tebra-php-api-oqg3wfutka-uc.a.run.app/api',
     };
 

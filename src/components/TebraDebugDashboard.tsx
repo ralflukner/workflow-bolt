@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Activity, AlertTriangle, CheckCircle, Wifi, WifiOff, RefreshCw, Users, Calendar } from 'lucide-react';
 import { usePatientContext } from '../hooks/usePatientContext';
+import { LiveLogViewer } from './LiveLogViewer';
+import { RequestReplayTool } from './RequestReplayTool';
 
 interface DataFlowStep {
   id: string;
@@ -23,6 +25,13 @@ interface TebraMetrics {
     start: Date | null;
     end: Date | null;
   };
+}
+
+interface RecentError {
+  timestamp: Date;
+  step: string;
+  error: string;
+  correlationId: string;
 }
 
 export const TebraDebugDashboard: React.FC = () => {
@@ -92,15 +101,10 @@ export const TebraDebugDashboard: React.FC = () => {
     }
   });
 
-  const [recentErrors, setRecentErrors] = useState<Array<{
-    timestamp: Date;
-    step: string;
-    error: string;
-    correlationId: string;
-  }>>([]);
-
+  const [recentErrors, setRecentErrors] = useState<RecentError[]>([]);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [showAdvancedTools, setShowAdvancedTools] = useState(false);
 
   // Update patient count and date range when patients change
   useEffect(() => {
@@ -108,7 +112,15 @@ export const TebraDebugDashboard: React.FC = () => {
       // Find the date range from appointment times
       const appointmentTimes = patients
         .map(p => p.appointmentTime)
-        .filter(time => time instanceof Date)
+        .filter(time => {
+          // Handle both string and Date types
+          if (typeof time === 'string') {
+            const parsed = new Date(time);
+            return !isNaN(parsed.getTime());
+          }
+          return time && typeof time === 'object' && 'getTime' in time;
+        })
+        .map(time => typeof time === 'string' ? new Date(time) : time as Date)
         .sort((a, b) => a.getTime() - b.getTime());
       
       setMetrics(prev => ({
@@ -122,18 +134,7 @@ export const TebraDebugDashboard: React.FC = () => {
     }
   }, [patients]);
 
-  // Simulate real-time monitoring (in production, this would connect to actual monitoring APIs)
-  useEffect(() => {
-    if (!autoRefresh) return;
-
-    const interval = setInterval(async () => {
-      await runHealthChecks();
-    }, 10000); // Check every 10 seconds
-
-    return () => clearInterval(interval);
-  }, [autoRefresh]);
-
-  const runHealthChecks = async () => {
+  const runHealthChecks = useCallback(async () => {
     setIsMonitoring(true);
     
     try {
@@ -186,7 +187,18 @@ export const TebraDebugDashboard: React.FC = () => {
     } finally {
       setIsMonitoring(false);
     }
-  };
+  }, [dataFlowSteps]);
+
+  // Simulate real-time monitoring (in production, this would connect to actual monitoring APIs)
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(async () => {
+      await runHealthChecks();
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, runHealthChecks]);
 
   const checkStepHealth = async (stepId: string): Promise<'healthy' | 'warning' | 'error'> => {
     // In production, implement actual health checks for each component

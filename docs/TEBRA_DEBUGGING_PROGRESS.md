@@ -4,7 +4,7 @@
 
 **Date:** June 11, 2025
 **Problem:** Tebra SOAP proxy returning 0 appointments in Cloud Run, while local PHP scripts returned 8 appointments
-**Status:** 🛠️ IN&nbsp;PROGRESS 
+**Status:** 🛠️ IN&nbsp;PROGRESS
 
 ## Latest Progress (June 15, 2025)
 
@@ -14,6 +14,7 @@
 - **Current Blocker**: Tebra backend now returns `"Unable to find user."`—likely an account activation/username formatting issue on Tebra side. No infrastructure or code errors observed.
 
 Next steps:
+
 1. Confirm with Tebra support that the integration user is fully activated.
 2. Validate username formatting (case-sensitivity, domain, etc.).
-3. Once user issue is resolved, re-run end-to-end tests. 
+3. Once user issue is resolved, re-run end-to-end tests.

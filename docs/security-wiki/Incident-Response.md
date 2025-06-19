@@ -73,21 +73,25 @@
 ## 📋 Incident Severity Levels
 
 ### Level 1 - Critical
+
 - Data breach
 - System compromise
 - Unauthorized access
 
 ### Level 2 - High
+
 - Suspicious activity
 - Failed access attempts
 - System anomalies
 
 ### Level 3 - Medium
+
 - Policy violations
 - Configuration issues
 - Minor incidents
 
 ### Level 4 - Low
+
 - False positives
 - Minor issues
 - Informational
@@ -116,7 +120,7 @@
 
 ## 📞 Contact Information
 
-- **Security Team**: lukner@luknerclinic.com
+- **Security Team**: <lukner@luknerclinic.com>
 - **Emergency Phone**: 806-329-3050
 - **On-Call Engineer**: [On-Call Schedule](On-Call-Schedule)
 

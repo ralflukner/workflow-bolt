@@ -157,7 +157,8 @@ graph TD
 
 ### 8.2 Identified Failure Points
 
-#### **Critical Failure #1: PHP Fatal Error in Cloud Run** 
+#### **Critical Failure #1: PHP Fatal Error in Cloud Run**
+
 - **Location**: `tebra-php-api` Cloud Run service
 - **Error**: `Fatal error: Uncaught Error: Call to undefined method TebraHttpClient::callSoapMethod()`
 - **Impact**: **100% request failure** - All API calls return HTTP 500
@@ -166,6 +167,7 @@ graph TD
 - **Status**: ⚡ **URGENT** - Blocks all functionality
 
 #### **Critical Failure #2: Tebra Backend InternalServiceFault**
+
 - **Location**: Tebra SOAP API backend
 - **Error**: `InternalServiceFault: Tebra backend error`
 - **Frequency**: **Sporadic but frequent** - 45+ occurrences in recent logs
@@ -176,6 +178,7 @@ graph TD
 - **Status**: 🔄 **EXTERNAL** - Waiting on Tebra resolution
 
 #### **System Failure #3: Authentication Issues**
+
 - **Location**: Tebra SOAP Authentication
 - **Error**: `"Unable to find user"` or `SecurityResult: Authentication failed`
 - **Root Cause**: Account activation issues for integration user `work-flow@luknerclinic.com`
@@ -184,6 +187,7 @@ graph TD
 - **Status**: 🔍 **INVESTIGATION** - Tebra support involvement required
 
 #### **Data Flow Failure #4: Empty Response Handling**
+
 - **Location**: Dashboard state management (`src/components/Dashboard.tsx`)
 - **Issue**: Dashboard doesn't gracefully handle empty datasets from failed API calls
 - **Evidence**: Component shows "0 patients" without indicating API failure reason
@@ -191,6 +195,7 @@ graph TD
 - **Status**: 🛠️ **NEEDS FIX** - UI should show error states
 
 #### **Transformation Failure #5: Data Mapping Issues**
+
 - **Location**: `functions/src/tebra-sync/mappers.ts`
 - **Issue**: Data transformation assumes successful API responses
 - **Problem**: No error handling for malformed/empty Tebra responses
@@ -202,6 +207,7 @@ graph TD
 Our enhanced debugging system (see `DEBUG-TOOLKIT.md`) has revealed the failure sequence:
 
 **Typical Failed Request Flow:**
+
 ```
 1. [INFO] Dashboard:syncSchedule:abc123:1 (+0ms) Starting sync
 2. [INFO] TebraProxyClient:makeRequest:abc123:2 (+50ms) Calling Cloud Run
@@ -211,6 +217,7 @@ Our enhanced debugging system (see `DEBUG-TOOLKIT.md`) has revealed the failure 
 ```
 
 **Log Analysis Results (Last 7 Days):**
+
 - **Total API Attempts**: 1,247
 - **Fatal PHP Errors**: 89 (7.14% - all Tebra requests)
 - **Tebra InternalServiceFaults**: 45 (when PHP works)
@@ -241,21 +248,25 @@ Despite the dashboard failures, some components work in isolation:
 ### 8.6 Priority Remediation Plan
 
 #### **Phase 1: Critical Infrastructure Fix** (1-2 days)
+
 1. Fix `TebraHttpClient::callSoapMethod()` implementation
 2. Deploy Cloud Run service update
 3. Verify PHP errors eliminated
 
 #### **Phase 2: External API Stabilization** (1-2 weeks)
+
 1. Work with Tebra support on account activation
 2. Implement retry logic with exponential backoff
 3. Add circuit breaker pattern for unstable API
 
 #### **Phase 3: Error Handling Enhancement** (3-5 days)
+
 1. Add error states to Dashboard UI
 2. Implement defensive data transformation
 3. Add user-friendly error messages
 
 #### **Phase 4: Monitoring & Alerting** (2-3 days)
+
 1. Set up automated error detection
 2. Add dashboard health status indicators
 3. Implement retry/refresh capabilities
@@ -265,6 +276,7 @@ Despite the dashboard failures, some components work in isolation:
 **Definition of Success**: Dashboard shows real Tebra patient data
 
 **Measurable Indicators**:
+
 - ✅ Cloud Run returns HTTP 200 (not 500)
 - ✅ Tebra returns patient/appointment data (not InternalServiceFault)
 - ✅ Dashboard displays >0 patients from Tebra
@@ -274,11 +286,13 @@ Despite the dashboard failures, some components work in isolation:
 ### 8.8 Current Workarounds
 
 **For Development/Testing**:
+
 - Use mock data (`fallbackToMockData: true` in `TebraIntegrationService`)
 - Test individual components with local PHP scripts
 - Use manual data import via JSON upload feature
 
 **For Production**:
+
 - **No viable workaround exists** - Full remediation required
 
 ---

@@ -17,31 +17,37 @@ export const PersistenceDiagnostic: React.FC = () => {
   // Determine storage type and auth status
   useEffect(() => {
     const checkStatus = async () => {
-      const firebaseConfigured = isFirebaseConfigured();
-      const firebaseUser = auth?.currentUser;
-      
-      if (!isAuthenticated) {
-        setAuthStatus('No Auth0 login');
-        setStorageType('localStorage (no auth)');
-      } else if (!firebaseConfigured) {
-        setAuthStatus('Firebase not configured');
-        setStorageType('localStorage (no Firebase)');
-      } else if (!firebaseUser) {
-        setAuthStatus('Firebase auth failed');
-        setStorageType('localStorage (auth fallback)');
-      } else {
-        setAuthStatus('Authenticated');
-        setStorageType('Firebase');
+      try {
+        const firebaseConfigured = isFirebaseConfigured();
+        const firebaseUser = auth?.currentUser;
+        
+        if (!isAuthenticated) {
+          setAuthStatus('No Auth0 login');
+          setStorageType('localStorage (no auth)');
+        } else if (!firebaseConfigured) {
+          setAuthStatus('Firebase not configured');
+          setStorageType('localStorage (no Firebase)');
+        } else if (!firebaseUser) {
+          setAuthStatus('Firebase auth failed');
+          setStorageType('localStorage (auth fallback)');
+        } else {
+          setAuthStatus('Authenticated');
+          setStorageType('Firebase');
+        }
+      } catch (error) {
+        console.error('Error checking authentication status:', error);
+        setAuthStatus('Error checking status');
+        setStorageType('unknown');
       }
     };
-    
+
     checkStatus();
     const interval = setInterval(checkStatus, 5000); // Check every 5 seconds
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
   // Track when saves happen
-useEffect(() => {
+  useEffect(() => {
     if (!(patients.length > 0 && persistenceEnabled && hasRealData)) {
       return;
     }
@@ -49,16 +55,19 @@ useEffect(() => {
     setSaveStatus('saving');
     setLastSaveTime(new Date());
 
-    const successTimer = setTimeout(() => {
+    let successTimer: NodeJS.Timeout | null = null;
+    let idleTimer: NodeJS.Timeout | null = null;
+
+    successTimer = setTimeout(() => {
       setSaveStatus('success');
-      const idleTimer = setTimeout(() => setSaveStatus('idle'), 2000);
-      // clear idleTimer on unmount
-      return () => clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => setSaveStatus('idle'), 2000);
     }, 500);
 
-    // clear successTimer on unmount
-    return () => clearTimeout(successTimer);
-   }, [patients.length, persistenceEnabled, hasRealData]);
+    return () => {
+      if (successTimer) clearTimeout(successTimer);
+      if (idleTimer) clearTimeout(idleTimer);
+    };
+  }, [patients.length, persistenceEnabled, hasRealData]);
 
   const formatTime = (date: Date | null) => {
     if (!date) return 'Never';

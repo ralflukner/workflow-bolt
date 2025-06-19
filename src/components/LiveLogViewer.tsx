@@ -8,7 +8,11 @@ interface LogEntry {
   component: string;
   message: string;
   correlationId?: string;
-  metadata?: Record<string, any>;
+  metadata?: {
+    duration?: number;
+    statusCode?: number;
+    method?: string;
+  };
 }
 
 interface LiveLogViewerProps {
@@ -22,31 +26,31 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
 }) => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [filter, setFilter] = useState('');
-  const [levelFilter, setLevelFilter] = useState<string>('all');
+  const [levelFilter, setLevelFilter] = useState<'all' | 'info' | 'error' | 'warning' | 'debug'>('all');
   const [isPaused, setIsPaused] = useState(false);
   const logContainerRef = useRef<HTMLDivElement>(null);
   const [highlightCorrelationId, setHighlightCorrelationId] = useState<string | null>(null);
 
-  // Simulate real-time log streaming (in production, connect to actual log stream)
+  // Generate mock logs for demonstration
   useEffect(() => {
     if (isPaused) return;
 
-    const generateLog = (): LogEntry => {
-      const components = ['TebraProxy', 'CloudRun', 'Firebase', 'SOAP', 'Transform'];
-      const levels: Array<LogEntry['level']> = ['info', 'error', 'warning', 'debug'];
-      const correlationId = Math.random().toString(36).substring(2, 10);
-      
-      const templates = [
-        { level: 'info', message: 'GetAppointments request initiated' },
-        { level: 'error', message: 'SOAP fault: Object reference not set to an instance of an object' },
-        { level: 'warning', message: 'Response time exceeding threshold: 3247ms' },
-        { level: 'debug', message: 'Request headers: X-API-Key: [REDACTED]' },
-        { level: 'info', message: 'Successfully retrieved 12 patients' },
-        { level: 'error', message: 'Cloud Run health check failed: Connection timeout' },
-      ];
+    const components = ['TebraAPI', 'Firebase', 'CloudRun', 'Frontend', 'AuthBridge'];
+    const correlationId = Math.random().toString(36).substring(2, 10);
 
-      const template = templates[Math.floor(Math.random() * templates.length)];
-      
+    const logTemplates = [
+      { level: 'info' as const, message: 'API request initiated' },
+      { level: 'info' as const, message: 'Data transformation completed' },
+      { level: 'warning' as const, message: 'Rate limit approaching' },
+      { level: 'error' as const, message: 'Connection timeout' },
+      { level: 'debug' as const, message: 'Cache miss, fetching from source' },
+      { level: 'info' as const, message: 'Patient data synchronized' },
+      { level: 'error' as const, message: 'Invalid response format' },
+      { level: 'warning' as const, message: 'High memory usage detected' }
+    ];
+
+    const generateLog = (): LogEntry => {
+      const template = logTemplates[Math.floor(Math.random() * logTemplates.length)];
       return {
         id: Math.random().toString(36).substring(2),
         timestamp: new Date(),
@@ -73,10 +77,9 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
     return () => clearInterval(interval);
   }, [isPaused, maxEntries]);
 
-  // Auto-scroll to bottom when new logs arrive
   useEffect(() => {
     if (autoScroll && !isPaused && logContainerRef.current) {
-      logContainerRef.current.scrollTop = 0;
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }
   }, [logs, autoScroll, isPaused]);
 
@@ -85,9 +88,9 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
       log.message.toLowerCase().includes(filter.toLowerCase()) ||
       log.component.toLowerCase().includes(filter.toLowerCase()) ||
       (log.correlationId && log.correlationId.includes(filter));
-    
+
     const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
-    
+
     return matchesText && matchesLevel;
   });
 
@@ -97,6 +100,7 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
       case 'warning': return 'text-yellow-400';
       case 'info': return 'text-blue-400';
       case 'debug': return 'text-gray-400';
+      default: return 'text-gray-400';
     }
   };
 
@@ -106,6 +110,7 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
       case 'warning': return 'bg-yellow-900/20';
       case 'info': return 'bg-blue-900/20';
       case 'debug': return 'bg-gray-900/20';
+      default: return 'bg-gray-900/20';
     }
   };
 
@@ -113,13 +118,21 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
     const logText = filteredLogs.map(log => 
       `[${log.timestamp.toISOString()}] [${log.level.toUpperCase()}] [${log.component}] ${log.message}${log.correlationId ? ` (ID: ${log.correlationId})` : ''}`
     ).join('\n');
-    
+
     const blob = new Blob([logText], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `tebra-logs-${new Date().toISOString()}.txt`;
     a.click();
+  };
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFilter(e.target.value);
+  };
+
+  const handleLevelFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setLevelFilter(e.target.value as 'all' | 'info' | 'error' | 'warning' | 'debug');
   };
 
   return (
@@ -130,7 +143,7 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
           <h3 className="text-lg font-semibold text-white">Live API Logs</h3>
           <span className="text-sm text-gray-400">({filteredLogs.length} entries)</span>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setIsPaused(!isPaused)}
@@ -159,22 +172,27 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex space-x-2 mb-4">
+      <div className="flex items-center space-x-4 mb-4">
         <div className="flex-1 relative">
           <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             placeholder="Filter logs... (text, component, or correlation ID)"
             value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+            onChange={handleFilterChange}
+            aria-label="Filter logs by text, component, or correlation ID"
+            id="log-filter"
             className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
           />
         </div>
+        <label htmlFor="log-level-filter" className="sr-only">Filter logs by level</label>
         <select
+          id="log-level-filter"
           value={levelFilter}
-          onChange={(e) => setLevelFilter(e.target.value)}
+          onChange={handleLevelFilterChange}
           className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:border-blue-500"
+          aria-label="Filter logs by level"
+          title="Filter logs by level"
         >
           <option value="all">All Levels</option>
           <option value="error">Errors</option>
@@ -210,8 +228,7 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
                     hour12: false, 
                     hour: '2-digit', 
                     minute: '2-digit', 
-                    second: '2-digit',
-                    fractionalSecondDigits: 3
+                    second: '2-digit'
                   })}
                 </span>
                 <span className={`font-bold text-xs ${getLevelColor(log.level)}`}>
@@ -220,7 +237,7 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
                 <span className="text-cyan-400 text-xs">[{log.component}]</span>
                 <span className="text-gray-300 flex-1">{log.message}</span>
               </div>
-              
+
               {(log.correlationId || log.metadata) && (
                 <div className="ml-20 mt-1 text-xs space-x-4">
                   {log.correlationId && (

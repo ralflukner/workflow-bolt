@@ -17,6 +17,7 @@ MAJOR.MINOR.PATCH
 ## Version Tags
 
 Container images are tagged using the following format:
+
 ```
 v{MAJOR}.{MINOR}.{PATCH}
 ```
@@ -50,6 +51,7 @@ Example: `v1.0.0`
 ## Breaking Changes
 
 Breaking changes require:
+
 1. MAJOR version bump
 2. Migration guide
 3. Deprecation notice
@@ -58,6 +60,7 @@ Breaking changes require:
 ## Security Updates
 
 Security patches:
+
 1. Get highest priority
 2. May skip normal release cycle
 3. Require immediate deploymen

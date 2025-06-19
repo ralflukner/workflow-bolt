@@ -82,7 +82,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         setIsLoading(true);
         console.log(`Using ${storageType} for data persistence`);
         const savedPatients = await storageService.loadTodaysSession();
-        
+
         console.log(`Loaded ${savedPatients.length} patients from ${storageType}`);
         setPatients(savedPatients);
         // Consider it "real data" even if empty, because it's from persistence
@@ -90,7 +90,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         setHasRealData(true);
       } catch (error) {
         console.error(`Failed to load from ${storageType}:`, error);
-        
+
         // If Firebase fails, fall back to localStorage
         if (useFirebase && firebaseReady) {
           console.warn('Firebase load failed, falling back to localStorage');
@@ -137,12 +137,12 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         unsubscribe();
       }
     };
-  }, [persistenceEnabled, storageService, storageType, useFirebase, firebaseReady]);
+  }, [persistenceEnabled, storageService, storageType, useFirebase, firebaseReady, isLoading]);
 
   // Auto-save patients data periodically and when data changes
   useEffect(() => {
     if (!persistenceEnabled || isLoading) return;
-    
+
     // Skip auto-save if we have no patients at all
     if (patients.length === 0) {
       console.log('Skipping auto-save: no patients to save');
@@ -156,7 +156,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         console.log(`Session auto-saved to ${storageType}: ${patients.length} patients`);
       } catch (error) {
         console.error(`Failed to auto-save to ${storageType}:`, error);
-        
+
         // If Firebase save fails, fall back to localStorage
         if (useFirebase && firebaseReady) {
           console.warn('Firebase save failed, falling back to localStorage');
@@ -175,7 +175,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     const timeoutId = setTimeout(saveSession, 2000); // Debounce saves by 2 seconds
 
     return () => clearTimeout(timeoutId);
-  }, [patients, persistenceEnabled, isLoading, storageService, storageType, useFirebase]);
+  }, [patients, persistenceEnabled, isLoading, storageService, storageType, useFirebase, firebaseReady]);
 
   // Set up an interval to force re-renders and periodic saves
   useEffect(() => {
@@ -185,13 +185,13 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     const tick = () => {
       setTickCounter(prev => prev + 1);
       saveCounter++;
-      
+
       // Periodic save every 5 minutes during real time mode
       // Since tick runs every minute in real time, save every 5 ticks
       // Save if we have any patients, regardless of their source
       if (!timeMode.simulated && saveCounter >= 5 && persistenceEnabled && patients.length > 0) {
         saveCounter = 0; // Reset counter
-        
+
         // Handle both sync (localStorage) and async (Firebase) saves
         const handlePeriodicSave = async () => {
           try {
@@ -199,7 +199,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
             console.log(`Periodic save to ${storageType} successful`);
           } catch (error) {
             console.error(`Periodic save to ${storageType} failed:`, error);
-            
+
             // If Firebase fails, fall back to localStorage
             if (useFirebase && firebaseReady) {
               console.warn('Firebase periodic save failed, falling back to localStorage');
@@ -240,7 +240,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         clearInterval(intervalId);
       }
     };
-  }, [timeMode.simulated, persistenceEnabled, patients, storageService, storageType, useFirebase]);
+  }, [timeMode.simulated, persistenceEnabled, patients, storageService, storageType, useFirebase, firebaseReady]);
 
   const clearPatients = () => {
     setPatients([]);
@@ -420,23 +420,23 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
       console.warn('Cannot refresh: Firebase not configured');
       return;
     }
-    
+
     try {
       console.log('Manually refreshing patient data from Firebase');
-      
+
       // Load today's patients
       const todayPatients = await dailySessionService.loadTodaysSession();
       console.log(`Found ${todayPatients.length} patients for today`);
-      
+
       // Also check tomorrow's date to handle "Sync Tomorrow" functionality
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       const tomorrowId = tomorrow.toISOString().split('T')[0];
-      
+
       try {
         const tomorrowPatients = await dailySessionService.loadSessionForDate(tomorrowId);
         console.log(`Found ${tomorrowPatients.length} patients for tomorrow (${tomorrowId})`);
-        
+
         // If tomorrow has data but today doesn't, use tomorrow's data
         // This handles the "Sync Tomorrow" case where users want to see tomorrow's appointments
         if (tomorrowPatients.length > 0 && todayPatients.length === 0) {
@@ -445,10 +445,10 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
           setHasRealData(true);
           return;
         }
-      } catch (err) {
+      } catch {
         console.log('No data for tomorrow, using today\'s data');
       }
-      
+
       // Default to today's data
       setPatients(todayPatients);
       setHasRealData(true);

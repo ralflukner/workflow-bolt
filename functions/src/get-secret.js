@@ -4,6 +4,7 @@
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
+const { getFirestore } = require('firebase-admin/firestore');
 
 const gsm = new SecretManagerServiceClient();
 
@@ -26,7 +27,6 @@ const ALLOWED_SECRETS = new Set([
   'FIREBASE_MESSAGING_SENDER_ID',
   'FIREBASE_APP_ID',
   'FIREBASE_MEASUREMENT_ID',
-  'patient-encryption-key'
 ]);
 
 /**
@@ -49,6 +49,35 @@ const getSecret = onCall({ enforceAppCheck: true }, async (request) => {
   if (!ALLOWED_SECRETS.has(secretKey)) {
     throw new HttpsError('permission-denied', 'Access to this secret is not permitted');
   }
+
+  // --- Rate limiting logic ---
+  const RATE_LIMIT = 5; // max requests
+  const WINDOW_MS = 60 * 1000; // 1 minute
+  const userId = request.auth.uid;
+  const db = getFirestore();
+  const now = Date.now();
+  const windowStart = now - WINDOW_MS;
+  const rateDocRef = db.collection('secretRateLimits').doc(userId);
+
+  // Use a transaction to ensure atomicity
+  const allowed = await db.runTransaction(async (tx) => {
+    const doc = await tx.get(rateDocRef);
+    let requests = [];
+    if (doc.exists) {
+      requests = (doc.data().requests || []).filter(ts => ts > windowStart);
+    }
+    if (requests.length >= RATE_LIMIT) {
+      return false;
+    }
+    requests.push(now);
+    tx.set(rateDocRef, { requests }, { merge: true });
+    return true;
+  });
+
+  if (!allowed) {
+    throw new HttpsError('resource-exhausted', 'Rate limit exceeded. Please try again later.');
+  }
+  // --- End rate limiting ---
 
   // Build the GSM resource path
   const projectId = resolveProjectId();

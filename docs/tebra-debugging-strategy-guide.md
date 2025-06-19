@@ -9,12 +9,14 @@ This guide documents the comprehensive debugging improvements implemented for th
 ### 1. **TebraDebugDashboard Component** (`src/components/TebraDebugDashboard.tsx`)
 
 **What It Does:**
+
 - Real-time monitoring of all 7 data flow steps
 - Visual health indicators with color-coded status
 - Performance metrics and correlation ID tracking
 - Auto-refresh every 10 seconds with manual refresh option
 
 **Key Features:**
+
 - **Success Rate Tracking**: Overall system health percentage
 - **Response Time Monitoring**: Performance metrics across components
 - **Error Correlation**: Links errors using correlation IDs
@@ -23,11 +25,13 @@ This guide documents the comprehensive debugging improvements implemented for th
 ### 2. **Enhanced PHP Proxy Logging** (`tebra-php-api/src/TebraHttpClient.php`)
 
 **What It Does:**
+
 - Comprehensive request/response logging with security redaction
 - Health status tracking with success/failure metrics
 - Performance monitoring with duration tracking
 
 **Key Features:**
+
 - **Redacted Logging**: Sensitive data (passwords, SSN, DOB) shown as `[REDACTED]`
 - **Health Metrics**: Success rates, last success/failure timestamps
 - **Performance Tracking**: Request duration monitoring
@@ -36,6 +40,7 @@ This guide documents the comprehensive debugging improvements implemented for th
 ### 3. **Patient Management Improvements**
 
 **What It Does:**
+
 - Delete functionality for patient cards with confirmation
 - Enhanced patient context with delete operations
 - UI improvements for better data management
@@ -43,6 +48,7 @@ This guide documents the comprehensive debugging improvements implemented for th
 ### 4. **Health Status Endpoints**
 
 **What It Does:**
+
 - `/health/status` - Comprehensive health metrics endpoint
 - `testConnection` - Tebra connectivity testing
 - `getHealthStatus` - Detailed health metrics retrieval
@@ -54,6 +60,7 @@ This guide documents the comprehensive debugging improvements implemented for th
 Use the TebraDebugDashboard for continuous system monitoring:
 
 **Hypothetical Example:**
+
 ```
 Dashboard shows:
 - Success Rate: 23.4%
@@ -64,6 +71,7 @@ Dashboard shows:
 ```
 
 **Strategic Action:**
+
 1. **Identify the bottleneck**: Cloud Run PHP service failing
 2. **Use correlation ID**: Search logs for `3yo0fgwv`
 3. **Root cause**: Missing method implementation
@@ -74,6 +82,7 @@ Dashboard shows:
 Use correlation IDs to trace complete request flows:
 
 **Actual Example from Enhanced Logging:**
+
 ```
 [TEBRA_API] GetAppointments FAILED: 
 {
@@ -87,6 +96,7 @@ Duration: 245ms
 ```
 
 **Strategic Action:**
+
 1. **Search Cloud Logs**: `correlationId="h5cgqyia"`
 2. **Trace flow**: Find all log entries with this ID
 3. **Identify pattern**: Error occurs with specific date ranges
@@ -97,6 +107,7 @@ Duration: 245ms
 Use health metrics to identify performance bottlenecks:
 
 **Hypothetical Health Status Response:**
+
 ```json
 {
   "status": "operational",
@@ -127,6 +138,7 @@ Use health metrics to identify performance bottlenecks:
 ```
 
 **Strategic Action:**
+
 1. **Analyze success rates**: GetPatients performing better than GetAppointments
 2. **Performance comparison**: GetAppointments taking 1.6x longer
 3. **Focus efforts**: Optimize GetAppointments method first
@@ -137,12 +149,14 @@ Use health metrics to identify performance bottlenecks:
 ### **Scenario 1: Complete System Failure (0% Success Rate)**
 
 **Dashboard Indicators:**
+
 - All components showing 🔴 RED status
 - Success rate: 0%
 - Recent errors: Multiple "Connection refused" errors
 
 **Debugging Steps:**
-1. **Check Infrastructure**: 
+
+1. **Check Infrastructure**:
    ```bash
    curl https://tebra-php-api-url/health/status
    ```
@@ -155,12 +169,14 @@ Use health metrics to identify performance bottlenecks:
 ### **Scenario 2: Intermittent Failures (50-80% Success Rate)**
 
 **Dashboard Indicators:**
+
 - Components alternating between 🟢 GREEN and 🔴 RED
 - Success rate: 67.3%
 - Recent errors: Mix of timeouts and InternalServiceFaults
 
 **Debugging Steps:**
-1. **Pattern Analysis**: 
+
+1. **Pattern Analysis**:
    ```bash
    grep "FAILED" logs | grep -E "(timeout|InternalServiceFault)" | head -20
    ```
@@ -173,11 +189,13 @@ Use health metrics to identify performance bottlenecks:
 ### **Scenario 3: Performance Degradation (High Response Times)**
 
 **Dashboard Indicators:**
+
 - Components showing 🟢 GREEN but high response times (>5000ms)
 - Success rate: 94.2%
 - Performance trending downward
 
 **Debugging Steps:**
+
 1. **Performance profiling**:
    ```bash
    grep "Duration:" logs | awk '{print $NF}' | sort -n | tail -20
@@ -195,6 +213,7 @@ Use health metrics to identify performance bottlenecks:
 **Purpose**: Follow a single request through the entire system
 
 **Example Workflow:**
+
 1. **Capture correlation ID** from debug dashboard: `seax6ur9`
 2. **Search Firebase Functions logs**:
    ```bash
@@ -211,6 +230,7 @@ Use health metrics to identify performance bottlenecks:
 **Purpose**: Identify degradation patterns over time
 
 **Example Analysis:**
+
 ```bash
 # Get health metrics every hour for 24 hours
 for hour in {0..23}; do
@@ -264,16 +284,19 @@ awk '{sum+=$1; if(min==""){min=max=$1}; if($1>max){max=$1}; if($1<min){min=$1}} 
 ### **Component-Level Monitoring**
 
 **Firebase Functions**:
+
 - Cold start frequency: <10% of requests
 - Execution time: <30 seconds
 - Memory usage: <512MB
 
 **Cloud Run PHP Service**:
+
 - Request processing: <3 seconds
 - Memory usage: <1GB
 - CPU utilization: <80%
 
 **Tebra SOAP API**:
+
 - Response time: <2 seconds
 - InternalServiceFault rate: <1%
 - Authentication success: >99.9%
@@ -298,6 +321,7 @@ if (metrics.errorCount > 10) {
 ### **Daily Health Reports**
 
 **Automated daily summary**:
+
 - Success rate trends
 - Performance metrics
 - Top error categories
@@ -307,6 +331,7 @@ if (metrics.errorCount > 10) {
 ### **Predictive Monitoring**
 
 **Trend analysis for early warning**:
+
 - Response time degradation patterns
 - Error rate increases
 - Success rate declines
@@ -315,18 +340,21 @@ if (metrics.errorCount > 10) {
 ## 🎯 Strategic Implementation Plan
 
 ### **Phase 1: Immediate (Week 1)**
+
 - ✅ Deploy TebraDebugDashboard
 - ✅ Implement enhanced PHP logging
 - ✅ Add health status endpoints
 - ✅ Set up correlation ID tracking
 
 ### **Phase 2: Enhancement (Week 2-3)**
+
 - 🔄 Connect real API health checks
 - 🔄 Implement automated alerting
 - 🔄 Add performance trending
 - 🔄 Create daily health reports
 
 ### **Phase 3: Optimization (Week 4+)**
+
 - 🔄 Predictive failure detection
 - 🔄 Auto-scaling based on metrics
 - 🔄 Machine learning anomaly detection
@@ -335,26 +363,31 @@ if (metrics.errorCount > 10) {
 ## 📚 Quick Reference Commands
 
 ### **Check Overall System Health**
+
 ```bash
 curl -s "https://tebra-php-api-url/health/status" | jq '.'
 ```
 
 ### **Monitor Real-Time Success Rate**
+
 ```bash
 watch -n 5 'curl -s "https://tebra-php-api-url/health/status" | jq ".health_metrics.success_rate"'
 ```
 
 ### **Find Correlation ID in Logs**
+
 ```bash
 gcloud logging read 'jsonPayload.correlationId="your-correlation-id"' --limit=100
 ```
 
 ### **Analyze Error Patterns**
+
 ```bash
 grep "FAILED" logs/*.log | cut -d':' -f3 | sort | uniq -c | sort -nr
 ```
 
 ### **Performance Trend Analysis**
+
 ```bash
 grep "Duration:" logs/*.log | awk '{print $NF}' | sed 's/ms//' | \
 awk '{sum+=$1; sumsq+=$1*$1} END {print "Avg:", sum/NR, "StdDev:", sqrt(sumsq/NR - (sum/NR)^2)}'
@@ -362,4 +395,4 @@ awk '{sum+=$1; sumsq+=$1*$1} END {print "Avg:", sum/NR, "StdDev:", sqrt(sumsq/NR
 
 ---
 
-**This debugging strategy provides a comprehensive approach to monitoring, diagnosing, and resolving Tebra data flow issues with both reactive and proactive capabilities.** 
+**This debugging strategy provides a comprehensive approach to monitoring, diagnosing, and resolving Tebra data flow issues with both reactive and proactive capabilities.**

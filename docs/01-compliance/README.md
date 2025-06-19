@@ -1,2 +1,2 @@
 
-# compliance (placeholder)\n\n> TODO: replace this stub with real content in later phases.
+# compliance (placeholder)\n\n> TODO: replace this stub with real content in later phases

@@ -15,20 +15,24 @@ This document analyzes the failing AuthBridge integration tests, identifies root
 ### 1. **"should complete full auth flow: Auth0 -> Firebase Functions -> Firebase Auth"**
 
 **Failure Location**: Line 99
+
 ```typescript
 } as ReturnType<typeof useAuth0>);
 ```
 
 **Error**: `expect(received).toBe(expected) // Object.is equality`
+
 - Expected: `true`
 - Received: `false`
 
-**Root Cause**: 
+**Root Cause**:
+
 - The `ensureFirebaseAuth()` function is returning `false` instead of the expected `true`
 - This suggests the authentication flow is not completing successfully
 - Likely due to mock setup issues or missing dependencies
 
 **Symptoms**:
+
 - Auth0 token retrieval appears to work (mock returns valid token)
 - Firebase Functions call appears to work (mock returns success response)
 - Firebase Auth sign-in appears to work (mock returns user credential)
@@ -37,15 +41,18 @@ This document analyzes the failing AuthBridge integration tests, identifies root
 ### 2. **"should handle token refresh when Auth0 token expires"**
 
 **Failure Location**: Line 150
+
 ```typescript
 });
 ```
 
 **Error**: `expect(received).toBe(expected) // Object.is equality`
+
 - Expected: `true`
 - Received: `false`
 
 **Root Cause**:
+
 - Token refresh logic is not working as expected
 - The test expects the first call to fail due to expired token, then succeed after refresh
 - The `refreshToken()` method is not properly handling the token expiration scenario
@@ -53,15 +60,18 @@ This document analyzes the failing AuthBridge integration tests, identifies root
 ### 3. **"should handle network failures with retry logic"**
 
 **Failure Location**: Line 184
+
 ```typescript
 expect(success).toBe(true);
 ```
 
 **Error**: `expect(received).toBe(expected) // Object.is equality`
+
 - Expected: `true`
 - Received: `false`
 
 **Root Cause**:
+
 - Retry logic is not working properly
 - The test mocks network failures for the first two calls, then success on the third
 - The `withRetry` method may not be properly configured or the retry mechanism is broken
@@ -69,15 +79,18 @@ expect(success).toBe(true);
 ### 4. **"should cache tokens and reuse them efficiently"**
 
 **Failure Location**: Line 216
+
 ```typescript
 createMockUserCredential('firebase-user-123')
 ```
 
 **Error**: `expect(received).toBe(expected) // Object.is equality`
+
 - Expected: `true`
 - Received: `false`
 
 **Root Cause**:
+
 - Token caching mechanism is not working
 - The test expects the second authentication call to use cached tokens (no API call)
 - Cache validation or retrieval logic may be broken
@@ -85,15 +98,18 @@ createMockUserCredential('firebase-user-123')
 ### 5. **"should handle Firebase Auth sign-in failures"**
 
 **Failure Location**: Line 281
+
 ```typescript
 });
 ```
 
 **Error**: `expect(jest.fn()).toHaveBeenCalled()`
+
 - Expected number of calls: `>= 1`
 - Received number of calls: `0`
 
 **Root Cause**:
+
 - Firebase Auth sign-in is not being called when expected
 - Error handling logic may be preventing the sign-in attempt
 - Mock setup may be incorrect
@@ -101,14 +117,17 @@ createMockUserCredential('firebase-user-123')
 ### 6. **"should handle Auth0 popup fallback when silent refresh fails"**
 
 **Failure Location**: Line 305
+
 ```typescript
 ```
 
 **Error**: `expect(received).toBe(expected) // Object.is equality`
+
 - Expected: `true`
 - Received: `false`
 
 **Root Cause**:
+
 - Popup fallback mechanism is not working
 - When silent refresh fails, the system should fall back to popup authentication
 - The fallback logic may be broken or not properly implemented
@@ -116,15 +135,18 @@ createMockUserCredential('firebase-user-123')
 ### 7. **"should provide comprehensive debug information"**
 
 **Failure Location**: Line 324
+
 ```typescript
 ```
 
 **Error**: `expect(received).toHaveProperty(path)`
+
 - Expected path: `"tokenCache"`
 - Received path: `[]`
 - Received value: `{"cacheEntries": [], "cacheSize": 0, "recentLog": []}`
 
 **Root Cause**:
+
 - Debug information structure is incorrect
 - The test expects a `tokenCache` property but the actual structure has different property names
 - API mismatch between test expectations and actual implementation
@@ -132,14 +154,17 @@ createMockUserCredential('firebase-user-123')
 ### 8. **"should clear token cache effectively"**
 
 **Failure Location**: Line 362
+
 ```typescript
 ```
 
 **Error**: `expect(jest.fn()).toHaveBeenCalled()`
+
 - Expected number of calls: `>= 1`
 - Received number of calls: `0`
 
 **Root Cause**:
+
 - Cache clearing is not working
 - The test expects an API call after cache clearing, but no call is made
 - Cache clearing logic may be broken or not properly implemented
@@ -147,15 +172,18 @@ createMockUserCredential('firebase-user-123')
 ### 9. **"should perform health check with comprehensive status"**
 
 **Failure Location**: Line 375
+
 ```typescript
 ```
 
 **Error**: `expect(received).toHaveProperty(path)`
+
 - Expected path: `"auth0"`
 - Received path: `[]`
 - Received value: `{}`
 
 **Root Cause**:
+
 - Health check structure is incorrect
 - The test expects specific properties (`auth0`, `firebase`, `tokenCache`, `overall`)
 - The actual health check implementation returns a different structure
@@ -201,6 +229,7 @@ createMockUserCredential('firebase-user-123')
 ### Phase 1: Fix Mock Setup (High Priority)
 
 #### 1.1 Fix TypeScript Mock Issues
+
 ```typescript
 // Current problematic code:
 // @ts-expect-error - Jest mock doesn't match exact type but works for testing
@@ -226,6 +255,7 @@ mockUseAuth0.mockReturnValue(mockAuth0Hook as ReturnType<typeof useAuth0>);
 ```
 
 #### 1.2 Improve Mock Implementations
+
 ```typescript
 // Create proper mock factories
 const createMockAuth0Response = (token: string, expiresIn: number = 3600) => {
@@ -248,6 +278,7 @@ const createMockFirebaseResponse = (success: boolean, token?: string, uid?: stri
 ### Phase 2: Fix Authentication Flow (High Priority)
 
 #### 2.1 Debug ensureFirebaseAuth Function
+
 ```typescript
 // Add comprehensive logging to identify failure points
 const ensureFirebaseAuth = async (forceRefresh = false): Promise<boolean> => {
@@ -281,6 +312,7 @@ const ensureFirebaseAuth = async (forceRefresh = false): Promise<boolean> => {
 ```
 
 #### 2.2 Fix Token Exchange Logic
+
 ```typescript
 // Ensure proper error handling in exchangeTokens
 async exchangeTokens(auth0Token: string): Promise<string> {
@@ -325,6 +357,7 @@ async exchangeTokens(auth0Token: string): Promise<string> {
 ### Phase 3: Fix API Structure Issues (Medium Priority)
 
 #### 3.1 Fix Debug Information Structure
+
 ```typescript
 // Update getDebugInfo to match test expectations
 getDebugInfo(): {
@@ -351,6 +384,7 @@ getDebugInfo(): {
 ```
 
 #### 3.2 Fix Health Check Structure
+
 ```typescript
 // Update healthCheck to match test expectations
 async healthCheck(): Promise<{
@@ -377,6 +411,7 @@ async healthCheck(): Promise<{
 ### Phase 4: Improve Test Environment (Medium Priority)
 
 #### 4.1 Add Test Setup Utilities
+
 ```typescript
 // Create test setup utilities
 export const setupAuthBridgeTest = () => {
@@ -406,6 +441,7 @@ export const createTestAuth0Token = (expiresIn: number = 3600) => {
 ```
 
 #### 4.2 Add Integration Test Helpers
+
 ```typescript
 // Create integration test helpers
 export const waitForAuthFlow = async (callback: () => Promise<boolean>, timeout = 5000) => {
@@ -453,6 +489,7 @@ export const mockSuccessfulAuthFlow = () => {
 ### Phase 5: Add Comprehensive Testing (Low Priority)
 
 #### 5.1 Add Unit Tests for Individual Components
+
 ```typescript
 // Test individual methods in isolation
 describe('AuthBridge Unit Tests', () => {
@@ -483,6 +520,7 @@ describe('AuthBridge Unit Tests', () => {
 ```
 
 #### 5.2 Add Error Scenario Tests
+
 ```typescript
 // Test various error scenarios
 describe('Error Handling', () => {
@@ -503,16 +541,19 @@ describe('Error Handling', () => {
 ## Implementation Priority
 
 ### Immediate (Week 1)
+
 1. Fix mock setup issues
 2. Debug and fix `ensureFirebaseAuth` function
 3. Fix API structure mismatches
 
 ### Short Term (Week 2)
+
 1. Improve test environment configuration
 2. Add comprehensive error handling
 3. Fix retry logic
 
 ### Medium Term (Week 3-4)
+
 1. Add unit tests for individual components
 2. Improve integration test coverage
 3. Add performance monitoring
@@ -535,4 +576,4 @@ The AuthBridge test failures represent authentication flow issues that are separ
 
 By following the phased repair approach outlined above, these issues can be systematically resolved while maintaining the security and functionality of the authentication system.
 
-The patient encryption system remains fully functional and HIPAA-compliant, with all encryption-related tests passing successfully. 
+The patient encryption system remains fully functional and HIPAA-compliant, with all encryption-related tests passing successfully.

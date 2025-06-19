@@ -1,13 +1,13 @@
 // @ts-nocheck
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { tebraApiService } from '../services/tebraApiService';
+import tebraApi from '../services/tebraApi';
 
 export async function testTebraGetAppointmentsViaFirebase() {
   console.log('🔧 Testing Tebra getAppointments via Firebase Functions...\n');
 
   // First test the connection
   console.log('1️⃣ Testing Tebra connection...');
-  const connectionResult = await tebraApiService.testConnectionDetailed();
+  const connectionResult = await tebraApi.testConnection();
   console.log('Connection result:', connectionResult);
   
   if (!connectionResult.success) {
@@ -25,7 +25,7 @@ export async function testTebraGetAppointmentsViaFirebase() {
   
   try {
     // Use the testAppointments method which should handle date formatting
-    const result = await tebraApiService.testAppointments();
+    const result = await tebraApi.testAppointments();
     console.log('   Result:', result);
     
     if (result.success && result.data) {
@@ -48,7 +48,9 @@ export async function testTebraGetAppointmentsViaFirebase() {
   // Also try the sync schedule function
   console.log('\n3️⃣ Testing sync today\'s schedule...');
   try {
-    const syncResult = await tebraApiService.syncTodaysSchedule();
+    // Sync functionality not yet implemented in tebraApi
+    // const syncResult = await tebraApi.syncTodaysSchedule();
+    const syncResult = { success: false, message: 'Sync not yet implemented in PHP API' };
     console.log('   Sync result:', syncResult);
   } catch (error: any) {
     console.error('   ❌ Sync error:', error.message || error);

@@ -7,7 +7,7 @@ This document explains how to set up and use the Service Account Email Service f
 The Service Account Email Service uses a production-grade approach (Service Account + Domain-Wide Delegation) as recommended for HIPAA environments. This approach:
 
 - Uses a service account to authenticate with Google APIs
-- Impersonates a user (lukner@luknerclinic.com) using domain-wide delegation
+- Impersonates a user (<lukner@luknerclinic.com>) using domain-wide delegation
 - Does not require storing refresh tokens
 - Uses the service account's private key to obtain access tokens on demand
 
@@ -28,7 +28,7 @@ The Service Account Email Service uses a production-grade approach (Service Acco
 11. Click "Add Key" > "Create new key"
 12. Select "JSON" as the key type and click "Create"
 13. The key file will be downloaded to your computer
-14. Note the service account email address (e.g., gmail-service-account@luknerlumina-firebase.iam.gserviceaccount.com)
+14. Note the service account email address (e.g., <gmail-service-account@luknerlumina-firebase.iam.gserviceaccount.com>)
 
 ### 2. Enable Domain-Wide Delegation for the Service Accoun
 
@@ -62,6 +62,7 @@ gcloud functions deploy FUNCTION_NAME
 ```
 
 Replace:
+
 - `FUNCTION_NAME` with the name of your function
 - `your-service-account@luknerlumina-firebase.iam.gserviceaccount.com` with your actual service account email
 - `YOUR_PRIVATE_KEY_HERE` with the private key from the JSON key file (replace newlines with `\n`)

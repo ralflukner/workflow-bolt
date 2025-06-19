@@ -7,23 +7,27 @@ The Tebra Debug Dashboard (`src/components/TebraDebugDashboard.tsx`) is a compre
 ## 🎯 Key Features
 
 ### 1. **Visual Data Flow Monitoring**
+
 - **Real-time status indicators** for each step in the data flow chain
 - **Color-coded health status** (Green=Healthy, Yellow=Warning, Red=Error)
 - **Response time tracking** for performance monitoring
 - **Correlation ID tracking** for request tracing
 
 ### 2. **Comprehensive Metrics Dashboard**
+
 - **Success Rate**: Overall health percentage of the data flow
 - **Average Response Time**: Performance metrics across all components
 - **Active Error Count**: Number of currently failing components
 - **Last Successful Sync**: When the complete flow last worked
 
 ### 3. **Error Tracking & Analysis**
+
 - **Recent Errors Log**: Last 10 errors with timestamps and correlation IDs
 - **Error Context**: Shows which component failed and detailed error messages
 - **Correlation Tracing**: Links errors to specific request flows
 
 ### 4. **Auto-Refresh Monitoring**
+
 - **10-second intervals**: Automatic health checks
 - **Manual refresh**: On-demand status updates
 - **Real-time indicators**: Shows when monitoring is active
@@ -71,6 +75,7 @@ node analyze-logs.cjs --days=1 --service=tebra-php-api
 ## 📊 Monitoring Each Failure Point
 
 ### **Critical Failure #1: PHP Fatal Error in Cloud Run**
+
 ```typescript
 // Dashboard monitors Cloud Run health
 case 'cloud-run':
@@ -80,6 +85,7 @@ case 'cloud-run':
 ```
 
 ### **Critical Failure #2: Tebra Backend InternalServiceFault**
+
 ```typescript
 // Dashboard monitors Tebra API responses
 case 'tebra-api':
@@ -89,6 +95,7 @@ case 'tebra-api':
 ```
 
 ### **System Failure #3: Authentication Issues**
+
 ```typescript
 // Dashboard monitors auth flow
 case 'firebase-functions':
@@ -98,6 +105,7 @@ case 'firebase-functions':
 ```
 
 ### **Data Flow Failure #4: Empty Response Handling**
+
 ```typescript
 // Dashboard monitors data transformation
 case 'data-transform':
@@ -107,6 +115,7 @@ case 'data-transform':
 ```
 
 ### **Transformation Failure #5: Dashboard State Update**
+
 ```typescript
 // Dashboard monitors final UI update
 case 'dashboard-update':
@@ -150,6 +159,7 @@ import TebraDebugDashboard from './TebraDebugDashboard';
 ### 3. **Use Correlation IDs for Debugging**
 
 When an error occurs:
+
 1. **Note the Correlation ID** from the dashboard
 2. **Search Cloud Logs** using the correlation ID:
    ```bash
@@ -166,7 +176,7 @@ When an error occurs:
 
 ## 🔄 Real-Time Monitoring Workflow
 
-### Typical Debugging Session:
+### Typical Debugging Session
 
 1. **Open Debug Dashboard** (via "Show Debug" button)
 2. **Check Overall Success Rate**
@@ -248,21 +258,25 @@ useEffect(() => {
 ## 🔍 Troubleshooting Common Scenarios
 
 ### Scenario 1: All Components Show RED
+
 - **Likely Cause**: Complete system failure
 - **Check**: Network connectivity, Firebase project status
 - **Action**: Run `node test-debug-logging.cjs` to verify
 
 ### Scenario 2: Only Tebra API Shows RED
+
 - **Likely Cause**: Tebra backend issues or auth problems
 - **Check**: Recent error messages for "InternalServiceFault"
 - **Action**: Contact Tebra support, check credentials
 
 ### Scenario 3: High Response Times
+
 - **Likely Cause**: Performance bottlenecks
 - **Check**: Cloud Run resource limits, database queries
 - **Action**: Scale resources, optimize queries
 
 ### Scenario 4: Intermittent Failures
+
 - **Likely Cause**: Rate limiting or timeouts
 - **Check**: Error patterns by time of day
 - **Action**: Implement retry logic, adjust timeouts
@@ -279,13 +293,15 @@ The dashboard is working correctly when:
 
 ## 🔗 Integration Points
 
-### Works With:
+### Works With
+
 - **Enhanced Debug Logger** (`functions/src/debug-logger.js`)
 - **Log Analysis Script** (`analyze-logs.cjs`)
 - **Existing Debug Panels** (EnvDebugger, FirebaseDebugger)
 - **Cloud Logging Infrastructure**
 
-### Extends:
+### Extends
+
 - **Tebra API Failures Documentation** (`docs/tebra-api-failures.md`)
 - **Debug Toolkit** (`DEBUG-TOOLKIT.md`)
 - **Monitoring Strategy** (future Cloud Monitoring integration)
@@ -293,7 +309,8 @@ The dashboard is working correctly when:
 ---
 
 **Next Steps:**
+
 1. Integrate dashboard into main UI
 2. Connect to real monitoring APIs
 3. Add automated alerting
-4. Create mobile-responsive view for monitoring on-the-go 
+4. Create mobile-responsive view for monitoring on-the-go

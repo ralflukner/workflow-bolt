@@ -1,75 +1,29 @@
 /**
- * Tebra API Service Factory
- * Returns either Firebase Functions or PHP API implementation based on configuration
+ * Tebra API Service
+ * Uses PHP API exclusively - Node.js is not supported for Tebra SOAP
  */
 
-import * as firebaseApi from './tebraApiService';
 import * as phpApi from './tebraPhpApiService';
-import { getTebraApiConfig } from './configService';
 
-// Configuration will be loaded dynamically
-let USE_PHP_API: boolean | null = null;
-
-// Load configuration on first use
-async function ensureConfig() {
-  if (USE_PHP_API === null) {
-    const config = await getTebraApiConfig();
-    USE_PHP_API = config.usePhpApi;
-    console.log(`🔌 Tebra API: Using ${USE_PHP_API ? 'PHP Direct API' : 'Firebase Functions'}`);
-  }
-  return USE_PHP_API;
-}
-
-// Create wrapper functions that check configuration before calling
-export const tebraTestConnection = async (...args: any[]) => {
-  const usePhp = await ensureConfig();
-  return usePhp ? phpApi.tebraTestConnection(...args) : firebaseApi.tebraTestConnection(...args);
-};
-
-export const tebraGetPatient = async (...args: any[]) => {
-  const usePhp = await ensureConfig();
-  return usePhp ? phpApi.tebraGetPatient(...args) : firebaseApi.tebraGetPatient(...args);
-};
-
-export const tebraSearchPatients = async (...args: any[]) => {
-  const usePhp = await ensureConfig();
-  return usePhp ? phpApi.tebraSearchPatients(...args) : firebaseApi.tebraSearchPatients(...args);
-};
-
-export const tebraGetAppointments = async (...args: any[]) => {
-  const usePhp = await ensureConfig();
-  return usePhp ? phpApi.tebraGetAppointments(...args) : firebaseApi.tebraGetAppointments(...args);
-};
-
-export const tebraGetProviders = async (...args: any[]) => {
-  const usePhp = await ensureConfig();
-  return usePhp ? phpApi.tebraGetProviders(...args) : firebaseApi.tebraGetProviders(...args);
-};
-
-export const tebraCreateAppointment = async (...args: any[]) => {
-  const usePhp = await ensureConfig();
-  return usePhp ? phpApi.tebraCreateAppointment(...args) : firebaseApi.tebraCreateAppointment(...args);
-};
-
-export const tebraUpdateAppointment = async (...args: any[]) => {
-  const usePhp = await ensureConfig();
-  return usePhp ? phpApi.tebraUpdateAppointment(...args) : firebaseApi.tebraUpdateAppointment(...args);
-};
-
-export const tebraTestAppointments = async (...args: any[]) => {
-  const usePhp = await ensureConfig();
-  return usePhp ? phpApi.tebraTestAppointments(...args) : firebaseApi.tebraTestAppointments(...args);
-};
+// Re-export all PHP API functions directly
+export const tebraTestConnection = phpApi.tebraTestConnection;
+export const tebraGetPatient = phpApi.tebraGetPatient;
+export const tebraSearchPatients = phpApi.tebraSearchPatients;
+export const tebraGetAppointments = phpApi.tebraGetAppointments;
+export const tebraGetProviders = phpApi.tebraGetProviders;
+export const tebraCreateAppointment = phpApi.tebraCreateAppointment;
+export const tebraUpdateAppointment = phpApi.tebraUpdateAppointment;
+export const tebraTestAppointments = phpApi.tebraTestAppointments;
 
 // Export configuration info
-export const getApiInfo = async () => {
-  const config = await getTebraApiConfig();
-  return {
-    usingPhpApi: config.usePhpApi,
-    apiType: config.usePhpApi ? 'PHP Direct API' : 'Firebase Functions',
-    phpApiUrl: config.phpApiUrl,
-  };
-};
+export const getApiInfo = () => ({
+  usingPhpApi: true,
+  apiType: 'PHP Direct API (Node.js not supported)',
+  message: 'Tebra SOAP API only works reliably with PHP',
+});
+
+// Log that we're using PHP API
+console.log('🔌 Tebra API: Using PHP Direct API (Node.js not supported for SOAP)');
 
 export default {
   testConnection: tebraTestConnection,

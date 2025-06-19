@@ -42,14 +42,22 @@ function validateFirebaseConfig(config: unknown): config is FirebaseConfigType {
  * Fetch Firebase configuration from backend
  */
 async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
+  const FETCH_TIMEOUT = 10000; // 10 seconds
+
   try {
     // Fetch from the configurable getFirebaseConfig endpoint
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+
     const response = await fetch(FIREBASE_CONFIG_ENDPOINT, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-      }
+      },
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw Object.assign(
@@ -71,19 +79,32 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
     }
 
     return config;
-  } catch (error) {
-    console.error('Failed to fetch Firebase config from backend:', error);
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('Firebase config fetch timed out');
+    } else {
+      console.error('Failed to fetch Firebase config from backend:', error);
+    }
     // Fall back to environment variables if available
     if (import.meta.env?.VITE_FIREBASE_API_KEY) {
       console.warn('Using Firebase config from environment variables as fallback');
       const fallbackConfig = {
         apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'luknerlumina-firebase.firebaseapp.com',
-        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'luknerlumina-firebase',
-        storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'luknerlumina-firebase.firebasestorage.app',
-        messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '623450773640',
-        appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:623450773640:web:9afd63d3ccbb1fcb6fe73d',
-        measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-W6TX8WRN2Z'
+        authDomain:
+          import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
+          'luknerlumina-firebase.firebaseapp.com',
+        projectId:
+          import.meta.env.VITE_FIREBASE_PROJECT_ID || 'luknerlumina-firebase',
+        storageBucket:
+          import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
+          'luknerlumina-firebase.firebasestorage.app',
+        messagingSenderId:
+          import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '623450773640',
+        appId:
+          import.meta.env.VITE_FIREBASE_APP_ID ||
+          '1:623450773640:web:9afd63d3ccbb1fcb6fe73d',
+        measurementId:
+          import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-W6TX8WRN2Z'
       };
 
       if (!validateFirebaseConfig(fallbackConfig)) {

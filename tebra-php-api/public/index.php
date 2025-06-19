@@ -11,7 +11,7 @@ require_once __DIR__ . '/../src/tracing.php';
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-API-Key');
+header('Access-Control-Allow-Headers: Content-Type, X-API-Key, X-Admin-Token');
 header('Access-Control-Max-Age: 86400');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -51,25 +51,97 @@ if ($method === 'GET' && $path === '/health/status') {
     exit;
 }
 
-// Debug endpoint – disabled in production
-if ($method === 'GET' && $path === '/debug/secrets' && false /* remove or protect */) {
-    header('Content-Type: application/json');
-    $username = getenv('TEBRA_USERNAME') ?: '';
-    $password = getenv('TEBRA_PASSWORD') ?: '';
-    $customerKey = getenv('TEBRA_CUSTOMER_KEY') ?: '';
-    $internalKey = getenv('INTERNAL_API_KEY') ?: '';
+// Debug endpoint – secured with strong authentication
+if ($method === 'GET' && $path === '/debug/secrets') {
+    // Require both API key and admin token for debug access
+    $internalApiKey = SecretManager::getSecret('tebra-internal-api-key', 'INTERNAL_API_KEY');
+    $adminToken = SecretManager::getSecret('tebra-admin-debug-token', 'ADMIN_DEBUG_TOKEN');
+    $clientApiKey = $_SERVER['HTTP_X_API_KEY'] ?? '';
+    $clientAdminToken = $_SERVER['HTTP_X_ADMIN_TOKEN'] ?? '';
     
+    // Strong authentication check
+    if (!$internalApiKey || !$adminToken) {
+        http_response_code(503);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Debug endpoint not configured']);
+        exit;
+    }
+    
+    // Verify both API key and admin token
+    if (!hash_equals($internalApiKey, $clientApiKey) || !hash_equals($adminToken, $clientAdminToken)) {
+        http_response_code(401);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Unauthorized - Invalid credentials']);
+        exit;
+    }
+    
+    // Additional security: Check if debug mode is enabled
+    $debugEnabled = getenv('DEBUG_MODE_ENABLED') === 'true';
+    if (!$debugEnabled) {
+        http_response_code(403);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Debug mode disabled']);
+        exit;
+    }
+    
+    // Rate limiting for debug endpoint
+    $clientIP = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $rateLimitKey = "debug_rate_limit:$clientIP";
+    $rateLimitFile = sys_get_temp_dir() . "/$rateLimitKey";
+    
+    // Check rate limit (max 5 requests per minute)
+    $currentTime = time();
+    $rateLimitData = [];
+    if (file_exists($rateLimitFile)) {
+        $rateLimitData = json_decode(file_get_contents($rateLimitFile), true) ?: [];
+    }
+    
+    // Clean old entries (older than 1 minute)
+    $rateLimitData = array_filter($rateLimitData, function($timestamp) use ($currentTime) {
+        return ($currentTime - $timestamp) < 60;
+    });
+    
+    if (count($rateLimitData) >= 5) {
+        http_response_code(429);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Rate limit exceeded']);
+        exit;
+    }
+    
+    // Add current request to rate limit
+    $rateLimitData[] = $currentTime;
+    file_put_contents($rateLimitFile, json_encode($rateLimitData));
+    
+    // Log debug access for audit
+    error_log("[DEBUG_ACCESS] Admin debug access from IP: $clientIP, Time: " . date(DATE_ATOM));
+    
+    // Return only non-sensitive debug information
+    header('Content-Type: application/json');
     echo json_encode([
         'status' => 'debug_info',
         'timestamp' => date(DATE_ATOM),
-        'secrets' => [
-            'username_length' => strlen($username),
-            'username_first_chars' => substr($username, 0, 10) . '...',
-            'password_length' => strlen($password),
-            'password_first_chars' => substr($password, 0, 8) . '...',
-            'customer_key_length' => strlen($customerKey),
-            'customer_key_value' => $customerKey, // This one is safe to show
-            'internal_api_key_length' => strlen($internalKey)
+        'environment' => [
+            'php_version' => PHP_VERSION,
+            'server_time' => date(DATE_ATOM),
+            'memory_usage' => memory_get_usage(true),
+            'peak_memory' => memory_get_peak_usage(true)
+        ],
+        'configuration' => [
+            'debug_mode_enabled' => $debugEnabled,
+            'api_key_configured' => !empty($internalApiKey),
+            'admin_token_configured' => !empty($adminToken),
+            'secrets_manager_available' => class_exists('LuknerLumina\TebraApi\SecretManager')
+        ],
+        'secrets_status' => [
+            'username_configured' => !empty(getenv('TEBRA_USERNAME')),
+            'password_configured' => !empty(getenv('TEBRA_PASSWORD')),
+            'customer_key_configured' => !empty(getenv('TEBRA_CUSTOMER_KEY')),
+            'internal_api_key_configured' => !empty($internalApiKey)
+        ],
+        'security' => [
+            'rate_limit_remaining' => 5 - count($rateLimitData),
+            'client_ip' => $clientIP,
+            'request_id' => uniqid('debug_', true)
         ]
     ]);
     exit;

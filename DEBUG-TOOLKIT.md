@@ -74,11 +74,13 @@ This will provide:
 ### Sample Enhanced Log Entry
 
 **Console Output:**
+
 ```
 [INFO] TebraProxyClient:makeRequest:a1b2c3d4:3 (+1250ms) Starting request
 ```
 
 **GCP Cloud Logging Structured Fields:**
+
 ```json
 {
   "timestamp": "2025-06-15T10:30:15.123Z",

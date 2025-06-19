@@ -5,30 +5,36 @@ This directory contains integration tests for the "Sync Today" functionality tha
 ## Test Files
 
 ### 1. `syncSchedule.integration.test.ts`
+
 Comprehensive unit tests covering:
+
 - ✅ Successful sync scenarios
 - ✅ Error handling and edge cases
 - ✅ Data transformation and validation
 - ✅ Status mapping (Confirmed → scheduled, CheckedIn → arrived, etc.)
 
 ### 2. `testSyncLocal.ts`
+
 Local test script to simulate the sync process with mock data.
 
 ## Running Tests
 
-### Run all integration tests:
+### Run all integration tests
+
 ```bash
 cd functions
 npm run test:sync
 ```
 
-### Run tests with coverage:
+### Run tests with coverage
+
 ```bash
 cd functions
 npx jest src/tebra-sync/__tests__/syncSchedule.integration.test.ts --coverage
 ```
 
-### Run local simulation:
+### Run local simulation
+
 ```bash
 cd functions
 npx ts-node src/tebra-sync/__tests__/testSyncLocal.ts
@@ -39,6 +45,7 @@ npx ts-node src/tebra-sync/__tests__/testSyncLocal.ts 2025-06-15
 ## Test Coverage
 
 The tests cover:
+
 1. **Happy Path**: Syncing multiple appointments with complete patient data
 2. **Missing Data**: Handling appointments without provider info
 3. **API Failures**: Graceful handling when Tebra API fails
@@ -48,6 +55,7 @@ The tests cover:
 ## Key Test Scenarios
 
 ### Status Mapping
+
 - `Confirmed` → `scheduled`
 - `CheckedIn` → `arrived`
 - `InRoom` → `appt-prep`
@@ -57,6 +65,7 @@ The tests cover:
 - Unknown statuses → `scheduled` (default)
 
 ### Error Handling
+
 - Continues processing if one patient fails
 - Returns 0 when no appointments found
 - Handles missing patient IDs gracefully
@@ -65,6 +74,7 @@ The tests cover:
 ## Mock Data Structure
 
 Tests use realistic mock data matching Tebra's API responses:
+
 - Appointments with various statuses
 - Patient data with contact information
 - Provider data with titles and degrees
@@ -72,6 +82,7 @@ Tests use realistic mock data matching Tebra's API responses:
 ## Next Steps
 
 To test with real Tebra data:
+
 1. Deploy the updated Firebase functions
 2. Use the "Sync Today" button in your dashboard
 3. Monitor Firebase logs for any issues
