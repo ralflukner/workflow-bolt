@@ -6,9 +6,12 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 
 const gsm = new SecretManagerServiceClient();
-const PROJECT_ID = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT;
-if (!PROJECT_ID) {
-  throw new Error('GCP project ID not set; cannot access Secret Manager.');
+
+// Resolve project ID lazily so the module can be loaded in build/analysis environments
+let PROJECT_ID = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || null;
+
+function resolveProjectId() {
+  return PROJECT_ID || process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || null;
 }
 
 // Only these secret IDs can be requested from the client.
