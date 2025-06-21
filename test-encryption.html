@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Encryption/Decryption</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #555;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+        }
+        textarea {
+            min-height: 100px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            word-break: break-all;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test Encryption/Decryption</h1>
+        
+        <div class="test-section">
+            <h3>1. Test Basic Encryption</h3>
+            <div class="input-group">
+                <label>Enter test data (e.g., patient name):</label>
+                <input type="text" id="testData" value="John Doe" />
+            </div>
+            <button onclick="testBasicEncryption()">Test Encryption</button>
+            <div id="basicResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test Patient Data Encryption</h3>
+            <div class="input-group">
+                <label>Test Patient JSON:</label>
+                <textarea id="patientData">{
+  "id": "test-123",
+  "name": "Jane Smith",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "dateOfBirth": "1980-01-15",
+  "phone": "555-0123",
+  "email": "jane@example.com",
+  "insurance": {
+    "provider": "Blue Cross",
+    "policyNumber": "BC123456"
+  }
+}</textarea>
+            </div>
+            <button onclick="testPatientEncryption()">Test Patient Encryption</button>
+            <div id="patientResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test Decryption of Old Data</h3>
+            <div class="input-group">
+                <label>Paste encrypted string (e.g., U2FsdGVkX1...):</label>
+                <input type="text" id="encryptedData" placeholder="U2FsdGVkX1..." />
+            </div>
+            <button onclick="testDecryption()">Test Decryption</button>
+            <div id="decryptResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Full Cycle Test</h3>
+            <p>This will encrypt data, save to Firebase, reload, and decrypt to verify the full cycle works.</p>
+            <button onclick="testFullCycle()">Run Full Cycle Test</button>
+            <div id="fullCycleResult" class="result"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import Firebase and encryption utilities
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            getDoc 
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCIMBYxl3lMAPMAWOKzLjwItD_k-5Qbd-c",
+            authDomain: "luknerlumina-firebase.firebaseapp.com",
+            projectId: "luknerlumina-firebase",
+            storageBucket: "luknerlumina-firebase.firebasestorage.app",
+            messagingSenderId: "623450773640",
+            appId: "1:623450773640:web:9afd63d3ccbb1fcb6fe73d"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Load CryptoJS
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js';
+        document.head.appendChild(script);
+
+        // Wait for CryptoJS to load
+        script.onload = () => {
+            console.log('CryptoJS loaded');
+        };
+
+        // Get encryption key from environment
+        const ENCRYPTION_KEY = 'UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=';
+
+        // Basic encryption test
+        window.testBasicEncryption = function() {
+            const resultDiv = document.getElementById('basicResult');
+            const testData = document.getElementById('testData').value;
+            
+            try {
+                // Encrypt
+                const encrypted = CryptoJS.AES.encrypt(testData, ENCRYPTION_KEY).toString();
+                
+                // Decrypt
+                const decrypted = CryptoJS.AES.decrypt(encrypted, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8);
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Encryption/Decryption successful!</div>
+                    <strong>Original:</strong> ${testData}<br>
+                    <strong>Encrypted:</strong> <pre>${encrypted}</pre>
+                    <strong>Decrypted:</strong> ${decrypted}<br>
+                    <strong>Match:</strong> ${testData === decrypted ? '✅ Yes' : '❌ No'}
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        // Patient data encryption test
+        window.testPatientEncryption = function() {
+            const resultDiv = document.getElementById('patientResult');
+            const patientData = document.getElementById('patientData').value;
+            
+            try {
+                const patient = JSON.parse(patientData);
+                
+                // Encrypt sensitive fields
+                const encryptedPatient = {
+                    ...patient,
+                    name: CryptoJS.AES.encrypt(patient.name, ENCRYPTION_KEY).toString(),
+                    firstName: CryptoJS.AES.encrypt(patient.firstName, ENCRYPTION_KEY).toString(),
+                    lastName: CryptoJS.AES.encrypt(patient.lastName, ENCRYPTION_KEY).toString(),
+                    dateOfBirth: CryptoJS.AES.encrypt(patient.dateOfBirth, ENCRYPTION_KEY).toString(),
+                    phone: CryptoJS.AES.encrypt(patient.phone, ENCRYPTION_KEY).toString(),
+                    email: CryptoJS.AES.encrypt(patient.email, ENCRYPTION_KEY).toString(),
+                    insurance: patient.insurance ? {
+                        provider: CryptoJS.AES.encrypt(patient.insurance.provider, ENCRYPTION_KEY).toString(),
+                        policyNumber: CryptoJS.AES.encrypt(patient.insurance.policyNumber, ENCRYPTION_KEY).toString()
+                    } : null
+                };
+                
+                // Decrypt to verify
+                const decryptedPatient = {
+                    ...encryptedPatient,
+                    name: CryptoJS.AES.decrypt(encryptedPatient.name, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8),
+                    firstName: CryptoJS.AES.decrypt(encryptedPatient.firstName, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8),
+                    lastName: CryptoJS.AES.decrypt(encryptedPatient.lastName, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8),
+                    dateOfBirth: CryptoJS.AES.decrypt(encryptedPatient.dateOfBirth, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8),
+                    phone: CryptoJS.AES.decrypt(encryptedPatient.phone, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8),
+                    email: CryptoJS.AES.decrypt(encryptedPatient.email, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8),
+                    insurance: encryptedPatient.insurance ? {
+                        provider: CryptoJS.AES.decrypt(encryptedPatient.insurance.provider, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8),
+                        policyNumber: CryptoJS.AES.decrypt(encryptedPatient.insurance.policyNumber, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8)
+                    } : null
+                };
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Patient encryption/decryption successful!</div>
+                    <strong>Encrypted Name:</strong> <pre>${encryptedPatient.name}</pre>
+                    <strong>Decrypted Name:</strong> ${decryptedPatient.name}<br>
+                    <strong>Encrypted DOB:</strong> <pre>${encryptedPatient.dateOfBirth}</pre>
+                    <strong>Decrypted DOB:</strong> ${decryptedPatient.dateOfBirth}
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        // Test decryption of old data
+        window.testDecryption = function() {
+            const resultDiv = document.getElementById('decryptResult');
+            const encryptedData = document.getElementById('encryptedData').value;
+            
+            if (!encryptedData) {
+                resultDiv.innerHTML = `<div class="error">Please enter an encrypted string</div>`;
+                return;
+            }
+            
+            try {
+                // Try with current key
+                const decrypted = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8);
+                
+                if (decrypted) {
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ Decryption successful!</div>
+                        <strong>Decrypted:</strong> ${decrypted}
+                    `;
+                } else {
+                    // Try with dev key
+                    const devKey = 'dev-only-key-do-not-use-in-production-1234567890';
+                    const devDecrypted = CryptoJS.AES.decrypt(encryptedData, devKey).toString(CryptoJS.enc.Utf8);
+                    
+                    if (devDecrypted) {
+                        resultDiv.innerHTML = `
+                            <div class="info">ℹ️ Decrypted with development key</div>
+                            <strong>Decrypted:</strong> ${devDecrypted}<br>
+                            <em>This data was encrypted with the old development key</em>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `<div class="error">❌ Could not decrypt with current or dev key</div>`;
+                    }
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Decryption error: ${error.message}</div>`;
+            }
+        };
+
+        // Full cycle test
+        window.testFullCycle = async function() {
+            const resultDiv = document.getElementById('fullCycleResult');
+            resultDiv.innerHTML = '<div class="info">Running full cycle test...</div>';
+            
+            try {
+                // Test data
+                const testPatient = {
+                    id: 'test-' + Date.now(),
+                    name: 'Test Patient',
+                    dateOfBirth: '1990-01-01'
+                };
+                
+                // Encrypt
+                const encrypted = {
+                    id: testPatient.id,
+                    name: CryptoJS.AES.encrypt(testPatient.name, ENCRYPTION_KEY).toString(),
+                    dateOfBirth: CryptoJS.AES.encrypt(testPatient.dateOfBirth, ENCRYPTION_KEY).toString(),
+                    _encrypted: true,
+                    _timestamp: new Date().toISOString()
+                };
+                
+                // Save to Firebase
+                const testDoc = doc(db, 'encryption_tests', testPatient.id);
+                await setDoc(testDoc, encrypted);
+                
+                // Read back
+                const docSnap = await getDoc(testDoc);
+                const savedData = docSnap.data();
+                
+                // Decrypt
+                const decrypted = {
+                    id: savedData.id,
+                    name: CryptoJS.AES.decrypt(savedData.name, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8),
+                    dateOfBirth: CryptoJS.AES.decrypt(savedData.dateOfBirth, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8)
+                };
+                
+                // Verify
+                const matches = 
+                    decrypted.name === testPatient.name &&
+                    decrypted.dateOfBirth === testPatient.dateOfBirth;
+                
+                resultDiv.innerHTML = `
+                    <div class="${matches ? 'success' : 'error'}">
+                        ${matches ? '✅ Full cycle test passed!' : '❌ Full cycle test failed!'}
+                    </div>
+                    <strong>Original:</strong> ${JSON.stringify(testPatient, null, 2)}<br>
+                    <strong>Encrypted in Firebase:</strong> <pre>${JSON.stringify(savedData, null, 2)}</pre>
+                    <strong>Decrypted:</strong> ${JSON.stringify(decrypted, null, 2)}<br>
+                    <strong>Match:</strong> ${matches ? '✅ Yes' : '❌ No'}
+                `;
+                
+                // Clean up test data
+                await setDoc(testDoc, { _deleted: true });
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Full cycle test error: ${error.message}</div>`;
+            }
+        };
+    </script>
+</body>
+</html>

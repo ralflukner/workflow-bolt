@@ -9,8 +9,8 @@ The Tebra PHP API has been successfully deployed to Google Cloud Run.
 - **Service Name**: tebra-php-api
 - **Project**: luknerlumina-firebase
 - **Region**: us-central1
-- **Service URL**: https://tebra-php-api-xccvzgogwa-uc.a.run.app
-- **API Base URL**: https://tebra-php-api-xccvzgogwa-uc.a.run.app/api
+- **Service URL**: <https://tebra-php-api-xccvzgogwa-uc.a.run.app>
+- **API Base URL**: <https://tebra-php-api-xccvzgogwa-uc.a.run.app/api>
 - **Status**: ✅ LIVE and WORKING
 
 ### Available Endpoints
@@ -68,11 +68,13 @@ You can test the API using:
 ### Monitoring
 
 View logs:
+
 ```bash
 gcloud run services logs read tebra-php-api --region us-central1 --limit 50
 ```
 
 Stream logs:
+
 ```bash
 gcloud run services logs tail tebra-php-api --region us-central1
 ```

@@ -28,7 +28,7 @@ export class SecretsService {
     // Encryption keys - prioritize GSM for HIPAA compliance
     PATIENT_ENCRYPTION_KEY: {
       secretName: 'patient-encryption-key',
-      envFallback: 'REACT_APP_PATIENT_ENCRYPTION_KEY',
+      envFallback: 'VITE_PATIENT_ENCRYPTION_KEY',
       required: true
     },
 
@@ -239,7 +239,15 @@ export class SecretsService {
       }
     }
 
-    // Browser environment - use getEnvVar helper that handles import.meta safely
+    // Vite environment variables - direct access
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      const value = import.meta.env[envVar];
+      if (value) {
+        return value;
+      }
+    }
+
+    // Browser environment - use getEnvVar helper as fallback
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { getEnvVar } = require('../constants/env');

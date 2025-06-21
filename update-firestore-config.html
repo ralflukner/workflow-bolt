@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Firestore Config for Tebra PHP API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .config-display {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .current-config {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Update Firestore Config for Tebra PHP API</h1>
+        
+        <div class="config-display">
+            <h3>New Configuration:</h3>
+            <pre>{
+  "useTebraPhpApi": true,
+  "tebraPhpApiUrl": "https://tebra-php-api-xccvzgogwa-uc.a.run.app/api"
+}</pre>
+        </div>
+
+        <div id="status"></div>
+        
+        <button id="updateBtn" onclick="updateConfig()">Update Firestore Configuration</button>
+        <button id="checkBtn" onclick="checkConfig()">Check Current Configuration</button>
+        
+        <div id="currentConfig" class="current-config hidden">
+            <h3>Current Configuration:</h3>
+            <pre id="configContent"></pre>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXh6nwfFwkDhxY0PdGT8ApQcJFktceMBg",
+            authDomain: "luknerlumina-firebase.firebaseapp.com",
+            projectId: "luknerlumina-firebase",
+            storageBucket: "luknerlumina-firebase.appspot.com",
+            messagingSenderId: "623450773640",
+            appId: "1:623450773640:web:1134501abcd837bc019b94"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = 'status ' + type;
+            statusDiv.textContent = message;
+        }
+
+        async function updateConfig() {
+            const updateBtn = document.getElementById('updateBtn');
+            updateBtn.disabled = true;
+            
+            try {
+                showStatus('Updating configuration...', 'loading');
+                
+                // Check if user is authenticated
+                const user = auth.currentUser;
+                if (!user) {
+                    showStatus('Please sign in first. Attempting anonymous auth...', 'info');
+                    await auth.signInAnonymously();
+                }
+                
+                const configRef = db.collection('config').doc('app');
+                
+                const newConfig = {
+                    useTebraPhpApi: true,
+                    tebraPhpApiUrl: 'https://tebra-php-api-xccvzgogwa-uc.a.run.app/api',
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await configRef.set(newConfig, { merge: true });
+                
+                showStatus('✅ Configuration updated successfully!', 'success');
+                
+                // Show the updated configuration
+                await checkConfig();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Error: ' + error.message, 'error');
+            } finally {
+                updateBtn.disabled = false;
+            }
+        }
+
+        async function checkConfig() {
+            const checkBtn = document.getElementById('checkBtn');
+            checkBtn.disabled = true;
+            
+            try {
+                showStatus('Checking current configuration...', 'loading');
+                
+                const configRef = db.collection('config').doc('app');
+                const doc = await configRef.get();
+                
+                const currentConfigDiv = document.getElementById('currentConfig');
+                const configContent = document.getElementById('configContent');
+                
+                if (doc.exists) {
+                    const data = doc.data();
+                    configContent.textContent = JSON.stringify(data, null, 2);
+                    currentConfigDiv.classList.remove('hidden');
+                    showStatus('✅ Configuration loaded', 'success');
+                } else {
+                    configContent.textContent = 'No configuration found. Click "Update" to create it.';
+                    currentConfigDiv.classList.remove('hidden');
+                    showStatus('⚠️ No configuration found', 'info');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Error: ' + error.message, 'error');
+            } finally {
+                checkBtn.disabled = false;
+            }
+        }
+
+        // Check config on page load
+        window.addEventListener('load', () => {
+            // Try anonymous authentication
+            auth.signInAnonymously().catch(error => {
+                console.warn('Anonymous auth failed:', error);
+            });
+        });
+    </script>
+</body>
+</html>

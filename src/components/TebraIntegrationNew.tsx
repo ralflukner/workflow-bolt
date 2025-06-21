@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { usePatientContext } from '../hooks/usePatientContext';
 import tebraApi from '../services/tebraApi';
@@ -13,31 +13,25 @@ interface SyncResult {
   lastSync?: Date;
 }
 
-interface TestAppointmentsData {
-  appointments?: Array<{
-    AppointmentId?: string;
-    PatientId?: string;
-    ProviderId?: string;
-    StartTime?: string;
-    EndTime?: string;
-    Status?: string;
-    Type?: string;
-    Notes?: string;
-  }>;
-  count?: number;
-  fromDate?: string;
-  toDate?: string;
+// Wrapper type for PHP API responses used in this component
+interface PhpApiEnvelope<T = unknown> {
+  data: {
+    success: boolean;
+    data?: T;
+    error?: string;
+    message?: string;
+  };
 }
 
-interface TestAppointmentsResponse {
-  success: boolean;
-  data?: TestAppointmentsData;
-  message?: string;
-}
-
-interface TebraIntegrationResponse {
-  success: boolean;
-  message?: string;
+interface TebraApiResponse {
+  data: {
+    success: boolean;
+    data?: {
+      appointments?: unknown[];
+    };
+    error?: string;
+    message?: string;
+  };
 }
 
 const TebraIntegration: React.FC = () => {
@@ -55,33 +49,8 @@ const TebraIntegration: React.FC = () => {
   const [tomorrowAppointmentCount, setTomorrowAppointmentCount] = useState<number | null>(null);
   const [appointmentCountLoading, setAppointmentCountLoading] = useState(false);
 
-  useEffect(() => {
-    // Set default date to current time
-    const currentDate = getCurrentTime();
-    setSelectedDate(currentDate.toISOString().split('T')[0]);
-  }, [getCurrentTime]);
-
-  // Test connection on component mount
-  useEffect(() => {
-    if (!connectionTested) {
-      testConnection();
-    }
-  }, [connectionTested]);
-
-  // Refresh appointment counts periodically when connected
-  useEffect(() => {
-    if (isConnected) {
-      // Fetch immediately when connected
-      fetchAppointmentCounts();
-      
-      // Then refresh every 5 minutes
-      const interval = setInterval(fetchAppointmentCounts, 5 * 60 * 1000);
-      
-      return () => clearInterval(interval);
-    }
-  }, [isConnected]);
-
-  const fetchAppointmentCounts = async () => {
+  // Define functions before useEffects to avoid hoisting issues
+  const fetchAppointmentCounts = useCallback(async () => {
     setAppointmentCountLoading(true);
     try {
       // Get today's date
@@ -99,48 +68,44 @@ const TebraIntegration: React.FC = () => {
         tebraApi.getAppointments({ fromDate: tomorrowStr, toDate: tomorrowStr })
       ]);
       
-      setTodayAppointmentCount(todayAppointments.length);
-      setTomorrowAppointmentCount(tomorrowAppointments.length);
+      const extractCount = <T extends { appointments?: unknown[] }>(resp: PhpApiEnvelope<T>): number => {
+        const appts = resp?.data?.data?.appointments;
+        return Array.isArray(appts) ? appts.length : 0;
+      };
+
+      setTodayAppointmentCount(extractCount(todayAppointments));
+      setTomorrowAppointmentCount(extractCount(tomorrowAppointments));
     } catch (error) {
       console.error('Failed to fetch appointment counts:', error);
       // Don't update counts on error, keep them as null
     } finally {
       setAppointmentCountLoading(false);
     }
-  };
+  }, []);
 
-  const testConnection = async () => {
+  const testConnection = useCallback(async () => {
     setIsLoading(true);
     setStatusMessage('Testing Tebra API connection...');
     
     try {
-      // Call Firebase Function instead of direct API service
-      console.log('🔄 Initializing Firebase for Tebra connection test...');
-      const { httpsCallable } = await import('firebase/functions');
-      const { initializeFirebase, functions } = await import('../config/firebase');
-      await initializeFirebase();
+      // Call PHP API directly (Firebase Functions no longer handle Tebra)
+      console.log('🔄 Testing connection to Tebra PHP API...');
       
-      if (!functions) {
-        throw new Error('Firebase Functions not initialized');
-      }
+      const result = await tebraApi.testConnection();
+      console.log('📨 PHP API response:', result);
       
-      console.log('🔄 Calling tebraTestConnection Firebase Function...');
-      const tebraTestConnection = httpsCallable(functions, 'tebraTestConnection');
-      
-      const result = await tebraTestConnection();
-      console.log('📨 Firebase Function response:', result);
-      const data = result.data as TebraIntegrationResponse;
-      const connected = data.success || false;
+      const data = result.data;
+      const connected = data?.success || false;
       
       setIsConnected(connected);
       setConnectionTested(true);
       
       if (connected) {
-        setStatusMessage('✅ Connected to Tebra API via Firebase Functions');
+        setStatusMessage('✅ Connected to Tebra API via PHP backend');
         // Fetch appointment counts when connected
         fetchAppointmentCounts();
       } else {
-        const errorMessage = data.message || 'Check configuration';
+        const errorMessage = data?.error || data?.message || 'Check configuration';
         setStatusMessage(`❌ Failed to connect to Tebra API. ${errorMessage}`);
       }
     } catch (error) {
@@ -151,7 +116,33 @@ const TebraIntegration: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [fetchAppointmentCounts]);
+
+  useEffect(() => {
+    // Set default date to current time
+    const currentDate = getCurrentTime();
+    setSelectedDate(currentDate.toISOString().split('T')[0]);
+  }, [getCurrentTime]);
+
+  // Test connection on component mount
+  useEffect(() => {
+    if (!connectionTested) {
+      testConnection();
+    }
+  }, [connectionTested, testConnection]);
+
+  // Refresh appointment counts periodically when connected
+  useEffect(() => {
+    if (isConnected) {
+      // Fetch immediately when connected
+      fetchAppointmentCounts();
+      
+      // Then refresh every 5 minutes
+      const interval = setInterval(fetchAppointmentCounts, 5 * 60 * 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isConnected, fetchAppointmentCounts]);
 
   // Remove handleSyncSchedule and instead listen to Firestore
   useEffect(() => {
@@ -188,7 +179,8 @@ const TebraIntegration: React.FC = () => {
     setStatusMessage('Testing patient search...');
 
     try {
-      const patients = await tebraApi.searchPatients({ lastName: 'Test' });
+      const response = await tebraApi.searchPatients({ lastName: 'Test' });
+      const patients = Array.isArray(response?.data?.data) ? response.data.data : [];
       setStatusMessage(`✅ Patient search test completed. Found ${patients.length} patients.`);
     } catch (error) {
       console.error('Patient search test failed:', error);
@@ -208,9 +200,10 @@ const TebraIntegration: React.FC = () => {
     setStatusMessage('Getting providers...');
 
     try {
-      const providers = await tebraApi.getProviders();
-      setStatusMessage(`✅ Retrieved ${providers.length} providers from Tebra.`);
-      console.log('Providers:', providers);
+      const response = await tebraApi.getProviders();
+      const providersList = Array.isArray(response?.data?.data) ? response.data.data : [];
+      setStatusMessage(`✅ Retrieved ${providersList.length} providers from Tebra.`);
+      console.log('Providers:', providersList);
     } catch (error) {
       console.error('Get providers failed:', error);
       setStatusMessage(`❌ Failed to get providers: ${error}`);
@@ -229,11 +222,12 @@ const TebraIntegration: React.FC = () => {
     setStatusMessage(`Testing raw appointments for ${date}...`);
 
     try {
-      const result = await tebraApi.testAppointments() as TestAppointmentsResponse;
-      console.log('Raw Tebra response:', result);
-      setStatusMessage(`✅ Test complete. Check console for raw data.`);
-      if (result.success && result.data) {
-        const appointments = result.data.appointments || [];
+      const apiResp = await tebraApi.testAppointments();
+      console.log('Raw Tebra response:', apiResp);
+      setStatusMessage('✅ Test complete. Check console for raw data.');
+
+      const appointments = apiResp?.data?.data?.appointments || [];
+      if (Array.isArray(appointments)) {
         console.log('Appointments found:', appointments.length);
         if (appointments.length > 0) {
           console.log('First appointment:', appointments[0]);
@@ -271,27 +265,25 @@ const TebraIntegration: React.FC = () => {
       console.log(`[TebraIntegrationNew] Specific date parameter: ${specificDate || 'not provided'}`);
       
       setStatusMessage(`Syncing schedule for ${dateToSync}...`);
-      // TODO: Implement sync functionality in PHP API
-      // const result = await tebraApi.syncTodaysSchedule(dateToSync);
-      const result = { data: { success: false, message: 'Sync not yet implemented in PHP API' } };
-      if (result.success) {
-        const patientCount = result.patientCount || result.patients?.length || 0;
+      const apiResp = await tebraApi.syncSchedule(dateToSync) as TebraApiResponse;
+      const resultSuccess = apiResp?.data?.success;
+      const resultMessage = apiResp?.data?.message || apiResp?.data?.error;
+      const appointments = apiResp?.data?.data?.appointments || [];
+
+      if (resultSuccess) {
+        const patientCount = appointments.length;
         setStatusMessage(`✅ Sync completed. Imported ${patientCount} appointments for ${dateToSync}.`);
         setLastSyncResult({
           success: true,
           message: `Synced ${dateToSync}`,
           patientCount,
-          lastSync: new Date()
+          lastSync: new Date(),
         });
-        
-        // Refresh patient data from Firebase after successful sync
-        console.log('[TebraIntegrationNew] Refreshing patient data after sync...');
+
         await refreshFromFirebase();
-        
-        // Refresh appointment counts after successful sync
         fetchAppointmentCounts();
       } else {
-        setStatusMessage(`❌ Sync failed: ${result.message}`);
+        setStatusMessage(`❌ Sync failed: ${resultMessage || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Manual sync failed:', error);
@@ -321,6 +313,7 @@ const TebraIntegration: React.FC = () => {
       {/* Connection Test */}
       <div className="mb-4">
         <button
+          type="button"
           onClick={testConnection}
           disabled={isLoading}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -364,6 +357,7 @@ const TebraIntegration: React.FC = () => {
         
         <div className="flex space-x-2 flex-wrap gap-2">
           <button
+            type="button"
             onClick={() => handleManualSync()}
             disabled={isLoading || !isConnected}
             aria-label="Manually sync today's schedule from Tebra EHR"
@@ -372,6 +366,7 @@ const TebraIntegration: React.FC = () => {
             {isLoading ? 'Syncing...' : `Sync Today (${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })})`}
           </button>
           <button
+            type="button"
             onClick={() => {
               const tomorrow = new Date();
               tomorrow.setDate(tomorrow.getDate() + 1);
@@ -391,6 +386,7 @@ const TebraIntegration: React.FC = () => {
         <h3 className="text-lg font-medium text-white mb-2">Test Operations</h3>
         <div className="flex space-x-2 mb-4">
           <button
+            type="button"
             onClick={handleTestPatientSearch}
             disabled={isLoading || !isConnected}
             aria-label="Test patient search functionality by searching for test patients in Tebra EHR"
@@ -400,6 +396,7 @@ const TebraIntegration: React.FC = () => {
           </button>
 
           <button
+            type="button"
             onClick={handleGetProviders}
             disabled={isLoading || !isConnected}
             aria-label="Retrieve and display all healthcare providers from Tebra EHR system"
@@ -409,6 +406,7 @@ const TebraIntegration: React.FC = () => {
           </button>
 
           <button
+            type="button"
             onClick={() => handleTestAppointments('2025-06-11')}
             disabled={isLoading || !isConnected}
             aria-label="Test raw appointment data for June 11"
@@ -439,4 +437,4 @@ const TebraIntegration: React.FC = () => {
   );
 };
 
-export default TebraIntegration; 
+export default TebraIntegration;

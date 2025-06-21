@@ -1,4 +1,7 @@
-require('./otel-init');
+// TEMPORARILY DISABLED - causing memory exhaustion
+// require('./otel-init');
+// Use minimal version instead
+require('./otel-init-minimal');
 const functions = require('firebase-functions');
 const functionsV1 = require('firebase-functions/v1');
 const { onCall } = require('firebase-functions/v2/https');

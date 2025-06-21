@@ -14,6 +14,7 @@ export const tebraGetProviders = phpApi.tebraGetProviders;
 export const tebraCreateAppointment = phpApi.tebraCreateAppointment;
 export const tebraUpdateAppointment = phpApi.tebraUpdateAppointment;
 export const tebraTestAppointments = phpApi.tebraTestAppointments;
+export const tebraSyncSchedule = phpApi.tebraSyncSchedule;
 
 // Export configuration info
 export const getApiInfo = () => ({
@@ -34,5 +35,6 @@ export default {
   createAppointment: tebraCreateAppointment,
   updateAppointment: tebraUpdateAppointment,
   testAppointments: tebraTestAppointments,
+  syncSchedule: tebraSyncSchedule,
   getApiInfo,
 };

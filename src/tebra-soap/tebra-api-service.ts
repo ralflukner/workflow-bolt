@@ -56,6 +56,8 @@ interface EnvConfig {
   username: string;
   /** Tebra password */
   password: string;
+  /** Tebra customer key */
+  customerKey: string;
 }
 
 /**
@@ -143,10 +145,11 @@ export class TebraApiService {
   ) {
     // Use credentials passed in or fallback to environment variables
     // Note: Credentials should be retrieved from Firebase Functions/GSM via backend
-    const config: EnvConfig = {
+    const config: TebraCredentials = {
       wsdlUrl: credentials?.wsdlUrl || getEnvVar('TEBRA_WSDL_URL', ''),
       username: credentials?.username || getEnvVar('TEBRA_USERNAME', ''),
-      password: credentials?.password || getEnvVar('TEBRA_PASSWORD', '')
+      password: credentials?.password || getEnvVar('TEBRA_PASSWORD', ''),
+      customerKey: credentials?.customerKey || getEnvVar('TEBRA_CUSTOMER_KEY', '')
     };
 
     this.validateConfig(config);

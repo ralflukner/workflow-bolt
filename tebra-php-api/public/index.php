@@ -9,6 +9,26 @@ require_once __DIR__ . '/../vendor/autoload.php';
 // Initialise OpenTelemetry tracing (safe-no-op if disabled)
 require_once __DIR__ . '/../src/tracing.php';
 
+/**
+ * Generate a correlation ID for error tracking
+ * @param string $prefix Prefix for the correlation ID
+ * @return string Unique correlation ID
+ */
+function generateCorrelationId(string $prefix = 'error'): string {
+    return uniqid($prefix . '_', true);
+}
+
+/**
+ * Log error with correlation ID for consistent tracing
+ * @param string $level Error level (e.g., 'TEBRA_SOAP_FAULT', 'TEBRA_CONFIG_ERROR')
+ * @param array $errorDetails Error details to log
+ * @param string $correlationId Correlation ID for tracing
+ */
+function logErrorWithCorrelation(string $level, array $errorDetails, string $correlationId): void {
+    $errorDetails['correlation_id'] = $correlationId;
+    error_log("[$level] " . json_encode($errorDetails));
+}
+
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-API-Key, X-Admin-Token');
@@ -21,6 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Simple routing based on path
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+// Remove /api prefix if present for flexible routing
+$path = preg_replace('#^/api#', '', $path);
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Health check endpoint
@@ -63,7 +85,13 @@ if ($method === 'GET' && $path === '/debug/secrets') {
     if (!$internalApiKey || !$adminToken) {
         http_response_code(503);
         header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'error' => 'Debug endpoint not configured']);
+        echo json_encode([
+            'success' => false, 
+            'error' => 'Debug endpoint not configured',
+            'type' => 'debug_config_error',
+            'timestamp' => date(DATE_ATOM),
+            'correlation_id' => generateCorrelationId('error')
+        ]);
         exit;
     }
     
@@ -71,7 +99,13 @@ if ($method === 'GET' && $path === '/debug/secrets') {
     if (!hash_equals($internalApiKey, $clientApiKey) || !hash_equals($adminToken, $clientAdminToken)) {
         http_response_code(401);
         header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'error' => 'Unauthorized - Invalid credentials']);
+        echo json_encode([
+            'success' => false, 
+            'error' => 'Unauthorized - Invalid credentials',
+            'type' => 'debug_auth_error',
+            'timestamp' => date(DATE_ATOM),
+            'correlation_id' => generateCorrelationId('error')
+        ]);
         exit;
     }
     
@@ -80,7 +114,13 @@ if ($method === 'GET' && $path === '/debug/secrets') {
     if (!$debugEnabled) {
         http_response_code(403);
         header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'error' => 'Debug mode disabled']);
+        echo json_encode([
+            'success' => false, 
+            'error' => 'Debug mode disabled',
+            'type' => 'debug_disabled_error',
+            'timestamp' => date(DATE_ATOM),
+            'correlation_id' => generateCorrelationId('error')
+        ]);
         exit;
     }
     
@@ -104,7 +144,13 @@ if ($method === 'GET' && $path === '/debug/secrets') {
     if (count($rateLimitData) >= 5) {
         http_response_code(429);
         header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'error' => 'Rate limit exceeded']);
+        echo json_encode([
+            'success' => false, 
+            'error' => 'Rate limit exceeded',
+            'type' => 'debug_rate_limit_error',
+            'timestamp' => date(DATE_ATOM),
+            'correlation_id' => generateCorrelationId('error')
+        ]);
         exit;
     }
     
@@ -141,7 +187,7 @@ if ($method === 'GET' && $path === '/debug/secrets') {
         'security' => [
             'rate_limit_remaining' => 5 - count($rateLimitData),
             'client_ip' => $clientIP,
-            'request_id' => uniqid('debug_', true)
+            'request_id' => generateCorrelationId('debug')
         ]
     ]);
     exit;
@@ -155,7 +201,14 @@ $clientApiKey   = $_SERVER['HTTP_X_API_KEY'] ?? '';
 if ($internalApiKey !== null && $internalApiKey !== '') {
     if (!hash_equals($internalApiKey, $clientApiKey)) {
         http_response_code(401);
-        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false, 
+            'error' => 'Unauthorized',
+            'type' => 'authentication_error',
+            'timestamp' => date(DATE_ATOM),
+            'correlation_id' => generateCorrelationId('error')
+        ]);
         exit;
     }
 }
@@ -163,7 +216,13 @@ if ($internalApiKey !== null && $internalApiKey !== '') {
 if ($method !== 'POST') {
     http_response_code(405);
     header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'error' => 'Method Not Allowed']);
+    echo json_encode([
+        'success' => false, 
+        'error' => 'Method Not Allowed',
+        'type' => 'method_error',
+        'timestamp' => date(DATE_ATOM),
+        'correlation_id' => generateCorrelationId('error')
+    ]);
     exit;
 }
 
@@ -172,7 +231,13 @@ $body    = json_decode($rawBody, true);
 if (json_last_error() !== JSON_ERROR_NONE) {
     http_response_code(400);
     header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'error' => 'Invalid JSON body']);
+    echo json_encode([
+        'success' => false, 
+        'error' => 'Invalid JSON body',
+        'type' => 'json_error',
+        'timestamp' => date(DATE_ATOM),
+        'correlation_id' => generateCorrelationId('error')
+    ]);
     exit;
 }
 
@@ -243,6 +308,30 @@ try {
         case 'testConnection':
             $responseData = $client->testConnection();
             break;
+        case 'syncSchedule':
+            // Sync appointments for specific date (defaults to today)
+            $syncDate = $params['date'] ?? null;
+
+            // Validate date or default to today (Y-m-d)
+            if ($syncDate) {
+                $dateObj = DateTime::createFromFormat('Y-m-d', $syncDate);
+                if (!$dateObj) {
+                    throw new InvalidArgumentException('Invalid date format for syncSchedule. Expected Y-m-d');
+                }
+            } else {
+                $dateObj = new DateTime('now', new DateTimeZone('UTC'));
+                $syncDate = $dateObj->format('Y-m-d');
+            }
+
+            // Fetch same-day appointments
+            $appointments = $client->getAppointments($syncDate, $syncDate);
+
+            $responseData = [
+                'appointments' => $appointments,
+                'date' => $syncDate,
+                'count' => is_array($appointments) ? count($appointments) : 0,
+            ];
+            break;
         case 'getHealthStatus':
             $responseData = $client->getHealthStatus();
             break;
@@ -255,11 +344,13 @@ try {
 } catch (InvalidArgumentException $e) {
     http_response_code(400);
     header('Content-Type: application/json');
+    $correlationId = generateCorrelationId('error');
     echo json_encode([
         'success' => false, 
         'error' => $e->getMessage(),
         'type' => 'validation_error',
-        'timestamp' => date(DATE_ATOM)
+        'timestamp' => date(DATE_ATOM),
+        'correlation_id' => $correlationId
     ]);
 } catch (\SoapFault $e) {
     http_response_code(503);
@@ -267,13 +358,15 @@ try {
     
     // Provide specific SOAP error details
     $errorMessage = 'Tebra SOAP API Error: ' . $e->getMessage();
+    $correlationId = generateCorrelationId('error');
     $errorDetails = [
         'success' => false,
         'error' => $errorMessage,
         'type' => 'soap_fault',
         'fault_code' => $e->faultcode ?? 'Unknown',
         'fault_string' => $e->faultstring ?? $e->getMessage(),
-        'timestamp' => date(DATE_ATOM)
+        'timestamp' => date(DATE_ATOM),
+        'correlation_id' => $correlationId
     ];
     
     // Add specific error context based on common Tebra errors
@@ -289,17 +382,19 @@ try {
         $errorDetails['suggestion'] = 'Tebra backend is experiencing issues. Retry in a few minutes.';
     }
     
-    error_log('[TEBRA_SOAP_FAULT] ' . json_encode($errorDetails));
+    logErrorWithCorrelation('TEBRA_SOAP_FAULT', $errorDetails, $correlationId);
     echo json_encode($errorDetails);
 } catch (\RuntimeException $e) {
     http_response_code(500);
     header('Content-Type: application/json');
     
+    $correlationId = generateCorrelationId('error');
     $errorDetails = [
         'success' => false,
         'error' => 'Configuration Error: ' . $e->getMessage(),
         'type' => 'configuration_error',
-        'timestamp' => date(DATE_ATOM)
+        'timestamp' => date(DATE_ATOM),
+        'correlation_id' => $correlationId
     ];
     
     // Check for specific configuration issues
@@ -307,20 +402,23 @@ try {
         $errorDetails['suggestion'] = 'Check Cloud Run environment variables configuration';
     }
     
-    error_log('[TEBRA_CONFIG_ERROR] ' . json_encode($errorDetails));
+    logErrorWithCorrelation('TEBRA_CONFIG_ERROR', $errorDetails, $correlationId);
     echo json_encode($errorDetails);
 } catch (Throwable $e) {
     http_response_code(500);
     header('Content-Type: application/json');
+    
+    $correlationId = generateCorrelationId('error');
     
     // Log the full error details for debugging
     $errorDetails = [
         'file' => $e->getFile(),
         'line' => $e->getLine(),
         'message' => $e->getMessage(),
-        'trace' => $e->getTraceAsString()
+        'trace' => $e->getTraceAsString(),
+        'correlation_id' => $correlationId
     ];
-    error_log('[TEBRA_FATAL_ERROR] ' . json_encode($errorDetails));
+    logErrorWithCorrelation('TEBRA_FATAL_ERROR', $errorDetails, $correlationId);
     
     // Return specific error information
     echo json_encode([
@@ -330,6 +428,6 @@ try {
         'error_class' => get_class($e),
         'error_location' => basename($e->getFile()) . ':' . $e->getLine(),
         'timestamp' => date(DATE_ATOM),
-        'correlation_id' => uniqid('error_', true)
+        'correlation_id' => $correlationId
     ]);
 } 

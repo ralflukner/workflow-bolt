@@ -2,6 +2,12 @@
 
 A robust and well-documented integration with the Tebra EHR system using SOAP API.
 
+## ⚠️ IMPORTANT: Tebra API Configuration
+
+**Current Tebra PHP API URL:** `https://tebra-php-api-623450773640.us-central1.run.app`
+
+See [TEBRA_API_URL_CONFIG.md](./TEBRA_API_URL_CONFIG.md) for detailed URL configuration and troubleshooting.
+
 ## Features
 
 - SOAP API integration with Tebra EHR
@@ -35,7 +41,7 @@ A robust and well-documented integration with the Tebra EHR system using SOAP AP
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your-org/tebra-integration.gi
+git clone https://github.com/your-org/tebra-integration.git
 cd tebra-integration
 
 ```
@@ -158,7 +164,7 @@ try {
 
 ### Data Types
 
-#### TebraPatien
+#### TebraPatient
 
 ```typescript
 interface TebraPatient {
@@ -187,7 +193,7 @@ interface TebraPatient {
 
 ```
 
-#### TebraAppointmen
+#### TebraAppointmentt
 
 ```typescript
 interface TebraAppointment {
@@ -242,7 +248,7 @@ The integration is built with a modular architecture:
 
 ### Component Details
 
-#### TebraSoapClien
+#### TebraSoapClient
 
 - Handles SOAP API communication
 
@@ -296,7 +302,7 @@ The integration is built with a modular architecture:
 Enable debug logging by setting the environment variable:
 
 ```bash
- DEBUG=tebra:* npm startt
+DEBUG=tebra:* npm start
 
 ```
 

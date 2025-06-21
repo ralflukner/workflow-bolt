@@ -45,7 +45,21 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
       const endTime = performance.now();
       const responseTime = Math.round(endTime - startTime);
       
-      if (result.success) {
+      // tebraTestConnection returns { data: ApiResponse } (e.g. Axios). Fallback to result itself.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = (result && 'data' in result ? (result as any).data : result) as {
+        success: boolean;
+        performanceMetrics?: {
+          soap_duration_ms?: number;
+          total_duration_ms?: number;
+          cacheHit?: boolean;
+        };
+        message?: string;
+        timestamp?: string;
+        correlationId?: string;
+      };
+      
+      if (data.success) {
         // Determine status based on response time thresholds (adjusted for rate limiting)
         let proxyState: 'healthy' | 'warning' = 'healthy';
         if (responseTime > 5000) {
@@ -61,10 +75,10 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
           responseTime,
           latency: responseTime,
           errors: 0,
-          performanceMetrics: result.performanceMetrics ? {
-            soapDuration: result.performanceMetrics.soap_duration_ms,
-            totalDuration: result.performanceMetrics.total_duration_ms,
-            cacheHit: 'cacheHit' in result.performanceMetrics ? (result.performanceMetrics as { cacheHit: boolean }).cacheHit : undefined
+          performanceMetrics: data.performanceMetrics ? {
+            soapDuration: data.performanceMetrics.soap_duration_ms,
+            totalDuration: data.performanceMetrics.total_duration_ms,
+            cacheHit: 'cacheHit' in data.performanceMetrics ? (data.performanceMetrics as { cacheHit: boolean }).cacheHit : undefined
           } : undefined,
           errorDetails: undefined // Clear any previous errors
         });
@@ -76,10 +90,10 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
           responseTime,
           errors: 1,
           errorDetails: {
-            type: parseErrorType(result.message || 'Unknown error'),
-            message: result.message || 'Connection test failed',
-            timestamp: result.timestamp || new Date().toISOString(),
-            correlationId: result.correlationId
+            type: parseErrorType(data.message || 'Unknown error'),
+            message: data.message || 'Connection test failed',
+            timestamp: data.timestamp || new Date().toISOString(),
+            correlationId: data.correlationId
           }
         });
       }
@@ -275,6 +289,8 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
             )}
             <button
               className="text-gray-400 hover:text-white transition-colors"
+              aria-label="Refresh status"
+              title="Refresh status"
               onClick={(e) => {
                 e.stopPropagation();
                 checkProxyHealth();

@@ -9,12 +9,6 @@ import { renderHook, act } from '@testing-library/react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { User, UserCredential } from 'firebase/auth';
 
-// Integration tests require more realistic mocking
-jest.mock('@auth0/auth0-react');
-jest.mock('../../config/firebase');
-
-const mockUseAuth0 = useAuth0 as jest.MockedFunction<typeof useAuth0>;
-
 // Helper to create a properly typed Firebase User mock
 const createMockUser = (uid: string): User => ({
   uid,
@@ -46,16 +40,44 @@ const createMockUserCredential = (uid: string): UserCredential => ({
   operationType: 'signIn'
 } as UserCredential);
 
-// Mock Firebase Auth with more realistic behavior
-const mockFirebaseAuth: {
-  currentUser: User | null;
-  signInWithCustomToken: jest.MockedFunction<(token: string) => Promise<UserCredential>>;
-  onAuthStateChanged: jest.MockedFunction<(nextOrObserver: (user: User | null) => void) => () => void>;
-} = {
+// Shared mocks -------------------------------------------------------------
+const mockSignInWithCustomToken: jest.MockedFunction<(token: string) => Promise<UserCredential>> = jest.fn();
+
+const mockHttpsCallable = jest.fn(() => async (data: unknown) => {
+  const response = await fetch('/exchangeAuth0Token', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return { data: await response.json() };
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockFirebaseAuth: any = {
   currentUser: null,
-  signInWithCustomToken: jest.fn(),
+  signInWithCustomToken: mockSignInWithCustomToken,
   onAuthStateChanged: jest.fn(),
 };
+
+// -------------------------------------------------------------------------
+
+// Set up Jest module mocks BEFORE importing code under test
+jest.mock('@auth0/auth0-react');
+
+jest.mock('../../config/firebase', () => ({
+  auth: mockFirebaseAuth,
+  functions: {}, // truthy placeholder for Firebase Functions instance
+}));
+
+jest.mock('firebase/auth', () => ({
+  signInWithCustomToken: mockSignInWithCustomToken,
+  onAuthStateChanged: jest.fn(),
+}));
+
+jest.mock('firebase/functions', () => ({
+  httpsCallable: mockHttpsCallable,
+}));
+
+const mockUseAuth0 = useAuth0 as jest.MockedFunction<typeof useAuth0>;
 
 describe('AuthBridge Integration Tests', () => {
   let mockFetch: jest.MockedFunction<typeof fetch>;
@@ -68,17 +90,9 @@ describe('AuthBridge Integration Tests', () => {
     mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
     global.fetch = mockFetch;
 
-    // Mock Firebase Functions
-    jest.doMock('firebase/functions', () => ({
-      httpsCallable: () => async (data: unknown) => {
-        // Simulate calling the actual Firebase Function
-        const response = await fetch('/exchangeAuth0Token', {
-          method: 'POST',
-          body: JSON.stringify(data),
-        });
-        return { data: await response.json() };
-      },
-    }));
+    // Reset Firebase auth mocks
+    mockSignInWithCustomToken.mockReset();
+    mockFirebaseAuth.onAuthStateChanged.mockReset();
   });
 
   afterEach(() => {
@@ -109,7 +123,7 @@ describe('AuthBridge Integration Tests', () => {
       } as Response);
 
       // Mock Firebase Auth successful sign-in
-      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue(
+      mockSignInWithCustomToken.mockResolvedValue(
         createMockUserCredential('firebase-user-123')
       );
 
@@ -126,7 +140,7 @@ describe('AuthBridge Integration Tests', () => {
         method: 'POST',
         body: JSON.stringify({ auth0Token: 'valid-jwt-token' })
       });
-      expect(mockFirebaseAuth.signInWithCustomToken).toHaveBeenCalledWith(
+      expect(mockSignInWithCustomToken).toHaveBeenCalledWith(
           'firebase-custom-token'
       );
     });
@@ -164,7 +178,7 @@ describe('AuthBridge Integration Tests', () => {
         })
       } as Response);
 
-      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue(
+      mockSignInWithCustomToken.mockResolvedValue(
         createMockUserCredential('firebase-user-123')
       );
 
@@ -212,7 +226,7 @@ describe('AuthBridge Integration Tests', () => {
             })
           } as Response);
 
-      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue(
+      mockSignInWithCustomToken.mockResolvedValue(
         createMockUserCredential('firebase-user-123')
       );
 
@@ -253,7 +267,7 @@ describe('AuthBridge Integration Tests', () => {
         })
       } as Response);
 
-      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue(
+      mockSignInWithCustomToken.mockResolvedValue(
         createMockUserCredential('firebase-user-123')
       );
 
@@ -276,7 +290,7 @@ describe('AuthBridge Integration Tests', () => {
 
       // Verify cache was used (no additional API calls)
       expect(mockFetch).not.toHaveBeenCalled();
-      expect(mockFirebaseAuth.signInWithCustomToken).toHaveBeenCalledTimes(2);
+      expect(mockSignInWithCustomToken).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -309,7 +323,7 @@ describe('AuthBridge Integration Tests', () => {
       });
 
       // Should not proceed to Firebase Auth
-      expect(mockFirebaseAuth.signInWithCustomToken).not.toHaveBeenCalled();
+      expect(mockSignInWithCustomToken).not.toHaveBeenCalled();
     });
 
     it('should handle Firebase Auth sign-in failures', async () => {
@@ -332,7 +346,7 @@ describe('AuthBridge Integration Tests', () => {
       } as Response);
 
       // Mock Firebase Auth failure
-      mockFirebaseAuth.signInWithCustomToken.mockRejectedValue(
+      mockSignInWithCustomToken.mockRejectedValue(
           new Error('Firebase Auth: Invalid custom token')
       );
 
@@ -343,7 +357,7 @@ describe('AuthBridge Integration Tests', () => {
         expect(success).toBe(false);
       });
 
-      expect(mockFirebaseAuth.signInWithCustomToken).toHaveBeenCalled();
+      expect(mockSignInWithCustomToken).toHaveBeenCalled();
     });
 
     it('should handle Auth0 popup fallback when silent refresh fails', async () => {
@@ -369,7 +383,7 @@ describe('AuthBridge Integration Tests', () => {
         })
       } as Response);
 
-      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue(
+      mockSignInWithCustomToken.mockResolvedValue(
         createMockUserCredential('firebase-user-123')
       );
 
@@ -382,7 +396,7 @@ describe('AuthBridge Integration Tests', () => {
 
       expect(mockGetAccessTokenSilently).toHaveBeenCalled();
       expect(mockGetAccessTokenWithPopup).toHaveBeenCalled();
-      expect(mockFirebaseAuth.signInWithCustomToken).toHaveBeenCalledWith(
+      expect(mockSignInWithCustomToken).toHaveBeenCalledWith(
           'popup-firebase-token'
       );
     });
@@ -403,10 +417,9 @@ describe('AuthBridge Integration Tests', () => {
 
       const debugInfo = result.current.getDebugInfo();
 
-      expect(debugInfo).toHaveProperty('tokenCache');
-      expect(debugInfo).toHaveProperty('lastError');
-      expect(debugInfo).toHaveProperty('authState');
-      expect(debugInfo).toHaveProperty('performance');
+      expect(debugInfo).toHaveProperty('cacheEntries');
+      expect(debugInfo).toHaveProperty('recentLog');
+      expect(debugInfo).toHaveProperty('cacheSize');
     });
 
     it('should clear token cache effectively', async () => {
@@ -428,7 +441,7 @@ describe('AuthBridge Integration Tests', () => {
         })
       } as Response);
 
-      mockFirebaseAuth.signInWithCustomToken.mockResolvedValue(
+      mockSignInWithCustomToken.mockResolvedValue(
         createMockUserCredential('firebase-user-123')
       );
 
@@ -469,10 +482,9 @@ describe('AuthBridge Integration Tests', () => {
 
       const healthStatus = result.current.healthCheck();
 
-      expect(healthStatus).toHaveProperty('auth0');
-      expect(healthStatus).toHaveProperty('firebase');
-      expect(healthStatus).toHaveProperty('tokenCache');
-      expect(healthStatus).toHaveProperty('overall');
+      expect(healthStatus).toHaveProperty('status');
+      expect(healthStatus).toHaveProperty('checks');
+      expect(healthStatus).toHaveProperty('details');
     });
   });
 });

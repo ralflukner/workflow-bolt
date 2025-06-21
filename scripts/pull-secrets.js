@@ -34,6 +34,7 @@ const SECRETS_TO_PULL = [
   { name: 'GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY', envVar: 'GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY' },
   // Patient encryption key
   { name: 'patient-encryption-key', envVar: 'REACT_APP_PATIENT_ENCRYPTION_KEY' },
+  { name: 'PATIENT_ENCRYPTION_KEY', envVar: 'VITE_PATIENT_ENCRYPTION_KEY' },
 ];
 
 async function readSecret(secretName) {

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Encrypted Session Data</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #c82333;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .log {
+            font-family: monospace;
+            font-size: 14px;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 3px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear Encrypted Session Data</h1>
+        
+        <div class="warning">
+            <strong>⚠️ WARNING:</strong> This will permanently delete ALL patient session data from Firebase. This action cannot be undone!
+        </div>
+        
+        <div class="info">
+            <strong>ℹ️ Why clear the data?</strong><br>
+            The existing patient data was encrypted with an old key. To avoid "Malformed UTF-8 data" errors, we need to clear this data and let the application create new sessions with the current encryption key.
+        </div>
+        
+        <p><strong>This will delete:</strong></p>
+        <ul>
+            <li>All patient records in the sessions collection</li>
+            <li>All encrypted patient data</li>
+            <li>Any cached session information</li>
+        </ul>
+        
+        <p><strong>After clearing:</strong></p>
+        <ul>
+            <li>The application will start fresh</li>
+            <li>New data will be encrypted with the current key</li>
+            <li>You'll need to re-sync data from Tebra</li>
+        </ul>
+        
+        <label>
+            <input type="checkbox" id="confirmCheckbox">
+            I understand this will delete all session data
+        </label>
+        
+        <br>
+        
+        <button id="clearButton" disabled onclick="clearData()">
+            Clear All Session Data
+        </button>
+        
+        <div id="status" class="status"></div>
+    </div>
+
+    <script type="module">
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCIMBYxl3lMAPMAWOKzLjwItD_k-5Qbd-c",
+            authDomain: "luknerlumina-firebase.firebaseapp.com",
+            projectId: "luknerlumina-firebase",
+            storageBucket: "luknerlumina-firebase.firebasestorage.app",
+            messagingSenderId: "623450773640",
+            appId: "1:623450773640:web:9afd63d3ccbb1fcb6fe73d"
+        };
+
+        // Import Firebase
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { 
+            getFirestore, 
+            collection, 
+            getDocs, 
+            writeBatch 
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Enable button when checkbox is checked
+        document.getElementById('confirmCheckbox').addEventListener('change', (e) => {
+            document.getElementById('clearButton').disabled = !e.target.checked;
+        });
+
+        // Make clearData function global
+        window.clearData = async function() {
+            const statusDiv = document.getElementById('status');
+            const button = document.getElementById('clearButton');
+            
+            button.disabled = true;
+            statusDiv.className = 'status';
+            statusDiv.innerHTML = '<strong>Processing...</strong><div class="log" id="log"></div>';
+            statusDiv.style.display = 'block';
+            
+            const log = document.getElementById('log');
+            const addLog = (message) => {
+                log.innerHTML += message + '<br>';
+                log.scrollTop = log.scrollHeight;
+            };
+
+            try {
+                addLog('🔍 Fetching all sessions...');
+                const sessionsRef = collection(db, 'sessions');
+                const snapshot = await getDocs(sessionsRef);
+                
+                if (snapshot.empty) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = '<strong>✅ Success!</strong><br>No sessions found. Collection is already empty.';
+                    return;
+                }
+
+                addLog(`📊 Found ${snapshot.size} sessions to delete.`);
+                
+                // Delete in batches
+                const batchSize = 500;
+                const batches = [];
+                let batch = writeBatch(db);
+                let count = 0;
+                
+                snapshot.forEach((doc) => {
+                    batch.delete(doc.ref);
+                    count++;
+                    
+                    if (count % batchSize === 0) {
+                        batches.push(batch);
+                        batch = writeBatch(db);
+                    }
+                });
+                
+                if (count % batchSize !== 0) {
+                    batches.push(batch);
+                }
+                
+                addLog(`🗑️  Deleting ${count} sessions in ${batches.length} batch(es)...`);
+                
+                // Execute all batches
+                for (let i = 0; i < batches.length; i++) {
+                    await batches[i].commit();
+                    addLog(`✓ Batch ${i + 1}/${batches.length} completed`);
+                }
+                
+                // Also clear localStorage
+                localStorage.clear();
+                addLog('✓ localStorage cleared');
+                
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `
+                    <strong>✅ Success!</strong><br>
+                    Successfully deleted ${count} sessions.<br>
+                    localStorage has been cleared.<br><br>
+                    <strong>Next steps:</strong><br>
+                    1. Close this window<br>
+                    2. Refresh your application<br>
+                    3. The app will create new sessions with proper encryption
+                `;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    <strong>❌ Error!</strong><br>
+                    ${error.message}<br><br>
+                    Please check the console for more details.
+                `;
+            }
+        };
+    </script>
+</body>
+</html>

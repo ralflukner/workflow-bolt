@@ -235,6 +235,19 @@ class TebraHttpClient {
             ])
         ];
         
+        // Use a simple file lock to avoid race conditions when multiple requests
+        // try to initialise the SoapClient at the same time (Cloud Run concurrent threads).
+        $lockPath = sys_get_temp_dir() . '/tebra_soap.lock';
+        $lockHandle = @fopen($lockPath, 'c');
+        if ($lockHandle === false) {
+            // Fallback without lock if we cannot create the file
+            $lockHandle = null;
+        }
+
+        if ($lockHandle) {
+            flock($lockHandle, LOCK_EX);
+        }
+
         try {
             $this->client = new \SoapClient($this->wsdlUrl, $options);
             error_log("Tebra SOAP client initialized successfully with WSDL: " . $this->wsdlUrl);
@@ -242,6 +255,11 @@ class TebraHttpClient {
             error_log("SOAP Client initialization failed: " . $e->getMessage());
             // Re-throw the original SoapFault to preserve faultcode and detail information
             throw $e;
+        } finally {
+            if ($lockHandle) {
+                flock($lockHandle, LOCK_UN);
+                fclose($lockHandle);
+            }
         }
     }
     

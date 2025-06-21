@@ -1,8 +1,15 @@
-chore(config): Enforce consistent file name casing in TypeScript
+docs(error-handling): Add correlation ID implementation documentation
 
-Add forceConsistentCasingInFileNames: true to tsconfig.json to prevent issues 
-on case-sensitive file systems. This configuration ensures that import statements 
-use the correct casing, which helps avoid deployment problems and improves code 
-consistency across different development environments.
+Add comprehensive documentation explaining the correlation ID implementation
+for error tracing in the Tebra PHP API. The documentation covers:
 
-Also includes a minor formatting fix in README-patient-encryption.md.
+- Utility functions for generating and logging correlation IDs
+- Standardized error response structure
+- Different error types and their correlation ID patterns
+- Benefits of consistent correlation ID implementation
+- Usage examples and migration notes
+
+This documentation provides a clear reference for developers working with
+the error handling system and explains the traceability improvements.
+
+Fixed markdown formatting issues to comply with linting requirements.

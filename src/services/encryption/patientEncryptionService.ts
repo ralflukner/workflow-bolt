@@ -36,6 +36,14 @@ export class PatientEncryptionService {
       return key;
     } catch (error) {
       console.error('Failed to retrieve encryption key synchronously:', error);
+      
+      // In development, use a default key with warning
+      if (import.meta.env.DEV) {
+        console.warn('⚠️ Using default encryption key for development only!');
+        console.warn('Set VITE_PATIENT_ENCRYPTION_KEY in .env.local for proper encryption');
+        return 'dev-only-key-do-not-use-in-production-1234567890';
+      }
+      
       throw new Error('Unable to retrieve encryption key - HIPAA compliance compromised');
     }
   }

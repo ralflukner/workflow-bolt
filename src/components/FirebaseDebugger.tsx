@@ -260,7 +260,8 @@ export const FirebaseDebugger: React.FC = () => {
           <button
             onClick={() => {
               const dateInfo = debugDateFormats();
-              alert(`Date Debug:\nCurrent Key: ${dateInfo.currentDateKey}\nTimezone: ${dateInfo.timezone}\nOffset: ${dateInfo.offset} minutes`);
+              const currentKey = dateInfo.toDateKey(new Date());
+              alert(`Date Debug:\nCurrent Key: ${currentKey}\nTimezone: ${dateInfo.timezone}\nOffset: ${dateInfo.offset} minutes`);
             }}
             className="flex items-center px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-500"
           >

@@ -102,10 +102,11 @@ jest.mock('firebase/auth', () => ({
 
 // Mock Firebase config
 jest.mock('../../config/firebase', () => ({
-  isFirebaseConfigured: false,
+  isFirebaseConfigured: jest.fn(() => false),
   auth: null,
   functions: null,
   db: null,
+  app: null,
 }));
 
 // Mock authBridge

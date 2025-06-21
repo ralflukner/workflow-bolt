@@ -48,7 +48,10 @@ const handleExportSchedule = async (): Promise<void> => {
   if (isExporting.current) return;     // guard against rapid clicks
   isExporting.current = true;
   try {
-    const report = await generateReport('csv');
+    // generateReport('csv') returns void and triggers download directly
+    generateReport('csv');
+    // For modal display, generate text report
+    const report = generateReport('text');
     setReportContent(report);
     setShowReportModal(true);
   } catch (err) {

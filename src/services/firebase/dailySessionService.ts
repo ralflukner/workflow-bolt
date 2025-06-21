@@ -89,20 +89,35 @@ export class DailySessionService implements StorageService {
     
     try {
       // Encrypt sensitive patient data for HIPAA compliance
-      const sanitizedPatients = patients.map(patient => {
+      const sanitizedIncoming = patients.map(p => {
         try {
-          const encrypted = PatientEncryptionService.encryptPatient(patient);
-          return stripUndefined(encrypted);
-        } catch (error) {
-          console.error('Error encrypting patient data:', error);
-          return stripUndefined(patient);
+          return stripUndefined(PatientEncryptionService.encryptPatient(p));
+        } catch (err) {
+          console.error('Error encrypting patient data:', err);
+          return stripUndefined(p);
         }
       });
+
+      // Fetch any existing patients so we can append instead of overwrite
+      let mergedPatients = sanitizedIncoming;
+      try {
+        const existingSnap = await getDoc(doc(this.getDb(), COLLECTION_NAME, sessionId));
+        if (existingSnap.exists()) {
+          const existing = (existingSnap.data().patients || []) as Patient[];
+          const existingById = new Map(existing.map((p: Patient) => [p.id, p]));
+          for (const incoming of sanitizedIncoming) {
+            existingById.set(incoming.id, incoming);
+          }
+          mergedPatients = Array.from(existingById.values());
+        }
+      } catch (mergeErr) {
+        console.warn('Could not merge with existing patients:', mergeErr);
+      }
 
       const sessionData = {
         id: sessionId,
         date: sessionId,
-        patients: sanitizedPatients,
+        patients: mergedPatients,
         isEncrypted: true, // Flag to indicate data is encrypted
         // Use server timestamp for created time if this is a new document
         createdAt: serverTimestamp(),

@@ -10,7 +10,7 @@ import { getTebraApiConfig } from './configService';
 let PHP_API_BASE_URL: string | null = null;
 let API_KEY: string | undefined = undefined;
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -33,15 +33,15 @@ async function ensureConfig() {
 /**
  * Make a request to the PHP API
  */
-async function callPhpApi<T = any>(
+async function callPhpApi<T = unknown>(
   endpoint: string,
   method: 'GET' | 'POST' = 'POST',
-  data?: any
+  data?: Record<string, unknown>
 ): Promise<ApiResponse<T>> {
   try {
     await ensureConfig();
     
-    const url = `${PHP_API_BASE_URL}${endpoint}`;
+    let url = `${PHP_API_BASE_URL}${endpoint}`;
     
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -60,12 +60,12 @@ async function callPhpApi<T = any>(
     if (method === 'POST' && data) {
       options.body = JSON.stringify(data);
     } else if (method === 'GET' && data) {
-      // Add query parameters for GET requests
-      const params = new URLSearchParams(data);
-      url.concat('?' + params.toString());
+      // Add query parameters for GET requests – assume data is object of primitives
+      const params = new URLSearchParams(data as Record<string, string>);
+      url = `${url}?${params.toString()}`;
     }
     
-    secureLog('📡 Calling PHP API:', endpoint, { method, data });
+    secureLog(`📡 Calling PHP API: ${endpoint}`, { method, data });
     
     const response = await fetch(url, options);
     const result = await response.json();
@@ -74,7 +74,7 @@ async function callPhpApi<T = any>(
       throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
     }
     
-    secureLog('✅ PHP API response:', endpoint, result);
+    secureLog(`✅ PHP API response: ${endpoint}`, result);
     
     return result;
   } catch (error) {
@@ -90,7 +90,10 @@ async function callPhpApi<T = any>(
  * Test connection to Tebra API
  */
 export const tebraTestConnection = async () => {
-  const response = await callPhpApi('/testConnection');
+  const response = await callPhpApi('', 'POST', {
+    action: 'testConnection',
+    params: {}
+  });
   return { data: response };
 };
 
@@ -98,7 +101,10 @@ export const tebraTestConnection = async () => {
  * Get patient by ID
  */
 export const tebraGetPatient = async (data: { patientId: string }) => {
-  const response = await callPhpApi('/getPatient', 'POST', data);
+  const response = await callPhpApi('', 'POST', {
+    action: 'getPatient',
+    params: data
+  });
   return { data: response };
 };
 
@@ -106,7 +112,10 @@ export const tebraGetPatient = async (data: { patientId: string }) => {
  * Search patients by last name
  */
 export const tebraSearchPatients = async (data: { lastName: string }) => {
-  const response = await callPhpApi('/searchPatients', 'POST', data);
+  const response = await callPhpApi('', 'POST', {
+    action: 'searchPatients',
+    params: data
+  });
   return { data: response };
 };
 
@@ -114,7 +123,10 @@ export const tebraSearchPatients = async (data: { lastName: string }) => {
  * Get appointments for date range
  */
 export const tebraGetAppointments = async (data: { fromDate: string; toDate: string }) => {
-  const response = await callPhpApi('/getAppointments', 'POST', data);
+  const response = await callPhpApi('', 'POST', {
+    action: 'getAppointments',
+    params: data
+  });
   return { data: response };
 };
 
@@ -122,23 +134,43 @@ export const tebraGetAppointments = async (data: { fromDate: string; toDate: str
  * Get all providers
  */
 export const tebraGetProviders = async () => {
-  const response = await callPhpApi('/getProviders');
+  const response = await callPhpApi('', 'POST', {
+    action: 'getProviders',
+    params: {}
+  });
+  return { data: response };
+};
+
+/**
+ * Sync schedule for a specific date (YYYY-MM-DD)
+ */
+export const tebraSyncSchedule = async (date: string) => {
+  const response = await callPhpApi('', 'POST', {
+    action: 'syncSchedule',
+    params: { date },
+  });
   return { data: response };
 };
 
 /**
  * Create a new appointment
  */
-export const tebraCreateAppointment = async (data: any) => {
-  const response = await callPhpApi('/createAppointment', 'POST', data);
+export const tebraCreateAppointment = async (data: Record<string, unknown>) => {
+  const response = await callPhpApi('', 'POST', {
+    action: 'createAppointment',
+    params: { appointmentData: data }
+  });
   return { data: response };
 };
 
 /**
  * Update an existing appointment
  */
-export const tebraUpdateAppointment = async (data: any) => {
-  const response = await callPhpApi('/updateAppointment', 'POST', data);
+export const tebraUpdateAppointment = async (data: Record<string, unknown>) => {
+  const response = await callPhpApi('', 'POST', {
+    action: 'updateAppointment',
+    params: { appointmentData: data }
+  });
   return { data: response };
 };
 
@@ -161,7 +193,10 @@ export const tebraTestAppointments = async () => {
  * Check service health
  */
 export const checkServiceHealth = async () => {
-  const response = await callPhpApi('/health', 'GET');
+  const response = await callPhpApi('', 'POST', {
+    action: 'health',
+    params: {}
+  });
   return { data: response };
 };
 
@@ -176,6 +211,7 @@ export const tebraPhpApi = {
   updateAppointment: tebraUpdateAppointment,
   testAppointments: tebraTestAppointments,
   checkHealth: checkServiceHealth,
+  syncSchedule: tebraSyncSchedule,
 };
 
 export default tebraPhpApi;

@@ -100,8 +100,8 @@ export class AuthBridge {
   private maxDebugEntries = 100;
   private retryConfig = {
     maxRetries: 3,
-    baseDelay: 1000,
-    maxDelay: 10000,
+    baseDelay: 5000, // Increased from 1s to 5s
+    maxDelay: 30000, // Increased from 10s to 30s
   };
   
   private constructor() {
@@ -236,10 +236,13 @@ export class AuthBridge {
         throw error;
       }
 
-      const delay = Math.min(
+      const baseDelay = Math.min(
         this.retryConfig.baseDelay * Math.pow(2, retryCount),
         this.retryConfig.maxDelay
       );
+      // Add jitter to prevent thundering herd
+      const jitter = Math.random() * 1000; // 0-1s random jitter
+      const delay = baseDelay + jitter;
 
       this.logDebug(`⏳ ${context} retry ${retryCount + 1}/${this.retryConfig.maxRetries} in ${delay}ms`, error);
       

@@ -23,7 +23,7 @@ class TebraApiClient {
     /**
      * Initialize SOAP client with proper configuration
      */
-    private function initializeSoapClient() {
+    private function initializeSoapClient(): void {
         try {
             $options = [
                 'login' => $this->username,
@@ -61,7 +61,7 @@ class TebraApiClient {
     /**
      * Test the API connection
      */
-    public function testConnection() {
+    public function testConnection(): array {
         try {
             // Try a simple operation to test the connection
             $response = $this->soapClient->__call('TestConnection', []);
@@ -84,7 +84,7 @@ class TebraApiClient {
     /**
      * Get appointments for a date range
      */
-    public function getAppointments($fromDate, $toDate) {
+    public function getAppointments($fromDate, $toDate): array {
         try {
             $params = [
                 'request' => [
@@ -115,7 +115,7 @@ class TebraApiClient {
     /**
      * Get providers
      */
-    public function getProviders() {
+    public function getProviders(): array {
         try {
             $params = [
                 'request' => [
@@ -144,7 +144,7 @@ class TebraApiClient {
     /**
      * Search for patients
      */
-    public function searchPatients($lastName) {
+    public function searchPatients($lastName): array {
         try {
             $params = [
                 'request' => [
@@ -174,7 +174,7 @@ class TebraApiClient {
     /**
      * Get patient by ID
      */
-    public function getPatientById($patientId) {
+    public function getPatientById($patientId): array {
         try {
             $params = [
                 'request' => [
@@ -204,14 +204,14 @@ class TebraApiClient {
     /**
      * Get SOAP client last request for debugging
      */
-    public function getLastRequest() {
+    public function getLastRequest(): string {
         return $this->soapClient->__getLastRequest();
     }
     
     /**
      * Get SOAP client last response for debugging
      */
-    public function getLastResponse() {
+    public function getLastResponse(): string {
         return $this->soapClient->__getLastResponse();
     }
 }

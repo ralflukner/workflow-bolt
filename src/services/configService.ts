@@ -4,8 +4,8 @@
  * No dependency on .env files
  */
 
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
-import { getRemoteConfig, fetchAndActivate, getValue } from 'firebase/remote-config';
+import { getFirestore, doc, getDoc, setDoc, Firestore } from 'firebase/firestore';
+import { getRemoteConfig, fetchAndActivate, getValue, RemoteConfig } from 'firebase/remote-config';
 import { app, isFirebaseConfigured } from '../config/firebase';
 
 interface AppConfig {
@@ -17,15 +17,25 @@ interface AppConfig {
 class ConfigService {
   private static instance: ConfigService;
   private config: AppConfig | null = null;
-  private db = isFirebaseConfigured() ? getFirestore(app) : null;
-  private remoteConfig = isFirebaseConfigured() ? getRemoteConfig(app) : null;
+
+  // Firebase services (initialised lazily in the constructor to avoid TS null issues)
+  private db: Firestore | null = null;
+  private remoteConfig: RemoteConfig | null = null;
 
   private constructor() {
-    // Set default values for Remote Config
+    // Only attempt to obtain Firebase services if Firebase was successfully initialised
+    if (isFirebaseConfigured() && app) {
+      // Non-null assertion is safe here because the guard ensures app is defined
+      this.db = getFirestore(app!);
+      this.remoteConfig = getRemoteConfig(app!);
+    }
+
+    // Set default values for Remote Config (if available)
     if (this.remoteConfig) {
       this.remoteConfig.defaultConfig = {
         useTebraPhpApi: 'true',
-        tebraPhpApiUrl: 'https://tebra-php-api-oqg3wfutka-uc.a.run.app/api',
+        // IMPORTANT: Updated to new Cloud Run URL
+        tebraPhpApiUrl: 'https://tebra-php-api-xccvzgogwa-uc.a.run.app',
       };
     }
   }
@@ -49,7 +59,13 @@ class ConfigService {
     // Default configuration - ALWAYS use PHP API
     let config: AppConfig = {
       useTebraPhpApi: true, // ALWAYS true - Node.js is not supported for Tebra
-      tebraPhpApiUrl: 'https://tebra-php-api-oqg3wfutka-uc.a.run.app/api',
+      // IMPORTANT: This is the correct Cloud Run URL for Tebra PHP API
+      // Old URL: https://tebra-php-api-oqg3wfutka-uc.a.run.app/api (no longer valid)
+      // Previous: https://tebra-php-api-623450773640.us-central1.run.app
+      // Current: https://tebra-php-api-xccvzgogwa-uc.a.run.app (active deployment)
+      tebraPhpApiUrl: 'https://tebra-php-api-xccvzgogwa-uc.a.run.app',
+      // Use the Tebra proxy API key from environment
+      tebraInternalApiKey: import.meta.env.VITE_TEBRA_PROXY_API_KEY,
     };
 
     try {
