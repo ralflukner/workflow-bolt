@@ -64,17 +64,23 @@ const mockFirebaseAuth: any = {
 jest.mock('@auth0/auth0-react');
 
 jest.mock('../../config/firebase', () => ({
-  auth: mockFirebaseAuth,
+  // Use getter to defer access until after mockFirebaseAuth is initialized
+  get auth() {
+    return mockFirebaseAuth;
+  },
   functions: {}, // truthy placeholder for Firebase Functions instance
 }));
 
 jest.mock('firebase/auth', () => ({
-  signInWithCustomToken: mockSignInWithCustomToken,
+  // Defer evaluation of mockSignInWithCustomToken until runtime to avoid TDZ errors
+  signInWithCustomToken: (...args: unknown[]) => mockSignInWithCustomToken(...args),
   onAuthStateChanged: jest.fn(),
 }));
 
 jest.mock('firebase/functions', () => ({
-  httpsCallable: mockHttpsCallable,
+  get httpsCallable() {
+    return mockHttpsCallable;
+  },
 }));
 
 const mockUseAuth0 = useAuth0 as jest.MockedFunction<typeof useAuth0>;

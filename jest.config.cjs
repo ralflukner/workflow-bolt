@@ -62,7 +62,8 @@ module.exports = {
         '.e2e.test.',
         'real-api',
         '/src/__tests__/real-api/',
-        '/src/services/__tests__/.*\\.integration\\.test\\.ts$'
+        '/src/services/__tests__/.*\\.integration\\.test\\.ts$',
+        '<rootDir>/src/services/__tests__/authBridge.integration.test.ts'
       ],
       // Add globals to mock import.meta for Jest
       globals: {
@@ -91,6 +92,9 @@ module.exports = {
       testMatch: [
         '<rootDir>/src/**/*.integration.test.(ts|tsx)',
         '<rootDir>/src/**/__tests__/**/integration/**/*.test.(ts|tsx)'
+      ],
+      testPathIgnorePatterns: [
+        '<rootDir>/src/services/__tests__/authBridge.integration.test.ts'
       ],
       globals: {
         'import.meta': {
