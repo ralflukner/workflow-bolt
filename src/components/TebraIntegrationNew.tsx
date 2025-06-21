@@ -13,11 +13,13 @@ interface SyncResult {
   lastSync?: Date;
 }
 
-// Wrapper type for PHP API responses used in this component
-interface PhpApiEnvelope<T = unknown> {
+// Type for API response wrapper structure
+interface ApiResponseWrapper {
   data: {
     success: boolean;
-    data?: T;
+    data?: {
+      appointments?: unknown[];
+    };
     error?: string;
     message?: string;
   };
@@ -68,7 +70,7 @@ const TebraIntegration: React.FC = () => {
         tebraApi.getAppointments({ fromDate: tomorrowStr, toDate: tomorrowStr })
       ]);
       
-      const extractCount = (resp: any): number => {
+      const extractCount = (resp: ApiResponseWrapper): number => {
         const appts = resp?.data?.data?.appointments;
         return Array.isArray(appts) ? appts.length : 0;
       };

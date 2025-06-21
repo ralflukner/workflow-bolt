@@ -5,7 +5,8 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: 'tsconfig.json'
+      tsconfig: 'tsconfig.json',
+      babelConfig: true
     }],
     '^.+\\.(js|jsx)$': 'babel-jest'
   },
@@ -40,7 +41,8 @@ module.exports = {
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
-          tsconfig: 'tsconfig.json'
+          tsconfig: 'tsconfig.json',
+          babelConfig: true
         }],
         '^.+\\.(js|jsx)$': 'babel-jest'
       },
@@ -76,7 +78,8 @@ module.exports = {
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
-          tsconfig: 'tsconfig.json'
+          tsconfig: 'tsconfig.json',
+          babelConfig: true
         }],
         '^.+\\.(js|jsx)$': 'babel-jest'
       },
@@ -102,7 +105,8 @@ module.exports = {
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
-          tsconfig: 'tsconfig.json'
+          tsconfig: 'tsconfig.json',
+          babelConfig: true
         }],
         '^.+\\.(js|jsx)$': 'babel-jest'
       },
