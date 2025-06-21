@@ -75,8 +75,8 @@ const TebraIntegration: React.FC = () => {
         return Array.isArray(appts) ? appts.length : 0;
       };
 
-      setTodayAppointmentCount(extractCount(todayAppointments));
-      setTomorrowAppointmentCount(extractCount(tomorrowAppointments));
+      setTodayAppointmentCount(extractCount(todayAppointments as ApiResponseWrapper));
+      setTomorrowAppointmentCount(extractCount(tomorrowAppointments as ApiResponseWrapper));
     } catch (error) {
       console.error('Failed to fetch appointment counts:', error);
       // Don't update counts on error, keep them as null
