@@ -18,7 +18,7 @@ See [TEBRA_API_URL_CONFIG.md](./TEBRA_API_URL_CONFIG.md) for detailed URL config
 
 - Comprehensive error handling
 
-- Type safety with TypeScrip
+- Type safety with TypeScript
 
 - Extensive test coverage
 
@@ -211,7 +211,7 @@ interface TebraAppointment {
 
 ```
 
-## Developmen
+## Development
 
 ### Running Tests
 

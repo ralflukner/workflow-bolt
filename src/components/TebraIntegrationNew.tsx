@@ -68,7 +68,7 @@ const TebraIntegration: React.FC = () => {
         tebraApi.getAppointments({ fromDate: tomorrowStr, toDate: tomorrowStr })
       ]);
       
-      const extractCount = <T extends { appointments?: unknown[] }>(resp: PhpApiEnvelope<T>): number => {
+      const extractCount = (resp: any): number => {
         const appts = resp?.data?.data?.appointments;
         return Array.isArray(appts) ? appts.length : 0;
       };
@@ -226,7 +226,8 @@ const TebraIntegration: React.FC = () => {
       console.log('Raw Tebra response:', apiResp);
       setStatusMessage('✅ Test complete. Check console for raw data.');
 
-      const appointments = apiResp?.data?.data?.appointments || [];
+      const appointmentsData = apiResp?.data?.data as { appointments?: unknown[] } | undefined;
+      const appointments = appointmentsData?.appointments || [];
       if (Array.isArray(appointments)) {
         console.log('Appointments found:', appointments.length);
         if (appointments.length > 0) {

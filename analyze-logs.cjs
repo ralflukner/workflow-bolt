@@ -266,11 +266,13 @@ class LogAnalyzer {
     const recommendations = [];
 
     // Error rate recommendations
-    if (parseFloat(analysis.summary.errorRate) > 10) {
+    // Make error rate threshold configurable (default 5% for production)
+    const errorRateThreshold = this.errorRateThreshold || 5;
+    if (parseFloat(analysis.summary.errorRate) > errorRateThreshold) {
       recommendations.push({
         priority: 'HIGH',
         category: 'ERROR_RATE',
-        message: `Error rate is ${analysis.summary.errorRate}% - implement circuit breaker pattern`
+        message: `Error rate is ${analysis.summary.errorRate}% (threshold: ${errorRateThreshold}%) - implement circuit breaker pattern`
       });
     }
 
