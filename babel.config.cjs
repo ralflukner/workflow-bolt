@@ -7,6 +7,6 @@ module.exports = {
   plugins: [
     '@babel/plugin-transform-class-properties',
     '@babel/plugin-transform-runtime',
-    require('./babel/import-meta-env')
+    require('./babel/import-meta-env.cjs')
   ]
 }; 
