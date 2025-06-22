@@ -160,3 +160,9 @@ src/vite-env.d.ts
 tebra-tools/credential-rotation-state.json
 key.json
 key.json
+
+# Ignore any environment templates or files with .txt extension
+**/env*.txt
+
+# ===== Husky =====
+.husky/

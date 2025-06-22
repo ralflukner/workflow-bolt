@@ -3,8 +3,8 @@
 # .env.local is gitignored and will not be committed to version control
 
 # Tebra API Configuration
-VITE_TEBRA_USERNAME="work-flow@luknerclinic.com"
-VITE_TEBRA_PASSWORD="s?3dVK=iXBj73*i$%5i8/5<4xtiP9?"
+VITE_TEBRA_USERNAME="your-tebra-username"
+VITE_TEBRA_PASSWORD="your-tebra-password"
 VITE_TEBRA_WSDL_URL="https://api.tebra.com/wsdl"
 VITE_TEBRA_CUSTOMER_KEY="your-customer-key"
 

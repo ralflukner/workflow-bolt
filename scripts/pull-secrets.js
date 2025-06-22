@@ -10,19 +10,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configuration
-const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || 'your-project-id';
+const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || 'luknerlumina-firebase';
 const SECRETS_TO_PULL = [
   // Auth0 secrets
-  { name: 'AUTH0_DOMAIN', envVar: 'VITE_AUTH0_DOMAIN' },
-  { name: 'AUTH0_CLIENT_ID', envVar: 'VITE_AUTH0_CLIENT_ID' },
-  { name: 'AUTH0_REDIRECT_URI', envVar: 'VITE_AUTH0_REDIRECT_URI' },
-  { name: 'AUTH0_AUDIENCE', envVar: 'VITE_AUTH0_AUDIENCE' },
-  { name: 'AUTH0_SCOPE', envVar: 'VITE_AUTH0_SCOPE' },
+  { name: 'VITE_AUTH0_DOMAIN', envVar: 'VITE_AUTH0_DOMAIN' },
+  { name: 'VITE_AUTH0_CLIENT_ID', envVar: 'VITE_AUTH0_CLIENT_ID' },
+  { name: 'VITE_AUTH0_REDIRECT_URI', envVar: 'VITE_AUTH0_REDIRECT_URI' },
+  { name: 'VITE_AUTH0_AUDIENCE', envVar: 'VITE_AUTH0_AUDIENCE' },
+  { name: 'VITE_AUTH0_SCOPE', envVar: 'VITE_AUTH0_SCOPE' },
   // Tebra secrets
-  { name: 'TEBRA_USERNAME', envVar: 'VITE_TEBRA_USERNAME' },
-  { name: 'TEBRA_PASSWORD', envVar: 'VITE_TEBRA_PASSWORD' },
-  { name: 'TEBRA_CUSTOMER_KEY', envVar: 'VITE_TEBRA_CUSTOMER_KEY' },
-  { name: 'TEBRA_WSDL_URL', envVar: 'VITE_TEBRA_WSDL_URL' },
+  { name: 'VITE_TEBRA_USERNAME', envVar: 'VITE_TEBRA_USERNAME' },
+  { name: 'VITE_TEBRA_PASSWORD', envVar: 'VITE_TEBRA_PASSWORD' },
+  { name: 'VITE_TEBRA_CUSTOMER_KEY', envVar: 'VITE_TEBRA_CUSTOMER_KEY' },
+  { name: 'VITE_TEBRA_WSDL_URL', envVar: 'VITE_TEBRA_WSDL_URL' },
   // Gmail OAuth2 secrets
   { name: 'GMAIL_CLIENT_ID', envVar: 'GMAIL_CLIENT_ID' },
   { name: 'GMAIL_CLIENT_SECRET', envVar: 'GMAIL_CLIENT_SECRET' },
@@ -33,19 +33,26 @@ const SECRETS_TO_PULL = [
   { name: 'GMAIL_SERVICE_ACCOUNT_EMAIL', envVar: 'GMAIL_SERVICE_ACCOUNT_EMAIL' },
   { name: 'GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY', envVar: 'GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY' },
   // Patient encryption key
-  { name: 'patient-encryption-key', envVar: 'REACT_APP_PATIENT_ENCRYPTION_KEY' },
-  { name: 'PATIENT_ENCRYPTION_KEY', envVar: 'VITE_PATIENT_ENCRYPTION_KEY' },
+  { name: 'VITE_PATIENT_ENCRYPTION_KEY', envVar: 'VITE_PATIENT_ENCRYPTION_KEY' },
+  // --- Runtime configuration / proxy ---
+  { name: 'VITE_TEBRA_PROXY_API_KEY', envVar: 'VITE_TEBRA_PROXY_API_KEY' },
+  { name: 'VITE_FIREBASE_CONFIG', envVar: 'VITE_FIREBASE_CONFIG' },
+  { name: 'GOOGLE_CLOUD_PROJECT', envVar: 'GOOGLE_CLOUD_PROJECT' },
 ];
 
 async function readSecret(secretName) {
-  try {
-    const client = new SecretManagerServiceClient();
+  const client = new SecretManagerServiceClient();
+  const tryFetch = async (name) => {
     const [version] = await client.accessSecretVersion({
-      name: `projects/${PROJECT_ID}/secrets/${secretName}/versions/latest`,
+      name: `projects/${PROJECT_ID}/secrets/${name}/versions/latest`,
     });
     return version.payload?.data?.toString() || '';
-  } catch (error) {
-    console.warn(`Warning: Could not read secret ${secretName}:`, error.message);
+  };
+
+  try {
+    return await tryFetch(secretName);
+  } catch (err) {
+    console.warn(`Warning: Could not read secret ${secretName}:`, err.message);
     return null;
   }
 }
@@ -72,9 +79,17 @@ async function pullSecrets() {
   for (const { name, envVar } of SECRETS_TO_PULL) {
     const value = await readSecret(name);
     if (value) {
-      envContent.push(`${envVar}=${value}`);
+      // Convert real newlines to \n so they fit on one line
+      let safeVal = value.replace(/\n/g, '\\n');
+      // Quote if it contains spaces, tabs, or literal \n sequences
+      if (/\s/.test(safeVal)) {
+        safeVal = `"${safeVal.replace(/"/g, '\\"')}"`;
+      }
+      envContent.push(`${envVar}=${safeVal}`);
       // Mask sensitive values in logs
-      const maskedValue = envVar.includes('PASSWORD') ? '********' : value.substring(0, 10) + '...';
+      const maskedValue = envVar.match(/PASSWORD|PRIVATE_KEY|TOKEN|SECRET/i)
+        ? '********'
+        : safeVal.substring(0, 10) + '...';
       console.log(`✅ ${envVar} = ${maskedValue}`);
     } else {
       console.log(`⚠️  ${envVar} = (not found in GSM)`);
@@ -109,4 +124,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   });
 }
 
-export { pullSecrets }; 
+export { pullSecrets, SECRETS_TO_PULL }; 
