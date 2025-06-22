@@ -1,4 +1,5 @@
-import React, { useState, useEffect, ReactNode, useContext } from 'react';
+import React, { useState, ReactNode, useContext } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Patient, PatientApptStatus, Metrics } from '../types';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { PatientContext } from './PatientContextDef';
@@ -6,6 +7,9 @@ import { FirebaseContext } from '../contexts/firebase';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useFirebaseAuth } from '../services/authBridge';
 import { usePatientData } from '../hooks/usePatientData';
+import { mockPatients } from '../data/mockData';
+import { dailySessionService } from '../services/firebase/dailySessionService';
+import { localSessionService } from '../services/localStorage/localSessionService';
 
 interface PatientProviderProps {
   children: ReactNode;
@@ -63,41 +67,54 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   const { isInitialized: firebaseReady } = useContext(FirebaseContext);
   const { isAuthenticated, isLoading: auth0Loading } = useAuth0();
   const { ensureFirebaseAuth } = useFirebaseAuth();
-  const [firebaseAuthReady, setFirebaseAuthReady] = useState(false);
-  
-  // Only use Firebase if both Firebase is ready AND user is authenticated with Firebase
-  const canUseFirebase = firebaseReady && isAuthenticated && !auth0Loading && firebaseAuthReady;
-  const [useFirebase, setUseFirebase] = useState(canUseFirebase);
-  
-  // Handle Firebase authentication when Auth0 is ready
-  useEffect(() => {
-    const setupFirebaseAuth = async () => {
-      if (isAuthenticated && !auth0Loading && firebaseReady) {
-        try {
-          console.log('🔐 Setting up Firebase authentication...');
-          const firebaseAuthSuccess = await ensureFirebaseAuth();
-          setFirebaseAuthReady(firebaseAuthSuccess);
-          if (firebaseAuthSuccess) {
-            console.log('✅ Firebase authentication successful');
-          } else {
-            console.warn('❌ Firebase authentication failed');
-          }
-        } catch (error) {
-          console.error('🚨 Firebase authentication error:', error);
-          setFirebaseAuthReady(false);
-        }
-      } else {
-        setFirebaseAuthReady(false);
+
+  // Use React Query for Firebase authentication
+  const {
+    data: firebaseAuthReady = false,
+    isLoading: firebaseAuthLoading,
+    error: firebaseAuthError
+  } = useQuery({
+    queryKey: ['firebaseAuth', isAuthenticated, auth0Loading, firebaseReady],
+    queryFn: async () => {
+      if (!isAuthenticated || auth0Loading || !firebaseReady) {
+        return false;
       }
-    };
+      
+      try {
+        console.log('🔐 Setting up Firebase authentication...');
+        const success = await ensureFirebaseAuth();
+        if (success) {
+          console.log('✅ Firebase authentication successful');
+        } else {
+          console.warn('❌ Firebase authentication failed');
+        }
+        return success;
+      } catch (error) {
+        console.error('🚨 Firebase authentication error:', error);
+        return false;
+      }
+    },
+    enabled: isAuthenticated && !auth0Loading && firebaseReady,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+    retryDelay: 2000
+  });
 
-    setupFirebaseAuth();
-  }, [isAuthenticated, auth0Loading, firebaseReady, ensureFirebaseAuth]);
+  // Determine if we can use Firebase
+  const canUseFirebase = firebaseReady && isAuthenticated && !auth0Loading && firebaseAuthReady;
+  const useFirebase = canUseFirebase;
 
-  // Update useFirebase when authentication state changes
-  useEffect(() => {
-    setUseFirebase(canUseFirebase);
-  }, [canUseFirebase]);
+  // Debug logging for Firebase state
+  console.log('🔍 Firebase state debug:', {
+    firebaseReady,
+    isAuthenticated,
+    auth0Loading,
+    firebaseAuthReady,
+    firebaseAuthLoading,
+    firebaseAuthError,
+    canUseFirebase,
+    useFirebase
+  });
 
   // Use React Query for patient data management
   const {
@@ -108,8 +125,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     updatePatients,
     addPatient: addPatientToQuery,
     updatePatient: updatePatientInQuery,
-    removePatient: removePatientFromQuery,
-    isSaving
+    removePatient: removePatientFromQuery
   } = usePatientData({
     persistenceEnabled,
     useFirebase,
@@ -119,10 +135,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     firebaseAuthReady
   });
 
-
-
   // Set up an interval to force re-renders and periodic saves
-  useEffect(() => {
+  React.useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | undefined;
 
     const tick = () => {
@@ -277,9 +291,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
       }
     });
 
-    // Update state
-    setPatients(importedPatients);
-    setHasRealData(true);
+    // Update state using React Query
+    updatePatients(importedPatients);
   };
 
   const saveCurrentSession = async () => {
@@ -288,6 +301,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     }
 
     try {
+      // Use the storage service from usePatientData
+      const storageService = useFirebase ? dailySessionService : localSessionService;
       await storageService.saveTodaysSession(patients);
       console.log(`Session saved to ${storageType}`);
     } catch (error) {
@@ -300,13 +315,13 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     setPersistenceEnabled(prev => !prev);
   };
 
-  const refreshFromFirebase = async () => {
-    if (!useFirebase || !firebaseReady) {
-      console.warn('Cannot refresh: Firebase not configured');
-      return;
-    }
+  // Use React Query mutation for refreshing from Firebase
+  const refreshFromFirebaseMutation = useMutation({
+    mutationFn: async () => {
+      if (!useFirebase || !firebaseReady) {
+        throw new Error('Cannot refresh: Firebase not configured');
+      }
 
-    try {
       console.log('Manually refreshing patient data from Firebase');
 
       // Load today's patients
@@ -323,28 +338,38 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         console.log(`Found ${tomorrowPatients.length} patients for tomorrow (${tomorrowId})`);
 
         // If tomorrow has data but today doesn't, use tomorrow's data
-        // This handles the "Sync Tomorrow" case where users want to see tomorrow's appointments
         if (tomorrowPatients.length > 0 && todayPatients.length === 0) {
           console.log('Using tomorrow\'s data as no data exists for today');
-          setPatients(tomorrowPatients);
-          setHasRealData(true);
-          return;
+          return tomorrowPatients;
         }
       } catch {
         console.log('No data for tomorrow, using today\'s data');
       }
 
       // Default to today's data
-      setPatients(todayPatients);
-      setHasRealData(true);
-    } catch (error) {
+      return todayPatients;
+    },
+    onSuccess: (newPatients) => {
+      updatePatients(newPatients);
+      console.log('✅ Firebase refresh successful');
+    },
+    onError: (error) => {
       console.error('Failed to refresh from Firebase:', error);
     }
+  });
+
+  const refreshFromFirebase = async (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      refreshFromFirebaseMutation.mutate(undefined, {
+        onSuccess: () => resolve(),
+        onError: (error) => reject(error)
+      });
+    });
   };
 
   const value = {
     patients,
-    isLoading,
+    isLoading: isLoading || firebaseAuthLoading,
     persistenceEnabled,
     hasRealData,
     tickCounter,
@@ -363,6 +388,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     saveCurrentSession,
     togglePersistence,
     refreshFromFirebase,
+    firebaseAuthError,
   };
 
   return (

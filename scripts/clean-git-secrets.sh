@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # Script to remove exposed secrets from Git history
 # WARNING: This will rewrite Git history!

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # Script to create admin debug token in Google Secret Manager
 # This token is required for accessing the secured debug endpoint
