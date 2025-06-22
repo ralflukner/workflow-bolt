@@ -22,20 +22,12 @@ const getFirebaseConfig = onRequest({ cors: true, memory: '1GiB' }, async (req, 
 }
 
 if (!cachedConfig) {
-      const name = `projects/${PROJECT_ID}/secrets/FIREBASE_API_KEY/versions/latest`;
+      const name = `projects/${PROJECT_ID}/secrets/firebase-config/versions/latest`;
       const [version] = await gsm.accessSecretVersion({ name });
-      const apiKey = version.payload?.data?.toString() || '';
-      if (!apiKey) throw new Error('Firebase API key not found in Secret Manager');
+      const configData = version.payload?.data?.toString() || '';
+      if (!configData) throw new Error('Firebase config not found in Secret Manager');
 
-      cachedConfig = {
-        apiKey,
-        authDomain: 'luknerlumina-firebase.firebaseapp.com',
-        projectId: 'luknerlumina-firebase',
-        storageBucket: 'luknerlumina-firebase.appspot.com',
-        messagingSenderId: '623450773640',
-        appId: '1:623450773640:web:9afd63d3ccbb1fcb6fe73d',
-        measurementId: 'G-W6TX8WRN2Z'
-      };
+      cachedConfig = JSON.parse(configData);
     }
  
     res.status(200).json(cachedConfig);

@@ -6,6 +6,8 @@ import { PatientContext } from './PatientContextDef';
 import { dailySessionService } from '../services/firebase/dailySessionService';
 import { localSessionService } from '../services/localStorage/localSessionService';
 import { FirebaseContext } from '../contexts/firebase';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useFirebaseAuth } from '../services/authBridge';
 
 interface PatientProviderProps {
   children: ReactNode;
@@ -64,7 +66,43 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   const [hasRealData, setHasRealData] = useState(false);
   const { getCurrentTime, timeMode } = useTimeContext();
   const { isInitialized: firebaseReady } = useContext(FirebaseContext);
-  const [useFirebase, setUseFirebase] = useState(firebaseReady);
+  const { isAuthenticated, isLoading: auth0Loading } = useAuth0();
+  const { ensureFirebaseAuth } = useFirebaseAuth();
+  const [firebaseAuthReady, setFirebaseAuthReady] = useState(false);
+  
+  // Only use Firebase if both Firebase is ready AND user is authenticated with Firebase
+  const canUseFirebase = firebaseReady && isAuthenticated && !auth0Loading && firebaseAuthReady;
+  const [useFirebase, setUseFirebase] = useState(canUseFirebase);
+  
+  // Handle Firebase authentication when Auth0 is ready
+  useEffect(() => {
+    const setupFirebaseAuth = async () => {
+      if (isAuthenticated && !auth0Loading && firebaseReady) {
+        try {
+          console.log('🔐 Setting up Firebase authentication...');
+          const firebaseAuthSuccess = await ensureFirebaseAuth();
+          setFirebaseAuthReady(firebaseAuthSuccess);
+          if (firebaseAuthSuccess) {
+            console.log('✅ Firebase authentication successful');
+          } else {
+            console.warn('❌ Firebase authentication failed');
+          }
+        } catch (error) {
+          console.error('🚨 Firebase authentication error:', error);
+          setFirebaseAuthReady(false);
+        }
+      } else {
+        setFirebaseAuthReady(false);
+      }
+    };
+
+    setupFirebaseAuth();
+  }, [isAuthenticated, auth0Loading, firebaseReady, ensureFirebaseAuth]);
+
+  // Update useFirebase when authentication state changes
+  useEffect(() => {
+    setUseFirebase(canUseFirebase);
+  }, [canUseFirebase]);
   const storageService = useFirebase ? dailySessionService : localSessionService;
   const storageType = useFirebase ? 'Firebase' : 'LocalStorage';
 
@@ -122,7 +160,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
 
     // Setup real-time listener for Firebase updates
     let unsubscribe: (() => void) | undefined;
-    if (useFirebase && firebaseReady && !isLoading) {
+    if (useFirebase && firebaseReady && !isLoading && isAuthenticated && !auth0Loading && firebaseAuthReady) {
       console.log('Setting up Firebase real-time listener');
       unsubscribe = dailySessionService.subscribeToDailySession((updatedPatients) => {
         console.log(`Real-time update: ${updatedPatients.length} patients from Firebase`);
@@ -137,7 +175,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         unsubscribe();
       }
     };
-  }, [persistenceEnabled, storageService, storageType, useFirebase, firebaseReady, isLoading]);
+  }, [persistenceEnabled, storageService, storageType, useFirebase, firebaseReady, isLoading, isAuthenticated, auth0Loading, firebaseAuthReady]);
 
   // Auto-save patients data periodically and when data changes
   useEffect(() => {
@@ -175,7 +213,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     const timeoutId = setTimeout(saveSession, 2000); // Debounce saves by 2 seconds
 
     return () => clearTimeout(timeoutId);
-  }, [patients, persistenceEnabled, isLoading, storageService, storageType, useFirebase, firebaseReady]);
+  }, [patients, persistenceEnabled, isLoading, storageService, storageType, useFirebase, firebaseReady, isAuthenticated, auth0Loading, firebaseAuthReady]);
 
   // Set up an interval to force re-renders and periodic saves
   useEffect(() => {
@@ -240,7 +278,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         clearInterval(intervalId);
       }
     };
-  }, [timeMode.simulated, persistenceEnabled, patients, storageService, storageType, useFirebase, firebaseReady]);
+  }, [timeMode.simulated, persistenceEnabled, patients, storageService, storageType, useFirebase, firebaseReady, isAuthenticated, auth0Loading, firebaseAuthReady]);
 
   const clearPatients = () => {
     setPatients([]);
