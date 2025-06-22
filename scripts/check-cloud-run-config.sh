@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # Check Cloud Run configuration for Tebra PHP API
 

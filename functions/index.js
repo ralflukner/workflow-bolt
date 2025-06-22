@@ -204,8 +204,25 @@ const { validateHIPAACompliance, testSecretRedaction } = require('./hipaaValidat
 exports.validateHIPAACompliance = validateHIPAACompliance;
 exports.testSecretRedaction = testSecretRedaction;
 
-// NOTE: All Tebra API functions have been moved to PHP
-// See tebra-php-api/ for the PHP implementation
+// HIPAA-Compliant Tebra API Proxy - PHP ONLY (NO NODE.JS SOAP)
+const { tebraProxyClient } = require('./src/tebra-proxy-client.js');
+
+// Tebra API proxy endpoint for HIPAA compliance - CALLS PHP SERVICE ONLY
+app.post('/api/tebra', async (req, res) => {
+  try {
+    const { action, params = {} } = req.body;
+    if (!action) {
+      return res.status(400).json({ success: false, error: 'Action is required' });
+    }
+
+    // ALL REQUESTS GO TO PHP CLOUD RUN SERVICE - NO NODE.JS SOAP
+    const result = await tebraProxyClient.makeRequest(action, params);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Tebra PHP proxy error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // Export getSecret callable (whitelisted secrets for frontend)
 const { getSecret } = require('./src/get-secret.js');

@@ -52,6 +52,7 @@ async function callPhpApi<T = unknown>(
       headers['X-API-Key'] = API_KEY;
     }
     
+    
     const options: RequestInit = {
       method,
       headers,

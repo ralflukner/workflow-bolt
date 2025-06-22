@@ -17,12 +17,10 @@ WORKDIR /var/www
 COPY . .
 
 # Point Apache to public directory
-ENV APACHE_DOCUMENT_ROOT /var/www/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+RUN sed -ri -e 's!/var/www/html!/var/www/public!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!DocumentRoot /var/www!DocumentRoot /var/www/public!g' /etc/apache2/sites-available/*.conf
 
-# Configure Apache to allow .htaccess overrides
-RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+# Configure Apache directory permissions
 RUN echo '<Directory /var/www/public>\n\
     Options Indexes FollowSymLinks\n\
     AllowOverride All\n\
@@ -32,6 +30,7 @@ RUN a2enconf app
 
 # Configure for Cloud Run
 RUN sed -i 's/80/${PORT}/g' /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf
+ENV PORT=8080
 
 # Install Composer and PHP dependencies
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \

@@ -1,13 +1,11 @@
 import React, { useState, useEffect, ReactNode, useContext } from 'react';
 import { Patient, PatientApptStatus, Metrics } from '../types';
 import { useTimeContext } from '../hooks/useTimeContext';
-import { mockPatients } from '../data/mockData';
 import { PatientContext } from './PatientContextDef';
-import { dailySessionService } from '../services/firebase/dailySessionService';
-import { localSessionService } from '../services/localStorage/localSessionService';
 import { FirebaseContext } from '../contexts/firebase';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useFirebaseAuth } from '../services/authBridge';
+import { usePatientData } from '../hooks/usePatientData';
 
 interface PatientProviderProps {
   children: ReactNode;
@@ -59,11 +57,8 @@ const normalizeStatus = (status: string): string => {
 };
 
 export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) => {
-  const [patients, setPatients] = useState<Patient[]>([]);
   const [tickCounter, setTickCounter] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const [persistenceEnabled, setPersistenceEnabled] = useState(true);
-  const [hasRealData, setHasRealData] = useState(false);
   const { getCurrentTime, timeMode } = useTimeContext();
   const { isInitialized: firebaseReady } = useContext(FirebaseContext);
   const { isAuthenticated, isLoading: auth0Loading } = useAuth0();
@@ -103,168 +98,35 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   useEffect(() => {
     setUseFirebase(canUseFirebase);
   }, [canUseFirebase]);
-  const storageService = useFirebase ? dailySessionService : localSessionService;
-  const storageType = useFirebase ? 'Firebase' : 'LocalStorage';
 
-  // Load today's data on mount and when persistence is toggled
-  useEffect(() => {
-    const loadTodaysData = async () => {
-      if (!persistenceEnabled) {
-        setPatients(mockPatients);
-        setHasRealData(false);
-        setIsLoading(false);
-        return;
-      }
+  // Use React Query for patient data management
+  const {
+    patients,
+    isLoading,
+    hasRealData,
+    storageType,
+    updatePatients,
+    addPatient: addPatientToQuery,
+    updatePatient: updatePatientInQuery,
+    removePatient: removePatientFromQuery,
+    isSaving
+  } = usePatientData({
+    persistenceEnabled,
+    useFirebase,
+    firebaseReady,
+    isAuthenticated,
+    auth0Loading,
+    firebaseAuthReady
+  });
 
-      try {
-        setIsLoading(true);
-        console.log(`Using ${storageType} for data persistence`);
-        const savedPatients = await storageService.loadTodaysSession();
 
-        console.log(`Loaded ${savedPatients.length} patients from ${storageType}`);
-        setPatients(savedPatients);
-        // Consider it "real data" even if empty, because it's from persistence
-        // This allows users to start with an empty list and add patients
-        setHasRealData(true);
-      } catch (error) {
-        console.error(`Failed to load from ${storageType}:`, error);
-
-        // If Firebase fails, fall back to localStorage
-        if (useFirebase && firebaseReady) {
-          console.warn('Firebase load failed, falling back to localStorage');
-          setUseFirebase(false);
-          try {
-            const savedPatients = await localSessionService.loadTodaysSession();
-            console.log(`Loaded ${savedPatients.length} patients from localStorage fallback`);
-            setPatients(savedPatients);
-            setHasRealData(true);
-          } catch (localError) {
-            console.error('localStorage fallback also failed:', localError);
-            setPatients([]);
-            setHasRealData(false);
-          }
-        } else {
-          setPatients([]);
-          setHasRealData(false);
-          if (!firebaseReady) {
-            setPersistenceEnabled(false);
-            console.warn('localStorage persistence disabled due to data corruption');
-          }
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadTodaysData();
-
-    // Setup real-time listener for Firebase updates
-    let unsubscribe: (() => void) | undefined;
-    if (useFirebase && firebaseReady && !isLoading && isAuthenticated && !auth0Loading && firebaseAuthReady) {
-      console.log('Setting up Firebase real-time listener');
-      unsubscribe = dailySessionService.subscribeToDailySession((updatedPatients) => {
-        console.log(`Real-time update: ${updatedPatients.length} patients from Firebase`);
-        setPatients(updatedPatients);
-        setHasRealData(true);
-      });
-    }
-
-    return () => {
-      if (unsubscribe) {
-        console.log('Cleaning up Firebase real-time listener');
-        unsubscribe();
-      }
-    };
-  }, [persistenceEnabled, storageService, storageType, useFirebase, firebaseReady, isLoading, isAuthenticated, auth0Loading, firebaseAuthReady]);
-
-  // Auto-save patients data periodically and when data changes
-  useEffect(() => {
-    if (!persistenceEnabled || isLoading) return;
-
-    // Skip auto-save if we have no patients at all
-    if (patients.length === 0) {
-      console.log('Skipping auto-save: no patients to save');
-      return;
-    }
-
-    const saveSession = async () => {
-      try {
-        console.log(`Auto-saving ${patients.length} patients to ${storageType}...`);
-        await storageService.saveTodaysSession(patients);
-        console.log(`Session auto-saved to ${storageType}: ${patients.length} patients`);
-      } catch (error) {
-        console.error(`Failed to auto-save to ${storageType}:`, error);
-
-        // If Firebase save fails, fall back to localStorage
-        if (useFirebase && firebaseReady) {
-          console.warn('Firebase save failed, falling back to localStorage');
-          setUseFirebase(false);
-          try {
-            await localSessionService.saveTodaysSession(patients);
-            console.log('Session saved to localStorage fallback');
-          } catch (localError) {
-            console.error('localStorage fallback save also failed:', localError);
-          }
-        }
-      }
-    };
-
-    // Save immediately when patients change
-    const timeoutId = setTimeout(saveSession, 2000); // Debounce saves by 2 seconds
-
-    return () => clearTimeout(timeoutId);
-  }, [patients, persistenceEnabled, isLoading, storageService, storageType, useFirebase, firebaseReady, isAuthenticated, auth0Loading, firebaseAuthReady]);
 
   // Set up an interval to force re-renders and periodic saves
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | undefined;
-    let saveCounter = 0;
 
     const tick = () => {
       setTickCounter(prev => prev + 1);
-      saveCounter++;
-
-      // Periodic save every 5 minutes during real time mode
-      // Since tick runs every minute in real time, save every 5 ticks
-      // Save if we have any patients, regardless of their source
-      if (!timeMode.simulated && saveCounter >= 5 && persistenceEnabled && patients.length > 0) {
-        saveCounter = 0; // Reset counter
-
-        // Handle both sync (localStorage) and async (Firebase) saves
-        const handlePeriodicSave = async () => {
-          try {
-            await storageService.saveTodaysSession(patients);
-            console.log(`Periodic save to ${storageType} successful`);
-          } catch (error) {
-            console.error(`Periodic save to ${storageType} failed:`, error);
-
-            // If Firebase fails, fall back to localStorage
-            if (useFirebase && firebaseReady) {
-              console.warn('Firebase periodic save failed, falling back to localStorage');
-              setUseFirebase(false);
-              try {
-                await localSessionService.saveTodaysSession(patients);
-                console.log('Periodic save to localStorage fallback successful');
-              } catch (localError) {
-                console.error('localStorage fallback periodic save also failed:', localError);
-              }
-            }
-          }
-        };
-
-        // For async Firebase saves, handle the promise properly
-        if (useFirebase) {
-          handlePeriodicSave();
-        } else {
-          // localStorage is synchronous
-          try {
-            storageService.saveTodaysSession(patients);
-            console.log(`Periodic save to ${storageType} successful`);
-          } catch (error) {
-            console.error(`Periodic save to ${storageType} failed:`, error);
-          }
-        }
-      }
     };
 
     if (timeMode.simulated) {
@@ -278,11 +140,10 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         clearInterval(intervalId);
       }
     };
-  }, [timeMode.simulated, persistenceEnabled, patients, storageService, storageType, useFirebase, firebaseReady, isAuthenticated, auth0Loading, firebaseAuthReady]);
+  }, [timeMode.simulated]);
 
   const clearPatients = () => {
-    setPatients([]);
-    setHasRealData(false);
+    updatePatients([]);
   };
 
   const addPatient = (patientData: Omit<Patient, 'id'>) => {
@@ -291,72 +152,58 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
       id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     };
 
-    setPatients(prev => [...prev, newPatient]);
-    setHasRealData(true); // Mark as real data when user adds patients
+    addPatientToQuery(newPatient);
   };
 
   const deletePatient = (id: string) => {
-    setPatients(prev => prev.filter(patient => patient.id !== id));
+    removePatientFromQuery(id);
   };
 
   // Load mock data manually (for development/testing)
   const loadMockData = () => {
-    setPatients(mockPatients);
-    setHasRealData(false); // This is mock data, don't auto-save it
+    updatePatients(mockPatients);
     console.log('Mock data loaded for development/testing');
   };
 
   const updatePatientStatus = (id: string, status: PatientApptStatus) => {
     const now = getCurrentTime().toISOString();
+    const patient = patients.find(p => p.id === id);
+    
+    if (!patient) return;
 
-    setPatients(prev => 
-      prev.map(patient => {
-        if (patient.id === id) {
-          const updatedPatient = { ...patient, status };
+    const updatedData: Partial<Patient> = { 
+      status: normalizeStatus(status) as PatientApptStatus 
+    };
 
-          updatedPatient.status = normalizeStatus(status) as PatientApptStatus;
+    if (
+      updatedData.status === 'arrived' ||
+      updatedData.status === 'Arrived' ||
+      updatedData.status === 'Checked In'
+    ) {
+      updatedData.checkInTime = patient.checkInTime || now;
+    }
 
-          if (
-            updatedPatient.status === 'arrived' ||
-            updatedPatient.status === 'Arrived' ||
-            updatedPatient.status === 'Checked In'
-          ) {
-            updatedPatient.checkInTime = updatedPatient.checkInTime || now;
-          }
+    if (
+      updatedData.status === 'With Doctor' ||
+      updatedData.status === 'seen-by-md' ||
+      updatedData.status === 'Seen by MD'
+    ) {
+      updatedData.withDoctorTime = patient.withDoctorTime || now;
+    }
 
-          if (
-            updatedPatient.status === 'With Doctor' ||
-            updatedPatient.status === 'seen-by-md' ||
-            updatedPatient.status === 'Seen by MD'
-          ) {
-            updatedPatient.withDoctorTime = updatedPatient.withDoctorTime || now;
-          }
+    if (updatedData.status === 'completed' || updatedData.status === 'Checked Out') {
+      updatedData.completedTime = patient.completedTime || now;
+    }
 
-          if (updatedPatient.status === 'completed' || updatedPatient.status === 'Checked Out') {
-            updatedPatient.completedTime = updatedPatient.completedTime || now;
-          }
-
-          return updatedPatient;
-        }
-        return patient;
-      })
-    );
+    updatePatientInQuery(id, updatedData);
   };
 
   const assignRoom = (id: string, room: string) => {
-    setPatients(prev => 
-      prev.map(patient => 
-        patient.id === id ? { ...patient, room } : patient
-      )
-    );
+    updatePatientInQuery(id, { room });
   };
 
   const updateCheckInTime = (id: string, checkInTime: string) => {
-    setPatients(prev => 
-      prev.map(patient => 
-        patient.id === id ? { ...patient, checkInTime } : patient
-      )
-    );
+    updatePatientInQuery(id, { checkInTime });
   };
 
   const getPatientsByStatus = (status: PatientApptStatus): Patient[] => {
