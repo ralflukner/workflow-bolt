@@ -291,6 +291,21 @@ export class AuthBridge {
       const validation = this.validateAuth0Token(auth0Token);
       debugInfo.auth0TokenExpiry = validation.expiry;
       
+      // Debug: Log token audience for troubleshooting
+      try {
+        const parts = auth0Token.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+          this.logDebug('🔍 Token audience debug', { 
+            audience: payload.aud, 
+            issuer: payload.iss,
+            expectedAudience: 'https://api.patientflow.com'
+          });
+        }
+      } catch (e) {
+        this.logDebug('⚠️ Could not decode token for debugging', e);
+      }
+      
       if (!validation.valid) {
         throw new Error(`Invalid Auth0 token: ${validation.error}`);
       }
@@ -491,9 +506,13 @@ export const useFirebaseAuth = () => {
       authBridge.logDebug('🔐 Ensuring HIPAA-compliant authentication for patient data access');
       
       try {
-        // Try silent token refresh first
+        // Try silent token refresh first - force cache off to get token with audience
         auth0Token = await getAccessTokenSilently({
-          cacheMode: forceRefresh ? 'off' : 'on',
+          authorizationParams: {
+            audience: 'https://api.patientflow.com',
+            scope: 'openid profile email offline_access'
+          },
+          cacheMode: 'off', // Force fresh token with audience
           detailedResponse: false
         });
       } catch (silentError) {
@@ -501,7 +520,12 @@ export const useFirebaseAuth = () => {
         
         // Fallback to popup if silent refresh fails
         try {
-          const result = await getAccessTokenWithPopup();
+          const result = await getAccessTokenWithPopup({
+            authorizationParams: {
+              audience: 'https://api.patientflow.com',
+              scope: 'openid profile email offline_access'
+            }
+          });
           auth0Token = result as string;
         } catch (popupError) {
           authBridge.logDebug('❌ Both silent and popup token refresh failed', popupError);

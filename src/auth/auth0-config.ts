@@ -14,7 +14,7 @@ export function getAuth0Config(): Auth0Cfg {
   const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
   const redirectUri = import.meta.env.VITE_AUTH0_REDIRECT_URI;
   const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
-  const scope = import.meta.env.VITE_AUTH0_SCOPE || 'openid profile email';
+  const scope = import.meta.env.VITE_AUTH0_SCOPE || 'openid profile email offline_access';
 
   if (!domain || !clientId || !redirectUri) {
     throw new Error(
