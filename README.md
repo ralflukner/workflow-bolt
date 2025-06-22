@@ -126,7 +126,7 @@ The main service class for interacting with the Tebra EHR system.
 
 - `getAllPatients()`: Gets all patients in the system
 
-- `createAppointment(appointmentData: Partial<TebraAppointment>)`: Creates a new appointmen
+- `createAppointment(appointmentData: Partial<TebraAppointment>)`: Creates a new appointment
 
 - `updateAppointment(appointmentData: Partial<TebraAppointment>)`: Updates an existing appointmen
 
