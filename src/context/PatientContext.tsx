@@ -1,11 +1,11 @@
-import React, { useState, useEffect, ReactNode } from 'react';
+import React, { useState, useEffect, ReactNode, useContext } from 'react';
 import { Patient, PatientApptStatus, Metrics } from '../types';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { mockPatients } from '../data/mockData';
 import { PatientContext } from './PatientContextDef';
 import { dailySessionService } from '../services/firebase/dailySessionService';
 import { localSessionService } from '../services/localStorage/localSessionService';
-import { isFirebaseConfigured } from '../config/firebase';
+import { FirebaseContext } from '../contexts/firebase';
 
 interface PatientProviderProps {
   children: ReactNode;
@@ -63,7 +63,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   const [persistenceEnabled, setPersistenceEnabled] = useState(true);
   const [hasRealData, setHasRealData] = useState(false);
   const { getCurrentTime, timeMode } = useTimeContext();
-  const firebaseReady = isFirebaseConfigured();
+  const { isInitialized: firebaseReady } = useContext(FirebaseContext);
   const [useFirebase, setUseFirebase] = useState(firebaseReady);
   const storageService = useFirebase ? dailySessionService : localSessionService;
   const storageType = useFirebase ? 'Firebase' : 'LocalStorage';
@@ -108,7 +108,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         } else {
           setPatients([]);
           setHasRealData(false);
-          if (!isFirebaseConfigured()) {
+          if (!firebaseReady) {
             setPersistenceEnabled(false);
             console.warn('localStorage persistence disabled due to data corruption');
           }

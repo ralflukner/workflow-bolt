@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [
     react(),
     nodePolyfills({
-      include: ['events', 'fs', 'crypto', 'stream', 'path', 'os', 'zlib', 'http', 'https', 'string_decoder', 'vm'],
+      include: ['events', 'fs', 'crypto', 'stream', 'path', 'os', 'zlib', 'http', 'https', 'string_decoder', 'vm', 'util'],
       globals: {
         Buffer: true,
         global: true,
@@ -30,7 +30,8 @@ export default defineConfig({
       'node:path': 'path-browserify',
       'node:string_decoder': 'string_decoder',
       '@google-cloud/secret-manager': path.resolve(__dirname, 'src/mocks/secretManagerBrowserStub.ts'),
-      'node:stream/web': 'node-stdlib-browser/mock/empty'
+      'node:stream/web': 'node-stdlib-browser/mock/empty',
+      'util': 'util'
     }
   },
   build: {
