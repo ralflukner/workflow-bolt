@@ -374,6 +374,14 @@ class TebraProxyClient {
     }
     return this.makeRequest('getPatients', { patientIds });
   }
+
+  async getPatientById(patientId) {
+    if (!patientId) {
+      throw new Error('patientId is required');
+    }
+    this.logger.info(`Getting patient by ID: ${patientId}`);
+    return this.makeRequest('getPatientById', { patientId });
+  }
 }
 
 // Create singleton instance

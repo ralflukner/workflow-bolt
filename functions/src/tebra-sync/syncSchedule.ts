@@ -16,11 +16,17 @@ export const syncSchedule = async (
   dateOverride?: string,
   uid = 'system',
 ): Promise<number> => {
-  const today = dateOverride ??
-    new Date(now().toLocaleString('en-US', { timeZone: timezone }))
-      .toISOString().split('T')[0];
+  const today = dateOverride ?? (() => {
+    // Get current date in the specified timezone properly
+    const currentTime = now();
+    const year = new Intl.DateTimeFormat('en', { year: 'numeric', timeZone: timezone }).format(currentTime);
+    const month = new Intl.DateTimeFormat('en', { month: '2-digit', timeZone: timezone }).format(currentTime);
+    const day = new Intl.DateTimeFormat('en', { day: '2-digit', timeZone: timezone }).format(currentTime);
+    return `${year}-${month}-${day}`;
+  })();
 
-  logger.info('Syncing appointments for', today);
+  logger.info('Syncing appointments for date:', today);
+  logger.info('Timezone used:', timezone);
 
   const appointments = await tebra.getAppointments(today, today);
   logger.info('Fetched appointments', appointments.length);

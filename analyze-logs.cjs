@@ -378,9 +378,19 @@ if (require.main === module) {
 
   args.forEach(arg => {
     if (arg.startsWith('--days=')) {
-      options.days = parseInt(arg.split('=')[1]);
+      const days = parseInt(arg.split('=')[1]);
+      if (isNaN(days) || days < 1 || days > 365) {
+        console.error('❌ Invalid days value. Must be between 1 and 365.');
+        process.exit(1);
+      }
+      options.days = days;
     } else if (arg.startsWith('--service=')) {
-      options.service = arg.split('=')[1];
+      const service = arg.split('=')[1];
+      if (!service || service.length === 0) {
+        console.error('❌ Invalid service name.');
+        process.exit(1);
+      }
+      options.service = service;
     }
   });
 
