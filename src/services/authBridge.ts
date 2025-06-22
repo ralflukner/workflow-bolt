@@ -291,15 +291,21 @@ export class AuthBridge {
       const validation = this.validateAuth0Token(auth0Token);
       debugInfo.auth0TokenExpiry = validation.expiry;
       
-      // Debug: Log token audience for troubleshooting
+      // Debug: Log token details for troubleshooting
       try {
         const parts = auth0Token.split('.');
         if (parts.length === 3) {
+          const header = JSON.parse(atob(parts[0].replace(/-/g, '+').replace(/_/g, '/')));
           const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-          this.logDebug('🔍 Token audience debug', { 
-            audience: payload.aud, 
+          this.logDebug('🔍 JWT Token Debug', { 
+            algorithm: header.alg,
+            audience: payload.aud,
             issuer: payload.iss,
-            expectedAudience: 'https://api.patientflow.com'
+            subject: payload.sub,
+            expiry: new Date(payload.exp * 1000).toISOString(),
+            scopes: payload.scope,
+            expectedAudience: 'https://api.patientflow.com',
+            tokenLength: auth0Token.length
           });
         }
       } catch (e) {
@@ -326,7 +332,9 @@ export class AuthBridge {
       
       // Exchange token with retry logic
       const result = await this.withRetry(async () => {
-        return await this.exchangeTokenFunction!({ auth0Token });
+        return await this.exchangeTokenFunction!({ 
+          auth0Token
+        });
       }, 'Token exchange');
 
       const response = result.data;
@@ -507,6 +515,7 @@ export const useFirebaseAuth = () => {
       
       try {
         // Try silent token refresh first - force cache off to get token with audience
+        authBridge.logDebug('🔐 Requesting Auth0 token with audience: https://api.patientflow.com');
         auth0Token = await getAccessTokenSilently({
           authorizationParams: {
             audience: 'https://api.patientflow.com',
@@ -515,6 +524,7 @@ export const useFirebaseAuth = () => {
           cacheMode: 'off', // Force fresh token with audience
           detailedResponse: false
         });
+        authBridge.logDebug('✅ Auth0 token acquired silently');
       } catch (silentError) {
         authBridge.logDebug('⚠️ Silent token refresh failed, trying popup', silentError);
         
@@ -527,6 +537,7 @@ export const useFirebaseAuth = () => {
             }
           });
           auth0Token = result as string;
+          authBridge.logDebug('✅ Auth0 token acquired via popup');
         } catch (popupError) {
           authBridge.logDebug('❌ Both silent and popup token refresh failed', popupError);
           throw popupError; // Re-throw the original popupError to be caught by the outer try-catch

@@ -112,7 +112,10 @@ async function verifyAuth0Jwt(token) {
         auth0ClientSecret,
         {
           algorithms: ['HS256'],
-          audience: auth0Audience,
+          audience: [
+            auth0Audience, // Primary API audience
+            `https://${auth0Domain}/userinfo` // Auth0 userinfo endpoint
+          ],
           issuer: `https://${auth0Domain}/`
         },
         (err, decoded) => (err ? reject(err) : resolve(decoded))
@@ -133,10 +136,19 @@ async function verifyAuth0Jwt(token) {
       getSigningKey,
       {
         algorithms: ['RS256'],
-        audience: auth0Audience,
+        audience: [
+          auth0Audience, // Primary API audience
+          `https://${auth0Domain}/userinfo` // Auth0 userinfo endpoint
+        ],
         issuer: `https://${auth0Domain}/`
       },
-      (err, decoded) => (err ? reject(err) : resolve(decoded))
+      (err, decoded) => {
+        if (err) {
+          console.error('JWT_VERIFY_ERROR', err);
+          return reject(err);
+        }
+        resolve(decoded);
+      }
     );
   });
 }
@@ -243,12 +255,40 @@ exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
     );
   }
 
+  // Debug: Log token format for troubleshooting
+  try {
+    const parts = auth0Token.split('.');
+    if (parts.length === 3) {
+      const header = JSON.parse(Buffer.from(parts[0], 'base64').toString('utf-8'));
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'));
+      console.log('JWT_DEBUG:', JSON.stringify({
+        algorithm: header.alg,
+        audience: payload.aud,
+        issuer: payload.iss,
+        subject: payload.sub,
+        expiry: new Date(payload.exp * 1000).toISOString(),
+        expectedAudience: [
+          await initAuth0Config().then(() => auth0Audience),
+          await initAuth0Config().then(() => `https://${auth0Domain}/userinfo`)
+        ]
+      }));
+    }
+  } catch (debugError) {
+    console.error('JWT_DEBUG_ERROR:', debugError);
+  }
+
   let decoded;
   try {
     decoded = await verifyAuth0Jwt(auth0Token);   // ① Full JWT verification
   } catch (err) {
-    console.error('Invalid Auth0 JWT', err);
-    throw new functions.https.HttpsError('unauthenticated', 'JWT verification failed');
+    console.error('JWT_VERIFICATION_FAILED:', JSON.stringify({
+      error: err.message,
+      code: err.code,
+      stack: err.stack,
+      tokenLength: auth0Token?.length,
+      tokenPrefix: auth0Token?.substring(0, 50)
+    }));
+    throw new functions.https.HttpsError('unauthenticated', `JWT verification failed: ${err.message}`);
   }
 
   // ② Derive a stable, safe Firebase UID

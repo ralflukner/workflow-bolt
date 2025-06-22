@@ -27,7 +27,7 @@ export function getAuth0Config(): Auth0Cfg {
     clientId,
     authorizationParams: {
       redirect_uri: redirectUri,
-      ...(audience && { audience }),
+      audience: audience || 'https://api.patientflow.com', // Ensure audience is always set
       scope,
     },
   };
