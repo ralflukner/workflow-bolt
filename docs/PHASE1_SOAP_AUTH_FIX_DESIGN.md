@@ -472,11 +472,7 @@ Unit test adjustments: assert that the generated XML contains `<PracticeName>` a
  | Production deploy                       | DevOps     | 0.25d|
  | Total                                   |            | 1.75d|
 
- ---
- _Phase 1 design authored 2025-06-23_
-+
-+---
-+
+ *Phase 1 design authored 2025-06-23*
 
 ## 11  Implementation Status (Updated 2025-06-23)
 

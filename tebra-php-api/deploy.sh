@@ -30,8 +30,7 @@ gcloud run deploy $SERVICE_NAME \
   --cpu 1 \
   --timeout 300 \
   --max-instances 10 \
-  --set-env-vars GOOGLE_CLOUD_PROJECT=$PROJECT_ID \
-  --service-account tebra-php-api@$PROJECT_ID.iam.gserviceaccount.com
+  --set-env-vars GOOGLE_CLOUD_PROJECT=$PROJECT_ID
 
 # Get the service URL
 SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region $REGION --format 'value(status.url)')

@@ -18,6 +18,9 @@
     "test:real-api": "RUN_REAL_API_TESTS=true jest --config jest.config.cjs --selectProjects real-api",
     "test:all": "RUN_INTEGRATION_TESTS=true RUN_REAL_API_TESTS=true jest --config jest.config.cjs",
     "test:jest": "jest --forceExit --detectOpenHandles --verbose --bail --testTimeout=10000",
+    "test:tebra-integration": "RUN_INTEGRATION_TESTS=true jest --config jest.config.cjs --testNamePattern='Tebra.*Integration'",
+    "test:tebra-real": "RUN_REAL_API_TESTS=true jest --config jest.config.cjs --testNamePattern='Tebra.*Real'",
+    "test:tebra-all": "RUN_INTEGRATION_TESTS=true RUN_REAL_API_TESTS=true jest --config jest.config.cjs --testNamePattern='Tebra'",
     "diagnose": "node scripts/tebra-diagnose.mjs"
   },
   "dependencies": {
