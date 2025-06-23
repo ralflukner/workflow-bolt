@@ -35,7 +35,7 @@ class ConfigService {
       this.remoteConfig.defaultConfig = {
         useTebraPhpApi: 'true',
         // IMPORTANT: Use Firebase Functions as HIPAA-compliant proxy to PHP
-        tebraPhpApiUrl: 'https://us-central1-luknerlumina-firebase.cloudfunctions.net/api/api/tebra',
+        tebraPhpApiUrl: 'https://api-xccvzgogwa-uc.a.run.app/api/tebra',
       };
     }
   }
@@ -61,7 +61,7 @@ class ConfigService {
       useTebraPhpApi: true, // ALWAYS true - Node.js is not supported for Tebra
       // IMPORTANT: Use Firebase Functions as HIPAA-compliant proxy to PHP Cloud Run
       // This ensures proper authentication and HIPAA compliance
-      tebraPhpApiUrl: 'https://us-central1-luknerlumina-firebase.cloudfunctions.net/api/api/tebra',
+      tebraPhpApiUrl: 'https://api-xccvzgogwa-uc.a.run.app/api/tebra',
       // No API key needed for Firebase Functions (uses Firebase Auth)
       tebraInternalApiKey: undefined,
     };

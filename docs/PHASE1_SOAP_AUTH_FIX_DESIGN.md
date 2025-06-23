@@ -1074,6 +1074,18 @@ export RUN_REAL_API_TESTS=true
 | Real API Tests | < 10s | 30s |
 
 **TESTING STATUS**: ✅ **Unit Tests Implemented & Passing**  
+**CRITICAL FIX APPLIED**: ✅ **AuthBridge Method Name Corrected**
+
+**BUG FIXES APPLIED**:
+1. ✅ Fixed `getFirebaseToken()` → `getFirebaseIdToken()` method name mismatch
+   - Updated tebraFirebaseApi.ts and all test files
+   - Unit tests still passing (16/16) after fix
+
+2. ✅ **CRITICAL**: Fixed double `/api/api/` URL configuration bug
+   - **Issue**: Frontend configured with `/api/api/tebra` (invalid endpoint)
+   - **Fix**: Corrected to `/api/tebra` in configService.ts  
+   - **Impact**: Requests now route to correct Firebase Functions endpoint
+
 **NEXT ACTIONS**:
 
 1. Execute integration tests with Auth0 configuration
