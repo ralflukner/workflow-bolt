@@ -176,7 +176,41 @@ const limiter = rateLimit({
 
 app.use('/api', limiter);
 
-// Health check endpoint
+// HIPAA SECURITY: Authentication middleware for ALL API routes
+app.use('/api/*', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Authentication required - Missing or invalid Authorization header' 
+      });
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+    
+    // Verify Firebase ID token
+    try {
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      req.user = decodedToken;
+      next();
+    } catch (firebaseError) {
+      console.error('Firebase token verification failed:', firebaseError.message);
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid Firebase authentication token' 
+      });
+    }
+  } catch (error) {
+    console.error('Authentication middleware error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Authentication service unavailable' 
+    });
+  }
+});
+
+// Health check endpoint (NO AUTHENTICATION - safe)
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
@@ -185,19 +219,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Test endpoint with different HTTP methods
-app.get('/test', (req, res) => {
-  res.json({ message: 'GET request successful', method: 'GET' });
-});
-
-app.post('/test', (req, res) => {
-  const body = req.body;
-  res.json({ 
-    message: 'POST request successful', 
-    method: 'POST',
-    receivedData: body 
-  });
-});
+// REMOVED: Test endpoints for HIPAA security compliance
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -240,10 +262,24 @@ app.post('/api/tebra', async (req, res) => {
 const { getSecret } = require('./src/get-secret.js');
 exports.getSecret = getSecret;
 
-// Export public Firebase config endpoint
-const { getFirebaseConfig } = require('./src/get-firebase-config.js');
-exports.getFirebaseConfig = getFirebaseConfig;
+// Authenticated Firebase config endpoint (HIPAA Compliant)
+exports.getFirebaseConfig = onCall({ cors: true }, async (request) => {
+  // HIPAA Security: Require authentication
+  if (!request.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
+  }
 
+  // Return public Firebase configuration (safe for authenticated users)
+  return {
+    apiKey: process.env.FIREBASE_API_KEY || 'AIzaSyCIMBYxl3lMAPMAWOKzLjwItD_k-5Qbd-c',
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN || 'luknerlumina-firebase.firebaseapp.com',
+    projectId: process.env.FIREBASE_PROJECT_ID || 'luknerlumina-firebase',
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'luknerlumina-firebase.appspot.com',
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '623450773640',
+    appId: process.env.FIREBASE_APP_ID || '1:623450773640:web:9afd63d3ccbb1fcb6fe73d',
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID || 'G-W6TX8WRN2Z'
+  };
+});
 
 // Secure Auth0 token exchange function (HIPAA Compliant)
 exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {

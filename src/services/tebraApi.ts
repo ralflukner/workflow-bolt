@@ -1,30 +1,30 @@
 /**
  * Tebra API Service
- * Uses PHP API exclusively - Node.js is not supported for Tebra SOAP
+ * Routes through Firebase Functions for security and HIPAA compliance
  */
 
-import * as phpApi from './tebraPhpApiService';
+import * as firebaseApi from './tebraFirebaseApi';
 
-// Re-export all PHP API functions directly
-export const tebraTestConnection = phpApi.tebraTestConnection;
-export const tebraGetPatient = phpApi.tebraGetPatient;
-export const tebraSearchPatients = phpApi.tebraSearchPatients;
-export const tebraGetAppointments = phpApi.tebraGetAppointments;
-export const tebraGetProviders = phpApi.tebraGetProviders;
-export const tebraCreateAppointment = phpApi.tebraCreateAppointment;
-export const tebraUpdateAppointment = phpApi.tebraUpdateAppointment;
-export const tebraTestAppointments = phpApi.tebraTestAppointments;
-export const tebraSyncSchedule = phpApi.tebraSyncSchedule;
+// Re-export all Firebase Functions API functions
+export const tebraTestConnection = firebaseApi.tebraTestConnection;
+export const tebraGetPatient = firebaseApi.tebraGetPatient;
+export const tebraSearchPatients = firebaseApi.tebraSearchPatients;
+export const tebraGetAppointments = firebaseApi.tebraGetAppointments;
+export const tebraGetProviders = firebaseApi.tebraGetProviders;
+export const tebraCreateAppointment = firebaseApi.tebraCreateAppointment;
+export const tebraUpdateAppointment = firebaseApi.tebraUpdateAppointment;
+export const tebraTestAppointments = firebaseApi.tebraTestAppointments;
+export const tebraSyncSchedule = firebaseApi.tebraSyncSchedule;
 
 // Export configuration info
 export const getApiInfo = () => ({
-  usingPhpApi: true,
-  apiType: 'PHP Direct API (Node.js not supported)',
-  message: 'Tebra SOAP API only works reliably with PHP',
+  usingFirebaseProxy: true,
+  apiType: 'Firebase Functions -> PHP Cloud Run',
+  message: 'Using Firebase Functions as security proxy to PHP Tebra API',
 });
 
-// Log that we're using PHP API
-console.log('🔌 Tebra API: Using PHP Direct API (Node.js not supported for SOAP)');
+// Log that we're using Firebase proxy
+console.log('🔌 Tebra API: Using Firebase Functions proxy (designed architecture)');
 
 export default {
   testConnection: tebraTestConnection,

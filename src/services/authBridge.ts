@@ -440,6 +440,32 @@ export class AuthBridge {
   }
 
   /**
+   * Gets the current Firebase user's ID token for API authorization
+   * @param {boolean} forceRefresh - Whether to force refresh the token
+   * @returns {Promise<string>} The Firebase ID token
+   * @throws {Error} If user is not authenticated or token retrieval fails
+   * @example
+   * ```typescript
+   * const token = await authBridge.getFirebaseIdToken();
+   * const headers = { 'Authorization': `Bearer ${token}` };
+   * ```
+   */
+  async getFirebaseIdToken(forceRefresh = false): Promise<string> {
+    if (!auth?.currentUser) {
+      throw new Error('No authenticated Firebase user - please sign in first');
+    }
+
+    try {
+      const idToken = await auth.currentUser.getIdToken(forceRefresh);
+      this.logDebug('✅ Firebase ID token retrieved for API authorization');
+      return idToken;
+    } catch (error) {
+      this.logDebug('❌ Failed to get Firebase ID token', error);
+      throw new Error('Failed to get Firebase ID token for API authorization');
+    }
+  }
+
+  /**
    * Performs a health check of the AuthBridge
    * @returns {Promise<Object>} Health check results
    * @property {string} status - 'healthy' | 'degraded' | 'unhealthy'
@@ -521,7 +547,7 @@ export const useFirebaseAuth = () => {
             audience: 'https://api.patientflow.com',
             scope: 'openid profile email offline_access'
           },
-          cacheMode: 'off', // Force fresh token with audience
+          cacheMode: forceRefresh ? 'off' : 'on', // Use forceRefresh parameter
           detailedResponse: false
         });
         authBridge.logDebug('✅ Auth0 token acquired silently');
@@ -567,12 +593,14 @@ export const useFirebaseAuth = () => {
   const getDebugInfo = () => authBridge.getDebugInfo();
   const clearCache = () => authBridge.clearTokenCache();
   const healthCheck = () => authBridge.healthCheck();
+  const getFirebaseIdToken = (forceRefresh = false) => authBridge.getFirebaseIdToken(forceRefresh);
 
   return { 
     ensureFirebaseAuth, 
     refreshToken, 
     getDebugInfo, 
     clearCache, 
-    healthCheck 
+    healthCheck,
+    getFirebaseIdToken 
   };
 }; 

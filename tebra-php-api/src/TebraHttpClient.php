@@ -307,7 +307,7 @@ class TebraHttpClient {
         $detailedMessage = $e->getMessage();
         
         if (strpos($e->getMessage(), 'ValidationHelper') !== false) {
-            $detailedMessage = "Tebra server bug in {$method}: ValidationHelper.ValidateDateTimeFields null reference. This is a known Tebra issue (ticket #112623).";
+            $detailedMessage = "Tebra API error in {$method}: ValidationHelper.ValidateDateTimeFields null reference.";
         } elseif (strpos($e->getMessage(), 'Could not connect to host') !== false) {
             $detailedMessage = "Cannot connect to Tebra SOAP API at {$this->wsdlUrl}. Network or firewall issue.";
         } elseif (strpos($e->getMessage(), 'Unauthorized') !== false) {
@@ -380,34 +380,48 @@ class TebraHttpClient {
      */
     public function getAppointments($fromDate = null, $toDate = null) {
         $startTime = microtime(true);
-        $dateFrom = $fromDate ?: date('n/j/Y');
-        $dateTo = $toDate ?: date('n/j/Y');
+        
+        // Convert dates to proper ISO 8601 format for Tebra
+        $startDateTime = new \DateTime($fromDate ?: 'today', new \DateTimeZone('America/Chicago'));
+        $startDateTime->setTime(0, 0, 0);
+        $startDateTime->setTimezone(new \DateTimeZone('UTC'));
+        $startDateIso = $startDateTime->format('Y-m-d\TH:i:s\Z');
+        
+        $endDateTime = new \DateTime($toDate ?: 'today', new \DateTimeZone('America/Chicago'));
+        $endDateTime->setTime(23, 59, 59);  // End of day
+        $endDateTime->setTimezone(new \DateTimeZone('UTC'));
+        $endDateIso = $endDateTime->format('Y-m-d\TH:i:s\Z');
         
         try {
-            // Use correct structure with Filter section as per Tebra XML
+            // CORRECTED: Use proper Tebra SOAP structure as per support documentation
             $request = array (
                 'RequestHeader' => array(
-                    'User' => $this->username, 
+                    'CustomerKey' => $this->customerKey,  // Alphabetical order as per WSDL
                     'Password' => $this->password, 
-                    'CustomerKey' => $this->customerKey
+                    'User' => $this->username
                 ),
-                'Fields' => array(), // Empty to get all fields
+                'Fields' => new \stdClass(),  // Empty object as required by WSDL
                 'Filter' => array(
-                    'StartDate' => $dateFrom,
-                    'EndDate' => $dateTo
+                    'EndDate' => $endDateIso,           // Alphabetical order
+                    'PracticeName' => 'Lukner Medical Clinic',  // CRITICAL: Required for filtering
+                    'StartDate' => $startDateIso
                 )
             );
 
             $params = array('request' => $request);
             
-            // Log the request attempt
+            // HIPAA-Safe: Log only structural information, no PHI
+            error_log("GetAppointments request initiated with corrected SOAP structure");
+            
+            // HIPAA-Safe: Log only technical metrics, no dates or PHI
             $this->logRequest('GetAppointments', [
-                'fromDate' => $dateFrom,
-                'toDate' => $dateTo,
-                'action' => 'Attempted to get appointments for ' . $dateFrom . ' to ' . $dateTo
+                'action' => 'Using corrected SOAP structure with Filter section'
             ], false, null, null);
             
             $response = $this->client->GetAppointments($params)->GetAppointmentsResult;
+            
+            // HIPAA-Safe: Log only success/failure, not PHI content
+            error_log("SOAP GetAppointments request completed successfully");
             
             // Check for API errors
             if (isset($response->ErrorResponse) && $response->ErrorResponse->IsError) {
@@ -416,11 +430,9 @@ class TebraHttpClient {
             
             $duration = round((microtime(true) - $startTime) * 1000, 2);
             
-            // Log success
+            // HIPAA-Safe: Log success without dates
             $this->logRequest('GetAppointments', [
-                'fromDate' => $dateFrom,
-                'toDate' => $dateTo,
-                'action' => 'Successfully retrieved appointments for ' . $dateFrom . ' to ' . $dateTo
+                'action' => 'Successfully retrieved appointments using corrected SOAP structure'
             ], true, null, $duration);
             
             return [
@@ -869,9 +881,9 @@ class TebraHttpClient {
         
         try {
             // Convert date to format expected by Tebra API (M/d/Y)
-            $dateObj = DateTime::createFromFormat('Y-m-d', $date);
+            $dateObj = \DateTime::createFromFormat('Y-m-d', $date);
             if (!$dateObj) {
-                throw new InvalidArgumentException('Invalid date format. Use Y-m-d format');
+                throw new \InvalidArgumentException('Invalid date format. Use Y-m-d format');
             }
             
             $tebraDate = $dateObj->format('n/j/Y');
@@ -882,7 +894,7 @@ class TebraHttpClient {
             $appointmentsResponse = $this->getAppointments($tebraDate, $tebraDate);
             
             if (!$appointmentsResponse['success']) {
-                throw new Exception('Failed to retrieve appointments: ' . $appointmentsResponse['message']);
+                throw new \Exception('Failed to retrieve appointments: ' . $appointmentsResponse['message']);
             }
             
             // Extract appointment data

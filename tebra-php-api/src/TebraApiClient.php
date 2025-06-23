@@ -9,13 +9,15 @@ class TebraApiClient {
     private $username;
     private $password;
     private $customerKey;
+    private $practiceId;
     private $soapClient;
     
-    public function __construct($wsdlUrl, $username, $password, $customerKey = null) {
+    public function __construct($wsdlUrl, $username, $password, $customerKey = null, $practiceId = null) {
         $this->wsdlUrl = $wsdlUrl;
         $this->username = $username;
         $this->password = $password;
         $this->customerKey = $customerKey;
+        $this->practiceId = $practiceId;
         
         $this->initializeSoapClient();
     }
@@ -42,9 +44,9 @@ class TebraApiClient {
                         'method' => 'GET'
                     ],
                     'ssl' => [
-                        'verify_peer' => false,
-                        'verify_peer_name' => false,
-                        'allow_self_signed' => true
+                        'verify_peer' => true,
+                        'verify_peer_name' => true,
+                        'allow_self_signed' => false
                     ]
                 ])
             ];
@@ -82,9 +84,27 @@ class TebraApiClient {
     }
     
     /**
+     * Convert YYYY-MM-DD (clinic local date) to ISO-8601 UTC format required by Tebra.
+     */
+    private function formatTebraDate(string $date): string {
+        try {
+            // Clinic operates in America/Chicago; convert start-of-day to UTC
+            $dt = new DateTime($date, new DateTimeZone('America/Chicago'));
+            $dt->setTime(0, 0, 0);
+            $dt->setTimezone(new DateTimeZone('UTC'));
+            return $dt->format('Y-m-d\TH:i:s\Z');
+        } catch (Exception $e) {
+            throw new InvalidArgumentException("Invalid date format provided to getAppointments: {$date}");
+        }
+    }
+    
+    /**
      * Get appointments for a date range
      */
     public function getAppointments($fromDate, $toDate): array {
+        $fromDateIso = $this->formatTebraDate($fromDate);
+        $toDateIso   = $this->formatTebraDate($toDate);
+        
         try {
             $params = [
                 'request' => [
@@ -93,12 +113,13 @@ class TebraApiClient {
                         'Password' => $this->password,
                         'CustomerKey' => $this->customerKey
                     ],
-                    'FromDate' => $fromDate,
-                    'ToDate' => $toDate
+                    'PracticeID' => $this->practiceId ?: 67149,  // CRITICAL: Practice ID required for appointment queries
+                    'FromDate' => $fromDateIso,
+                    'ToDate' => $toDateIso
                 ]
             ];
             
-            $response = $this->soapClient->__call('GetAppointments', $params);
+            $response = $this->soapClient->__call('GetAppointments', [$params]);
             
             return [
                 'success' => true,

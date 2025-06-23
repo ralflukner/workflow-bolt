@@ -5,6 +5,7 @@
 **Authors**: Claude Code Assistant  
 
 ## Summary
+
 This document contains debugging information for Auth0 token exchange with Firebase Functions, specifically resolving JWT verification failures.
 
 ## Pre-flight Checklist
@@ -23,9 +24,11 @@ Before debugging Auth0 authentication issues, verify these prerequisites:
 ## Root Cause Analysis
 
 ### Problem
+
 JWT verification was failing with 401 errors during Auth0 token exchange with Firebase custom tokens.
 
 ### Root Cause
+
 **Configuration mismatches** between frontend and backend Auth0 settings:
 
 1. **Domain Mismatch**: Frontend and Firebase Functions were using different Auth0 domains
@@ -35,6 +38,7 @@ JWT verification was failing with 401 errors during Auth0 token exchange with Fi
 ## Architecture Overview
 
 ### Auth Flow
+
 ```
 Frontend (React) 
   ↓ Auth0 Login
@@ -49,6 +53,7 @@ Returns Firebase Token to Frontend
 ```
 
 ### Configuration Sources
+
 - **Frontend**: `.env` file with `VITE_*` variables
 - **Backend**: Google Secret Manager secrets (`AUTH0_DOMAIN`, `AUTH0_AUDIENCE`)
 
@@ -56,13 +61,14 @@ Returns Firebase Token to Frontend
 
 | Environment | Auth0 Domain | Audience | Redirect URI | Client ID |
 |-------------|--------------|----------|--------------|-----------|
-| Development | dev-uex7qzqmd8c4qnde.us.auth0.com | https://api.patientflow.com | http://localhost:5173 | I8ZHr1uCjPkO4ePgY6S421N9HQ0nnN7A |
+| Development | dev-uex7qzqmd8c4qnde.us.auth0.com | <https://api.patientflow.com> | <http://localhost:5173> | I8ZHr1uCjPkO4ePgY6S421N9HQ0nnN7A |
 | Staging     | *Not configured* | *Not configured* | *Not configured* | *Not configured* |
 | Production  | *Not configured* | *Not configured* | *Not configured* | *Not configured* |
 
 ## Working Configuration
 
 ### Frontend (.env)
+
 ```bash
 VITE_AUTH0_DOMAIN=dev-uex7qzqmd8c4qnde.us.auth0.com
 VITE_AUTH0_CLIENT_ID=I8ZHr1uCjPkO4ePgY6S421N9HQ0nnN7A
@@ -72,6 +78,7 @@ VITE_AUTH0_SCOPE="openid profile email offline_access"
 ```
 
 ### Backend (Google Secret Manager)
+
 ```bash
 AUTH0_DOMAIN=dev-uex7qzqmd8c4qnde.us.auth0.com
 AUTH0_AUDIENCE=https://api.patientflow.com
@@ -80,12 +87,14 @@ AUTH0_AUDIENCE=https://api.patientflow.com
 ## Key Files and Locations
 
 ### Frontend Configuration
+
 - **Main config**: `/.env`
 - **Auth0 setup**: `/src/auth/auth0-config.ts`
 - **Auth provider**: `/src/auth/AuthProvider.tsx`
 - **Token exchange**: `/src/services/authBridge.ts`
 
 ### Backend Configuration
+
 - **Firebase function**: `/functions/index.js`
 - **JWT verification**: Lines 92-154 in `/functions/index.js`
 - **Token exchange endpoint**: Lines 249-301 in `/functions/index.js`
@@ -93,6 +102,7 @@ AUTH0_AUDIENCE=https://api.patientflow.com
 ## Debugging Commands
 
 ### Check Secret Manager Values
+
 ```bash
 gcloud secrets versions access latest --secret="AUTH0_DOMAIN" --project="luknerlumina-firebase"
 gcloud secrets versions access latest --secret="AUTH0_AUDIENCE" --project="luknerlumina-firebase"
@@ -100,12 +110,14 @@ gcloud secrets list --project="luknerlumina-firebase" --filter="name:AUTH0"
 ```
 
 ### Update Secret Manager
+
 ```bash
 echo "dev-uex7qzqmd8c4qnde.us.auth0.com" | gcloud secrets versions add AUTH0_DOMAIN --data-file=- --project="luknerlumina-firebase"
 echo "https://api.patientflow.com" | gcloud secrets versions add AUTH0_AUDIENCE --data-file=- --project="luknerlumina-firebase"
 ```
 
 ### Deploy Functions
+
 ```bash
 firebase deploy --only functions:exchangeAuth0Token
 ```
@@ -113,8 +125,9 @@ firebase deploy --only functions:exchangeAuth0Token
 ## Manual JWT Verification
 
 ### Token Verification Tool
+
 1. Copy the Auth0 token from browser DevTools (Network tab → exchangeAuth0Token request)
-2. Visit https://jwt.io
+2. Visit <https://jwt.io>
 3. Paste token and verify:
    - `aud` (audience) matches your configured audience: `https://api.patientflow.com`
    - `iss` (issuer) matches: `https://dev-uex7qzqmd8c4qnde.us.auth0.com/`
@@ -123,6 +136,7 @@ firebase deploy --only functions:exchangeAuth0Token
    - `alg` (algorithm) is `RS256` or `HS256`
 
 ### Browser Console Debugging
+
 ```javascript
 // Available in development mode only
 await getToken(); // Gets current Auth0 token
@@ -137,7 +151,9 @@ console.log(await authBridge.healthCheck());
 ## Debug Logging
 
 ### Frontend (authBridge.ts)
+
 Enhanced logging shows:
+
 - Token acquisition process
 - JWT token details (algorithm, audience, issuer, expiry)
 - Token exchange attempts and failures
@@ -145,7 +161,9 @@ Enhanced logging shows:
 - Performance timing metrics
 
 ### Backend (Firebase Function)
+
 Enhanced logging shows:
+
 - JWT header and payload details
 - Expected vs actual audience values
 - Detailed error messages with stack traces
@@ -154,31 +172,39 @@ Enhanced logging shows:
 ## Common Issues and Solutions
 
 ### Issue 1: Domain Mismatch
+
 **Symptoms**: `Unknown host` errors, JWT verification failures
 **Solution**: Ensure both frontend and backend use the same valid Auth0 domain
 
 ### Issue 2: Audience Mismatch  
+
 **Symptoms**: JWT verification fails with audience errors
 **Solution**: Verify audience is configured in Auth0 dashboard and matches both frontend/backend
 
 ### Issue 3: Invalid Auth0 Domain
+
 **Symptoms**: `Unknown host: luknerclinic.us.auth0.com`
 **Solution**: Use valid Auth0 domain from Auth0 dashboard (e.g., `dev-uex7qzqmd8c4qnde.us.auth0.com`)
 
 ### Issue 4: Secret Manager Out of Sync
+
 **Symptoms**: Configuration looks correct but still fails
 **Solution**: Check and update Google Secret Manager values, then redeploy functions
 
 ### Issue 5: Newline Characters in Secret Manager ⭐ **CRITICAL**
+
 **Symptoms**: JWT verification fails with line break in error message like:
+
 ```
 JWT verification failed: jwt audience invalid. expected: https://api.patientflow.com
  or https://dev-uex7qzqmd8c4qnde.us.auth0.com
 /userinfo
 ```
+
 **Root Cause**: Secret Manager values contain trailing newline characters (`\n`)
 **Detection**: Use `gcloud secrets versions access latest --secret="AUTH0_DOMAIN" | xxd` to see hex dump
-**Solution**: 
+**Solution**:
+
 ```bash
 # Fix with echo -n (no trailing newline)
 echo -n "dev-uex7qzqmd8c4qnde.us.auth0.com" | gcloud secrets versions add AUTH0_DOMAIN --data-file=-
@@ -213,12 +239,14 @@ Is login failing?
 ## Enhanced Debug Features Added
 
 ### Frontend Debugging
+
 - JWT token parsing and validation
 - Detailed token acquisition logging
 - Cache hit/miss tracking
 - Performance timing metrics
 
 ### Backend Debugging
+
 - JWT header and payload inspection
 - Expected vs actual audience comparison
 - Detailed error reporting with context
@@ -252,6 +280,7 @@ If authentication breaks again:
 If authentication completely breaks and needs immediate rollback:
 
 ### 1. Rollback to Previous Secret Manager Versions
+
 ```bash
 # List previous versions
 gcloud secrets versions list AUTH0_DOMAIN --project="luknerlumina-firebase"
@@ -267,6 +296,7 @@ echo "https://api.patientflow.com" | gcloud secrets versions add AUTH0_AUDIENCE 
 ```
 
 ### 2. Rollback Firebase Functions
+
 ```bash
 # Delete current function
 firebase functions:delete exchangeAuth0Token
@@ -279,6 +309,7 @@ firebase deploy --only functions:exchangeAuth0Token
 ```
 
 ### 3. Rollback Frontend Configuration
+
 ```bash
 # Revert .env to last working state
 git checkout HEAD~1 .env
@@ -291,6 +322,7 @@ echo "VITE_AUTH0_AUDIENCE=https://api.patientflow.com" >> .env
 ## Security Best Practices
 
 ### ⚠️ Critical Security Considerations
+
 - **Never commit `.env` files to version control** - Use `.env.example` instead
 - **Rotate Auth0 client secrets regularly** (every 90 days minimum)
 - **Use least-privilege IAM roles** for Secret Manager access
@@ -300,6 +332,7 @@ echo "VITE_AUTH0_AUDIENCE=https://api.patientflow.com" >> .env
 - **Use HTTPS only** for all redirect URIs in production
 
 ### Secret Management
+
 ```bash
 # Grant minimal Secret Manager permissions
 gcloud projects add-iam-policy-binding luknerlumina-firebase \
@@ -313,6 +346,7 @@ gcloud logging read 'resource.type="secret_manager_secret"' --project="luknerlum
 ## Monitoring and Alerts
 
 ### Firebase Functions Monitoring
+
 ```bash
 # Set up error reporting alerts
 gcloud alpha monitoring policies create \
@@ -324,6 +358,7 @@ gcloud alpha monitoring policies create \
 ```
 
 ### Key Metrics to Monitor
+
 - **JWT verification failure rate** - Should be < 5%
 - **Token exchange latency** - Should be < 2s (P95)
 - **Secret Manager access failures** - Should be 0
@@ -331,7 +366,9 @@ gcloud alpha monitoring policies create \
 - **Firebase custom token creation failures** - Should be < 1%
 
 ### Auth0 Log Streaming
+
 Configure Auth0 to stream logs to your logging service:
+
 1. Go to Auth0 Dashboard → Monitoring → Logs → Streams
 2. Set up stream to Google Cloud Logging or your preferred service
 3. Monitor for failed login attempts and anomalies
@@ -339,12 +376,14 @@ Configure Auth0 to stream logs to your logging service:
 ## Performance Optimization
 
 ### Current Optimizations ✓
+
 - **JWKS key caching** - 10 minutes cache with 5 entry limit
 - **Token caching** - 55 minute cache to avoid re-exchange
 - **Rate limiting** - 100 requests per 15 minutes per IP
 - **Connection pooling** - Firebase Admin SDK handles this
 
 ### Additional Performance Tips
+
 ```bash
 # Set minimum instances to avoid cold starts (costs money)
 gcloud functions deploy exchangeAuth0Token \
@@ -359,6 +398,7 @@ gcloud monitoring metrics list --filter="metric.type:secretmanager.googleapis.co
 ```
 
 ### Performance Benchmarks
+
 - **Cold start**: ~2-3 seconds
 - **Warm start**: ~200-500ms
 - **JWKS resolution**: ~100-300ms (cached)
@@ -378,27 +418,35 @@ gcloud monitoring metrics list --filter="metric.type:secretmanager.googleapis.co
 ## Frequently Asked Questions
 
 ### Q: Why do I need both frontend and backend Auth0 configuration?
+
 **A**: Frontend gets tokens from Auth0, backend verifies them. Both must use the same domain/audience or verification fails.
 
 ### Q: Can I use environment variables instead of Secret Manager?
+
 **A**: Not recommended for production. Secret Manager provides better security, versioning, and access control.
 
 ### Q: What happens if JWKS endpoint is down?
+
 **A**: Firebase function will fail JWT verification. The JWKS client has caching and retry logic to minimize impact.
 
 ### Q: How often should I rotate Auth0 secrets?
+
 **A**: Client secrets should be rotated every 90 days. Domain and audience rarely change.
 
 ### Q: Can I test authentication without deploying functions?
+
 **A**: Yes, use Firebase Functions emulator: `firebase emulators:start --only functions`
 
 ### Q: Why is my token exchange slow?
+
 **A**: Check for cold starts, network latency to Auth0, or Secret Manager access issues. Monitor function logs.
 
 ## Automation Scripts
 
 ### Health Check Script
+
 Create `scripts/auth-health-check.sh`:
+
 ```bash
 #!/bin/bash
 set -e
@@ -438,7 +486,9 @@ echo -e "\n✅ Health check complete"
 ```
 
 ### Sync Configuration Script
+
 Create `scripts/sync-auth-config.sh`:
+
 ```bash
 #!/bin/bash
 set -e
@@ -470,6 +520,7 @@ echo "✅ Configuration sync complete"
 ## Change Log
 
 ### Version 1.0 (2025-06-22)
+
 - Initial documentation creation
 - Added comprehensive debugging procedures
 - Documented working configuration
@@ -480,6 +531,7 @@ echo "✅ Configuration sync complete"
 - Added FAQ section and error code reference
 
 ### Future Improvements
+
 - [ ] Add visual architecture diagrams
 - [ ] Create automated testing scripts
 - [ ] Add staging/production environment configs
@@ -487,6 +539,7 @@ echo "✅ Configuration sync complete"
 - [ ] Set up automated monitoring dashboards
 
 ## Notes
+
 - Auth0 audience parameter is a unique identifier, doesn't need to be a working URL
 - Firebase Functions cache Secret Manager values, requiring redeployment after updates
 - Enhanced debug logging should be removed or minimized in production for security

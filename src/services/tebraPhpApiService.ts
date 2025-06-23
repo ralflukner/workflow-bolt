@@ -4,6 +4,7 @@
  */
 
 import { secureLog } from '../utils/redact';
+import { AuthBridge } from './authBridge';
 import { getTebraApiConfig } from './configService';
 
 // Configuration will be loaded dynamically
@@ -50,6 +51,17 @@ async function callPhpApi<T = unknown>(
     // Add API key if configured
     if (API_KEY) {
       headers['X-API-Key'] = API_KEY;
+    }
+    
+    // Add Firebase ID token for authentication (required by security middleware)
+    try {
+      const authBridge = AuthBridge.getInstance();
+      const firebaseToken = await authBridge.getFirebaseIdToken();
+      headers['Authorization'] = `Bearer ${firebaseToken}`;
+      secureLog('🔐 Added Firebase ID token to request headers');
+    } catch (authError) {
+      secureLog('❌ Failed to get Firebase ID token for authentication', authError);
+      throw new Error('Authentication required - please sign in to access Tebra API');
     }
     
     

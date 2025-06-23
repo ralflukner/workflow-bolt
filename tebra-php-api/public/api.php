@@ -47,7 +47,7 @@ try {
         case '/getPatient':
             $patientId = $body['patientId'] ?? $_GET['patientId'] ?? null;
             if (!$patientId) {
-                throw new InvalidArgumentException('patientId is required');
+                throw new \InvalidArgumentException('patientId is required');
             }
             $responseData = $client->getPatient($patientId);
             break;
@@ -55,7 +55,7 @@ try {
         case '/searchPatients':
             $lastName = $body['lastName'] ?? $_GET['lastName'] ?? null;
             if (!$lastName) {
-                throw new InvalidArgumentException('lastName is required');
+                throw new \InvalidArgumentException('lastName is required');
             }
             $responseData = $client->searchPatients($lastName);
             break;
@@ -64,19 +64,19 @@ try {
             $fromDate = $body['fromDate'] ?? $_GET['fromDate'] ?? null;
             $toDate = $body['toDate'] ?? $_GET['toDate'] ?? null;
             if (!$fromDate || !$toDate) {
-                throw new InvalidArgumentException('fromDate and toDate are required');
+                throw new \InvalidArgumentException('fromDate and toDate are required');
             }
             
             // Validate date formats
-            $fromDateTime = DateTime::createFromFormat('Y-m-d', $fromDate);
-            $toDateTime = DateTime::createFromFormat('Y-m-d', $toDate);
+            $fromDateTime = \DateTime::createFromFormat('Y-m-d', $fromDate);
+            $toDateTime = \DateTime::createFromFormat('Y-m-d', $toDate);
             
             if (!$fromDateTime || !$toDateTime) {
-                throw new InvalidArgumentException('Invalid date format. Use Y-m-d format');
+                throw new \InvalidArgumentException('Invalid date format. Use Y-m-d format');
             }
             
             if ($fromDateTime > $toDateTime) {
-                throw new InvalidArgumentException('fromDate must be before or equal to toDate');
+                throw new \InvalidArgumentException('fromDate must be before or equal to toDate');
             }
             
             $responseData = $client->getAppointments($fromDate, $toDate);
@@ -88,34 +88,34 @@ try {
             
         case '/createAppointment':
             if ($method !== 'POST') {
-                throw new InvalidArgumentException('POST method required');
+                throw new \InvalidArgumentException('POST method required');
             }
             $appointmentData = $body['appointmentData'] ?? $body;
             if (!$appointmentData) {
-                throw new InvalidArgumentException('appointmentData is required');
+                throw new \InvalidArgumentException('appointmentData is required');
             }
             $responseData = $client->createAppointment($appointmentData);
             break;
             
         case '/updateAppointment':
             if ($method !== 'POST') {
-                throw new InvalidArgumentException('POST method required');
+                throw new \InvalidArgumentException('POST method required');
             }
             $appointmentData = $body['appointmentData'] ?? $body;
             if (!$appointmentData) {
-                throw new InvalidArgumentException('appointmentData is required');
+                throw new \InvalidArgumentException('appointmentData is required');
             }
             $responseData = $client->updateAppointment($appointmentData);
             break;
             
         case '/syncSchedule':
             if ($method !== 'POST') {
-                throw new InvalidArgumentException('POST method required');
+                throw new \InvalidArgumentException('POST method required');
             }
             $date = $body['date'] ?? null;
             if (!$date) {
                 // Default to today in Chicago timezone
-                $date = (new DateTime('today', new DateTimeZone('America/Chicago')))->format('Y-m-d');
+                $date = (new \DateTime('today', new \DateTimeZone('America/Chicago')))->format('Y-m-d');
             }
             $responseData = $client->syncSchedule($date);
             break;
@@ -169,7 +169,7 @@ try {
     // Return successful response
     echo json_encode($responseData);
     
-} catch (InvalidArgumentException $e) {
+} catch (\InvalidArgumentException $e) {
     http_response_code(400);
     echo json_encode([
         'success' => false,

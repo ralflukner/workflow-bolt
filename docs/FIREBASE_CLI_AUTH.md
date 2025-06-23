@@ -28,6 +28,7 @@ chmod +x scripts/firebase-auth.sh
 ```
 
 The script will:
+
 - Check if Firebase CLI is installed
 - Install Firebase CLI if needed
 - Check if you're already logged in
@@ -83,6 +84,7 @@ firebase --version
 ### Authentication Failed
 
 If authentication fails:
+
 1. Check your internet connection
 2. Ensure you have the correct Firebase account credentials
 3. Try logging in with the `--no-localhost` flag
@@ -95,6 +97,7 @@ If authentication fails:
 ### Permission Denied
 
 If you encounter permission issues:
+
 1. Ensure you have the necessary permissions in the Firebase project
 2. Verify that you're using the correct Google account
 3. Ask a project administrator to grant you the required permissions
