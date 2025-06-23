@@ -39,7 +39,7 @@ describeIf(runRealApiTests)('Tebra Real API Integration Tests', () => {
   describe('Authentication Chain (Real)', () => {
     test('should authenticate with Auth0 and get Firebase token', async () => {
       try {
-        const token = await authBridge.getFirebaseToken();
+        const token = await authBridge.getFirebaseIdToken();
         expect(token).toBeTruthy();
         expect(typeof token).toBe('string');
         expect(token.length).toBeGreaterThan(100);

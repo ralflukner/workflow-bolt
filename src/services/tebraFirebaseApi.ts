@@ -25,7 +25,7 @@ async function callFirebaseTebraApi<T = unknown>(
 ): Promise<ApiResponse<T>> {
   try {
     const authBridge = AuthBridge.getInstance();
-    const token = await authBridge.getFirebaseToken();
+    const token = await authBridge.getFirebaseIdToken();
     
     if (!token) {
       throw new Error('No Firebase authentication token available');

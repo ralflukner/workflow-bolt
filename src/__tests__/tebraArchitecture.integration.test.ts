@@ -24,7 +24,7 @@ describeIf(runIntegrationTests)('Tebra Architecture Integration Tests', () => {
     
     // Get Firebase token for testing
     try {
-      firebaseToken = await authBridge.getFirebaseToken();
+      firebaseToken = await authBridge.getFirebaseIdToken();
       expect(firebaseToken).toBeTruthy();
     } catch (error) {
       console.error('Failed to get Firebase token:', error);
@@ -38,7 +38,7 @@ describeIf(runIntegrationTests)('Tebra Architecture Integration Tests', () => {
 
   describe('Authentication Chain', () => {
     it('should successfully obtain Firebase ID token', async () => {
-      const token = await authBridge.getFirebaseToken();
+      const token = await authBridge.getFirebaseIdToken();
       expect(token).toBeTruthy();
       expect(typeof token).toBe('string');
       expect(token.length).toBeGreaterThan(100); // JWT tokens are typically long
@@ -152,15 +152,15 @@ describeIf(runIntegrationTests)('Tebra Architecture Integration Tests', () => {
 
     it('should handle authentication errors gracefully', async () => {
       // Temporarily break authentication by clearing the token
-      const originalGetToken = authBridge.getFirebaseToken;
-      authBridge.getFirebaseToken = jest.fn().mockRejectedValue(new Error('Mock auth failure'));
+      const originalGetToken = authBridge.getFirebaseIdToken;
+      authBridge.getFirebaseIdToken = jest.fn().mockRejectedValue(new Error('Mock auth failure'));
 
       try {
         const result = await tebraTestConnection();
         expect(result.success).toBe(false);
         expect(result.error).toContain('Firebase authentication');
       } finally {
-        authBridge.getFirebaseToken = originalGetToken;
+        authBridge.getFirebaseIdToken = originalGetToken;
       }
     });
   });

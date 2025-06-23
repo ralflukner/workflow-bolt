@@ -27,7 +27,7 @@ jest.mock('../services/tebraFirebaseApi', () => ({
 jest.mock('../services/authBridge', () => ({
   AuthBridge: {
     getInstance: jest.fn(() => ({
-      getFirebaseToken: jest.fn().mockResolvedValue('mock-firebase-token'),
+      getFirebaseIdToken: jest.fn().mockResolvedValue('mock-firebase-token'),
       getDebugInfo: jest.fn().mockResolvedValue({
         auth0Token: 'mock-auth0-token',
         firebaseToken: 'mock-firebase-token',
