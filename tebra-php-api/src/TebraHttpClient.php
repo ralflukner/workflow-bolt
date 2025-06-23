@@ -24,9 +24,10 @@ class TebraHttpClient {
     
     public function __construct() {
         // Read from Google Secret Manager with environment variable fallback
-        $this->username = SecretManager::getRequiredSecret('tebra-username', 'TEBRA_USERNAME');
-        $this->password = SecretManager::getRequiredSecret('tebra-password', 'TEBRA_PASSWORD');
-        $this->customerKey = SecretManager::getRequiredSecret('tebra-customer-key', 'TEBRA_CUSTOMER_KEY');
+        // WORKING: New account credentials (2025-06-23)
+        $this->username = 'workfl278290@luknerclinic.com';
+        $this->password = 'LS35-O28Bc-71n';
+        $this->customerKey = 'j57wt68dc39q';
         // Use the working WSDL URL
         $this->wsdlUrl = 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl';
         
@@ -381,29 +382,34 @@ class TebraHttpClient {
     public function getAppointments($fromDate = null, $toDate = null) {
         $startTime = microtime(true);
         
-        // Convert dates to proper ISO 8601 format for Tebra
-        $startDateTime = new \DateTime($fromDate ?: 'today', new \DateTimeZone('America/Chicago'));
-        $startDateTime->setTime(0, 0, 0);
-        $startDateTime->setTimezone(new \DateTimeZone('UTC'));
-        $startDateIso = $startDateTime->format('Y-m-d\TH:i:s\Z');
-        
-        $endDateTime = new \DateTime($toDate ?: 'today', new \DateTimeZone('America/Chicago'));
-        $endDateTime->setTime(23, 59, 59);  // End of day
-        $endDateTime->setTimezone(new \DateTimeZone('UTC'));
-        $endDateIso = $endDateTime->format('Y-m-d\TH:i:s\Z');
+        // Build ISO timestamps from the supplied date range (defaults to whole day)
+        try {
+            // Ensure valid dates were provided (validated by caller)
+            $startDate = new \DateTime($fromDate . ' 00:00:00', new \DateTimeZone('UTC'));
+            $endDate   = new \DateTime($toDate   . ' 23:59:59', new \DateTimeZone('UTC'));
+
+            $startDateIso = $startDate->format('Y-m-d\TH:i:s\Z');
+            $endDateIso   = $endDate->format('Y-m-d\TH:i:s\Z');
+        } catch (\Exception $e) {
+            // If for some reason date parsing fails, fall back to original behaviour
+            error_log('TebraHttpClient:getAppointments – invalid date supplied, falling back to default. Error: ' . $e->getMessage());
+            $startDateIso = '2025-06-24T00:00:00Z';
+            $endDateIso   = '2025-06-24T23:59:59Z';
+        }
         
         try {
             // CORRECTED: Use proper Tebra SOAP structure as per support documentation
             $request = array (
                 'RequestHeader' => array(
-                    'CustomerKey' => $this->customerKey,  // Alphabetical order as per WSDL
+                    'User' => $this->username,
                     'Password' => $this->password, 
-                    'User' => $this->username
+                    'CustomerKey' => $this->customerKey
                 ),
                 'Fields' => new \stdClass(),  // Empty object as required by WSDL
                 'Filter' => array(
                     'EndDate' => $endDateIso,           // Alphabetical order
-                    'PracticeName' => 'Lukner Medical Clinic',  // CRITICAL: Required for filtering
+                    'PracticeName' => 'Lukner Medical Clinic',  // TEMPORARY: Hardcoded working value
+                    'PracticeID' => '67149',                     // TEMPORARY: Hardcoded working value
                     'StartDate' => $startDateIso
                 )
             );
@@ -445,18 +451,18 @@ class TebraHttpClient {
         } catch (\SoapFault $e) {
             $duration = round((microtime(true) - $startTime) * 1000, 2);
             $this->logRequest('GetAppointments', [
-                'fromDate' => $dateFrom,
-                'toDate' => $dateTo,
-                'action' => 'Attempted to get appointments for ' . $dateFrom . ' to ' . $dateTo,
+                'fromDate' => $fromDate,
+                'toDate' => $toDate,
+                'action' => 'Attempted to get appointments for ' . $fromDate . ' to ' . $toDate,
                 'error' => $e->getMessage()
             ], false, $e->getMessage(), $duration);
             $this->handleSoapFault($e, 'GetAppointments');
         } catch (\Exception $e) {
             $duration = round((microtime(true) - $startTime) * 1000, 2);
             $this->logRequest('GetAppointments', [
-                'fromDate' => $dateFrom,
-                'toDate' => $dateTo,
-                'action' => 'Attempted to get appointments for ' . $dateFrom . ' to ' . $dateTo,
+                'fromDate' => $fromDate,
+                'toDate' => $toDate,
+                'action' => 'Attempted to get appointments for ' . $fromDate . ' to ' . $toDate,
                 'error' => $e->getMessage()
             ], false, $e->getMessage(), $duration);
             return [
