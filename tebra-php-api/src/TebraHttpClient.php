@@ -862,6 +862,84 @@ class TebraHttpClient {
     }
     
     /**
+     * Sync schedule for a specific date
+     */
+    public function syncSchedule($date) {
+        $startTime = microtime(true);
+        
+        try {
+            // Convert date to format expected by Tebra API (M/d/Y)
+            $dateObj = DateTime::createFromFormat('Y-m-d', $date);
+            if (!$dateObj) {
+                throw new InvalidArgumentException('Invalid date format. Use Y-m-d format');
+            }
+            
+            $tebraDate = $dateObj->format('n/j/Y');
+            
+            error_log("Syncing schedule for date: {$date} (Tebra format: {$tebraDate})");
+            
+            // Get appointments for the specified date
+            $appointmentsResponse = $this->getAppointments($tebraDate, $tebraDate);
+            
+            if (!$appointmentsResponse['success']) {
+                throw new Exception('Failed to retrieve appointments: ' . $appointmentsResponse['message']);
+            }
+            
+            // Extract appointment data
+            $appointments = [];
+            $appointmentData = $appointmentsResponse['data'];
+            
+            // Debug logging - log the full response structure
+            error_log("[SYNC DEBUG] Full Tebra response structure: " . json_encode($appointmentData, JSON_PRETTY_PRINT));
+            
+            if (isset($appointmentData->Appointments) && isset($appointmentData->Appointments->AppointmentData)) {
+                $rawAppointments = $appointmentData->Appointments->AppointmentData;
+                $appointments = is_array($rawAppointments) ? $rawAppointments : [$rawAppointments];
+                error_log("[SYNC DEBUG] Found appointments: " . count($appointments));
+            } else {
+                error_log("[SYNC DEBUG] No appointments found in response. Response keys: " . 
+                    (is_object($appointmentData) ? implode(', ', array_keys((array)$appointmentData)) : 'Not an object'));
+            }
+            
+            $duration = round((microtime(true) - $startTime) * 1000, 2);
+            
+            // Log the sync operation
+            $this->logRequest('SyncSchedule', [
+                'date' => $date,
+                'tebra_date' => $tebraDate,
+                'appointments_found' => count($appointments)
+            ], true, null, $duration);
+            
+            return [
+                'success' => true,
+                'imported' => count($appointments),
+                'appointments' => $appointments,
+                'date' => $date,
+                'timestamp' => date('c'),
+                'duration_ms' => $duration
+            ];
+            
+        } catch (\Exception $e) {
+            $duration = round((microtime(true) - $startTime) * 1000, 2);
+            
+            error_log("Failed to sync schedule for date {$date}: " . $e->getMessage());
+            
+            $this->logRequest('SyncSchedule', [
+                'date' => $date,
+                'error' => $e->getMessage()
+            ], false, $e->getMessage(), $duration);
+            
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'date' => $date,
+                'timestamp' => date('c'),
+                'duration_ms' => $duration
+            ];
+        }
+    }
+    
+    /**
      * Generic SOAP method caller - handles any SOAP operation
      * This method was missing and causing the fatal error in Cloud Run
      */

@@ -17,7 +17,7 @@ async function updateConfig() {
     
     const config = {
       useTebraPhpApi: true,
-      tebraPhpApiUrl: 'https://tebra-php-api-xccvzgogwa-uc.a.run.app/api',
+      tebraPhpApiUrl: 'https://us-central1-luknerlumina-firebase.cloudfunctions.net/api/api/tebra',
       updatedAt: FieldValue.serverTimestamp()
     };
     

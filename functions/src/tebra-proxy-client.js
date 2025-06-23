@@ -113,25 +113,10 @@ class TebraProxyClient {
   }
 
   async makeRequest(action, params = {}) {
-    // Special-case: run syncSchedule inside this Cloud Function instead of the PHP service
-    if (action === 'syncSchedule') {
-      const { syncSchedule } = require('./tebra-sync/syncSchedule');
-      const { firestoreDailySessionRepo } = require('./services/firestoreDailySession');
-      const { consoleLogger } = require('./services/logger');
-
-      // Build dependencies expected by syncSchedule.ts
-      return await syncSchedule(
-        {
-          tebra: this,                     // reuse this proxy for nested Tebra calls
-          repo: firestoreDailySessionRepo, // Firestore repository
-          logger: consoleLogger,           // unified logger
-          now: () => new Date(),
-          timezone: 'America/Chicago',
-        },
-        params.date,                       // optional specific date
-        'system',                          // caller uid not available here
-      );
-    }
+    // 🚫 Do NOT run syncSchedule inside Node. All EHR-related calls must go
+    // through the PHP Cloud-Run service for HIPAA-compliant SOAP handling.
+    // Therefore we forward *all* actions (including "syncSchedule") to
+    // Cloud Run below.
 
     const requestLogger = this.logger.child('makeRequest');
     const timer = requestLogger.time(`${action} request`);

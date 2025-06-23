@@ -18,7 +18,7 @@ COPY . .
 
 # Point Apache to public directory
 RUN sed -ri -e 's!/var/www/html!/var/www/public!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!DocumentRoot /var/www!DocumentRoot /var/www/public!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!DocumentRoot /var/www$!DocumentRoot /var/www/public!g' /etc/apache2/sites-available/*.conf
 
 # Configure Apache directory permissions
 RUN echo '<Directory /var/www/public>\n\

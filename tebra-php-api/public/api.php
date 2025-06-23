@@ -108,6 +108,26 @@ try {
             $responseData = $client->updateAppointment($appointmentData);
             break;
             
+        case '/syncSchedule':
+            if ($method !== 'POST') {
+                throw new InvalidArgumentException('POST method required');
+            }
+            $date = $body['date'] ?? null;
+            if (!$date) {
+                // Default to today in Chicago timezone
+                $date = (new DateTime('today', new DateTimeZone('America/Chicago')))->format('Y-m-d');
+            }
+            $responseData = $client->syncSchedule($date);
+            break;
+            
+        case '/debugProviders':
+            // Debug endpoint to check available providers
+            $responseData = [
+                'providers' => $client->getProviders(),
+                'timestamp' => date('c')
+            ];
+            break;
+            
         case '/health':
         case '/':
             $responseData = [
@@ -121,7 +141,8 @@ try {
                     '/getAppointments',
                     '/getProviders',
                     '/createAppointment',
-                    '/updateAppointment'
+                    '/updateAppointment',
+                    '/syncSchedule'
                 ]
             ];
             break;
@@ -138,7 +159,8 @@ try {
                     '/getAppointments', 
                     '/getProviders',
                     '/createAppointment',
-                    '/updateAppointment'
+                    '/updateAppointment',
+                    '/syncSchedule'
                 ]
             ]);
             exit;
