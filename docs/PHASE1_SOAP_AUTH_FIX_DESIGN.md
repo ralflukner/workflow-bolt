@@ -472,7 +472,7 @@ Unit test adjustments: assert that the generated XML contains `<PracticeName>` a
  | Production deploy                       | DevOps     | 0.25d|
  | Total                                   |            | 1.75d|
 
- *Phase 1 design authored 2025-06-23*
+ _Phase 1 design authored 2025-06-23_
 
 ## 11  Implementation Status (Updated 2025-06-23)
 
@@ -774,9 +774,9 @@ aunderscore names but **the secret names here must use hyphens**.
 |-------------------|---------|--------------|
 | `tebra-practice-name` | Practice display name used in SOAP filter | "Lukner Medical Clinic" |
 | `tebra-practice-id`   | Numeric PracticeID sent in SOAP filter      | `67149` |
-| `tebra-username`      | Tebra SOAP username                         | *email-style user* |
-| `tebra-password`      | Tebra SOAP password (≤ 20 chars)            | *secure pwd* |
-| `tebra-customer-key`  | CustomerKey provided by Tebra              | *uuid-like key* |
+| `tebra-username`      | Tebra SOAP username                         | _email-style user_ |
+| `tebra-password`      | Tebra SOAP password (≤ 20 chars)            | _secure pwd_ |
+| `tebra-customer-key`  | CustomerKey provided by Tebra              | _uuid-like key_ |
 | `tebra-php-api-url`   | Deployed Cloud Run base URL                 | `https://tebra-php-api-xxxxx.uc.a.run.app` |
 
 After creating or updating these secrets, redeploy the Cloud Run service and Firebase Functions so new values are picked up.
@@ -784,13 +784,17 @@ After creating or updating these secrets, redeploy the Cloud Run service and Fir
 ## 15 Testing Plan - End-to-End Verification (2025-06-23)
 
 ### 🎯 OBJECTIVE
+
 Verify that the designed architecture works end-to-end after implementing the correct routing:
+
 ```
 Frontend → Firebase Functions (/api/tebra) → PHP Cloud Run → Tebra SOAP
 ```
 
 ### 📋 IMPLEMENTATION STATUS
+
 **Architecture Fix Applied**: ✅ **COMPLETED**
+
 - **Frontend Routing**: Updated `src/services/tebraApi.ts` to use `tebraFirebaseApi` instead of direct PHP calls
 - **Firebase Functions**: Existing `/api/tebra` endpoint ready and deployed  
 - **PHP Cloud Run**: Service operational with working Tebra credentials
@@ -799,15 +803,20 @@ Frontend → Firebase Functions (/api/tebra) → PHP Cloud Run → Tebra SOAP
 ### 🧪 TEST PLAN
 
 #### **Test 1: Authentication Chain Verification**
+
 **Objective**: Verify Firebase ID token flow works
+
 ```bash
 # Browser DevTools Console Test
 await getToken(); // Should return valid Firebase ID token
 ```
+
 **Expected Result**: Valid Firebase ID token obtained without errors
 
 #### **Test 2: Firebase Functions Proxy Test**  
+
 **Objective**: Verify Firebase Functions can reach PHP Cloud Run
+
 ```bash
 # Direct Firebase Functions test
 curl -X POST "https://api-xccvzgogwa-uc.a.run.app/api/tebra" \
@@ -815,10 +824,13 @@ curl -X POST "https://api-xccvzgogwa-uc.a.run.app/api/tebra" \
   -H "Authorization: Bearer <FIREBASE_ID_TOKEN>" \
   -d '{"action":"testConnection","params":{}}'
 ```
+
 **Expected Result**: `{"success":true,"data":{"status":"healthy"}}`
 
 #### **Test 3: Appointment Sync UI Test**
+
 **Objective**: Verify end-to-end appointment synchronization through UI
+
 ```javascript
 // Browser DevTools Console Test
 const { tebraGetAppointments } = await import('/src/services/tebraApi');
@@ -828,10 +840,13 @@ const result = await tebraGetAppointments({
 });
 console.log('Appointments:', result.data);
 ```
+
 **Expected Result**: Successfully retrieves 4 appointments for June 24th
 
 #### **Test 4: Network Request Verification**
+
 **Objective**: Verify routing follows designed architecture
+
 1. Open Browser DevTools → Network tab
 2. Trigger appointment sync in UI  
 3. Verify request goes to: `https://api-xccvzgogwa-uc.a.run.app/api/tebra`
@@ -840,7 +855,9 @@ console.log('Appointments:', result.data);
 **Expected Result**: All requests route through Firebase Functions, no direct PHP calls
 
 #### **Test 5: Error Handling Verification**
+
 **Objective**: Verify proper error propagation through the chain
+
 ```javascript
 // Test with invalid date to trigger error
 const result = await tebraGetAppointments({
@@ -849,6 +866,7 @@ const result = await tebraGetAppointments({
 });
 console.log('Error handling:', result.error);
 ```
+
 **Expected Result**: Clear error message propagated from PHP through Firebase Functions
 
 ### 📊 SUCCESS CRITERIA
@@ -864,34 +882,44 @@ console.log('Error handling:', result.error);
 ### 🚨 TROUBLESHOOTING SCENARIOS
 
 #### **Scenario 1: Firebase Auth Failure**
+
 **Symptoms**: 401 Unauthorized from Firebase Functions
-**Diagnosis**: 
+**Diagnosis**:
+
 ```bash
 # Check Auth0 → Firebase token exchange
 const authBridge = AuthBridge.getInstance();
 console.log(await authBridge.getDebugInfo());
 ```
+
 **Solution**: Verify Auth0 configuration per CLAUDE.md documentation
 
 #### **Scenario 2: PHP Cloud Run Connection Failure**  
+
 **Symptoms**: 500 errors from Firebase Functions
 **Diagnosis**:
+
 ```bash
 # Check Firebase Functions logs
 gcloud logging read 'resource.type="cloud_function" AND resource.labels.function_name="api"' --limit=10
 ```
+
 **Solution**: Verify `TEBRA_PHP_API_URL` secret points to correct Cloud Run service
 
 #### **Scenario 3: Tebra SOAP Authentication Failure**
+
 **Symptoms**: `"Authenticated": false` in response data
 **Diagnosis**:
+
 ```bash
 # Check PHP Cloud Run logs for authentication errors
 gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="tebra-php-api"' --limit=10
 ```
+
 **Solution**: Verify hyphen-named secrets exist and contain correct values
 
 #### **Scenario 4: Frontend Still Using Direct PHP Calls**
+
 **Symptoms**: Network requests going directly to `tebra-php-api-xxxxx.uc.a.run.app`
 **Diagnosis**: Check browser DevTools Network tab for request URLs
 **Solution**: Ensure `tebraApi.ts` imports from `tebraFirebaseApi` not `tebraPhpApiService`
@@ -916,3 +944,138 @@ gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.serv
 
 **CURRENT STATUS**: ✅ **Implementation Complete - Ready for Testing**  
 **NEXT MILESTONE**: End-to-end validation of designed architecture
+
+## 16 Automated Testing Implementation (2025-06-23)
+
+### 🧪 TEST SUITE OVERVIEW
+
+Comprehensive test coverage for the Tebra architecture with three testing levels:
+
+```
+Unit Tests (Fast, No Dependencies) → Integration Tests (Mocked Services) → Real API Tests (Live Services)
+```
+
+### 📁 TEST FILES CREATED
+
+| File | Type | Purpose | Status |
+|------|------|---------|--------|
+| `src/__tests__/tebraArchitecture.unit.test.ts` | Unit | Routing logic & function signatures | ✅ **PASSING** |
+| `src/__tests__/tebraArchitecture.integration.test.ts` | Integration | Authentication chain & mocked APIs | ✅ **CREATED** |
+| `src/__tests__/real-api/tebraArchitectureReal.test.ts` | End-to-End | Live services integration | ✅ **CREATED** |
+| `src/__tests__/README-TEBRA-TESTS.md` | Documentation | Testing guide & troubleshooting | ✅ **COMPLETE** |
+
+### 🎯 TEST COVERAGE
+
+#### **Unit Tests** ✅ **16/16 PASSING**
+
+- ✅ Verifies routing through Firebase Functions (not direct PHP)
+- ✅ Function signature compatibility & module exports
+- ✅ Error handling and propagation
+- ✅ API configuration validation
+- ✅ Backwards compatibility checks
+
+#### **Integration Tests** ⏳ **READY FOR MANUAL TESTING**
+
+- ⏳ Authentication chain (Auth0 → Firebase)
+- ⏳ Request routing verification  
+- ⏳ Header inclusion validation
+- ⏳ Error handling with mocked failures
+- ⏳ Response structure validation
+
+#### **Real API Tests** ⏳ **READY FOR LIVE TESTING**
+
+- ⏳ End-to-end authentication flow
+- ⏳ Network request routing verification
+- ⏳ Live Tebra API integration
+- ⏳ Appointment data retrieval (June 24: 4 appointments expected)
+- ⏳ Performance benchmarks (< 15s per request)
+- ⏳ Security compliance (HTTPS, headers)
+
+### 🚀 TEST EXECUTION COMMANDS
+
+```bash
+# Unit Tests (Fast development feedback)
+npm test -- --testNamePattern="Tebra.*Unit"
+
+# Integration Tests (Requires AUTH setup)
+npm run test:tebra-integration
+
+# Real API Tests (Requires live services)
+npm run test:tebra-real
+
+# All Tebra Tests
+npm run test:tebra-all
+```
+
+### 📊 VERIFICATION RESULTS
+
+**Unit Test Execution** ✅ **SUCCESSFUL**
+
+```
+PASS unit src/__tests__/tebraArchitecture.unit.test.ts
+Test Suites: 2 passed
+Tests: 16 passed
+Time: 4.98s
+```
+
+**Test Validation**:
+
+- ✅ Verifies tebraApi.ts imports from tebraFirebaseApi (not tebraPhpApiService)
+- ✅ Confirms all 10 required functions exported
+- ✅ Validates API configuration shows Firebase proxy routing
+- ✅ Tests error propagation and response structure
+
+### 🔍 INTEGRATION TEST REQUIREMENTS
+
+**For Integration Tests**:
+
+```bash
+export RUN_INTEGRATION_TESTS=true
+# Requires Auth0 configuration in environment
+```
+
+**For Real API Tests**:
+
+```bash
+export RUN_REAL_API_TESTS=true
+# Requires live Firebase Functions + PHP Cloud Run + Tebra credentials
+```
+
+### 📋 TEST SUCCESS CRITERIA
+
+| Level | Criteria | Status |
+|-------|----------|--------|
+| **Unit** | All routing logic tested without external dependencies | ✅ **MET** |
+| **Integration** | Authentication chain works with mocked services | ⏳ **PENDING** |
+| **Real API** | End-to-end flow retrieves live appointments | ⏳ **PENDING** |
+
+### 🚨 TESTING TROUBLESHOOTING
+
+**Common Issues & Solutions**:
+
+1. **"Authentication setup failed"**
+   - Verify Auth0 environment variables
+   - Check network connectivity to Auth0 domain
+
+2. **"Firebase Functions connection failed"**  
+   - Verify Functions deployment: `curl https://api-xccvzgogwa-uc.a.run.app/health`
+   - Check TEBRA_PHP_API_URL secret
+
+3. **"Tebra SOAP authentication failed"**
+   - Verify Secret Manager credentials
+   - Ensure password ≤ 20 characters
+
+### 📈 PERFORMANCE BENCHMARKS
+
+| Test Type | Target | Timeout |
+|-----------|--------|---------|
+| Unit Tests | < 100ms | 5s |
+| Integration Tests | < 2s | 15s |
+| Real API Tests | < 10s | 30s |
+
+**TESTING STATUS**: ✅ **Unit Tests Implemented & Passing**  
+**NEXT ACTIONS**:
+
+1. Execute integration tests with Auth0 configuration
+2. Run real API tests against live services  
+3. Validate all success criteria met
