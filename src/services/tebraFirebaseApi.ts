@@ -50,7 +50,16 @@ async function callFirebaseTebraApi<T = unknown>(
     }
 
     const result = await response.json();
-    secureLog('✅ Firebase API response:', { success: result.success });
+    
+    // Log response metadata without redacting the actual data
+    console.log('✅ Firebase API response metadata:', { 
+      success: result.success, 
+      hasData: !!result.data,
+      dataKeys: result.data ? Object.keys(result.data) : [],
+      dataSize: result.data ? JSON.stringify(result.data).length : 0,
+      timestamp: new Date().toISOString()
+    });
+    
     return result;
   } catch (error) {
     secureLog('❌ Firebase API error:', error);
@@ -133,6 +142,48 @@ export const getApiInfo = () => ({
 
 // Log that we're using Firebase proxy
 console.log('🔌 Tebra API: Using Firebase Functions proxy to PHP service');
+
+// Browser console helper for inspecting appointment data (production safe)
+(window as any).tebraDebug = {
+  async getAppointments(fromDate: string, toDate: string) {
+    const result = await tebraGetAppointments({ fromDate, toDate });
+    // Handle double-nested structure: result.data.data contains the actual SOAP response
+    const soapData = result.data?.data;
+    console.log('Raw appointment response (unredacted):', {
+      success: result.success,
+      dataPresent: !!result.data,
+      soapDataPresent: !!soapData,
+      appointmentCount: soapData?.GetAppointmentsResult?.Appointments?.length || 0,
+      firstAppointment: soapData?.GetAppointmentsResult?.Appointments?.[0],
+      securityResponse: soapData?.GetAppointmentsResult?.SecurityResponse,
+      fullStructure: {
+        topLevel: Object.keys(result),
+        dataLevel: result.data ? Object.keys(result.data) : [],
+        soapLevel: soapData ? Object.keys(soapData) : []
+      }
+    });
+    return result;
+  },
+  
+  async testConnection() {
+    const result = await tebraTestConnection();
+    // Handle double-nested structure: result.data.data contains the actual SOAP response
+    const soapData = result.data?.data;
+    console.log('Raw connection test response (unredacted):', {
+      success: result.success,
+      dataPresent: !!result.data,
+      soapDataPresent: !!soapData,
+      providerCount: soapData?.GetProvidersResult?.Providers?.ProviderData?.length || 0,
+      securityResponse: soapData?.GetProvidersResult?.SecurityResponse,
+      fullStructure: {
+        topLevel: Object.keys(result),
+        dataLevel: result.data ? Object.keys(result.data) : [],
+        soapLevel: soapData ? Object.keys(soapData) : []
+      }
+    });
+    return result;
+  }
+};
 
 export default {
   testConnection: tebraTestConnection,

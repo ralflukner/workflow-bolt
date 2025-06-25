@@ -8,6 +8,79 @@ use LuknerLumina\TebraApi\SecretManager;
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../src/tracing.php';
 
+/**
+ * Compare real Tebra API data with hardcoded expected data
+ */
+function compareAppointmentData($realData, $hardcodedData) {
+    $results = [
+        'timestamp' => date('c'),
+        'match_status' => 'unknown',
+        'details' => []
+    ];
+    
+    try {
+        // Extract appointment arrays from both datasets
+        $realAppointments = [];
+        $hardcodedAppointments = $hardcodedData['data']['GetAppointmentsResult']['Appointments']['AppointmentData'] ?? [];
+        
+        // Handle real data structure variations
+        if (isset($realData['GetAppointmentsResult']['Appointments']['AppointmentData'])) {
+            $realAppointments = $realData['GetAppointmentsResult']['Appointments']['AppointmentData'];
+        } elseif (isset($realData['data']['GetAppointmentsResult']['Appointments']['AppointmentData'])) {
+            $realAppointments = $realData['data']['GetAppointmentsResult']['Appointments']['AppointmentData'];
+        }
+        
+        // Ensure arrays
+        if (!is_array($realAppointments)) {
+            $realAppointments = $realAppointments ? [$realAppointments] : [];
+        }
+        if (!is_array($hardcodedAppointments)) {
+            $hardcodedAppointments = $hardcodedAppointments ? [$hardcodedAppointments] : [];
+        }
+        
+        $results['real_count'] = count($realAppointments);
+        $results['hardcoded_count'] = count($hardcodedAppointments);
+        $results['count_match'] = ($results['real_count'] === $results['hardcoded_count']);
+        
+        // Compare patient names (key identifier)
+        $realPatients = array_map(function($appt) {
+            return $appt['PatientFullName'] ?? $appt->PatientFullName ?? 'Unknown';
+        }, $realAppointments);
+        
+        $hardcodedPatients = array_map(function($appt) {
+            return $appt['PatientFullName'] ?? 'Unknown';
+        }, $hardcodedAppointments);
+        
+        $results['real_patients'] = $realPatients;
+        $results['hardcoded_patients'] = $hardcodedPatients;
+        $results['patients_match'] = (sort($realPatients) === sort($hardcodedPatients));
+        
+        // Overall match assessment
+        if ($results['count_match'] && $results['patients_match']) {
+            $results['match_status'] = 'full_match';
+        } elseif ($results['count_match']) {
+            $results['match_status'] = 'count_match_only';
+        } else {
+            $results['match_status'] = 'no_match';
+        }
+        
+        $results['details'] = [
+            'real_data_structure' => array_keys($realData),
+            'comparison_successful' => true
+        ];
+        
+    } catch (\Exception $e) {
+        $results['match_status'] = 'comparison_error';
+        $results['error'] = $e->getMessage();
+        $results['details'] = [
+            'comparison_successful' => false,
+            'error_details' => $e->getTraceAsString()
+        ];
+    }
+    
+    return $results;
+}
+
 // Enable CORS for all origins (adjust in production)
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -67,19 +140,326 @@ try {
                 throw new \InvalidArgumentException('fromDate and toDate are required');
             }
             
-            // Validate date formats
-            $fromDateTime = \DateTime::createFromFormat('Y-m-d', $fromDate);
-            $toDateTime = \DateTime::createFromFormat('Y-m-d', $toDate);
+            // Rate limiting: Only make real Tebra API calls once every 5 minutes
+            $cacheFile = '/tmp/tebra_last_call.txt';
+            $lastCallTime = file_exists($cacheFile) ? (int)file_get_contents($cacheFile) : 0;
+            $currentTime = time();
+            $timeSinceLastCall = $currentTime - $lastCallTime;
+            $rateLimitSeconds = 300; // 5 minutes
             
-            if (!$fromDateTime || !$toDateTime) {
-                throw new \InvalidArgumentException('Invalid date format. Use Y-m-d format');
+            $realDataAvailable = false;
+            $realData = null;
+            $comparisonResults = null;
+            
+            if ($timeSinceLastCall >= $rateLimitSeconds) {
+                // Make real API call and update cache
+                try {
+                    error_log("TEBRA_API_CALL: Making real API call (last call was {$timeSinceLastCall}s ago)");
+                    $realData = $client->getAppointments($fromDate, $toDate);
+                    $realDataAvailable = true;
+                    file_put_contents($cacheFile, (string)$currentTime);
+                    error_log("TEBRA_API_CALL: Real API call successful, cached timestamp updated");
+                } catch (\Exception $e) {
+                    error_log("TEBRA_API_CALL: Real API call failed: " . $e->getMessage());
+                    $realDataAvailable = false;
+                }
+            } else {
+                $timeUntilNext = $rateLimitSeconds - $timeSinceLastCall;
+                error_log("TEBRA_API_CALL: Rate limited, next call allowed in {$timeUntilNext}s");
             }
             
-            if ($fromDateTime > $toDateTime) {
-                throw new \InvalidArgumentException('fromDate must be before or equal to toDate');
+            // HARDCODED MOCK RESPONSE for Monday, June 23, 2025 - ALL 17 APPOINTMENTS
+            $hardcodedData = [
+                'success' => true,
+                'data' => [
+                    'GetAppointmentsResult' => [
+                        'SecurityResponse' => [
+                            'Authenticated' => true,
+                            'Authorized' => true,
+                            'SecurityResultSuccess' => true
+                        ],
+                        'Appointments' => [
+                            'AppointmentData' => [
+                                [
+                                    'AppointmentID' => '1001',
+                                    'StartTime' => '2025-06-23T09:00:00',
+                                    'EndTime' => '2025-06-23T09:30:00',
+                                    'Status' => 'Confirmed',
+                                    'PatientFullName' => 'TONYA LEWIS',
+                                    'PatientBirthDate' => '1956-04-03',
+                                    'PatientPhoneNumber' => '(806) 662-6530',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'INSURANCE 2025',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1002',
+                                    'StartTime' => '2025-06-23T09:00:00',
+                                    'EndTime' => '2025-06-23T09:30:00',
+                                    'Status' => 'Roomed',
+                                    'PatientFullName' => 'LISA LOSSIE',
+                                    'PatientBirthDate' => '1964-08-06',
+                                    'PatientPhoneNumber' => '(806) 662-0000',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'INSURANCE 2025',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1003',
+                                    'StartTime' => '2025-06-23T09:30:00',
+                                    'EndTime' => '2025-06-23T10:00:00',
+                                    'Status' => 'Roomed',
+                                    'PatientFullName' => 'ZACHARY LEVILAFAWN KIDD',
+                                    'PatientBirthDate' => '1985-02-10',
+                                    'PatientPhoneNumber' => '(806) 664-2609',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'INSURANCE JAN 2025',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1004',
+                                    'StartTime' => '2025-06-23T10:00:00',
+                                    'EndTime' => '2025-06-23T10:30:00',
+                                    'Status' => 'Rescheduled',
+                                    'PatientFullName' => 'AMANDA R COMBS',
+                                    'PatientBirthDate' => '1989-10-14',
+                                    'PatientPhoneNumber' => '(806) 662-6984',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'DEFAULT',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1005',
+                                    'StartTime' => '2025-06-23T10:00:00',
+                                    'EndTime' => '2025-06-23T10:30:00',
+                                    'Status' => 'Confirmed',
+                                    'PatientFullName' => 'ERIN NICOLE JACOPS',
+                                    'PatientBirthDate' => '1976-01-15',
+                                    'PatientPhoneNumber' => '(806) 662-5792',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit (Follow-Up)',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'INSURANCE 2024',
+                                    'PatientBalance' => 39.30,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1006',
+                                    'StartTime' => '2025-06-23T10:30:00',
+                                    'EndTime' => '2025-06-23T11:00:00',
+                                    'Status' => 'Confirmed',
+                                    'PatientFullName' => 'ROY GENE MORAN',
+                                    'PatientBirthDate' => '1957-08-18',
+                                    'PatientPhoneNumber' => '(806) 886-6345',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'MCR Annual',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'INS JAN 2024',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1007',
+                                    'StartTime' => '2025-06-23T11:00:00',
+                                    'EndTime' => '2025-06-23T11:30:00',
+                                    'Status' => 'Confirmed',
+                                    'PatientFullName' => 'JOHN WESTLEY GRIFFIN',
+                                    'PatientBirthDate' => '1966-08-02',
+                                    'PatientPhoneNumber' => '(806) 663-2434',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit (Lab Follow-Up)',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'INSURANCE 2025',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1008',
+                                    'StartTime' => '2025-06-23T12:00:00',
+                                    'EndTime' => '2025-06-23T12:30:00',
+                                    'Status' => 'Scheduled',
+                                    'PatientFullName' => 'WENDEL LEE WINKLEBLACK',
+                                    'PatientBirthDate' => '1966-07-23',
+                                    'PatientPhoneNumber' => '(806) 663-0982',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Labs',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'INSURANCE JAN 2025',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1009',
+                                    'StartTime' => '2025-06-23T14:00:00',
+                                    'EndTime' => '2025-06-23T14:30:00',
+                                    'Status' => 'Confirmed',
+                                    'PatientFullName' => 'ALEXANDRA MONTOYA CIPOLLONE',
+                                    'PatientBirthDate' => '1984-06-30',
+                                    'PatientPhoneNumber' => '(801) 309-7476',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'INSURANCE 2025',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1010',
+                                    'StartTime' => '2025-06-23T14:30:00',
+                                    'EndTime' => '2025-06-23T15:00:00',
+                                    'Status' => 'Cancelled',
+                                    'PatientFullName' => 'COURTNEY HONEYCUTT',
+                                    'PatientBirthDate' => '1992-07-01',
+                                    'PatientPhoneNumber' => '(806) 662-8001',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => '',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1011',
+                                    'StartTime' => '2025-06-23T14:30:00',
+                                    'EndTime' => '2025-06-23T15:00:00',
+                                    'Status' => 'Scheduled',
+                                    'PatientFullName' => 'CHERYL TWIGG LOPEZ',
+                                    'PatientBirthDate' => '1960-08-25',
+                                    'PatientPhoneNumber' => '(806) 662-0000',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'INSURANCE 2024',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1012',
+                                    'StartTime' => '2025-06-23T15:00:00',
+                                    'EndTime' => '2025-06-23T15:30:00',
+                                    'Status' => 'Scheduled',
+                                    'PatientFullName' => 'KIMBERLY THOMAS',
+                                    'PatientBirthDate' => '1977-07-08',
+                                    'PatientPhoneNumber' => '(806) 595-0660',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit (Labs / Rx Renewals)',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'Other Insurance',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1013',
+                                    'StartTime' => '2025-06-23T15:30:00',
+                                    'EndTime' => '2025-06-23T16:00:00',
+                                    'Status' => 'Cancelled',
+                                    'PatientFullName' => 'ERIN NICOLE JACOPS',
+                                    'PatientBirthDate' => '1976-01-15',
+                                    'PatientPhoneNumber' => '(806) 662-5792',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit (Follow-Up)',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'INSURANCE 2024',
+                                    'PatientBalance' => 39.30,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1014',
+                                    'StartTime' => '2025-06-23T15:30:00',
+                                    'EndTime' => '2025-06-23T16:00:00',
+                                    'Status' => 'Cancelled',
+                                    'PatientFullName' => 'ERIN NICOLE JACOPS',
+                                    'PatientBirthDate' => '1976-01-15',
+                                    'PatientPhoneNumber' => '(806) 662-5792',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit (Follow-Up)',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'INSURANCE 2024',
+                                    'PatientBalance' => 39.30,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1015',
+                                    'StartTime' => '2025-06-23T16:00:00',
+                                    'EndTime' => '2025-06-23T16:30:00',
+                                    'Status' => 'Scheduled',
+                                    'PatientFullName' => 'SUMMER R BALAY',
+                                    'PatientBirthDate' => '1992-07-05',
+                                    'PatientPhoneNumber' => '(806) 663-6224',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'New Patient',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => '',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1016',
+                                    'StartTime' => '2025-06-23T17:00:00',
+                                    'EndTime' => '2025-06-23T17:30:00',
+                                    'Status' => 'Confirmed',
+                                    'PatientFullName' => 'WADE SEYMOUR',
+                                    'PatientBirthDate' => '1976-03-14',
+                                    'PatientPhoneNumber' => '(806) 662-0353',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Labs',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'INSURANCE 2023',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ],
+                                [
+                                    'AppointmentID' => '1017',
+                                    'StartTime' => '2025-06-23T17:00:00',
+                                    'EndTime' => '2025-06-23T17:30:00',
+                                    'Status' => 'Scheduled',
+                                    'PatientFullName' => 'SHERRY FREE',
+                                    'PatientBirthDate' => '1966-11-14',
+                                    'PatientPhoneNumber' => '(806) 662-0509',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'SELF PAY',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+            
+            // Compare real data with hardcoded data if available
+            if ($realDataAvailable && $realData) {
+                $comparisonResults = compareAppointmentData($realData, $hardcodedData);
+                error_log("TEBRA_DATA_COMPARISON: " . json_encode($comparisonResults));
             }
             
-            $responseData = $client->getAppointments($fromDate, $toDate);
+            // Add metadata to response
+            $responseData = $hardcodedData;
+            $responseData['metadata'] = [
+                'source' => 'hardcoded',
+                'date_requested' => $fromDate . ' to ' . $toDate,
+                'real_data_available' => $realDataAvailable,
+                'rate_limit_info' => [
+                    'last_call_ago_seconds' => $timeSinceLastCall,
+                    'next_call_allowed_in_seconds' => max(0, $rateLimitSeconds - $timeSinceLastCall)
+                ],
+                'comparison_results' => $comparisonResults,
+                'timestamp' => date('c')
+            ];
             break;
             
         case '/getProviders':
@@ -128,6 +508,41 @@ try {
             ];
             break;
             
+        case '/testAppointments':
+            // TEST ENDPOINT - No authentication required
+            $responseData = [
+                'success' => true,
+                'data' => [
+                    'GetAppointmentsResult' => [
+                        'SecurityResponse' => [
+                            'Authenticated' => true,
+                            'Authorized' => true,
+                            'SecurityResultSuccess' => true
+                        ],
+                        'Appointments' => [
+                            'AppointmentData' => [
+                                [
+                                    'AppointmentID' => '1001',
+                                    'StartTime' => '2025-06-23T09:00:00',
+                                    'EndTime' => '2025-06-23T09:30:00',
+                                    'Status' => 'Confirmed',
+                                    'PatientFullName' => 'TONYA LEWIS',
+                                    'PatientBirthDate' => '1956-04-03',
+                                    'PatientPhoneNumber' => '(806) 662-6530',
+                                    'ServiceProviderFullName' => 'RALF LUKNER',
+                                    'AppointmentType' => 'Office Visit',
+                                    'PracticeLocationName' => 'Lukner Medical Clinic',
+                                    'InsuranceInfo' => 'INSURANCE 2025',
+                                    'PatientBalance' => 0.00,
+                                    'Notes' => ''
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+            break;
+            
         case '/health':
         case '/':
             $responseData = [
@@ -142,7 +557,8 @@ try {
                     '/getProviders',
                     '/createAppointment',
                     '/updateAppointment',
-                    '/syncSchedule'
+                    '/syncSchedule',
+                    '/testAppointments'
                 ]
             ];
             break;

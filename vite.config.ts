@@ -17,8 +17,8 @@ export default defineConfig({
     })
   ],
   server: {
-    port: 3000, // Set your preferred port here
-    strictPort: true, // This will fail if port 3000 is not available
+    port: 5173, // Use Vite's default port
+    host: true, // Allow external connections
   },
   optimizeDeps: {
     exclude: ['lucide-react', '@google-cloud/secret-manager'],

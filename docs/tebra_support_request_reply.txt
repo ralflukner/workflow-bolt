@@ -1,0 +1,100 @@
+Subject: RE: Tebra SOAP API Integration - Urgent Authentication Issue
+
+Dear Gustavo and Tebra Support Team,
+
+Thank you for your previous assistance with our SOAP API integration. I'm writing to follow up on a critical authentication issue that has developed with our production system.
+
+## Current Issue Summary
+
+Despite having a previously working configuration that successfully retrieved appointments on June 23rd, 2025, we are now experiencing authentication failures with our SOAP API calls. Our system was able to retrieve specific appointment counts (1, 15, 4, and 8 appointments for dates 2025-06-22 through 2025-06-25) but now returns authentication errors.
+
+## Working Configuration Details (June 23rd, 2025)
+
+Our last successful test used the following SOAP structure that perfectly matched your recommended format:
+
+```xml
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" 
+               xmlns:kar="http://www.kareo.com/api/schemas/">
+    <soap:Header/>
+    <soap:Body>
+        <kar:GetAppointments>
+            <kar:request>
+                <kar:RequestHeader>
+                    <kar:User>pMUfiUwHGtQ@luknerclinic.com</kar:User>
+                    <kar:Password>y3l7-i7p56-S497G</kar:Password>
+                    <kar:CustomerKey>j57wt68dc39q</kar:CustomerKey>
+                </kar:RequestHeader>
+                <kar:Fields/>
+                <kar:Filter>
+                    <kar:StartDate>2025-06-22T05:00:00Z</kar:StartDate>
+                    <kar:EndDate>2025-06-22T05:00:00Z</kar:EndDate>
+                    <kar:PracticeName>Lukner Clinic</kar:PracticeName>
+                    <kar:PracticeID>123456</kar:PracticeID>
+                </kar:Filter>
+            </kar:request>
+        </kar:GetAppointments>
+    </soap:Body>
+</soap:Envelope>
+```
+
+## Current Credentials and Configuration
+
+- **Username**: pMUfiUwHGtQ@luknerclinic.com
+- **Password**: y3l7-i7p56-S497G  
+- **Customer Key**: j57wt68dc39q
+- **Practice Name**: Lukner Clinic
+- **Practice ID**: 123456
+- **WSDL URL**: https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl
+
+## Technical Environment
+
+- **PHP Version**: 8.2
+- **SOAP Client**: PHP SoapClient with proper SSL verification
+- **Authentication**: Basic HTTP authentication with SOAP headers
+- **Infrastructure**: Google Cloud Run (production environment)
+
+## Current Error Pattern
+
+Our authentication is failing consistently across all SOAP methods (GetAppointments, GetProviders, etc.). The exact same SOAP structure and credentials that worked on June 23rd now return authentication errors.
+
+## Questions for Tebra Support
+
+1. **Credential Status**: Can you verify if our credentials (username: pMUfiUwHGtQ@luknerclinic.com, customer key: j57wt68dc39q) are still active and properly configured?
+
+2. **Account Changes**: Have there been any changes to our account configuration since June 23rd that might affect API access?
+
+3. **Environment Issues**: Are there any known issues with the SOAP API endpoint or authentication system that might explain why previously working credentials are now failing?
+
+4. **Password Reset**: If needed, can you assist with resetting our password or verifying our current password is correct in your system?
+
+5. **Practice Configuration**: Can you confirm that our Practice ID (123456) and Practice Name ("Lukner Clinic") are correctly configured in your system?
+
+## Urgency and Impact
+
+This is affecting our production patient flow management system. We have patients scheduled and need to restore API connectivity as soon as possible. Since we had a working configuration just days ago, we believe this may be a simple credential or account configuration issue.
+
+## Previous Working Evidence
+
+We have detailed logs showing successful API responses on June 23rd with specific appointment counts, confirming our integration was functioning correctly with the exact credentials and SOAP structure we're using now.
+
+Could you please:
+1. Verify our account and credential status
+2. Check for any recent changes that might affect our API access
+3. Provide guidance on restoring connectivity
+4. If necessary, assist with credential reset/renewal
+
+Thank you for your prompt attention to this matter. Please let me know if you need any additional technical details or logs from our system.
+
+Best regards,
+
+Dr. Ralf Lukner, MD, PhD
+Lukner Clinic
+Email: [Your contact email]
+Phone: [Your contact phone]
+
+---
+Technical Contact Information:
+- Integration Type: Tebra SOAP API via PHP SoapClient
+- Last Successful Connection: June 23rd, 2025
+- Current Status: Authentication Failure
+- Environment: Production (Google Cloud Run)

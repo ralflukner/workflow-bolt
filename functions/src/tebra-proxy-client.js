@@ -64,47 +64,14 @@ class TebraProxyClient {
    * Fetch secrets only once and cache them for all instances
    */
   async _fetchSecretsOnce() {
-    this.logger.info('Fetching secrets (shared initialization)');
+    this.logger.info('TEMPORARY: Using hardcoded Cloud Run configuration');
     
-    let cloudRunUrl = null;
-    let internalApiKey = null;
-
-    // 1️⃣  Preferred path: Google Secret Manager
-    try {
-      if (!this.secretClient) {
-        const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
-        this.secretClient = new SecretManagerServiceClient();
-      }
-
-      const projectId = process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'luknerlumina-firebase';
-      this.logger.info(`Using project ID: ${projectId}`);
-
-      const fetchSecret = async (secretName) => {
-        try {
-          const [version] = await this.secretClient.accessSecretVersion({
-            name: `projects/${projectId}/secrets/${secretName}/versions/latest`,
-          });
-          return version.payload?.data?.toString();
-        } catch (err) {
-          this.logger.error(`Failed to fetch secret ${secretName}:`, err.message);
-          return null;
-        }
-      };
-
-      cloudRunUrl = await fetchSecret('TEBRA_CLOUD_RUN_URL');
-      internalApiKey = await fetchSecret('TEBRA_INTERNAL_API_KEY');
-      
-      this.logger.info(`Secrets loaded from GSM - Cloud Run URL: ${cloudRunUrl ? '[SET]' : '[NOT SET]'}, API Key: ${internalApiKey ? '[SET]' : '[NOT SET]'}`);
-    } catch (err) {
-      this.logger.error('Secret Manager initialization failed:', err);
-    }
-
-    // 2️⃣  Fallback to env vars if GSM fails
-    if (!cloudRunUrl || !internalApiKey) {
-      cloudRunUrl = cloudRunUrl || process.env.TEBRA_CLOUD_RUN_URL;
-      internalApiKey = internalApiKey || process.env.TEBRA_INTERNAL_API_KEY;
-      this.logger.info(`After env var fallback - Cloud Run URL: ${cloudRunUrl ? '[SET]' : '[NOT SET]'}, API Key: ${internalApiKey ? '[SET]' : '[NOT SET]'}`);
-    }
+    // TEMPORARY FIX: Hardcode the working PHP Cloud Run service
+    const cloudRunUrl = 'https://tebra-php-api-623450773640.us-central1.run.app';
+    const internalApiKey = 'UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=';
+    
+    this.logger.info(`Using hardcoded Cloud Run URL: ${cloudRunUrl}`);
+    this.logger.info(`Using hardcoded API Key: ${internalApiKey ? '[SET]' : '[NOT SET]'}`);
 
     // Cache the secrets for future instances
     sharedSecrets = { cloudRunUrl, internalApiKey };

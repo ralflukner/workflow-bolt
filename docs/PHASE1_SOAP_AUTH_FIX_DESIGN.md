@@ -154,6 +154,11 @@ $customerKey = SecretManager::getRequiredSecret('tebra-customer-key');
 - PHP Cloud Run: Internal VPC communication
 - Tebra API: Mutual TLS authentication
 
+> **🚨 ABSOLUTE RULE (HIPAA): _NO UNAUTHENTICATED TRAFFIC_**  
+> • Every request that touches PHI **MUST** carry a valid Firebase ID-token (Bearer header) or originate from a trusted GCP service account.  
+> • The Express route `/api/tebra` **may never** be exposed with `--allow-unauthenticated`.  
+> • If a public 401/403 test ever succeeds, treat it as a Sev-1 incident.
+
 #### **Authentication Security**
 
 - Frontend: Firebase ID tokens (short-lived)
@@ -1091,3 +1096,17 @@ export RUN_REAL_API_TESTS=true
 1. Execute integration tests with Auth0 configuration
 2. Run real API tests against live services  
 3. Validate all success criteria met
+
+### Node-proxy repairs required (Firebase Functions layer)
+
+The Google-Auth proxy (`functions/src/tebra-proxy-client.js`) already signs Cloud-Run requests correctly, **but five small code issues must be fixed before Phase-1 can be closed**:
+
+| # | Issue | File / line | Required fix |
+|---|-------|-------------|--------------|
+| 1 | Unused property `this.secretClient` | line ~19 | Delete the line – it's never referenced |
+| 2 | Typo in method name `getPatientByld` (lower-case *L*) | line ~330 | Rename to `getPatientById` to match calls/tests |
+| 3 | Undeclared exports for `getPatients` / `getPatientById` | bottom of file | Add to `module.exports` **or** mark with `// TODO` if not needed yet |
+| 4 | PHPCS lint errors shown on a **JavaScript** file | n/a | Disable PHPCS for `.js` or scope it to PHP only; use ESLint for JS |
+| 5 | Hard-coded secrets left in place for debug | `_fetchSecretsOnce()` | Replace with Secret-Manager look-ups before commit |
+
+Once these are addressed the proxy will forward `/api/tebra → Cloud Run` calls without lint warnings and with full HIPAA compliance (Google IAM ID-token + `X-API-Key`, never unauthenticated).
