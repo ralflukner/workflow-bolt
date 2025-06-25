@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # Generate Firebase Config Script
 # Creates a JSON string for FIREBASE_CONFIG from individual environment variables

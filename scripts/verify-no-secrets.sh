@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # Script to verify no secrets are hardcoded in SoapUI files
 # Run this before committing to ensure security

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # Prompt securely for username
 printf "Enter Tebra username: "

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # Firebase CLI Authentication Script
 # This script helps authenticate with Firebase CLI

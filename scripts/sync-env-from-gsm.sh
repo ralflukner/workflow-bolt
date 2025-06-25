@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 # scripts/sync-env-from-gsm.sh
 
 set -e

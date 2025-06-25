@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # Script to rotate the admin debug token in Google Secret Manager
 # This script creates a new version of the existing token

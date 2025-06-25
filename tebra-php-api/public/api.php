@@ -19,6 +19,11 @@ function compareAppointmentData($realData, $hardcodedData) {
     ];
     
     try {
+        // Convert to array if it's an object
+        if (is_object($realData)) {
+            $realData = json_decode(json_encode($realData), true);
+        }
+        
         // Extract appointment arrays from both datasets
         $realAppointments = [];
         $hardcodedAppointments = $hardcodedData['data']['GetAppointmentsResult']['Appointments']['AppointmentData'] ?? [];
@@ -136,11 +141,17 @@ try {
         case '/getAppointments':
             $fromDate = $body['fromDate'] ?? $_GET['fromDate'] ?? null;
             $toDate = $body['toDate'] ?? $_GET['toDate'] ?? null;
+            $forceReal = $body['forceReal'] ?? $_GET['forceReal'] ?? false;
+            $debugMode = $body['debug'] ?? $_GET['debug'] ?? false;
+            
             if (!$fromDate || !$toDate) {
                 throw new \InvalidArgumentException('fromDate and toDate are required');
             }
             
-            // Rate limiting: Only make real Tebra API calls once every 5 minutes
+            // Enhanced debug logging
+            error_log("TEBRA_GET_APPOINTMENTS: Request received - From: {$fromDate}, To: {$toDate}, ForceReal: " . json_encode($forceReal) . ", Debug: " . json_encode($debugMode));
+            
+            // Rate limiting: Only make real Tebra API calls once every 5 minutes (unless forced)
             $cacheFile = '/tmp/tebra_last_call.txt';
             $lastCallTime = file_exists($cacheFile) ? (int)file_get_contents($cacheFile) : 0;
             $currentTime = time();
@@ -150,22 +161,43 @@ try {
             $realDataAvailable = false;
             $realData = null;
             $comparisonResults = null;
+            $debugInfo = [];
             
-            if ($timeSinceLastCall >= $rateLimitSeconds) {
+            // Check if we should make a real API call
+            $shouldMakeRealCall = $forceReal || ($timeSinceLastCall >= $rateLimitSeconds);
+            
+            if ($shouldMakeRealCall) {
                 // Make real API call and update cache
                 try {
-                    error_log("TEBRA_API_CALL: Making real API call (last call was {$timeSinceLastCall}s ago)");
+                    error_log("TEBRA_API_CALL: Making real API call (forced: " . json_encode($forceReal) . ", last call was {$timeSinceLastCall}s ago)");
                     $realData = $client->getAppointments($fromDate, $toDate);
                     $realDataAvailable = true;
                     file_put_contents($cacheFile, (string)$currentTime);
-                    error_log("TEBRA_API_CALL: Real API call successful, cached timestamp updated");
+                    error_log("TEBRA_API_CALL: Real API call successful, response size: " . strlen(json_encode($realData)));
+                    
+                    // Debug: Log real data structure
+                    if ($debugMode) {
+                        $debugInfo['real_data_keys'] = array_keys($realData);
+                        $debugInfo['real_appointments_count'] = isset($realData['GetAppointmentsResult']['Appointments']['AppointmentData']) 
+                            ? count($realData['GetAppointmentsResult']['Appointments']['AppointmentData']) 
+                            : 0;
+                    }
                 } catch (\Exception $e) {
                     error_log("TEBRA_API_CALL: Real API call failed: " . $e->getMessage());
+                    error_log("TEBRA_API_CALL: Stack trace: " . $e->getTraceAsString());
                     $realDataAvailable = false;
+                    $debugInfo['real_api_error'] = [
+                        'message' => $e->getMessage(),
+                        'code' => $e->getCode()
+                    ];
                 }
             } else {
                 $timeUntilNext = $rateLimitSeconds - $timeSinceLastCall;
                 error_log("TEBRA_API_CALL: Rate limited, next call allowed in {$timeUntilNext}s");
+                $debugInfo['rate_limit_info'] = [
+                    'next_allowed_seconds' => $timeUntilNext,
+                    'last_call_ago' => $timeSinceLastCall
+                ];
             }
             
             // HARDCODED MOCK RESPONSE for Monday, June 23, 2025 - ALL 17 APPOINTMENTS
@@ -447,19 +479,43 @@ try {
                 error_log("TEBRA_DATA_COMPARISON: " . json_encode($comparisonResults));
             }
             
-            // Add metadata to response
-            $responseData = $hardcodedData;
-            $responseData['metadata'] = [
-                'source' => 'hardcoded',
-                'date_requested' => $fromDate . ' to ' . $toDate,
-                'real_data_available' => $realDataAvailable,
-                'rate_limit_info' => [
-                    'last_call_ago_seconds' => $timeSinceLastCall,
-                    'next_call_allowed_in_seconds' => max(0, $rateLimitSeconds - $timeSinceLastCall)
-                ],
-                'comparison_results' => $comparisonResults,
-                'timestamp' => date('c')
-            ];
+            // Decide which data to return
+            if ($realDataAvailable && $realData) {
+                // If we have real data, return it
+                $responseData = [
+                    'success' => true,
+                    'data' => $realData
+                ];
+                $responseData['metadata'] = [
+                    'source' => 'real_tebra_api',
+                    'date_requested' => $fromDate . ' to ' . $toDate,
+                    'real_data_available' => true,
+                    'timestamp' => date('c'),
+                    'debug_info' => $debugInfo
+                ];
+                
+                // Compare with hardcoded if in debug mode
+                if ($debugMode) {
+                    // Extract the actual data from the response structure
+                    $realDataForComparison = isset($realData['data']) ? $realData['data'] : $realData;
+                    $comparisonResults = compareAppointmentData($realDataForComparison, $hardcodedData);
+                    $responseData['metadata']['comparison_results'] = $comparisonResults;
+                }
+            } else {
+                // Return hardcoded data as fallback
+                $responseData = $hardcodedData;
+                $responseData['metadata'] = [
+                    'source' => 'hardcoded_fallback',
+                    'date_requested' => $fromDate . ' to ' . $toDate,
+                    'real_data_available' => false,
+                    'rate_limit_info' => [
+                        'last_call_ago_seconds' => $timeSinceLastCall,
+                        'next_call_allowed_in_seconds' => max(0, $rateLimitSeconds - $timeSinceLastCall)
+                    ],
+                    'timestamp' => date('c'),
+                    'debug_info' => $debugInfo
+                ];
+            }
             break;
             
         case '/getProviders':

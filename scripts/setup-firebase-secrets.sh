@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # Firebase Configuration Setup Script for Google Secret Manager
 # HIPAA-Compliant Configuration Management

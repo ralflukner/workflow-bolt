@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # =============================================================================
 # Patient Encryption Key Setup Script for Google Secret Manager (GSM)
