@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 set -euo pipefail
 
 # This script creates the necessary Service Account secrets in Google Secret Manager for Gmail integration

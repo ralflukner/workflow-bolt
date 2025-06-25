@@ -243,18 +243,84 @@ const { tebraProxyClient } = require('./src/tebra-proxy-client.js');
 
 // Tebra API proxy endpoint for HIPAA compliance - CALLS PHP SERVICE ONLY
 app.post('/api/tebra', async (req, res) => {
+  const requestStart = Date.now();
+  const correlationId = req.headers['x-correlation-id'] || require('crypto').randomBytes(16).toString('hex');
+  
   try {
     const { action, params = {} } = req.body;
+    
+    // Enhanced debug logging
+    console.log('TEBRA_API_REQUEST:', JSON.stringify({
+      correlationId,
+      action,
+      params,
+      user: req.user?.uid,
+      timestamp: new Date().toISOString(),
+      headers: {
+        'user-agent': req.headers['user-agent'],
+        'x-correlation-id': correlationId
+      }
+    }));
+    
     if (!action) {
       return res.status(400).json({ success: false, error: 'Action is required' });
     }
 
     // ALL REQUESTS GO TO PHP CLOUD RUN SERVICE - NO NODE.JS SOAP
     const result = await tebraProxyClient.makeRequest(action, params);
-    res.json({ success: true, data: result });
+    
+    const requestDuration = Date.now() - requestStart;
+    
+    // Log successful response
+    console.log('TEBRA_API_RESPONSE:', JSON.stringify({
+      correlationId,
+      action,
+      success: true,
+      duration_ms: requestDuration,
+      response_size: JSON.stringify(result).length,
+      has_data: !!result,
+      data_type: typeof result,
+      timestamp: new Date().toISOString()
+    }));
+    
+    // Add debug metadata to response
+    res.json({ 
+      success: true, 
+      data: result,
+      _debug: {
+        correlationId,
+        duration_ms: requestDuration,
+        timestamp: new Date().toISOString()
+      }
+    });
   } catch (error) {
-    console.error('Tebra PHP proxy error:', error);
-    res.status(500).json({ success: false, error: error.message });
+    const requestDuration = Date.now() - requestStart;
+    
+    // Enhanced error logging
+    console.error('TEBRA_API_ERROR:', JSON.stringify({
+      correlationId,
+      action: req.body?.action,
+      error: {
+        message: error.message,
+        type: error.type || 'UNKNOWN',
+        stack: error.stack,
+        originalError: error.originalError?.message,
+        status: error.status
+      },
+      duration_ms: requestDuration,
+      timestamp: new Date().toISOString()
+    }));
+    
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      _debug: {
+        correlationId,
+        error_type: error.type,
+        duration_ms: requestDuration,
+        timestamp: new Date().toISOString()
+      }
+    });
   }
 });
 
