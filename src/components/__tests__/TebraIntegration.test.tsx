@@ -47,9 +47,6 @@ describe('TebraIntegration Component', () => {
     
     process.env = {
       ...originalEnv,
-      REACT_APP_TEBRA_USERNAME: 'test-user',
-      REACT_APP_TEBRA_PASSWORD: 'test-password',
-      REACT_APP_TEBRA_WSDL_URL: 'https://test-wsdl-url.com'
     };
   });
 
@@ -58,6 +55,10 @@ describe('TebraIntegration Component', () => {
   });
 
   it('renders correctly with valid credentials', async () => {
+    process.env.VITE_TEBRA_USERNAME = 'test-user';
+    process.env.VITE_TEBRA_PASSWORD = 'test-password';
+    process.env.VITE_TEBRA_WSDL_URL = 'https://test-wsdl-url.com';
+
     render(
       <TestProviders>
         <TebraIntegration />
@@ -76,6 +77,10 @@ describe('TebraIntegration Component', () => {
   });
 
   it('shows fallback mode and missing credentials message', async () => {
+    delete process.env.VITE_TEBRA_USERNAME;
+    delete process.env.VITE_TEBRA_PASSWORD;
+    delete process.env.VITE_TEBRA_WSDL_URL;
+
     render(
       <TestProviders>
         <TebraIntegration />
@@ -85,10 +90,17 @@ describe('TebraIntegration Component', () => {
     // Should show fallback mode badge
     expect(screen.getByText('Fallback Mode')).toBeInTheDocument();
     // Should show missing credentials message
-    expect(screen.getByText('Tebra credentials not configured - environment variables missing')).toBeInTheDocument();
+    await waitFor(() => {
+        expect(screen.getByText('Tebra credentials not configured - environment variables missing')).toBeInTheDocument();
+    });
   });
 
   it('handles import from Tebra in fallback mode', async () => {
+    // Unset credentials for this specific test
+    delete process.env.REACT_APP_TEBRA_USERNAME;
+    delete process.env.REACT_APP_TEBRA_PASSWORD;
+    delete process.env.REACT_APP_TEBRA_WSDL_URL;
+
     render(
       <TestProviders>
         <TebraIntegration />
@@ -98,7 +110,7 @@ describe('TebraIntegration Component', () => {
     const importButton = screen.getByText('Import from Tebra');
     fireEvent.click(importButton);
 
-    // In fallback mode, clicking import shows the integration not initialized message
+    // In fallback mode, clicking import shows the missing credentials message
     expect(screen.getByText('Integration service not initialized. Please check environment variables and reload.')).toBeInTheDocument();
   });
 

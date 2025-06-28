@@ -1,7 +1,8 @@
-// TEMPORARILY DISABLED - causing memory exhaustion
-// require('./otel-init');
-// Use minimal version instead
-require('./otel-init-minimal');
+// Load environment variables in development/emulator
+if (process.env.FUNCTIONS_EMULATOR) {
+  require('dotenv').config();
+}
+
 const functions = require('firebase-functions');
 const functionsV1 = require('firebase-functions/v1');
 const { onCall } = require('firebase-functions/v2/https');
@@ -12,120 +13,55 @@ const admin = require('firebase-admin');
 const jwt = require('jsonwebtoken');
 const jwksRsa = require('jwks-rsa');
 const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
+const { tebraProxyClient } = require('./src/tebra-proxy-client');
 const { 
+  validatePatientId, 
+  validateDate, 
+  validateSearchCriteria, 
+  validateAppointmentData,
+  logValidationAttempt 
+} = require('./src/validation');
+const { 
+  monitorAuth, 
+  monitorPhiAccess, 
+  monitorValidationFailure,
   generateSecurityReport 
 } = require('./src/monitoring');
 
 // Initialize Firebase Admin (avoid duplicate app error)
 if (!admin.apps.length) {
   // Initialize with default credentials and explicit project ID
-  admin.initializeApp({
+  // In emulator mode, we need to use a service account or set GOOGLE_APPLICATION_CREDENTIALS
+  const config = {
     projectId: 'luknerlumina-firebase'
-  });
+  };
+  admin.initializeApp(config);
 }
 
 // Note: Secrets management moved to environment variables for this deployment
 
-// -----------------------------------------------------------------------------
-// Auth0 configuration & JWKS client – cached per Cloud Functions instance
-// -----------------------------------------------------------------------------
-let auth0Domain = null;
-let auth0Audience = null;
-let auth0ClientSecret = null;
-let jwksClientInstance = null;
-let auth0InitPromise = null;
-
-/**
- * Initialise Auth0 secrets and the JWKS client once per cold start.
- * Subsequent calls await the same promise, avoiding repeat Secret Manager I/O.
- */
-function initAuth0Config() {
-  if (auth0InitPromise) return auth0InitPromise;
-
-  auth0InitPromise = (async () => {
-    const gsm = new SecretManagerServiceClient();
-    const PROJECT_ID = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || 'luknerlumina-firebase';
-
-    // Mandatory secrets
-    const [domainVersion] = await gsm.accessSecretVersion({
-      name: `projects/${PROJECT_ID}/secrets/AUTH0_DOMAIN/versions/latest`
-    });
-    const [audienceVersion] = await gsm.accessSecretVersion({
-      name: `projects/${PROJECT_ID}/secrets/AUTH0_AUDIENCE/versions/latest`
-    });
-
-    auth0Domain = domainVersion.payload?.data?.toString();
-    auth0Audience = audienceVersion.payload?.data?.toString();
-
-    if (!auth0Domain || !auth0Audience) {
-      throw new Error('Missing Auth0 configuration in Secret Manager');
-    }
-
-    // Optional – only needed for HS256 tenants
-    try {
-      const [secretVersion] = await gsm.accessSecretVersion({
-        name: `projects/${PROJECT_ID}/secrets/AUTH0_CLIENT_SECRET/versions/latest`
-      });
-      auth0ClientSecret = secretVersion.payload?.data?.toString();
-    } catch (err) {
-      console.info('AUTH0_CLIENT_SECRET not found – assuming RS256-signed tokens.');
-    }
-
-    // JWKS client (RS256 path)
-    jwksClientInstance = jwksRsa({
-      jwksUri: `https://${auth0Domain}/.well-known/jwks.json`,
-      cache: true,
-      cacheMaxEntries: 5,
-      cacheMaxAge: 10 * 60 * 1000, // 10 min
-      rateLimit: true,
-      jwksRequestsPerMinute: 10
-    });
-  })();
-
-  return auth0InitPromise;
-}
-
-/**
- * Verify Auth0 JWT (supports RS256 via JWKS & HS256 via client secret).
- * Secrets and JWKS client are cached by initAuth0Config().
- */
+/** Verifies an Auth0 RS256 access / ID token and returns the decoded payload */
 async function verifyAuth0Jwt(token) {
-  await initAuth0Config();
-
-  // Decode header to determine algorithm
-  let header;
-  try {
-    header = JSON.parse(Buffer.from(token.split('.')[0], 'base64').toString('utf-8'));
-  } catch {
-    throw new Error('Invalid JWT format');
+  // Get Auth0 config from environment variables
+  const domain = process.env.AUTH0_DOMAIN || process.env.VITE_AUTH0_DOMAIN;
+  const audience = process.env.AUTH0_AUDIENCE || process.env.VITE_AUTH0_AUDIENCE;
+  
+  if (!domain || !audience) {
+    throw new Error('Missing Auth0 configuration in environment variables');
   }
 
-  // HS256 path
-  if (header.alg === 'HS256') {
-    if (!auth0ClientSecret) {
-      throw new Error('AUTH0_CLIENT_SECRET not configured – cannot verify HS256 token');
-    }
+  // Create JWKS client with Auth0 domain
+  const jwksClient = jwksRsa({
+    jwksUri: `https://${domain}/.well-known/jwks.json`,
+    cache: true,
+    cacheMaxEntries: 5,
+    cacheMaxAge: 10 * 60 * 1000,      // 10 min
+    rateLimit: true,
+    jwksRequestsPerMinute: 10
+  });
 
-    return new Promise((resolve, reject) => {
-      jwt.verify(
-        token,
-        auth0ClientSecret,
-        {
-          algorithms: ['HS256'],
-          audience: [
-            auth0Audience, // Primary API audience
-            `https://${auth0Domain}/userinfo` // Auth0 userinfo endpoint
-          ],
-          issuer: `https://${auth0Domain}/`
-        },
-        (err, decoded) => (err ? reject(err) : resolve(decoded))
-      );
-    });
-  }
-
-  // RS256 path
-  const getSigningKey = (kidHeader, cb) =>
-    jwksClientInstance.getSigningKey(kidHeader.kid, (err, key) => {
+  const getSigningKey = (header, cb) =>
+    jwksClient.getSigningKey(header.kid, (err, key) => {
       if (err) return cb(err);
       cb(null, key.getPublicKey());
     });
@@ -136,19 +72,10 @@ async function verifyAuth0Jwt(token) {
       getSigningKey,
       {
         algorithms: ['RS256'],
-        audience: [
-          auth0Audience, // Primary API audience
-          `https://${auth0Domain}/userinfo` // Auth0 userinfo endpoint
-        ],
-        issuer: `https://${auth0Domain}/`
+        audience: audience,
+        issuer: `https://${domain}/`
       },
-      (err, decoded) => {
-        if (err) {
-          console.error('JWT_VERIFY_ERROR', err);
-          return reject(err);
-        }
-        resolve(decoded);
-      }
+      (err, decoded) => (err ? reject(err) : resolve(decoded))
     );
   });
 }
@@ -176,41 +103,7 @@ const limiter = rateLimit({
 
 app.use('/api', limiter);
 
-// HIPAA SECURITY: Authentication middleware for ALL API routes
-app.use('/api/*', async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Authentication required - Missing or invalid Authorization header' 
-      });
-    }
-
-    const idToken = authHeader.split('Bearer ')[1];
-    
-    // Verify Firebase ID token
-    try {
-      const decodedToken = await admin.auth().verifyIdToken(idToken);
-      req.user = decodedToken;
-      next();
-    } catch (firebaseError) {
-      console.error('Firebase token verification failed:', firebaseError.message);
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Invalid Firebase authentication token' 
-      });
-    }
-  } catch (error) {
-    console.error('Authentication middleware error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Authentication service unavailable' 
-    });
-  }
-});
-
-// Health check endpoint (NO AUTHENTICATION - safe)
+// Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
@@ -219,7 +112,19 @@ app.get('/health', (req, res) => {
   });
 });
 
-// REMOVED: Test endpoints for HIPAA security compliance
+// Test endpoint with different HTTP methods
+app.get('/test', (req, res) => {
+  res.json({ message: 'GET request successful', method: 'GET' });
+});
+
+app.post('/test', (req, res) => {
+  const body = req.body;
+  res.json({ 
+    message: 'POST request successful', 
+    method: 'POST',
+    receivedData: body 
+  });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -238,114 +143,296 @@ const { validateHIPAACompliance, testSecretRedaction } = require('./hipaaValidat
 exports.validateHIPAACompliance = validateHIPAACompliance;
 exports.testSecretRedaction = testSecretRedaction;
 
-// HIPAA-Compliant Tebra API Proxy - PHP ONLY (NO NODE.JS SOAP)
-const { tebraProxyClient } = require('./src/tebra-proxy-client.js');
-
-// Tebra API proxy endpoint for HIPAA compliance - CALLS PHP SERVICE ONLY
-app.post('/api/tebra', async (req, res) => {
-  const requestStart = Date.now();
-  const correlationId = req.headers['x-correlation-id'] || require('crypto').randomBytes(16).toString('hex');
+// Tebra API Functions
+exports.tebraTestConnection = onCall({ cors: true }, async (request) => {
+  console.log('Testing Tebra connection...');
+  console.log('Environment - TEBRA_CLOUD_RUN_URL:', process.env.TEBRA_CLOUD_RUN_URL);
+  console.log('Environment - GOOGLE_APPLICATION_CREDENTIALS:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
   
   try {
-    const { action, params = {} } = req.body;
+    // Test actual Tebra API connection
+    const connected = await tebraProxyClient.testConnection();
     
-    // Enhanced debug logging
-    console.log('TEBRA_API_REQUEST:', JSON.stringify({
-      correlationId,
-      action,
-      params,
-      user: req.user?.uid,
-      timestamp: new Date().toISOString(),
-      headers: {
-        'user-agent': req.headers['user-agent'],
-        'x-correlation-id': correlationId
-      }
-    }));
-    
-    if (!action) {
-      return res.status(400).json({ success: false, error: 'Action is required' });
-    }
-
-    // ALL REQUESTS GO TO PHP CLOUD RUN SERVICE - NO NODE.JS SOAP
-    const result = await tebraProxyClient.makeRequest(action, params);
-    
-    const requestDuration = Date.now() - requestStart;
-    
-    // Log successful response
-    console.log('TEBRA_API_RESPONSE:', JSON.stringify({
-      correlationId,
-      action,
-      success: true,
-      duration_ms: requestDuration,
-      response_size: JSON.stringify(result).length,
-      has_data: !!result,
-      data_type: typeof result,
+    return { 
+      success: connected, 
+      message: connected ? 'Tebra API connection test successful' : 'Tebra API connection failed',
       timestamp: new Date().toISOString()
-    }));
-    
-    // Add debug metadata to response
-    res.json({ 
-      success: true, 
-      data: result,
-      _debug: {
-        correlationId,
-        duration_ms: requestDuration,
-        timestamp: new Date().toISOString()
-      }
-    });
+    };
   } catch (error) {
-    const requestDuration = Date.now() - requestStart;
-    
-    // Enhanced error logging
-    console.error('TEBRA_API_ERROR:', JSON.stringify({
-      correlationId,
-      action: req.body?.action,
-      error: {
-        message: error.message,
-        type: error.type || 'UNKNOWN',
-        stack: error.stack,
-        originalError: error.originalError?.message,
-        status: error.status
-      },
-      duration_ms: requestDuration,
+    console.error('Tebra connection test failed:', error);
+    console.error('Full error details:', error.stack);
+    return { 
+      success: false, 
+      message: error.message || 'Connection test failed',
       timestamp: new Date().toISOString()
+    };
+  }
+});
+
+// Get patient by ID
+exports.tebraGetPatient = onCall({ 
+  cors: true,
+  enforceAppCheck: process.env.NODE_ENV === 'production' // Enable App Check in production
+}, async (request) => {
+  // HIPAA Compliance: Require authentication for PHI access
+  if (!request.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required for patient data access');
+  }
+  
+  // HIPAA Monitoring: Track PHI access
+  monitorPhiAccess(request.auth.uid, 'PATIENT_GET', { 
+    endpoint: 'tebraGetPatient',
+    timestamp: new Date().toISOString()
+  });
+  
+  try {
+    // HIPAA Security: Validate and sanitize input
+    const { patientId } = request.data;
+    const validatedPatientId = validatePatientId(patientId);
+    logValidationAttempt(request.auth.uid, 'PATIENT_ID_VALIDATION', true);
+    
+    // Get actual patient data from Tebra
+    const patientData = await tebraProxyClient.getPatientById(validatedPatientId);
+    
+    if (!patientData) {
+      return {
+        success: false,
+        message: 'Patient not found'
+      };
+    }
+    
+    // Transform the data to our expected format
+    return {
+      success: true,
+      data: {
+        PatientId: patientData.PatientId || patientData.Id || validatedPatientId,
+        FirstName: patientData.FirstName || '',
+        LastName: patientData.LastName || '',
+        DateOfBirth: patientData.DateOfBirth || patientData.DOB || '',
+        Phone: patientData.Phone || patientData.PhoneNumber || '',
+        Email: patientData.Email || patientData.EmailAddress || ''
+      }
+    };
+  } catch (error) {
+    // HIPAA Compliance: Log errors without PHI
+    console.error(`Patient data access failed for user: ${request.auth?.uid}`, { 
+      errorType: error.name,
+      timestamp: new Date().toISOString()
+    });
+    return {
+      success: false,
+      message: 'Failed to retrieve patient data' // Generic message to prevent PHI leakage
+    };
+  }
+});
+
+// Search patients
+exports.tebraSearchPatients = onCall({ cors: true }, async (request) => {
+  // HIPAA Compliance: Require authentication for PHI access
+  if (!request.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required for patient search');
+  }
+  
+  // HIPAA Monitoring: Track PHI access
+  monitorPhiAccess(request.auth.uid, 'PATIENT_SEARCH', { 
+    endpoint: 'tebraSearchPatients',
+    timestamp: new Date().toISOString()
+  });
+  
+  try {
+    // HIPAA Security: Validate and sanitize search criteria
+    const { searchCriteria } = request.data;
+    const validatedCriteria = validateSearchCriteria(searchCriteria);
+    logValidationAttempt(request.auth.uid, 'PATIENT_SEARCH_VALIDATION', true);
+    
+    // Search for patients using Tebra API
+    const patients = await tebraProxyClient.searchPatients(validatedCriteria.lastName || '');
+    
+    // Transform the results
+    const transformedPatients = patients.map(patient => ({
+      PatientId: patient.PatientId || patient.Id || '',
+      FirstName: patient.FirstName || '',
+      LastName: patient.LastName || '',
+      DateOfBirth: patient.DateOfBirth || patient.DOB || '',
+      Phone: patient.Phone || patient.PhoneNumber || '',
+      Email: patient.Email || patient.EmailAddress || ''
     }));
     
-    res.status(500).json({ 
-      success: false, 
-      error: error.message,
-      _debug: {
-        correlationId,
-        error_type: error.type,
-        duration_ms: requestDuration,
-        timestamp: new Date().toISOString()
-      }
-    });
+    return {
+      success: true,
+      data: transformedPatients
+    };
+  } catch (error) {
+    console.error('Failed to search patients:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to search patients',
+      data: []
+    };
   }
 });
 
-// Export getSecret callable (whitelisted secrets for frontend)
-const { getSecret } = require('./src/get-secret.js');
-exports.getSecret = getSecret;
-
-// Authenticated Firebase config endpoint (HIPAA Compliant)
-exports.getFirebaseConfig = onCall({ cors: true }, async (request) => {
-  // HIPAA Security: Require authentication
+// Get appointments
+exports.tebraGetAppointments = onCall({ cors: true }, async (request) => {
+  // HIPAA Compliance: Require authentication for PHI access
   if (!request.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required for appointment data access');
   }
-
-  // Return public Firebase configuration (safe for authenticated users)
-  return {
-    apiKey: process.env.FIREBASE_API_KEY || 'AIzaSyCIMBYxl3lMAPMAWOKzLjwItD_k-5Qbd-c',
-    authDomain: process.env.FIREBASE_AUTH_DOMAIN || 'luknerlumina-firebase.firebaseapp.com',
-    projectId: process.env.FIREBASE_PROJECT_ID || 'luknerlumina-firebase',
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'luknerlumina-firebase.appspot.com',
-    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '623450773640',
-    appId: process.env.FIREBASE_APP_ID || '1:623450773640:web:9afd63d3ccbb1fcb6fe73d',
-    measurementId: process.env.FIREBASE_MEASUREMENT_ID || 'G-W6TX8WRN2Z'
-  };
+  
+  // HIPAA Monitoring: Track PHI access
+  monitorPhiAccess(request.auth.uid, 'APPOINTMENT_GET', { 
+    endpoint: 'tebraGetAppointments',
+    timestamp: new Date().toISOString()
+  });
+  
+  try {
+    // HIPAA Security: Validate date input
+    const { date } = request.data;
+    const targetDate = date ? validateDate(date) : new Date().toISOString().split('T')[0];
+    logValidationAttempt(request.auth.uid, 'APPOINTMENT_DATE_VALIDATION', true);
+    
+    // Get appointments from Tebra
+    const appointments = await tebraProxyClient.getAppointments(targetDate, targetDate);
+    
+    // Return the appointments array directly
+    return appointments;
+  } catch (error) {
+    console.error('Failed to get appointments:', error);
+    throw new functions.https.HttpsError('internal', error.message || 'Failed to get appointments');
+  }
 });
+
+// Get providers
+exports.tebraGetProviders = onCall({ cors: true }, async (request) => {
+  console.log('Getting providers...');
+  
+  try {
+    // Get actual providers from Tebra
+    const providers = await tebraProxyClient.getProviders();
+    
+    // Transform the results
+    const transformedProviders = providers.map(provider => ({
+      ProviderId: provider.ProviderId || provider.Id || '',
+      FirstName: provider.FirstName || '',
+      LastName: provider.LastName || '',
+      Title: provider.Title || 'Dr.',
+      Specialty: provider.Specialty || '',
+      Email: provider.Email || ''
+    }));
+    
+    return {
+      success: true,
+      data: transformedProviders
+    };
+  } catch (error) {
+    console.error('Failed to get providers:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to get providers',
+      data: []
+    };
+  }
+});
+
+// Test Tebra appointments endpoint
+exports.tebraTestAppointments = onCall({ cors: true }, async (request) => {
+  if (!request.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Authentication required'
+    );
+  }
+  console.log('Testing Tebra appointments endpoint...');
+  
+  try {
+    const { fromDate, toDate, date } = request.data || {};
+    const startDate = fromDate || date || '2025-06-10';
+    const endDate = toDate || date || '2025-06-11';
+    
+    console.log(`Fetching raw appointments from ${startDate} to ${endDate}`);
+    const response = await tebraProxyClient.getAppointments(startDate, endDate);
+    
+    return {
+      success: true,
+      data: response,
+      message: `Raw Tebra response for ${startDate} to ${endDate}`
+    };
+  } catch (error) {
+    console.error('Test failed:', error);
+    return {
+      success: false,
+      message: error.message || 'Test failed'
+    };
+  }
+});
+
+// Create appointment
+exports.tebraCreateAppointment = onCall({ cors: true }, async (request) => {
+  // HIPAA Compliance: Require authentication for PHI operations
+  if (!request.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required for appointment creation');
+  }
+  
+  // Audit log for HIPAA compliance (no PHI logged)
+  console.log(`Appointment creation requested by user: ${request.auth.uid}`);
+  
+  try {
+    const appointmentData = request.data;
+    
+    // Mock response for now
+    // In production, this would call the actual Tebra API
+    return {
+      success: true,
+      data: {
+        AppointmentId: 'APT' + Date.now(),
+        ...appointmentData,
+        Status: 'Scheduled'
+      }
+    };
+  } catch (error) {
+    console.error('Failed to create appointment:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to create appointment'
+    };
+  }
+});
+
+// Update appointment
+exports.tebraUpdateAppointment = onCall({ cors: true }, async (request) => {
+  // HIPAA Compliance: Require authentication for PHI operations
+  if (!request.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required for appointment updates');
+  }
+  
+  // Audit log for HIPAA compliance (no PHI logged)
+  console.log(`Appointment update requested by user: ${request.auth.uid}`);
+  
+  try {
+    const { appointmentId, updates } = request.data;
+    
+    // Mock response for now
+    // In production, this would call the actual Tebra API
+    return {
+      success: true,
+      data: {
+        AppointmentId: appointmentId,
+        ...updates,
+        UpdatedAt: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    console.error('Failed to update appointment:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to update appointment'
+    };
+  }
+});
+
+// Import the new refactored sync function
+const { tebraSyncTodaysSchedule } = require('./src/tebra-sync/index');
+exports.tebraSyncTodaysSchedule = tebraSyncTodaysSchedule;
 
 // Secure Auth0 token exchange function (HIPAA Compliant)
 exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
@@ -357,40 +444,12 @@ exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
     );
   }
 
-  // Debug: Log token format for troubleshooting
-  try {
-    const parts = auth0Token.split('.');
-    if (parts.length === 3) {
-      const header = JSON.parse(Buffer.from(parts[0], 'base64').toString('utf-8'));
-      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'));
-      console.log('JWT_DEBUG:', JSON.stringify({
-        algorithm: header.alg,
-        audience: payload.aud,
-        issuer: payload.iss,
-        subject: payload.sub,
-        expiry: new Date(payload.exp * 1000).toISOString(),
-        expectedAudience: [
-          await initAuth0Config().then(() => auth0Audience),
-          await initAuth0Config().then(() => `https://${auth0Domain}/userinfo`)
-        ]
-      }));
-    }
-  } catch (debugError) {
-    console.error('JWT_DEBUG_ERROR:', debugError);
-  }
-
   let decoded;
   try {
     decoded = await verifyAuth0Jwt(auth0Token);   // ① Full JWT verification
   } catch (err) {
-    console.error('JWT_VERIFICATION_FAILED:', JSON.stringify({
-      error: err.message,
-      code: err.code,
-      stack: err.stack,
-      tokenLength: auth0Token?.length,
-      tokenPrefix: auth0Token?.substring(0, 50)
-    }));
-    throw new functions.https.HttpsError('unauthenticated', `JWT verification failed: ${err.message}`);
+    console.error('Invalid Auth0 JWT', err);
+    throw new functions.https.HttpsError('unauthenticated', 'JWT verification failed', { originalError: err.message });
   }
 
   // ② Derive a stable, safe Firebase UID
@@ -410,7 +469,7 @@ exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
     });
   } catch (err) {
     console.error('Failed to mint custom token', err);
-    throw new functions.https.HttpsError('internal', 'Could not mint custom token');
+    throw new functions.https.HttpsError('internal', 'Could not mint custom token', { originalError: err.message });
   }
 
   // HIPAA Audit Log
@@ -421,13 +480,7 @@ exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
     timestamp: new Date().toISOString()
   }));
 
-  // Return full response expected by frontend AuthBridge
-  return {
-    success: true,
-    firebaseToken: customToken,
-    uid: firebaseUid,
-    message: 'Token exchange successful'
-  };
+  return { success: true, firebaseToken: customToken };
 });
 
 // Security monitoring endpoint for HIPAA compliance
@@ -439,22 +492,22 @@ exports.getSecurityReport = onCall({
   if (!request.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required for security reports');
   }
-
+  
   // TODO: Add admin role check in production
   // if (!request.auth.token?.admin) {
   //   throw new functions.https.HttpsError('permission-denied', 'Admin access required');
   // }
-
+  
   try {
     const report = generateSecurityReport();
-
+    
     // Log security report access
     console.log('HIPAA_AUDIT:', JSON.stringify({
       type: 'SECURITY_REPORT_ACCESS',
       userId: request.auth.uid,
       timestamp: new Date().toISOString()
     }));
-
+    
     return {
       success: true,
       data: report
