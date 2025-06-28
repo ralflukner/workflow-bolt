@@ -30,6 +30,9 @@ gcloud-key.json
 gcr.json
 keyfile.json
 *-credentials.json
+# Firebase Admin SDK
+**/config/*firebase*.json
+**/config/*adminsdk*.json
 
 # API Keys and Secrets
 **/secrets.json
