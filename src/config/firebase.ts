@@ -3,7 +3,7 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFunctions, Functions } from 'firebase/functions';
 import { getAnalytics, Analytics } from 'firebase/analytics';
-import { firebaseConfig } from './firebase-config';
+import { getFirebaseConfigWithGSM } from './firebase-init';
 
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
@@ -21,7 +21,14 @@ export async function initializeFirebase(): Promise<void> {
     db = getFirestore(existingApp);
     auth = getAuth(existingApp);
     functions = getFunctions(existingApp);
-    analytics = getAnalytics(existingApp);
+    
+    // Only try to get analytics if it was previously initialized
+    try {
+      analytics = getAnalytics(existingApp);
+    } catch (error) {
+      console.warn('⚠️ Analytics not available for existing app:', error);
+      analytics = null;
+    }
     
     // Configure emulators in development (temporarily disabled due to CORS issues)
     // if (process.env.NODE_ENV === 'development') {
@@ -37,11 +44,27 @@ export async function initializeFirebase(): Promise<void> {
   }
 
   try {
+    // Fetch configuration from backend
+    const firebaseConfig = await getFirebaseConfigWithGSM();
+    console.log('Firebase config loaded from GSM');
+    
     app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
     functions = getFunctions(app);
-    analytics = getAnalytics(app);
+    
+    // Only initialize analytics if we have a valid API key and measurement ID
+    if (firebaseConfig.apiKey && firebaseConfig.apiKey !== 'VALUE' && firebaseConfig.measurementId) {
+      try {
+        analytics = getAnalytics(app);
+      } catch (error) {
+        console.warn('⚠️ Analytics initialization failed, continuing without analytics:', error);
+        analytics = null;
+      }
+    } else {
+      console.warn('⚠️ Skipping Analytics initialization due to invalid/missing API key or measurement ID');
+      analytics = null;
+    }
     
     // Configure emulators in development (temporarily disabled due to CORS issues)
     // if (process.env.NODE_ENV === 'development') {
@@ -65,7 +88,7 @@ export async function initializeFirebase(): Promise<void> {
  * Check if Firebase is configured
  */
 export const isFirebaseConfigured = (): boolean => {
-  return !!app && !!db && !!auth && !!functions && !!analytics;
+  return !!app && !!db && !!auth && !!functions;
 };
 
 /**

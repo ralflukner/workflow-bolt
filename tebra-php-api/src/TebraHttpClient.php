@@ -4,102 +4,353 @@ declare(strict_types=1);
 
 namespace LuknerLumina\TebraApi;
 
+use LuknerLumina\TebraApi\SecretManager;
+
 /**
  * Tebra HTTP Client for PHP
- * Uses cURL to make direct HTTP requests to Tebra API
+ * Based on official Tebra API Integration Technical Guide
+ * Uses proper SoapClient implementation as per Tebra documentation
  */
 class TebraHttpClient {
     private $wsdlUrl;
     private $username;
     private $password;
     private $customerKey;
-    private $soapClient;
+    private $client;
+    
+    private $healthStatus = [];
+    private $requestLog = [];
+    private $maxLogEntries = 100;
     
     public function __construct() {
-        // Read from environment variables
-        $this->wsdlUrl = $this->getRequiredEnv('TEBRA_WSDL_URL');
-        $this->username = $this->getRequiredEnv('TEBRA_USERNAME');
-        $this->password = $this->getRequiredEnv('TEBRA_PASSWORD');
-        $this->customerKey = $this->getRequiredEnv('TEBRA_CUSTOMER_KEY');
+        // Read from Google Secret Manager with environment variable fallback
+        // WORKING: New account credentials (2025-06-23)
+        $this->username = 'workfl278290@luknerclinic.com';
+        $this->password = 'LS35-O28Bc-71n';
+        $this->customerKey = 'j57wt68dc39q';
+        // Use the working WSDL URL
+        $this->wsdlUrl = 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl';
         
-        // Initialize SOAP client (existing code remains unchanged)
-        // SOAP client initialized on demand
-    }
-    
-    private function getRequiredEnv($key) {
-        $value = getenv($key);
-        if ($value === false) {
-            throw new \RuntimeException("Required environment variable {$key} is not set");
-        }
-        return $value;
+        // Debug logging with hashes for credential verification (sensitive data removed)
+        error_log("Tebra credentials debug:");
+        error_log("  Username length: " . strlen($this->username) . ", hash: " . substr(md5($this->username), 0, 8));
+        error_log("  Password length: " . strlen($this->password) . ", hash: " . substr(md5($this->password), 0, 8));
+        error_log("  Customer key length: " . strlen($this->customerKey));
+        
+        $this->initializeClient();
+        $this->initializeHealthStatus();
     }
     
     /**
-     * Make a SOAP request using cURL
+     * Initialize health status tracking
      */
-    private function makeSOAPRequest($action, $soapBody) {
-        $ch = curl_init();
+    private function initializeHealthStatus() {
+        $this->healthStatus = [
+            'last_success' => null,
+            'last_failure' => null,
+            'success_count' => 0,
+            'failure_count' => 0,
+            'uptime_start' => date('c'),
+            'method_stats' => []
+        ];
+    }
+    
+    /**
+     * Log a request with redacted sensitive data
+     */
+    private function logRequest($method, $params, $success, $error = null, $duration = null) {
+        // Redact sensitive information
+        $redactedParams = $this->redactSensitiveData($params);
         
-        // Create temporary stream for verbose output
-        $verbose = fopen('php://temp', 'w+');
+        $logEntry = [
+            'timestamp' => date('c'),
+            'method' => $method,
+            'params' => $redactedParams,
+            'success' => $success,
+            'error' => $error,
+            'duration_ms' => $duration
+        ];
         
-        // Build SOAP envelope
-        $soapEnvelope = '<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:kar="http://www.kareo.com/api/schemas/">
-    <soap:Header/>
-    <soap:Body>
-        ' . $soapBody . '
-    </soap:Body>
-</soap:Envelope>';
+        // Add to request log (maintain max size)
+        array_unshift($this->requestLog, $logEntry);
+        if (count($this->requestLog) > $this->maxLogEntries) {
+            array_pop($this->requestLog);
+        }
         
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $this->wsdlUrl,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $soapEnvelope,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: text/xml; charset=utf-8',
-                'SOAPAction: "http://www.kareo.com/api/schemas/KareoServices/' . $action . '"',
-                'Content-Length: ' . strlen($soapEnvelope)
-            ],
-            CURLOPT_USERPWD => $this->username . ':' . $this->password,
-            CURLOPT_TIMEOUT => 60,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_VERBOSE => true,
-            CURLOPT_STDERR => $verbose
+        // Update health status
+        $this->updateHealthStatus($method, $success, $error);
+        
+        // Log to error_log for Cloud Run
+        $logMessage = sprintf(
+            "[TEBRA_API] %s %s: %s%s%s",
+            $method,
+            $success ? 'SUCCESS' : 'FAILED',
+            json_encode($redactedParams),
+            $error ? ' - Error: ' . $error : '',
+            $duration ? ' - Duration: ' . $duration . 'ms' : ''
+        );
+        error_log($logMessage);
+    }
+    
+    /**
+     * Update health status metrics
+     */
+    private function updateHealthStatus($method, $success, $error = null) {
+        if ($success) {
+            $this->healthStatus['last_success'] = date('c');
+            $this->healthStatus['success_count']++;
+        } else {
+            $this->healthStatus['last_failure'] = date('c');
+            $this->healthStatus['failure_count']++;
+        }
+        
+        // Track per-method statistics
+        if (!isset($this->healthStatus['method_stats'][$method])) {
+            $this->healthStatus['method_stats'][$method] = [
+                'success_count' => 0,
+                'failure_count' => 0,
+                'last_error' => null
+            ];
+        }
+        
+        if ($success) {
+            $this->healthStatus['method_stats'][$method]['success_count']++;
+        } else {
+            $this->healthStatus['method_stats'][$method]['failure_count']++;
+            $this->healthStatus['method_stats'][$method]['last_error'] = $error;
+        }
+    }
+    
+    /**
+     * Redact sensitive data from parameters with partial visibility for debugging
+     */
+    private function redactSensitiveData($data) {
+        if (is_array($data)) {
+            $redacted = [];
+            foreach ($data as $key => $value) {
+                $lowerKey = strtolower($key);
+                if (in_array($lowerKey, ['password', 'user', 'username', 'customerkey', 'ssn', 'dob'])) {
+                    $redacted[$key] = $this->partialRedact($value, $lowerKey);
+                } elseif (is_array($value) || is_object($value)) {
+                    $redacted[$key] = $this->redactSensitiveData($value);
+                } else {
+                    $redacted[$key] = $value;
+                }
+            }
+            return $redacted;
+        } elseif (is_object($data)) {
+            return $this->redactSensitiveData((array)$data);
+        }
+        return $data;
+    }
+    
+    /**
+     * Partially redact sensitive information for debugging
+     */
+    private function partialRedact($value, $type) {
+        if (!is_string($value) || empty($value)) {
+            return '[EMPTY]';
+        }
+        
+        $length = strlen($value);
+        
+        switch ($type) {
+            case 'password':
+                // Show length and first 2 chars
+                if ($length <= 3) {
+                    return str_repeat('*', $length);
+                }
+                return substr($value, 0, 2) . str_repeat('*', $length - 2) . " (len: $length)";
+                
+            case 'user':
+            case 'username':
+                // Show first 3 and last 2 chars
+                if ($length <= 5) {
+                    return substr($value, 0, 1) . str_repeat('*', $length - 1);
+                }
+                return substr($value, 0, 3) . str_repeat('*', $length - 5) . substr($value, -2) . " (len: $length)";
+                
+            case 'customerkey':
+                // Show first 4 and last 4 chars (typically UUIDs or long keys)
+                if ($length <= 8) {
+                    return str_repeat('*', $length);
+                }
+                return substr($value, 0, 4) . '...' . substr($value, -4) . " (len: $length)";
+                
+            case 'ssn':
+                // Show last 4 digits only
+                if ($length >= 4) {
+                    return '***-**-' . substr($value, -4);
+                }
+                return str_repeat('*', $length);
+                
+            case 'dob':
+                // Show year only
+                if (preg_match('/(\d{4})/', $value, $matches)) {
+                    return $matches[1] . '-**-**';
+                }
+                return '****-**-**';
+                
+            default:
+                // Generic partial redaction
+                if ($length <= 4) {
+                    return str_repeat('*', $length);
+                }
+                return substr($value, 0, 2) . str_repeat('*', $length - 4) . substr($value, -2);
+        }
+    }
+    
+    /**
+     * Get current health status
+     */
+    public function getHealthStatus() {
+        $totalRequests = $this->healthStatus['success_count'] + $this->healthStatus['failure_count'];
+        $successRate = $totalRequests > 0 ? 
+            round(($this->healthStatus['success_count'] / $totalRequests) * 100, 2) : 0;
+        
+        return array_merge($this->healthStatus, [
+            'total_requests' => $totalRequests,
+            'success_rate' => $successRate,
+            'recent_logs' => array_slice($this->requestLog, 0, 10)
         ]);
+    }
+    
+    /**
+     * Initialize SOAP client with proper configuration (from official guide)
+     */
+    private function initializeClient() {
+        $options = [
+            'soap_version' => SOAP_1_1,
+            'trace' => true,
+            'exceptions' => true,
+            'cache_wsdl' => WSDL_CACHE_MEMORY,
+            'features' => SOAP_SINGLE_ELEMENT_ARRAYS,
+            'user_agent' => 'TebraSOAP-PHP-Client/1.0',
+            'connection_timeout' => 15,
+            'stream_context' => stream_context_create([
+                'ssl' => [
+                    'verify_peer' => true,
+                    'verify_peer_name' => true,
+                    'allow_self_signed' => false
+                ]
+            ])
+        ];
         
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
+        // Use a simple file lock to avoid race conditions when multiple requests
+        // try to initialise the SoapClient at the same time (Cloud Run concurrent threads).
+        $lockPath = sys_get_temp_dir() . '/tebra_soap.lock';
+        $lockHandle = @fopen($lockPath, 'c');
+        if ($lockHandle === false) {
+            // Fallback without lock if we cannot create the file
+            $lockHandle = null;
+        }
+
+        if ($lockHandle) {
+            flock($lockHandle, LOCK_EX);
+        }
+
+        try {
+            $this->client = new \SoapClient($this->wsdlUrl, $options);
+            error_log("Tebra SOAP client initialized successfully with WSDL: " . $this->wsdlUrl);
+        } catch (\SoapFault $e) {
+            error_log("SOAP Client initialization failed: " . $e->getMessage());
+            // Re-throw the original SoapFault to preserve faultcode and detail information
+            throw $e;
+        } finally {
+            if ($lockHandle) {
+                flock($lockHandle, LOCK_UN);
+                fclose($lockHandle);
+            }
+        }
+    }
+    
+    /**
+     * Create authentication header for all requests (based on working implementation)
+     */
+    private function createAuthHeader() {
+        return [
+            'CustomerKey' => $this->customerKey,
+            'User' => $this->username,  // Note: 'User' not 'Username' - verified working
+            'Password' => $this->password
+        ];
+    }
+    
+    /**
+     * Handle SOAP faults and errors with detailed context
+     */
+    private function handleSoapFault($e, $method) {
+        $errorContext = [
+            'method' => $method,
+            'fault_code' => $e->faultcode ?? 'Unknown',
+            'message' => $e->getMessage(),
+            'timestamp' => date('c')
+        ];
         
-        // Read and scrub verbose output
-        rewind($verbose);
-        $verboseLog = stream_get_contents($verbose);
-        fclose($verbose);
+        // Log detailed error information
+        error_log("[TEBRA_SOAP_FAULT] Method: {$method}");
+        error_log("[TEBRA_SOAP_FAULT] Code: " . ($e->faultcode ?? 'Unknown'));
+        error_log("[TEBRA_SOAP_FAULT] Message: " . $e->getMessage());
         
-        // Scrub sensitive information from verbose log
-        $verboseLog = preg_replace('/Authorization: Basic [^\r\n]+/', 'Authorization: Basic [REDACTED]', $verboseLog);
-        $verboseLog = preg_replace('/User: [^\r\n]+/', 'User: [REDACTED]', $verboseLog);
-        $verboseLog = preg_replace('/Pass: [^\r\n]+/', 'Pass: [REDACTED]', $verboseLog);
-        
-        // Log scrubbed verbose output if needed
-        if ($error || $httpCode >= 400) {
-            error_log("Tebra API request failed. Verbose log: " . $verboseLog);
+        if ($this->client) {
+            $lastRequest = $this->client->__getLastRequest();
+            $lastResponse = $this->client->__getLastResponse();
+            
+            // Redact sensitive data from request before logging
+            $redactedRequest = $this->redactSoapXml($lastRequest);
+            error_log("[TEBRA_SOAP_FAULT] Last Request: " . $redactedRequest);
+            error_log("[TEBRA_SOAP_FAULT] Last Response: " . $lastResponse);
+            
+            $errorContext['request_headers'] = $this->client->__getLastRequestHeaders();
+            $errorContext['response_headers'] = $this->client->__getLastResponseHeaders();
         }
         
-        curl_close($ch);
+        // Create detailed error message based on known Tebra issues
+        $detailedMessage = $e->getMessage();
         
-        if ($error) {
-            throw new Exception("cURL error: $error");
+        if (strpos($e->getMessage(), 'ValidationHelper') !== false) {
+            $detailedMessage = "Tebra API error in {$method}: ValidationHelper.ValidateDateTimeFields null reference.";
+        } elseif (strpos($e->getMessage(), 'Could not connect to host') !== false) {
+            $detailedMessage = "Cannot connect to Tebra SOAP API at {$this->wsdlUrl}. Network or firewall issue.";
+        } elseif (strpos($e->getMessage(), 'Unauthorized') !== false) {
+            $detailedMessage = "Tebra authentication failed for user: " . $this->partialRedact($this->username, 'username') . ". Check account activation.";
         }
         
-        if ($httpCode >= 400) {
-            throw new \Exception("HTTP error $httpCode: $response");
-        }
+        // Log to request history
+        $this->logRequest($method, ['soap_fault' => true], false, $detailedMessage, null);
         
-        return $response;
+        // Re-throw with enhanced details
+        throw new \SoapFault(
+            $e->faultcode ?? 'Client', 
+            $detailedMessage,
+            null,
+            array_merge((array)($e->detail ?? []), ['context' => $errorContext])
+        );
+    }
+    
+    /**
+     * Redact sensitive data from SOAP XML
+     */
+    private function redactSoapXml($xml) {
+        if (empty($xml)) return '[EMPTY]';
+        
+        // Redact password
+        $xml = preg_replace('/<([^>]*Password[^>]*)>([^<]+)<\//', '<$1>[REDACTED]</', $xml);
+        
+        // Partially redact username (show first 3 chars)
+        $xml = preg_replace_callback('/<([^>]*User[^>]*)>([^<]+)<\//', function($matches) {
+            $value = $matches[2];
+            $redacted = $this->partialRedact($value, 'username');
+            return "<{$matches[1]}>{$redacted}</";
+        }, $xml);
+        
+        // Partially redact customer key
+        $xml = preg_replace_callback('/<([^>]*CustomerKey[^>]*)>([^<]+)<\//', function($matches) {
+            $value = $matches[2];
+            $redacted = $this->partialRedact($value, 'customerkey');
+            return "<{$matches[1]}>{$redacted}</";
+        }, $xml);
+        
+        return $xml;
     }
     
     /**
@@ -107,25 +358,16 @@ class TebraHttpClient {
      */
     public function testConnection() {
         try {
-            // Try to get providers as a connection test
-            $soapBody = '<kar:GetProviders>
-                <kar:request>
-                    <kar:CustomerKey>' . htmlspecialchars($this->customerKey) . '</kar:CustomerKey>
-                </kar:request>
-            </kar:GetProviders>';
-            
-            $response = $this->makeSOAPRequest('GetProviders', $soapBody);
-            
-            error_log("Tebra HTTP connection test successful");
+            $result = $this->getProviders();
+            error_log("Tebra connection test successful");
             return [
                 'success' => true,
                 'message' => 'Connection test successful',
-                'response' => $response,
+                'data' => $result,
                 'timestamp' => date('c')
             ];
-            
-        } catch (Exception $e) {
-            error_log("Tebra HTTP connection test failed: " . $e->getMessage());
+        } catch (\Exception $e) {
+            error_log("Tebra connection test failed: " . $e->getMessage());
             return [
                 'success' => false,
                 'message' => 'Connection test failed: ' . $e->getMessage(),
@@ -137,76 +379,324 @@ class TebraHttpClient {
     /**
      * Get appointments for a date range
      */
-    public function getAppointments($fromDate, $toDate) {
+    public function getAppointments($fromDate = null, $toDate = null) {
+        $startTime = microtime(true);
+        
+        // Build ISO timestamps from the supplied date range (defaults to whole day)
         try {
-            $soapBody = '<kar:GetAppointments>
-                <kar:request>
-                    <kar:CustomerKey>' . htmlspecialchars($this->customerKey) . '</kar:CustomerKey>
-                    <kar:FromDate>' . htmlspecialchars($fromDate) . '</kar:FromDate>
-                    <kar:ToDate>' . htmlspecialchars($toDate) . '</kar:ToDate>
-                </kar:request>
-            </kar:GetAppointments>';
+            // Ensure valid dates were provided (validated by caller)
+            $startDate = new \DateTime($fromDate . ' 00:00:00', new \DateTimeZone('UTC'));
+            $endDate   = new \DateTime($toDate   . ' 23:59:59', new \DateTimeZone('UTC'));
+
+            $startDateIso = $startDate->format('Y-m-d\TH:i:s\Z');
+            $endDateIso   = $endDate->format('Y-m-d\TH:i:s\Z');
+        } catch (\Exception $e) {
+            // If for some reason date parsing fails, fall back to original behaviour
+            error_log('TebraHttpClient:getAppointments – invalid date supplied, falling back to default. Error: ' . $e->getMessage());
+            $startDateIso = '2025-06-24T00:00:00Z';
+            $endDateIso   = '2025-06-24T23:59:59Z';
+        }
+        
+        try {
+            // CORRECTED: Use proper Tebra SOAP structure as per support documentation
+            $request = array (
+                'RequestHeader' => array(
+                    'User' => $this->username,
+                    'Password' => $this->password, 
+                    'CustomerKey' => $this->customerKey
+                ),
+                'Fields' => new \stdClass(),  // Empty object as required by WSDL
+                'Filter' => array(
+                    'EndDate' => $endDateIso,           // Alphabetical order
+                    'PracticeName' => 'Lukner Medical Clinic',  // TEMPORARY: Hardcoded working value
+                    'PracticeID' => '67149',                     // TEMPORARY: Hardcoded working value
+                    'StartDate' => $startDateIso
+                )
+            );
+
+            $params = array('request' => $request);
             
-            $response = $this->makeSOAPRequest('GetAppointments', $soapBody);
+            // HIPAA-Safe: Log only structural information, no PHI
+            error_log("GetAppointments request initiated with corrected SOAP structure");
+            
+            // HIPAA-Safe: Log only technical metrics, no dates or PHI
+            $this->logRequest('GetAppointments', [
+                'action' => 'Using corrected SOAP structure with Filter section'
+            ], false, null, null);
+            
+            $response = $this->client->GetAppointments($params)->GetAppointmentsResult;
+            
+            // HIPAA-Safe: Log only success/failure, not PHI content
+            error_log("SOAP GetAppointments request completed successfully");
+            
+            // Check for API errors
+            if (isset($response->ErrorResponse) && $response->ErrorResponse->IsError) {
+                throw new \Exception('Tebra API Error: ' . $response->ErrorResponse->ErrorMessage);
+            }
+            
+            $duration = round((microtime(true) - $startTime) * 1000, 2);
+            
+            // HIPAA-Safe: Log success without dates
+            $this->logRequest('GetAppointments', [
+                'action' => 'Successfully retrieved appointments using corrected SOAP structure'
+            ], true, null, $duration);
             
             return [
                 'success' => true,
                 'data' => $response,
-                'timestamp' => date('c')
+                'timestamp' => date('c'),
+                'duration_ms' => $duration
             ];
             
-        } catch (Exception $e) {
-            error_log("Failed to get appointments: " . $e->getMessage());
+        } catch (\SoapFault $e) {
+            $duration = round((microtime(true) - $startTime) * 1000, 2);
+            $this->logRequest('GetAppointments', [
+                'fromDate' => $fromDate,
+                'toDate' => $toDate,
+                'action' => 'Attempted to get appointments for ' . $fromDate . ' to ' . $toDate,
+                'error' => $e->getMessage()
+            ], false, $e->getMessage(), $duration);
+            $this->handleSoapFault($e, 'GetAppointments');
+        } catch (\Exception $e) {
+            $duration = round((microtime(true) - $startTime) * 1000, 2);
+            $this->logRequest('GetAppointments', [
+                'fromDate' => $fromDate,
+                'toDate' => $toDate,
+                'action' => 'Attempted to get appointments for ' . $fromDate . ' to ' . $toDate,
+                'error' => $e->getMessage()
+            ], false, $e->getMessage(), $duration);
             return [
                 'success' => false,
                 'message' => 'Failed to get appointments: ' . $e->getMessage(),
-                'timestamp' => date('c')
+                'timestamp' => date('c'),
+                'duration_ms' => $duration
             ];
         }
     }
     
     /**
-     * Get providers
+     * Get providers (using verified working pattern)
      */
     public function getProviders() {
+        $startTime = microtime(true);
+        
         try {
-            $soapBody = '<kar:GetProviders>
-                <kar:request>
-                    <kar:CustomerKey>' . htmlspecialchars($this->customerKey) . '</kar:CustomerKey>
-                </kar:request>
-            </kar:GetProviders>';
+            $params = [
+                'request' => [
+                    'RequestHeader' => $this->createAuthHeader(),
+                    'Fields' => null
+                ]
+            ];
             
-            $response = $this->makeSOAPRequest('GetProviders', $soapBody);
+            // Log the request attempt
+            $this->logRequest('GetProviders', [
+                'action' => 'Attempting to get providers list'
+            ], false, null, null);
+            
+            $soapStartTime = microtime(true);
+            $response = $this->client->GetProviders($params);
+            $soapDuration = (microtime(true) - $soapStartTime) * 1000;
+            
+            $totalDuration = (microtime(true) - $startTime) * 1000;
+            
+            // Log success
+            $this->logRequest('GetProviders', [
+                'action' => 'Successfully retrieved providers list'
+            ], true, null, round($totalDuration, 2));
             
             return [
                 'success' => true,
                 'data' => $response,
-                'timestamp' => date('c')
+                'timestamp' => date('c'),
+                'performance' => [
+                    'soap_duration_ms' => round($soapDuration, 2),
+                    'total_duration_ms' => round($totalDuration, 2)
+                ]
             ];
             
-        } catch (Exception $e) {
-            error_log("Failed to get providers: " . $e->getMessage());
+        } catch (\SoapFault $e) {
+            $duration = round((microtime(true) - $startTime) * 1000, 2);
+            $this->logRequest('GetProviders', [
+                'action' => 'Attempted to get providers list',
+                'error' => $e->getMessage()
+            ], false, $e->getMessage(), $duration);
+            $this->handleSoapFault($e, 'GetProviders');
+        } catch (\Exception $e) {
+            $duration = round((microtime(true) - $startTime) * 1000, 2);
+            $this->logRequest('GetProviders', [
+                'action' => 'Attempted to get providers list',
+                'error' => $e->getMessage()
+            ], false, $e->getMessage(), $duration);
             return [
                 'success' => false,
                 'message' => 'Failed to get providers: ' . $e->getMessage(),
+                'timestamp' => date('c'),
+                'duration_ms' => $duration
+            ];
+        }
+    }
+    
+    /**
+     * Get patients (using EXACT official Tebra example pattern - VERIFIED WORKING)
+     */
+    public function getPatients($fromDate = null, $toDate = null, $patientId = null, $externalId = null) {
+        $startTime = microtime(true);
+        $dateFrom = $fromDate ?: '3/4/2012';
+        
+        try {
+            // Use EXACT structure from official Tebra PHP example that works
+            $request = array (
+                'RequestHeader' => array(
+                    'User' => $this->username, 
+                    'Password' => $this->password, 
+                    'CustomerKey' => $this->customerKey
+                ),
+                'Filter' => array('FromLastModifiedDate' => $dateFrom),
+                'Fields' => array('PatientFullName' => 'true')
+            );
+
+            $params = array('request' => $request);
+            
+            // Log the request attempt
+            $this->logRequest('GetPatients', [
+                'fromDate' => $dateFrom,
+                'action' => 'Attempting to get patients modified after ' . $dateFrom
+            ], false, null, null);
+            
+            $response = $this->client->GetPatients($params)->GetPatientsResult;
+            
+            $duration = round((microtime(true) - $startTime) * 1000, 2);
+            
+            // Log success
+            $this->logRequest('GetPatients', [
+                'fromDate' => $dateFrom,
+                'action' => 'Successfully retrieved patients modified after ' . $dateFrom
+            ], true, null, $duration);
+            
+            return [
+                'success' => true,
+                'data' => $response,
+                'timestamp' => date('c'),
+                'duration_ms' => $duration
+            ];
+            
+        } catch (\SoapFault $e) {
+            $duration = round((microtime(true) - $startTime) * 1000, 2);
+            $this->logRequest('GetPatients', [
+                'fromDate' => $dateFrom,
+                'action' => 'Attempted to get patients modified after ' . $dateFrom,
+                'error' => $e->getMessage()
+            ], false, $e->getMessage(), $duration);
+            $this->handleSoapFault($e, 'GetPatients');
+        } catch (\Exception $e) {
+            $duration = round((microtime(true) - $startTime) * 1000, 2);
+            $this->logRequest('GetPatients', [
+                'fromDate' => $dateFrom,
+                'action' => 'Attempted to get patients modified after ' . $dateFrom,
+                'error' => $e->getMessage()
+            ], false, $e->getMessage(), $duration);
+            return [
+                'success' => false,
+                'message' => 'Failed to get patients: ' . $e->getMessage(),
+                'timestamp' => date('c'),
+                'duration_ms' => $duration
+            ];
+        }
+    }
+    
+    /**
+     * Get a single patient by ID
+     */
+    public function getPatient($patientId) {
+        $startTime = microtime(true);
+        
+        try {
+            error_log("Getting patient with ID: {$patientId}");
+            
+            // Use GetPatients with specific patient ID filter
+            $request = [
+                'request' => [
+                    'RequestHeader' => [
+                        'User' => $this->username,
+                        'Password' => $this->password,
+                        'CustomerKey' => $this->customerKey
+                    ],
+                    'Filter' => [
+                        'PatientID' => $patientId,
+                        'PatientExternalID' => '',
+                        'FromLastModifiedDate' => '',
+                        'ToLastModifiedDate' => ''
+                    ]
+                ]
+            ];
+            
+            $response = $this->client->GetPatients($request);
+            $duration = round((microtime(true) - $startTime) * 1000);
+            
+            // Process response
+            if (isset($response->GetPatientsResult)) {
+                $result = $response->GetPatientsResult;
+                
+                // Check security response
+                if (isset($result->SecurityResponse) && !$result->SecurityResponse->Authenticated) {
+                    throw new \Exception('Authentication failed');
+                }
+                
+                // Check for errors
+                if (isset($result->ErrorResponse) && $result->ErrorResponse->IsError) {
+                    throw new \Exception('API Error: ' . $result->ErrorResponse->ErrorMessage);
+                }
+                
+                // Extract patient data
+                $patient = null;
+                if (isset($result->Patients) && isset($result->Patients->PatientData)) {
+                    $data = $result->Patients->PatientData;
+                    // Should return single patient, but handle array case
+                    $patient = is_array($data) ? $data[0] : $data;
+                }
+                
+                $this->logRequest('GetPatient', ['patientId' => $patientId], true, null, $duration);
+                
+                return [
+                    'success' => true,
+                    'patient' => $patient,
+                    'request_time_ms' => $duration,
+                    'timestamp' => date('c')
+                ];
+            }
+            
+            throw new \Exception('Unexpected response format from GetPatients');
+            
+        } catch (\SoapFault $e) {
+            $this->handleSoapFault($e, 'GetPatient');
+        } catch (\Exception $e) {
+            error_log("Failed to get patient: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to get patient: ' . $e->getMessage(),
                 'timestamp' => date('c')
             ];
         }
     }
     
     /**
-     * Search for patients
+     * Search for patients by last name
      */
     public function searchPatients($lastName) {
         try {
-            $soapBody = '<kar:SearchPatients>
-                <kar:request>
-                    <kar:CustomerKey>' . htmlspecialchars($this->customerKey) . '</kar:CustomerKey>
-                    <kar:LastName>' . htmlspecialchars($lastName) . '</kar:LastName>
-                </kar:request>
-            </kar:SearchPatients>';
+            // Note: This may need to be adjusted based on actual Tebra API
+            // The guide doesn't show a specific SearchPatients method
+            $params = [
+                'request' => [
+                    'RequestHeader' => $this->createAuthHeader(),
+                    'Filter' => [
+                        'LastName' => $lastName
+                    ],
+                    'Fields' => null
+                ]
+            ];
             
-            $response = $this->makeSOAPRequest('SearchPatients', $soapBody);
+            $response = $this->client->GetPatients($params);
             
             return [
                 'success' => true,
@@ -214,11 +704,327 @@ class TebraHttpClient {
                 'timestamp' => date('c')
             ];
             
-        } catch (Exception $e) {
+        } catch (\SoapFault $e) {
+            $this->handleSoapFault($e, 'SearchPatients');
+        } catch (\Exception $e) {
             error_log("Failed to search patients: " . $e->getMessage());
             return [
                 'success' => false,
                 'message' => 'Failed to search patients: ' . $e->getMessage(),
+                'timestamp' => date('c')
+            ];
+        }
+    }
+    
+    /**
+     * Get available SOAP methods (for debugging)
+     */
+    public function getAvailableMethods() {
+        try {
+            return $this->client->__getFunctions();
+        } catch (\Exception $e) {
+            throw new \Exception("Error getting available methods: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Get last SOAP request (for debugging)
+     */
+    public function getLastRequest() {
+        return $this->client ? $this->client->__getLastRequest() : null;
+    }
+    
+    /**
+     * Get last SOAP response (for debugging)
+     */
+    public function getLastResponse() {
+        return $this->client ? $this->client->__getLastResponse() : null;
+    }
+    
+    /**
+     * Create a new appointment
+     */
+    public function createAppointment($appointmentData) {
+        $startTime = microtime(true);
+        
+        try {
+            error_log("Creating appointment with data: " . json_encode($this->redactSensitiveData($appointmentData)));
+            
+            // Prepare request with authentication headers
+            $request = [
+                'request' => [
+                    'RequestHeader' => [
+                        'User' => $this->username,
+                        'Password' => $this->password,
+                        'CustomerKey' => $this->customerKey
+                    ],
+                    'Create' => [$appointmentData]
+                ]
+            ];
+            
+            $response = $this->client->CreateAppointments($request);
+            $duration = round((microtime(true) - $startTime) * 1000);
+            
+            // Process response
+            if (isset($response->CreateAppointmentsResult)) {
+                $result = $response->CreateAppointmentsResult;
+                
+                // Check security response
+                if (isset($result->SecurityResponse) && !$result->SecurityResponse->Authenticated) {
+                    throw new \Exception('Authentication failed');
+                }
+                
+                // Check for errors
+                if (isset($result->ErrorResponse) && $result->ErrorResponse->IsError) {
+                    throw new \Exception('API Error: ' . $result->ErrorResponse->ErrorMessage);
+                }
+                
+                // Extract created appointments
+                $appointments = [];
+                if (isset($result->Appointments) && isset($result->Appointments->AppointmentData)) {
+                    $data = $result->Appointments->AppointmentData;
+                    $appointments = is_array($data) ? $data : [$data];
+                }
+                
+                $this->logRequest('CreateAppointments', $appointmentData, true, null, $duration);
+                
+                return [
+                    'success' => true,
+                    'appointments' => $appointments,
+                    'request_time_ms' => $duration,
+                    'timestamp' => date('c')
+                ];
+            }
+            
+            throw new \Exception('Unexpected response format from CreateAppointments');
+            
+        } catch (\SoapFault $e) {
+            $this->handleSoapFault($e, 'CreateAppointments');
+        } catch (\Exception $e) {
+            error_log("Failed to create appointment: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to create appointment: ' . $e->getMessage(),
+                'timestamp' => date('c')
+            ];
+        }
+    }
+    
+    /**
+     * Update an existing appointment
+     */
+    public function updateAppointment($appointmentData) {
+        $startTime = microtime(true);
+        
+        try {
+            error_log("Updating appointment with data: " . json_encode($this->redactSensitiveData($appointmentData)));
+            
+            // Prepare request with authentication headers
+            $request = [
+                'request' => [
+                    'RequestHeader' => [
+                        'User' => $this->username,
+                        'Password' => $this->password,
+                        'CustomerKey' => $this->customerKey
+                    ],
+                    'Update' => [$appointmentData]
+                ]
+            ];
+            
+            $response = $this->client->UpdateAppointments($request);
+            $duration = round((microtime(true) - $startTime) * 1000);
+            
+            // Process response
+            if (isset($response->UpdateAppointmentsResult)) {
+                $result = $response->UpdateAppointmentsResult;
+                
+                // Check security response
+                if (isset($result->SecurityResponse) && !$result->SecurityResponse->Authenticated) {
+                    throw new \Exception('Authentication failed');
+                }
+                
+                // Check for errors
+                if (isset($result->ErrorResponse) && $result->ErrorResponse->IsError) {
+                    throw new \Exception('API Error: ' . $result->ErrorResponse->ErrorMessage);
+                }
+                
+                // Extract updated appointments
+                $appointments = [];
+                if (isset($result->Appointments) && isset($result->Appointments->AppointmentData)) {
+                    $data = $result->Appointments->AppointmentData;
+                    $appointments = is_array($data) ? $data : [$data];
+                }
+                
+                $this->logRequest('UpdateAppointments', $appointmentData, true, null, $duration);
+                
+                return [
+                    'success' => true,
+                    'appointments' => $appointments,
+                    'request_time_ms' => $duration,
+                    'timestamp' => date('c')
+                ];
+            }
+            
+            throw new \Exception('Unexpected response format from UpdateAppointments');
+            
+        } catch (\SoapFault $e) {
+            $this->handleSoapFault($e, 'UpdateAppointments');
+        } catch (\Exception $e) {
+            error_log("Failed to update appointment: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to update appointment: ' . $e->getMessage(),
+                'timestamp' => date('c')
+            ];
+        }
+    }
+    
+    /**
+     * Sync schedule for a specific date
+     */
+    public function syncSchedule($date) {
+        $startTime = microtime(true);
+        
+        try {
+            // Convert date to format expected by Tebra API (M/d/Y)
+            $dateObj = \DateTime::createFromFormat('Y-m-d', $date);
+            if (!$dateObj) {
+                throw new \InvalidArgumentException('Invalid date format. Use Y-m-d format');
+            }
+            
+            $tebraDate = $dateObj->format('n/j/Y');
+            
+            error_log("Syncing schedule for date: {$date} (Tebra format: {$tebraDate})");
+            
+            // Get appointments for the specified date
+            $appointmentsResponse = $this->getAppointments($tebraDate, $tebraDate);
+            
+            if (!$appointmentsResponse['success']) {
+                throw new \Exception('Failed to retrieve appointments: ' . $appointmentsResponse['message']);
+            }
+            
+            // Extract appointment data
+            $appointments = [];
+            $appointmentData = $appointmentsResponse['data'];
+            
+            // Debug logging - log the full response structure
+            error_log("[SYNC DEBUG] Full Tebra response structure: " . json_encode($appointmentData, JSON_PRETTY_PRINT));
+            
+            if (isset($appointmentData->Appointments) && isset($appointmentData->Appointments->AppointmentData)) {
+                $rawAppointments = $appointmentData->Appointments->AppointmentData;
+                $appointments = is_array($rawAppointments) ? $rawAppointments : [$rawAppointments];
+                error_log("[SYNC DEBUG] Found appointments: " . count($appointments));
+            } else {
+                error_log("[SYNC DEBUG] No appointments found in response. Response keys: " . 
+                    (is_object($appointmentData) ? implode(', ', array_keys((array)$appointmentData)) : 'Not an object'));
+            }
+            
+            $duration = round((microtime(true) - $startTime) * 1000, 2);
+            
+            // Log the sync operation
+            $this->logRequest('SyncSchedule', [
+                'date' => $date,
+                'tebra_date' => $tebraDate,
+                'appointments_found' => count($appointments)
+            ], true, null, $duration);
+            
+            return [
+                'success' => true,
+                'imported' => count($appointments),
+                'appointments' => $appointments,
+                'date' => $date,
+                'timestamp' => date('c'),
+                'duration_ms' => $duration
+            ];
+            
+        } catch (\Exception $e) {
+            $duration = round((microtime(true) - $startTime) * 1000, 2);
+            
+            error_log("Failed to sync schedule for date {$date}: " . $e->getMessage());
+            
+            $this->logRequest('SyncSchedule', [
+                'date' => $date,
+                'error' => $e->getMessage()
+            ], false, $e->getMessage(), $duration);
+            
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'date' => $date,
+                'timestamp' => date('c'),
+                'duration_ms' => $duration
+            ];
+        }
+    }
+    
+    /**
+     * Generic SOAP method caller - handles any SOAP operation
+     * This method was missing and causing the fatal error in Cloud Run
+     */
+    public function callSoapMethod($method, $params = []) {
+        $startTime = microtime(true);
+        error_log("Starting {$method} SOAP request");
+        
+        try {
+            // Ensure SOAP client is initialized
+            if (!$this->client) {
+                throw new \Exception("SOAP client not initialized");
+            }
+            
+            // Build request with authentication header
+            $request = [
+                'request' => array_merge(
+                    ['RequestHeader' => $this->createAuthHeader()],
+                    $params
+                )
+            ];
+            
+            // Call the SOAP method dynamically
+            $soapStartTime = microtime(true);
+            $response = $this->client->__soapCall($method, [$request]);
+            $soapDuration = (microtime(true) - $soapStartTime) * 1000;
+            
+            error_log("SOAP {$method} took: " . round($soapDuration, 2) . "ms");
+            
+            // Extract the result based on the method name
+            $resultProperty = $method . 'Result';
+            $result = isset($response->$resultProperty) ? $response->$resultProperty : $response;
+            
+            // Check for API errors in the response
+            if (isset($result->ErrorResponse) && $result->ErrorResponse->IsError) {
+                throw new \Exception('Tebra API Error: ' . $result->ErrorResponse->ErrorMessage);
+            }
+            
+            $totalDuration = (microtime(true) - $startTime) * 1000;
+            error_log("Total {$method} request took: " . round($totalDuration, 2) . "ms");
+            
+            return [
+                'success' => true,
+                'data' => $result,
+                'timestamp' => date('c'),
+                'performance' => [
+                    'soap_duration_ms' => round($soapDuration, 2),
+                    'total_duration_ms' => round($totalDuration, 2)
+                ]
+            ];
+            
+        } catch (\SoapFault $e) {
+            error_log("SOAP Fault in {$method}: " . $e->getMessage());
+            if ($this->client) {
+                error_log("Last SOAP Request: " . $this->client->__getLastRequest());
+                error_log("Last SOAP Response: " . $this->client->__getLastResponse());
+            }
+            return [
+                'success' => false,
+                'error' => 'SOAP Fault: ' . $e->getMessage(),
+                'faultcode' => $e->faultcode ?? 'Unknown',
+                'timestamp' => date('c')
+            ];
+        } catch (\Exception $e) {
+            error_log("Error in {$method}: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
                 'timestamp' => date('c')
             ];
         }

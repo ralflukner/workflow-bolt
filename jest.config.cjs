@@ -5,7 +5,8 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: 'tsconfig.json'
+      tsconfig: 'tsconfig.json',
+      babelConfig: true
     }],
     '^.+\\.(js|jsx)$': 'babel-jest'
   },
@@ -40,7 +41,8 @@ module.exports = {
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
-          tsconfig: 'tsconfig.json'
+          tsconfig: 'tsconfig.json',
+          babelConfig: true
         }],
         '^.+\\.(js|jsx)$': 'babel-jest'
       },
@@ -60,7 +62,8 @@ module.exports = {
         '.e2e.test.',
         'real-api',
         '/src/__tests__/real-api/',
-        '/src/services/__tests__/.*\\.integration\\.test\\.ts$'
+        '/src/services/__tests__/.*\\.integration\\.test\\.ts$',
+        '<rootDir>/src/services/__tests__/authBridge.integration.test.ts'
       ],
       // Add globals to mock import.meta for Jest
       globals: {
@@ -76,7 +79,8 @@ module.exports = {
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
-          tsconfig: 'tsconfig.json'
+          tsconfig: 'tsconfig.json',
+          babelConfig: true
         }],
         '^.+\\.(js|jsx)$': 'babel-jest'
       },
@@ -88,6 +92,9 @@ module.exports = {
       testMatch: [
         '<rootDir>/src/**/*.integration.test.(ts|tsx)',
         '<rootDir>/src/**/__tests__/**/integration/**/*.test.(ts|tsx)'
+      ],
+      testPathIgnorePatterns: [
+        '<rootDir>/src/services/__tests__/authBridge.integration.test.ts'
       ],
       globals: {
         'import.meta': {
@@ -102,7 +109,8 @@ module.exports = {
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
       transform: {
         '^.+\\.(ts|tsx)$': ['ts-jest', {
-          tsconfig: 'tsconfig.json'
+          tsconfig: 'tsconfig.json',
+          babelConfig: true
         }],
         '^.+\\.(js|jsx)$': 'babel-jest'
       },

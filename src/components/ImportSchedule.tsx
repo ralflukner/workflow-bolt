@@ -7,6 +7,15 @@ interface ImportScheduleProps {
   onClose: () => void;
 }
 
+// Status constants to prevent string drift
+const STATUS_CONFIRMED = ['confirmed', 'scheduled', 'reminder sent'];
+const STATUS_ARRIVED = ['arrived', 'checked in'];
+const STATUS_APPT_PREP = ['roomed', 'appt prep started'];
+const STATUS_CHECKED_OUT = ['checked out', 'checkedout'];
+const STATUS_CANCELLED = ['cancelled', 'canceled'];
+const HAS_CHECKED_IN = ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'];
+const STATUS_IN_ROOM = ['appt-prep', 'ready-for-md', 'With Doctor'];
+
 const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
   const { addPatient, clearPatients } = usePatientContext();
   const [scheduleText, setScheduleText] = useState('');
@@ -64,11 +73,11 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
       let patientStatus: PatientApptStatus = 'scheduled';
       const statusLower = externalStatus.toLowerCase();
       
-      if (['confirmed', 'scheduled', 'reminder sent'].includes(statusLower)) {
+      if (STATUS_CONFIRMED.includes(statusLower)) {
         patientStatus = 'scheduled';
-      } else if (['arrived', 'checked in'].includes(statusLower)) {
+      } else if (STATUS_ARRIVED.includes(statusLower)) {
         patientStatus = 'arrived';
-      } else if (['roomed', 'appt prep started'].includes(statusLower)) {
+      } else if (STATUS_APPT_PREP.includes(statusLower)) {
         patientStatus = 'appt-prep';
       } else if (statusLower === 'ready for md') {
         patientStatus = 'ready-for-md';
@@ -76,54 +85,70 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
         patientStatus = 'With Doctor';
       } else if (statusLower === 'seen by md') {
         patientStatus = 'seen-by-md';
-      } else if (['checked out', 'checkedout'].includes(statusLower)) {
+      } else if (STATUS_CHECKED_OUT.includes(statusLower)) {
         patientStatus = 'completed';
       } else if (statusLower === 'rescheduled') {
-        patientStatus = 'Rescheduled';
-      } else if (['cancelled', 'canceled'].includes(statusLower)) {
-        patientStatus = 'Cancelled';
+        patientStatus = 'rescheduled';
+      } else if (STATUS_CANCELLED.includes(statusLower)) {
+        patientStatus = 'cancelled';
       } else if (statusLower === 'no show') {
-        patientStatus = 'No Show';
+        patientStatus = 'no-show';
       }
 
       // Set check-in time for patients who have already checked in
       let checkInTime = undefined;
       let room = undefined;
 
-      // Parse check-in time from import data if available
-      if (checkInTimeStr && ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'].includes(patientStatus)) {
-        // Parse the check-in time (format: "12:31 PM")
-        const checkInMatch = checkInTimeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-        if (checkInMatch) {
-          const [, checkInHours, checkInMinutes, checkInPeriod] = checkInMatch;
-          let checkInHour = parseInt(checkInHours);
-          const isCheckInPM = checkInPeriod.toUpperCase() === 'PM';
+      // Check if this patient has checked in (based on status)
+      const hasCheckedIn = HAS_CHECKED_IN.includes(patientStatus);
+      
+      if (hasCheckedIn) {
+        if (checkInTimeStr) {
+          // Parse check-in time from import data if available (format: "12:31 PM")
+          const checkInMatch = checkInTimeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+          if (checkInMatch) {
+            const [, checkInHours, checkInMinutes, checkInPeriod] = checkInMatch;
+            let checkInHour = parseInt(checkInHours);
+            const isCheckInPM = checkInPeriod.toUpperCase() === 'PM';
 
-          if (isCheckInPM && checkInHour !== 12) {
-            checkInHour += 12;
-          } else if (!isCheckInPM && checkInHour === 12) {
-            checkInHour = 0;
+            if (isCheckInPM && checkInHour !== 12) {
+              checkInHour += 12;
+            } else if (!isCheckInPM && checkInHour === 12) {
+              checkInHour = 0;
+            }
+
+            // Create check-in time using the appointment date but with check-in time
+            const checkInDate = new Date(
+              parseInt(appointmentYear), 
+              parseInt(appointmentMonth) - 1,
+              parseInt(appointmentDay),
+              checkInHour,
+              parseInt(checkInMinutes),
+              0,
+              0
+            );
+
+            checkInTime = checkInDate.toISOString();
+          } else {
+            // Fallback: If checkInTimeStr exists but regex fails, 
+            // set check-in time to 30 minutes before appointment
+            const fallbackCheckInTime = new Date(appointmentDate);
+            fallbackCheckInTime.setMinutes(fallbackCheckInTime.getMinutes() - 30);
+            checkInTime = fallbackCheckInTime.toISOString();
           }
-
-          // Create check-in time using the appointment date but with check-in time
-          const checkInDate = new Date(
-            parseInt(appointmentYear), 
-            parseInt(appointmentMonth) - 1,
-            parseInt(appointmentDay),
-            checkInHour,
-            parseInt(checkInMinutes),
-            0,
-            0
-          );
-
-          checkInTime = checkInDate.toISOString();
+        } else {
+          // If no explicit check-in time but patient has checked in status,
+          // set check-in time to 30 minutes before appointment for testing
+          const defaultCheckInTime = new Date(appointmentDate);
+          defaultCheckInTime.setMinutes(defaultCheckInTime.getMinutes() - 30);
+          checkInTime = defaultCheckInTime.toISOString();
         }
       }
 
       // Use room from import data if available, otherwise assign a default room for patients who are in a room
       if (roomStr) {
         room = roomStr.trim();
-      } else if (['appt-prep', 'ready-for-md', 'With Doctor'].includes(patientStatus)) {
+      } else if (STATUS_IN_ROOM.includes(patientStatus)) {
         room = 'Waiting'; // Default room assignment
       }
 

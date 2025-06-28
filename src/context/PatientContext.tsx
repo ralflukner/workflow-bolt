@@ -1,11 +1,15 @@
-import React, { useState, useEffect, ReactNode } from 'react';
+import React, { useState, ReactNode, useContext } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Patient, PatientApptStatus, Metrics } from '../types';
 import { useTimeContext } from '../hooks/useTimeContext';
-import { mockPatients } from '../data/mockData';
 import { PatientContext } from './PatientContextDef';
+import { FirebaseContext } from '../contexts/firebase';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useFirebaseAuth } from '../services/authBridge';
+import { usePatientData } from '../hooks/usePatientData';
+import { mockPatients } from '../data/mockData';
 import { dailySessionService } from '../services/firebase/dailySessionService';
 import { localSessionService } from '../services/localStorage/localSessionService';
-import { isFirebaseConfigured } from '../config/firebase';
 
 interface PatientProviderProps {
   children: ReactNode;
@@ -57,109 +61,92 @@ const normalizeStatus = (status: string): string => {
 };
 
 export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) => {
-  const [patients, setPatients] = useState<Patient[]>([]);
   const [tickCounter, setTickCounter] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const [persistenceEnabled, setPersistenceEnabled] = useState(true);
-  const [hasRealData, setHasRealData] = useState(false);
   const { getCurrentTime, timeMode } = useTimeContext();
-  const firebaseReady = isFirebaseConfigured();
-  const storageService = firebaseReady ? dailySessionService : localSessionService;
-  const storageType = firebaseReady ? 'Firebase' : 'LocalStorage';
+  const { isInitialized: firebaseReady } = useContext(FirebaseContext);
+  const { isAuthenticated, isLoading: auth0Loading } = useAuth0();
+  const { ensureFirebaseAuth } = useFirebaseAuth();
 
-  // Load today's data on mount and when persistence is toggled
-  useEffect(() => {
-    const loadTodaysData = async () => {
-      if (!persistenceEnabled) {
-        setPatients(mockPatients);
-        setHasRealData(false);
-        setIsLoading(false);
-        return;
+  // Use React Query for Firebase authentication
+  const {
+    data: firebaseAuthReady = false,
+    isLoading: firebaseAuthLoading,
+    error: firebaseAuthError
+  } = useQuery({
+    queryKey: ['firebaseAuth', isAuthenticated, auth0Loading, firebaseReady],
+    queryFn: async () => {
+      if (!isAuthenticated || auth0Loading || !firebaseReady) {
+        return false;
       }
-
+      
       try {
-        setIsLoading(true);
-        console.log(`Using ${storageType} for data persistence`);
-        const savedPatients = await storageService.loadTodaysSession();
-        
-        if (savedPatients.length > 0) {
-          console.log(`Loaded ${savedPatients.length} patients from ${storageType}`);
-          setPatients(savedPatients);
-          setHasRealData(true);
+        console.log('🔐 Setting up Firebase authentication...');
+        const success = await ensureFirebaseAuth();
+        if (success) {
+          console.log('✅ Firebase authentication successful');
         } else {
-          console.log(`No saved session found in ${storageType}, starting with empty patient list`);
-          setPatients([]);
-          setHasRealData(false);
+          console.warn('❌ Firebase authentication failed');
         }
+        return success;
       } catch (error) {
-        console.error(`Failed to load from ${storageType}, starting with empty list:`, error);
-        setPatients([]);
-        setHasRealData(false);
-        
-        // Only disable persistence for localStorage errors, not Firebase network issues
-        if (!isFirebaseConfigured()) {
-          setPersistenceEnabled(false);
-          console.warn('localStorage persistence disabled due to data corruption');
-        } else {
-          console.warn('Firebase load failed, but persistence remains enabled for retry');
-        }
-      } finally {
-        setIsLoading(false);
+        console.error('🚨 Firebase authentication error:', error);
+        return false;
       }
-    };
+    },
+    enabled: isAuthenticated && !auth0Loading && firebaseReady,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+    retryDelay: 2000
+  });
 
-    loadTodaysData();
-  }, [persistenceEnabled, storageService, storageType]);
+  // Determine if we can use Firebase
+  const canUseFirebase = firebaseReady && isAuthenticated && !auth0Loading && firebaseAuthReady;
+  const useFirebase = canUseFirebase;
 
-  // Auto-save patients data periodically and when data changes
-  useEffect(() => {
-    if (!persistenceEnabled || isLoading || !hasRealData) return;
+  // Debug logging for Firebase state
+  console.log('🔍 Firebase state debug:', {
+    firebaseReady,
+    isAuthenticated,
+    auth0Loading,
+    firebaseAuthReady,
+    firebaseAuthLoading,
+    firebaseAuthError,
+    canUseFirebase,
+    useFirebase
+  });
 
-    const saveSession = async () => {
-      try {
-        await storageService.saveTodaysSession(patients);
-        console.log(`Session auto-saved to ${storageType}`);
-      } catch (error) {
-        console.error(`Failed to auto-save to ${storageType}:`, error);
-      }
-    };
-
-    // Save immediately when patients change
-    const timeoutId = setTimeout(saveSession, 2000); // Debounce saves by 2 seconds
-
-    return () => clearTimeout(timeoutId);
-  }, [patients, persistenceEnabled, isLoading, hasRealData, storageService, storageType]);
+  // Use React Query for patient data management
+  const {
+    patients,
+    isLoading,
+    hasRealData,
+    storageType,
+    updatePatients,
+    addPatient: addPatientToQuery,
+    updatePatient: updatePatientInQuery,
+    removePatient: removePatientFromQuery
+  } = usePatientData({
+    persistenceEnabled,
+    useFirebase,
+    firebaseReady,
+    isAuthenticated,
+    auth0Loading,
+    firebaseAuthReady
+  });
 
   // Set up an interval to force re-renders and periodic saves
-  useEffect(() => {
+  React.useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | undefined;
 
     const tick = () => {
       setTickCounter(prev => prev + 1);
-      
-      // Periodic save every 5 minutes during real time mode (only real data)
-      if (!timeMode.simulated && persistenceEnabled && patients.length > 0 && hasRealData) {
-        const saveResult = storageService.saveTodaysSession(patients);
-        
-        // Handle both sync (localStorage) and async (Firebase) saves
-        try {
-          if (isFirebaseConfigured()) {
-            // Firebase service returns a Promise
-            (saveResult as Promise<void>).catch((error: unknown) => {
-              console.error(`Periodic save to ${storageType} failed:`, error);
-            });
-          }
-          // localStorage service returns void - no additional handling needed
-        } catch (error) {
-          console.error(`Periodic save to ${storageType} failed:`, error);
-        }
-      }
     };
 
     if (timeMode.simulated) {
       intervalId = setInterval(tick, 1000);
     } else {
-      intervalId = setInterval(tick, 300000); // 5 minutes for real time
+      intervalId = setInterval(tick, 60000); // 1 minute for real time - update wait times every minute
     }
 
     return () => {
@@ -167,11 +154,10 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         clearInterval(intervalId);
       }
     };
-  }, [timeMode.simulated, persistenceEnabled, patients, hasRealData, storageService, storageType]);
+  }, [timeMode.simulated]);
 
   const clearPatients = () => {
-    setPatients([]);
-    setHasRealData(false);
+    updatePatients([]);
   };
 
   const addPatient = (patientData: Omit<Patient, 'id'>) => {
@@ -180,68 +166,58 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
       id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     };
 
-    setPatients(prev => [...prev, newPatient]);
-    setHasRealData(true); // Mark as real data when user adds patients
+    addPatientToQuery(newPatient);
+  };
+
+  const deletePatient = (id: string) => {
+    removePatientFromQuery(id);
   };
 
   // Load mock data manually (for development/testing)
   const loadMockData = () => {
-    setPatients(mockPatients);
-    setHasRealData(false); // This is mock data, don't auto-save it
+    updatePatients(mockPatients);
     console.log('Mock data loaded for development/testing');
   };
 
   const updatePatientStatus = (id: string, status: PatientApptStatus) => {
     const now = getCurrentTime().toISOString();
+    const patient = patients.find(p => p.id === id);
+    
+    if (!patient) return;
 
-    setPatients(prev => 
-      prev.map(patient => {
-        if (patient.id === id) {
-          const updatedPatient = { ...patient, status };
+    const updatedData: Partial<Patient> = { 
+      status: normalizeStatus(status) as PatientApptStatus 
+    };
 
-          updatedPatient.status = normalizeStatus(status) as PatientApptStatus;
+    if (
+      updatedData.status === 'arrived' ||
+      updatedData.status === 'Arrived' ||
+      updatedData.status === 'Checked In'
+    ) {
+      updatedData.checkInTime = patient.checkInTime || now;
+    }
 
-          if (
-            updatedPatient.status === 'arrived' ||
-            updatedPatient.status === 'Arrived' ||
-            updatedPatient.status === 'Checked In'
-          ) {
-            updatedPatient.checkInTime = updatedPatient.checkInTime || now;
-          }
+    if (
+      updatedData.status === 'With Doctor' ||
+      updatedData.status === 'seen-by-md' ||
+      updatedData.status === 'Seen by MD'
+    ) {
+      updatedData.withDoctorTime = patient.withDoctorTime || now;
+    }
 
-          if (
-            updatedPatient.status === 'With Doctor' ||
-            updatedPatient.status === 'seen-by-md' ||
-            updatedPatient.status === 'Seen by MD'
-          ) {
-            updatedPatient.withDoctorTime = updatedPatient.withDoctorTime || now;
-          }
+    if (updatedData.status === 'completed' || updatedData.status === 'Checked Out') {
+      updatedData.completedTime = patient.completedTime || now;
+    }
 
-          if (updatedPatient.status === 'completed' || updatedPatient.status === 'Checked Out') {
-            updatedPatient.completedTime = updatedPatient.completedTime || now;
-          }
-
-          return updatedPatient;
-        }
-        return patient;
-      })
-    );
+    updatePatientInQuery(id, updatedData);
   };
 
   const assignRoom = (id: string, room: string) => {
-    setPatients(prev => 
-      prev.map(patient => 
-        patient.id === id ? { ...patient, room } : patient
-      )
-    );
+    updatePatientInQuery(id, { room });
   };
 
   const updateCheckInTime = (id: string, checkInTime: string) => {
-    setPatients(prev => 
-      prev.map(patient => 
-        patient.id === id ? { ...patient, checkInTime } : patient
-      )
-    );
+    updatePatientInQuery(id, { checkInTime });
   };
 
   const getPatientsByStatus = (status: PatientApptStatus): Patient[] => {
@@ -273,7 +249,20 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
         'No Show': getPatientsByStatus('No Show').length,
         Rescheduled: getPatientsByStatus('Rescheduled').length,
       },
-      averageWaitTime: patients.reduce((acc, patient) => acc + getWaitTime(patient), 0) / patients.length || 0,
+      averageWaitTime: (() => {
+        // Only calculate wait time for patients who are actually waiting (have checked in but not completed)
+        const waitingPatients = patients.filter(p => 
+          p.checkInTime && 
+          p.status !== 'completed' && 
+          p.status !== 'Cancelled' && 
+          p.status !== 'No Show' &&
+          p.status !== 'Rescheduled' &&
+          p.status !== 'scheduled'
+        );
+        if (waitingPatients.length === 0) return 0;
+        const totalWaitTime = waitingPatients.reduce((acc, patient) => acc + getWaitTime(patient), 0);
+        return totalWaitTime / waitingPatients.length;
+      })(),
       patientsSeenToday: patients.filter(p => p.completedTime && new Date(p.completedTime) >= today).length,
     };
   };
@@ -302,9 +291,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
       }
     });
 
-    // Update state
-    setPatients(importedPatients);
-    setHasRealData(true);
+    // Update state using React Query
+    updatePatients(importedPatients);
   };
 
   const saveCurrentSession = async () => {
@@ -313,6 +301,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     }
 
     try {
+      // Use the storage service from usePatientData
+      const storageService = useFirebase ? dailySessionService : localSessionService;
       await storageService.saveTodaysSession(patients);
       console.log(`Session saved to ${storageType}`);
     } catch (error) {
@@ -325,14 +315,67 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     setPersistenceEnabled(prev => !prev);
   };
 
+  // Use React Query mutation for refreshing from Firebase
+  const refreshFromFirebaseMutation = useMutation({
+    mutationFn: async () => {
+      if (!useFirebase || !firebaseReady) {
+        throw new Error('Cannot refresh: Firebase not configured');
+      }
+
+      console.log('Manually refreshing patient data from Firebase');
+
+      // Load today's patients
+      const todayPatients = await dailySessionService.loadTodaysSession();
+      console.log(`Found ${todayPatients.length} patients for today`);
+
+      // Also check tomorrow's date to handle "Sync Tomorrow" functionality
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowId = tomorrow.toISOString().split('T')[0];
+
+      try {
+        const tomorrowPatients = await dailySessionService.loadSessionForDate(tomorrowId);
+        console.log(`Found ${tomorrowPatients.length} patients for tomorrow (${tomorrowId})`);
+
+        // If tomorrow has data but today doesn't, use tomorrow's data
+        if (tomorrowPatients.length > 0 && todayPatients.length === 0) {
+          console.log('Using tomorrow\'s data as no data exists for today');
+          return tomorrowPatients;
+        }
+      } catch {
+        console.log('No data for tomorrow, using today\'s data');
+      }
+
+      // Default to today's data
+      return todayPatients;
+    },
+    onSuccess: (newPatients) => {
+      updatePatients(newPatients);
+      console.log('✅ Firebase refresh successful');
+    },
+    onError: (error) => {
+      console.error('Failed to refresh from Firebase:', error);
+    }
+  });
+
+  const refreshFromFirebase = async (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      refreshFromFirebaseMutation.mutate(undefined, {
+        onSuccess: () => resolve(),
+        onError: (error) => reject(error)
+      });
+    });
+  };
+
   const value = {
     patients,
-    isLoading,
+    isLoading: isLoading || firebaseAuthLoading,
     persistenceEnabled,
     hasRealData,
     tickCounter,
     clearPatients,
     addPatient,
+    deletePatient,
     loadMockData,
     updatePatientStatus,
     assignRoom,
@@ -344,6 +387,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     importPatientsFromJSON,
     saveCurrentSession,
     togglePersistence,
+    refreshFromFirebase,
+    firebaseAuthError,
   };
 
   return (

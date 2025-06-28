@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # Test script for Tebra Proxy Appointments Endpoint
 # Run this with: ./test-proxy-appointments.sh [PROXY_URL] [API_KEY]

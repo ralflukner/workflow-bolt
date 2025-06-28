@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # Check if API key is set in environment
 if [ -z "$TEBRA_API_KEY" ]; then

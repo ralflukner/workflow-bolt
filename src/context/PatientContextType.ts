@@ -3,6 +3,7 @@ import { Patient, PatientApptStatus, Metrics } from '../types';
 export interface PatientContextType {
   patients: Patient[];
   addPatient: (patient: Omit<Patient, 'id'>) => void;
+  deletePatient: (id: string) => void;
   updatePatientStatus: (id: string, status: PatientApptStatus) => void;
   assignRoom: (id: string, room: string) => void;
   updateCheckInTime: (id: string, checkInTime: string) => void;
@@ -19,4 +20,5 @@ export interface PatientContextType {
   togglePersistence: () => void; // Toggle persistence on/off
   hasRealData: boolean; // Whether current data is real patient data or mock data
   loadMockData: () => void; // Manually load mock data for development/testing
+  refreshFromFirebase: () => Promise<void>; // Manually refresh data from Firebase
 }

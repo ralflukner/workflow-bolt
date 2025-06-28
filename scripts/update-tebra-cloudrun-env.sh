@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 set -euo pipefail
 
 # This script updates the Cloud Run service to use environment variables instead of secrets

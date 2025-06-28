@@ -166,8 +166,21 @@ export const WaitTimeDiagnostic: React.FC = () => {
         <div className="bg-gray-700 p-3 rounded lg:col-span-2">
           <h4 className="font-medium text-white mb-2">Patient Wait Time Details</h4>
           
-          {patientsWithWaitTimes.length === 0 ? (
-            <div className="text-gray-400 text-sm">No patients with check-in times</div>
+          {patients.length === 0 ? (
+            <div className="text-gray-400 text-sm">No patients loaded</div>
+          ) : patientsWithWaitTimes.length === 0 ? (
+            <div className="space-y-2">
+              <div className="text-yellow-400 text-sm">No patients with check-in times</div>
+              <div className="text-xs text-gray-400">
+                <div>All patients ({patients.length}):</div>
+                {patients.slice(0, 3).map(p => (
+                  <div key={p.id} className="ml-2">
+                    • {p.name}: status={p.status}, checkInTime={p.checkInTime ? 'SET' : 'MISSING'}
+                  </div>
+                ))}
+                {patients.length > 3 && <div className="ml-2">... and {patients.length - 3} more</div>}
+              </div>
+            </div>
           ) : (
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {patientsWithWaitTimes.map((patient) => (

@@ -1,7 +1,12 @@
-
 # Tebra EHR Integration
 
 A robust and well-documented integration with the Tebra EHR system using SOAP API.
+
+## ⚠️ IMPORTANT: Tebra API Configuration
+
+**Current Tebra PHP API URL:** `https://tebra-php-api-623450773640.us-central1.run.app`
+
+See [TEBRA_API_URL_CONFIG.md](./TEBRA_API_URL_CONFIG.md) for detailed URL configuration and troubleshooting.
 
 ## Features
 
@@ -27,7 +32,7 @@ A robust and well-documented integration with the Tebra EHR system using SOAP AP
 
 - npm or yarn
 
-- Firebase project
+- Firebase projec
 
 - Tebra EHR credentials
 
@@ -123,7 +128,7 @@ The main service class for interacting with the Tebra EHR system.
 
 - `createAppointment(appointmentData: Partial<TebraAppointment>)`: Creates a new appointment
 
-- `updateAppointment(appointmentData: Partial<TebraAppointment>)`: Updates an existing appointment
+- `updateAppointment(appointmentData: Partial<TebraAppointment>)`: Updates an existing appointmen
 
 #### Rate Limiting
 
@@ -188,7 +193,7 @@ interface TebraPatient {
 
 ```
 
-#### TebraAppointment
+#### TebraAppointmentt
 
 ```typescript
 interface TebraAppointment {
@@ -311,6 +316,10 @@ DEBUG=tebra:* npm start
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
-## Support
+## Support – Firebase Callable Functions & Cloud-Run Proxy
+
+Detailed usage instructions, security notes, and troubleshooting tips for
+`getSecret`, `tebraTestConnection`, and the other proxy functions live in
+[`docs/tebra-functions-usage.md`](docs/tebra-functions-usage.md).

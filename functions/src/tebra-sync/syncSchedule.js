@@ -1,32 +1,51 @@
 const pLimit = require('p-limit');
+const { isCheckedIn } = require('./status-map');
 
 const tebraStatusToInternal = (raw) => {
   const key = raw.trim().toLowerCase();
   switch (key) {
-    case 'confirmed':   return 'Confirmed';
-    case 'cancelled':   return 'Cancelled';
-    case 'rescheduled': return 'Rescheduled';
-    case 'no show':     return 'No Show';
-    default:            return 'Scheduled';
+    case 'scheduled':    return 'scheduled';
+    case 'confirmed':    return 'scheduled';
+    case 'cancelled':    return 'cancelled';
+    case 'rescheduled':  return 'rescheduled';
+    case 'no show':      return 'no-show';
+    case 'arrived':      return 'arrived';
+    case 'roomed':       return 'appt-prep';
+    case 'ready for md': return 'ready-for-md';
+    case 'with doctor':  return 'with-doctor';
+    case 'seen by md':   return 'seen-by-md';
+    case 'checked out':  return 'completed';
+    default:             return 'scheduled';
   }
 };
 
-const toDashboardPatient = (appointment, patient, provider) => ({
-  id: patient.PatientId || patient.Id || '',
-  name: `${patient.FirstName} ${patient.LastName}`.trim(),
-  dob: patient.DateOfBirth || patient.DOB || '',
-  appointmentTime:
+const toDashboardPatient = (appointment, patient, provider) => {
+  const status = tebraStatusToInternal(appointment.Status || appointment.status || '');
+  const appointmentTime = 
     appointment.StartTime ||
     appointment.AppointmentTime ||
-    `${appointment.Date || appointment.AppointmentDate || ''} ${appointment.Time || ''}`.trim(),
-  appointmentType: appointment.Type || appointment.AppointmentType || 'Office Visit',
-  provider: provider
-    ? `${provider.Title || provider.Degree || 'Dr.'} ${provider.FirstName} ${provider.LastName}`
-    : 'Unknown Provider',
-  status: tebraStatusToInternal(appointment.Status || appointment.status || ''),
-  phone: patient.Phone || patient.PhoneNumber,
-  email: patient.Email || patient.EmailAddress,
-});
+    `${appointment.Date || appointment.AppointmentDate || ''} ${appointment.Time || ''}`.trim();
+  
+  // Determine if patient should be marked as checked in
+  // Any status beyond scheduled indicates the patient has arrived
+  const checkedInStatus = isCheckedIn(status);
+  
+  return {
+    id: patient.PatientId || patient.Id || '',
+    name: `${patient.FirstName} ${patient.LastName}`.trim(),
+    dob: patient.DateOfBirth || patient.DOB || '',
+    appointmentTime: appointmentTime,
+    appointmentType: appointment.Type || appointment.AppointmentType || 'Office Visit',
+    provider: provider
+      ? `${provider.Title || provider.Degree || 'Dr.'} ${provider.FirstName} ${provider.LastName}`
+      : 'Unknown Provider',
+    status: status,
+    phone: patient.Phone || patient.PhoneNumber,
+    email: patient.Email || patient.EmailAddress,
+    // Add checkInTime for patients who have arrived
+    checkInTime: checkedInStatus ? appointmentTime : undefined,
+  };
+};
 
 const syncSchedule = async (
   { tebra, repo, logger, now, timezone },
@@ -44,12 +63,26 @@ const syncSchedule = async (
     }
   } else {
     // Default to today
-    const today = new Date(now().toLocaleString('en-US', { timeZone: timezone }))
-      .toISOString().split('T')[0];
+    const currentTime = now();
+    const localTimeString = currentTime.toLocaleString('en-US', { timeZone: timezone });
+    const today = new Date(localTimeString).toISOString().split('T')[0];
+    
+    logger.info('📅 Date calculation debug:', {
+      currentTime: currentTime.toISOString(),
+      timezone: timezone,
+      localTimeString: localTimeString,
+      calculatedToday: today
+    });
+    
     fromDate = toDate = today;
   }
 
-  logger.info('🔍 Syncing appointments for date range:', { fromDate, toDate });
+  logger.info('🔍 Syncing appointments for date range:', { 
+    fromDate, 
+    toDate,
+    dateOverride: dateOverride || 'none',
+    timezone: timezone
+  });
 
   // Add detailed debugging for the Tebra API call
   logger.info('📞 Calling tebra.getAppointments with dates:', { fromDate, toDate });

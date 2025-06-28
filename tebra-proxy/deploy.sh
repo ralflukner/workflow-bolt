@@ -57,7 +57,6 @@ gcloud run deploy $SERVICE_NAME \
   --timeout=300s \
   --concurrency=80 \
   --ingress=all \
-  --allow-unauthenticated \
   --service-account="$PROJECT_ID@appspot.gserviceaccount.com" \
   --labels="environment=production,hipaa-compliant=true,service=tebra-proxy"
 
@@ -77,6 +76,7 @@ echo "✅ Request logging for audit trails"
 echo "✅ Rate limiting implemented"
 echo "✅ Input validation active"
 echo "✅ CORS restricted to Firebase domains"
+echo "🔒 HIPAA COMPLIANCE: Authentication required (no public access)"
 
 # Test the deployment
 echo -e "\n${YELLOW}🧪 Testing deployment...${NC}"

@@ -7,6 +7,14 @@ const getAppointmentTime = (hour: number, minute: number) => {
   return today.toISOString();
 };
 
+// Helper to generate check-in times (15-30 minutes before appointment)
+const getCheckInTime = (appointmentHour: number, appointmentMinute: number, minutesBefore: number = 20) => {
+  const today = new Date();
+  today.setHours(appointmentHour, appointmentMinute, 0, 0);
+  today.setMinutes(today.getMinutes() - minutesBefore);
+  return today.toISOString();
+};
+
 export const mockPatients: Patient[] = [
   {
     id: 'pat-1',
@@ -22,7 +30,8 @@ export const mockPatients: Patient[] = [
     dob: '1976-08-23',
     appointmentTime: getAppointmentTime(9, 15),
     provider: 'Dr. Lukner',
-    status: 'scheduled',
+    status: 'arrived',
+    checkInTime: getCheckInTime(9, 15, 25), // Checked in 25 minutes before appointment
   },
   {
     id: 'pat-3',
@@ -30,7 +39,9 @@ export const mockPatients: Patient[] = [
     dob: '1990-01-05',
     appointmentTime: getAppointmentTime(9, 30),
     provider: 'Dr. Lukner',
-    status: 'scheduled',
+    status: 'appt-prep',
+    checkInTime: getCheckInTime(9, 30, 35), // Checked in 35 minutes before appointment
+    room: 'Room A',
   },
   {
     id: 'pat-4',
@@ -38,7 +49,9 @@ export const mockPatients: Patient[] = [
     dob: '1968-11-15',
     appointmentTime: getAppointmentTime(10, 0),
     provider: 'Dr. Lukner',
-    status: 'scheduled',
+    status: 'ready-for-md',
+    checkInTime: getCheckInTime(10, 0, 45), // Checked in 45 minutes before appointment
+    room: 'Room B',
   },
   {
     id: 'pat-5',
@@ -46,7 +59,10 @@ export const mockPatients: Patient[] = [
     dob: '1992-06-30',
     appointmentTime: getAppointmentTime(10, 15),
     provider: 'Dr. Lukner',
-    status: 'scheduled',
+    status: 'With Doctor',
+    checkInTime: getCheckInTime(10, 15, 50), // Checked in 50 minutes before appointment
+    withDoctorTime: getCheckInTime(10, 15, 10), // Went to doctor 10 minutes before appointment
+    room: 'Room C',
   },
   {
     id: 'pat-6',

@@ -1,6 +1,30 @@
 const functions = require('firebase-functions');
 const functionsV1 = require('firebase-functions/v1');
 const { onCall } = require('firebase-functions/v2/https');
+
+// Load environment variables in development/emulator
+if (process.env.FUNCTIONS_EMULATOR) {
+  require('dotenv').config();
+  
+  // Force use of service account in emulator
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS && !process.env.GOOGLE_APPLICATION_CREDENTIALS.startsWith('/')) {
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = require('path').resolve(__dirname, process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  }
+} else {
+  // In production, load from Firebase Functions config
+  const functionsConfig = functions.config();
+  
+  // Map Firebase config to environment variables
+  if (functionsConfig.tebra) {
+    process.env.TEBRA_CLOUD_RUN_URL = functionsConfig.tebra.cloud_run_url;
+    process.env.TEBRA_INTERNAL_API_KEY = functionsConfig.tebra.internal_api_key;
+  }
+  
+  if (functionsConfig.auth0) {
+    process.env.AUTH0_DOMAIN = functionsConfig.auth0.domain;
+    process.env.AUTH0_AUDIENCE = functionsConfig.auth0.audience;
+  }
+}
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -26,9 +50,11 @@ const {
 // Initialize Firebase Admin (avoid duplicate app error)
 if (!admin.apps.length) {
   // Initialize with default credentials and explicit project ID
-  admin.initializeApp({
+  // In emulator mode, we need to use a service account or set GOOGLE_APPLICATION_CREDENTIALS
+  const config = {
     projectId: 'luknerlumina-firebase'
-  });
+  };
+  admin.initializeApp(config);
 }
 
 // Note: Secrets management moved to environment variables for this deployment
@@ -36,8 +62,8 @@ if (!admin.apps.length) {
 /** Verifies an Auth0 RS256 access / ID token and returns the decoded payload */
 async function verifyAuth0Jwt(token) {
   // Get Auth0 config from environment variables
-  const domain = process.env.AUTH0_DOMAIN;
-  const audience = process.env.AUTH0_AUDIENCE;
+  const domain = process.env.AUTH0_DOMAIN || process.env.VITE_AUTH0_DOMAIN;
+  const audience = process.env.AUTH0_AUDIENCE || process.env.VITE_AUTH0_AUDIENCE;
   
   if (!domain || !audience) {
     throw new Error('Missing Auth0 configuration in environment variables');
@@ -139,6 +165,8 @@ exports.testSecretRedaction = testSecretRedaction;
 // Tebra API Functions
 exports.tebraTestConnection = onCall({ cors: true }, async (request) => {
   console.log('Testing Tebra connection...');
+  console.log('Environment - TEBRA_CLOUD_RUN_URL:', process.env.TEBRA_CLOUD_RUN_URL);
+  console.log('Environment - GOOGLE_APPLICATION_CREDENTIALS:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
   
   try {
     // Test actual Tebra API connection
@@ -151,6 +179,7 @@ exports.tebraTestConnection = onCall({ cors: true }, async (request) => {
     };
   } catch (error) {
     console.error('Tebra connection test failed:', error);
+    console.error('Full error details:', error.stack);
     return { 
       success: false, 
       message: error.message || 'Connection test failed',
@@ -439,7 +468,7 @@ exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
     decoded = await verifyAuth0Jwt(auth0Token);   // ① Full JWT verification
   } catch (err) {
     console.error('Invalid Auth0 JWT', err);
-    throw new functions.https.HttpsError('unauthenticated', 'JWT verification failed');
+    throw new functions.https.HttpsError('unauthenticated', 'JWT verification failed', { originalError: err.message });
   }
 
   // ② Derive a stable, safe Firebase UID
@@ -459,7 +488,7 @@ exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
     });
   } catch (err) {
     console.error('Failed to mint custom token', err);
-    throw new functions.https.HttpsError('internal', 'Could not mint custom token');
+    throw new functions.https.HttpsError('internal', 'Could not mint custom token', { originalError: err.message });
   }
 
   // HIPAA Audit Log
@@ -470,7 +499,7 @@ exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
     timestamp: new Date().toISOString()
   }));
 
-  return { firebaseToken: customToken };
+  return { success: true, firebaseToken: customToken };
 });
 
 // Security monitoring endpoint for HIPAA compliance

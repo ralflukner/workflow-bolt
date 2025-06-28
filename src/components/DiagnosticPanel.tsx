@@ -13,6 +13,7 @@ export const DiagnosticPanel: React.FC = () => {
     persistenceEnabled,
     isLoading,
     saveCurrentSession,
+    loadMockData,
     tickCounter
   } = usePatientContext();
 
@@ -232,6 +233,12 @@ export const DiagnosticPanel: React.FC = () => {
                 className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-500"
               >
                 Test Load
+              </button>
+              <button
+                onClick={loadMockData}
+                className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-500"
+              >
+                Load Mock Data
               </button>
             </div>
           </div>

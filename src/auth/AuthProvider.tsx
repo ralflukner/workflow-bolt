@@ -1,6 +1,7 @@
 import React from 'react';
 import { Auth0Provider } from '@auth0/auth0-react';
 import { getAuth0Config, Auth0Cfg } from './auth0-config';
+import { useAuth0 } from '@auth0/auth0-react';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -59,9 +60,35 @@ VITE_AUTH0_SCOPE=openid profile email (optional)`}
       onRedirectCallback={onRedirectCallback}
       useRefreshTokens={true}
     >
+      {/* Dev-only helpers to inspect Auth0 tokens from the browser console */}
+      {import.meta.env.DEV && (
+        <DevHelpers />
+      )}
       {children}
     </Auth0Provider>
   );
+};
+
+/* ------------------------------------------------------------------
+   DevHelpers – attaches getToken() and loginPopup() shortcuts to window
+   so you can analyse the Auth0 token from the browser console.
+   Removed automatically in production builds.                      
+-------------------------------------------------------------------*/
+const DevHelpers: React.FC = () => {
+  const { getAccessTokenSilently, loginWithPopup } = useAuth0();
+
+  React.useEffect(() => {
+    (window as unknown as Record<string, unknown>).getToken = () => getAccessTokenSilently();
+    (window as unknown as Record<string, unknown>).loginPopup = () => loginWithPopup();
+    console.log('🔧 Dev helpers available: getToken() • loginPopup()');
+
+    return () => {
+      delete (window as unknown as Record<string, unknown>).getToken;
+      delete (window as unknown as Record<string, unknown>).loginPopup;
+    };
+  }, [getAccessTokenSilently, loginWithPopup]);
+
+  return null;
 };
 
 export default AuthProvider; 

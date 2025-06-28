@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { TebraIntegrationService, SyncResult, createTebraConfig } from '../tebra-soap/tebra-integration-service';
 import { TebraCredentials } from '../tebra-soap/tebra-api-service.types';
@@ -13,11 +13,12 @@ const TebraIntegration: React.FC = () => {
   const [integrationService, setIntegrationService] = useState<TebraIntegrationService | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
 
-  const credentials: TebraCredentials = {
+  const credentials = useMemo<TebraCredentials>(() => ({
     username: process.env.VITE_TEBRA_USERNAME || '',
     password: process.env.VITE_TEBRA_PASSWORD || '',
-    wsdlUrl: process.env.VITE_TEBRA_WSDL_URL || ''
-  };
+    customerKey: process.env.VITE_TEBRA_CUSTOMER_KEY || '',
+    wsdlUrl: process.env.VITE_TEBRA_WSDL_URL || '',
+  }), []);
 
   useEffect(() => {
     // Check if credentials are properly configured

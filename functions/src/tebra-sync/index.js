@@ -33,6 +33,15 @@ const tebraSyncTodaysSchedule = onCall({ cors: true }, async (req) => {
       dateParam = date;
     }
 
+    consoleLogger.info('📅 tebraSyncTodaysSchedule called with:', {
+      date,
+      fromDate,
+      toDate,
+      dateParam,
+      currentServerTime: new Date().toISOString(),
+      timezone: 'America/Chicago'
+    });
+
     const count = await syncSchedule(
       {
         tebra: tebraProxyClient,

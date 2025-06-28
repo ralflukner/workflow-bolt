@@ -71,21 +71,22 @@ export const TimeProvider: React.FC<TimeProviderProps> = ({ children }) => {
   };
 
   const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true,
-      timeZone: 'America/Chicago'
-    });
+    // Format time without timezone conversion to avoid time shift issues
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+    return `${hours}:${minutesStr} ${ampm}`;
   };
 
   const formatDateTime = (date: Date): string => {
-    return date.toLocaleDateString([], {
-      month: 'numeric',
-      day: 'numeric',
-      year: 'numeric',
-      timeZone: 'America/Chicago'
-    }) + ' ' + formatTime(date);
+    // Format date and time without timezone conversion to avoid date/time shift issues
+    const month = date.getMonth() + 1; // getMonth() returns 0-11
+    const day = date.getDate();
+    const year = date.getFullYear();
+    return `${month}/${day}/${year} ${formatTime(date)}`;
   };
 
   const value = {

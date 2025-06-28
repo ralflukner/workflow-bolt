@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { tebraApiService } from '../services/tebraApiService';
+import { tebraTestConnection, getApiInfo } from '../services/tebraApi';
 
 export const TebraConnectionDebuggerSimple: React.FC = () => {
   const [testResult, setTestResult] = useState<string>('Not tested');
@@ -10,7 +10,7 @@ export const TebraConnectionDebuggerSimple: React.FC = () => {
     
     try {
       const startTime = Date.now();
-      const result = await tebraApiService.testConnection();
+      const result = await tebraTestConnection();
       const duration = Date.now() - startTime;
       
       if (result) {
@@ -57,6 +57,12 @@ export const TebraConnectionDebuggerSimple: React.FC = () => {
         <div className="text-sm text-gray-300">
           Result: {testResult}
         </div>
+
+        {testResult.includes('ms') && !testResult.includes('Error') && (
+          <div className="mt-2 text-xs text-gray-400 italic">
+            Note: Tebra API is rate-limited. Response times of 2-4 seconds are normal.
+          </div>
+        )}
       </div>
     </div>
   );

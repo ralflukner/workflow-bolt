@@ -104,8 +104,8 @@ describe('TebraApiService Integration Tests', () => {
 
     it('should verify Tebra configuration is loaded', () => {
       const tebraVars = [
-        'REACT_APP_TEBRA_CUSTKEY',
-        'REACT_APP_TEBRA_WSDL_URL'
+        'VITE_TEBRA_CUSTKEY',
+        'VITE_TEBRA_WSDL_URL'
       ];
 
       const missingVars = tebraVars.filter(varName => !process.env[varName]);

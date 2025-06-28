@@ -29,7 +29,7 @@
 2. **Analyze Impact**
    - Identify affected data
    - Assess system damage
-   - Evaluate business impact
+   - Evaluate business impac
 
 3. **Determine Root Cause**
    - Analyze attack vectors
@@ -53,10 +53,10 @@
    - Update access controls
    - Enhance monitoring
 
-### Post-Incident
+### Post-Inciden
 
 1. **Documentation**
-   - Complete incident report
+   - Complete incident repor
    - Update procedures
    - Document lessons learned
 
@@ -73,21 +73,25 @@
 ## 📋 Incident Severity Levels
 
 ### Level 1 - Critical
+
 - Data breach
 - System compromise
 - Unauthorized access
 
 ### Level 2 - High
+
 - Suspicious activity
 - Failed access attempts
 - System anomalies
 
 ### Level 3 - Medium
+
 - Policy violations
 - Configuration issues
 - Minor incidents
 
 ### Level 4 - Low
+
 - False positives
 - Minor issues
 - Informational
@@ -95,14 +99,14 @@
 ## 🔄 Response Timeline
 
 1. **0-15 minutes**
-   - Initial assessment
+   - Initial assessmen
    - Emergency notification
-   - Initial containment
+   - Initial containmen
 
 2. **15-60 minutes**
    - Detailed investigation
    - Stakeholder updates
-   - Extended containment
+   - Extended containmen
 
 3. **1-4 hours**
    - Root cause analysis
@@ -116,14 +120,14 @@
 
 ## 📞 Contact Information
 
-- **Security Team**: lukner@luknerclinic.com
+- **Security Team**: <lukner@luknerclinic.com>
 - **Emergency Phone**: 806-329-3050
 - **On-Call Engineer**: [On-Call Schedule](On-Call-Schedule)
 
 ## 📝 Incident Report Template
 
 ```markdown
-# Security Incident Report
+# Security Incident Repor
 
 ## Incident Details
 - Date/Time:
@@ -136,7 +140,7 @@
 - Containment:
 - Resolution:
 
-## Impact
+## Impac
 - Systems Affected:
 - Data Impact:
 - Business Impact:
@@ -182,8 +186,8 @@
 ## 📊 Metrics
 
 - Time to detection
-- Time to containment
+- Time to containmen
 - Time to resolution
 - Incident frequency
 - Success rate
-- Cost impact 
+- Cost impac

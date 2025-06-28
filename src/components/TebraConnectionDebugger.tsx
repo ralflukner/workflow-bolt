@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { tebraApiService } from '../services/tebraApiService';
+import { tebraTestConnection, getApiInfo } from '../services/tebraApi';
 import { app, isFirebaseConfigured } from '../config/firebase';
 import { getFunctions } from 'firebase/functions';
 import { checkFirebaseEnvVars } from '../utils/envUtils';
@@ -78,7 +78,7 @@ export const TebraConnectionDebugger: React.FC = () => {
 
     const startTime = Date.now();
     try {
-      const result = await tebraApiService.testConnection();
+      const result = await tebraTestConnection();
       const duration = Date.now() - startTime;
       console.log('TebraConnectionDebugger: Test result:', result, 'Duration:', duration);
 

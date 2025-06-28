@@ -25,13 +25,13 @@ export class SecretsService {
 
   // Secret configuration mapping
   private static readonly SECRET_CONFIGS: Record<string, SecretConfig> = {
-    // Encryption keys
+    // Encryption keys - prioritize GSM for HIPAA compliance
     PATIENT_ENCRYPTION_KEY: {
       secretName: 'patient-encryption-key',
-      envFallback: 'REACT_APP_PATIENT_ENCRYPTION_KEY',
+      envFallback: 'VITE_PATIENT_ENCRYPTION_KEY',
       required: true
     },
-    
+
     // Tebra API credentials  
     TEBRA_USERNAME: {
       secretName: 'TEBRA_USERNAME',
@@ -53,14 +53,14 @@ export class SecretsService {
       envFallback: 'REACT_APP_TEBRA_WSDL_URL',
       required: true
     },
-    
+
     // API Keys
     TEBRA_PROXY_API_KEY: {
       secretName: 'tebra-proxy-api-key',
       envFallback: 'VITE_TEBRA_PROXY_API_KEY',
       required: true
     },
-    
+
     // Firebase config (for server-side usage)
     FIREBASE_API_KEY: {
       secretName: 'firebase-api-key',
@@ -79,7 +79,7 @@ export class SecretsService {
   }
 
   /**
-   * Get secret from Google Secret Manager with fallback to environment variables
+   * Get secret from Google Secret Manager with fallback to environment variables and backend callable
    */
   public async getSecret(secretKey: string): Promise<string> {
     const config = SecretsService.SECRET_CONFIGS[secretKey];
@@ -96,11 +96,24 @@ export class SecretsService {
     let secretValue: string | null = null;
 
     try {
+      // For encryption keys, prioritize GSM for HIPAA compliance
+      const isEncryptionKey = secretKey === 'PATIENT_ENCRYPTION_KEY';
+      
       // Try Google Secret Manager first (server-side only)
       if (typeof window === 'undefined') {
         secretValue = await this.getFromSecretManager(config.secretName);
         if (secretValue) {
           console.log(`✅ Retrieved ${secretKey} from Google Secret Manager`);
+          this.cacheSecret(secretKey, secretValue);
+          return secretValue;
+        }
+      }
+
+      // For encryption keys, try backend callable before environment variables
+      if (isEncryptionKey && typeof window !== 'undefined') {
+        secretValue = await this.getFromBackend(secretKey);
+        if (secretValue) {
+          console.log(`🔒 Retrieved ${secretKey} from Firebase Function (secure)`);
           this.cacheSecret(secretKey, secretValue);
           return secretValue;
         }
@@ -116,10 +129,20 @@ export class SecretsService {
         }
       }
 
+      // For non-encryption keys, try backend callable as last resort
+      if (!isEncryptionKey && !secretValue && typeof window !== 'undefined') {
+        secretValue = await this.getFromBackend(secretKey);
+        if (secretValue) {
+          console.log(`🔒 Retrieved ${secretKey} from Firebase Function (secure)`);
+          this.cacheSecret(secretKey, secretValue);
+          return secretValue;
+        }
+      }
+
       // Handle missing required secrets
       if (config.required) {
         throw new Error(
-          `Required secret ${secretKey} not found in Secret Manager or environment variables. ` +
+          `Required secret ${secretKey} not found in Secret Manager, environment variables, or backend. ` +
           `Configure secret: gcloud secrets create ${config.secretName} --data-file=-`
         );
       }
@@ -127,11 +150,11 @@ export class SecretsService {
       return '';
     } catch (error) {
       console.error(`Failed to retrieve secret ${secretKey}:`, error);
-      
+
       if (config.required) {
         throw error;
       }
-      
+
       return '';
     }
   }
@@ -177,7 +200,7 @@ export class SecretsService {
   private async getFromSecretManager(secretName: string): Promise<string | null> {
     try {
       // Lazy-load the client so the browser bundle is not affected
-      // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
       const client = new SecretManagerServiceClient();
 
@@ -216,7 +239,15 @@ export class SecretsService {
       }
     }
 
-    // Browser environment - use getEnvVar helper that handles import.meta safely
+    // Vite environment variables - direct access
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      const value = import.meta.env[envVar];
+      if (value) {
+        return value;
+      }
+    }
+
+    // Browser environment - use getEnvVar helper as fallback
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { getEnvVar } = require('../constants/env');
@@ -262,6 +293,33 @@ export class SecretsService {
    */
   public clearCache(): void {
     SecretsService.cache = {};
+  }
+
+  /**
+   * Retrieve secret from Firebase Function backend
+   * This is used as a fallback in browser environments
+   */
+  private async getFromBackend(secretKey: string): Promise<string | null> {
+    try {
+      // run only in the browser
+      if (typeof window === 'undefined') return null;
+
+      const [{ httpsCallable, getFunctions }, { getApps }] = await Promise.all([
+        import('firebase/functions'),
+        import('firebase/app')
+      ]);
+
+      // assumes initialiseFirebase() has already run
+      if (!getApps().length) return null;
+
+      const fn = httpsCallable(getFunctions(), 'getSecret');
+      const res = await fn({ secretKey });
+      const { value } = res.data as { value: string };
+      return value ?? null;
+    } catch (err) {
+      console.warn(`Callable getSecret failed for ${secretKey}:`, err);
+      return null;
+    }
   }
 
   /**

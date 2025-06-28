@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tebra PHP API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tebra PHP API Test</h1>
+    
+    <div class="test-section">
+        <h2>Configuration</h2>
+        <p>API URL: <input type="text" id="apiUrl" value="https://tebra-php-api-oqg3wfutka-uc.a.run.app/api" style="width: 400px;"></p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Connection</h2>
+        <button onclick="testConnection()">Test Connection</button>
+        <div id="connectionResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Get Providers</h2>
+        <button onclick="getProviders()">Get Providers</button>
+        <div id="providersResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Get Appointments</h2>
+        <label>From Date: <input type="date" id="fromDate" value="2025-06-18"></label>
+        <label>To Date: <input type="date" id="toDate" value="2025-06-19"></label>
+        <button onclick="getAppointments()">Get Appointments</button>
+        <div id="appointmentsResult"></div>
+    </div>
+
+    <script>
+        const getApiUrl = () => document.getElementById('apiUrl').value;
+
+        async function callApi(endpoint, method = 'POST', data = null) {
+            const url = getApiUrl() + endpoint;
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            };
+            
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(url, options);
+                const result = await response.json();
+                return { success: response.ok, data: result };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('connectionResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            const result = await callApi('/testConnection');
+            
+            if (result.success && result.data.success) {
+                resultDiv.innerHTML = '<span class="success">✅ Connection successful!</span><pre>' + JSON.stringify(result.data, null, 2) + '</pre>';
+            } else {
+                resultDiv.innerHTML = '<span class="error">❌ Connection failed</span><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+            }
+        }
+
+        async function getProviders() {
+            const resultDiv = document.getElementById('providersResult');
+            resultDiv.innerHTML = 'Loading...';
+            
+            const result = await callApi('/getProviders');
+            
+            if (result.success && result.data.success) {
+                resultDiv.innerHTML = '<span class="success">✅ Providers loaded!</span><pre>' + JSON.stringify(result.data, null, 2) + '</pre>';
+            } else {
+                resultDiv.innerHTML = '<span class="error">❌ Failed to load providers</span><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+            }
+        }
+
+        async function getAppointments() {
+            const resultDiv = document.getElementById('appointmentsResult');
+            resultDiv.innerHTML = 'Loading...';
+            
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            
+            const result = await callApi('/getAppointments', 'POST', { fromDate, toDate });
+            
+            if (result.success && result.data.success) {
+                resultDiv.innerHTML = '<span class="success">✅ Appointments loaded!</span><pre>' + JSON.stringify(result.data, null, 2) + '</pre>';
+            } else {
+                resultDiv.innerHTML = '<span class="error">❌ Failed to load appointments</span><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+            }
+        }
+    </script>
+</body>
+</html>

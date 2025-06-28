@@ -14,7 +14,10 @@ export default tseslint.config(
     'node_modules/**',
     'functions/node_modules/**',
     'tebra-proxy/**',
-    '__mocks__/**'
+    '__mocks__/**',
+    'tebra-php-api/vendor/**',
+    'vendor/**',
+    'src/utils/testTebra*.ts'
   ] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],

@@ -56,10 +56,10 @@ The implementation supports a secure deployment workflow:
 2. **Service Deployment with Secret Integration**:
    ```bash
    # Deploy with secure secret references
-   gcloud functions deploy notification-service \
-     --gen2 \
-     --runtime=nodejs20 \
-     --region=us-central1 \
+   gcloud functions deploy notification-service
+     --gen2
+     --runtime=nodejs20
+     --region=us-central1
      --set-env-vars="GMAIL_CLIENT_ID=$(gcloud secrets versions access latest --secret=GMAIL_CLIENT_ID),GMAIL_CLIENT_SECRET=$(gcloud secrets versions access latest --secret=GMAIL_CLIENT_SECRET)"
    ```
 

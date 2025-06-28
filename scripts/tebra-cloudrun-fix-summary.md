@@ -36,7 +36,8 @@ chmod +x scripts/create-tebra-secrets.sh
 
 ```bash
 gcloud run services update tebra-php-api \
-     --region us-central1 \
+  --region us-central1 \
+  --set-env-vars TEBRA_INTERNAL_API_KEY="$NEW_KEY"
      --set-env-vars TEBRA_INTERNAL_API_KEY="$NEW_KEY"
 ```
 

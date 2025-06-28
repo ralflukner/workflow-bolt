@@ -69,8 +69,15 @@ export function secureLog(message: string, data?: unknown): void {
     if (typeof data === 'string') {
       console.log(`[SECURE] ${redactedMessage}`, redactSecrets(data));
     } else if (typeof data === 'object') {
-      // Don't log the full object to avoid potential credential exposure
-      console.log(`[SECURE] ${redactedMessage}`, '[Object - details redacted for security]');
+      // Serialize object and redact sensitive values so developers can still inspect structure
+      try {
+        const json = JSON.stringify(data, null, 2);
+        const safeJson = redactSecrets(json);
+        console.log(`[SECURE] ${redactedMessage}`, safeJson);
+      } catch {
+        // Fallback if circular structure prevents serialization
+        console.log(`[SECURE] ${redactedMessage}`, '[Object (could not serialize) - details redacted]');
+      }
     } else {
       console.log(`[SECURE] ${redactedMessage}`, '[Data redacted for security]');
     }

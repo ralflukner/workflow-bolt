@@ -30,12 +30,13 @@ To redeploy the fixed functions, use the following command:
 
 ```bash
 gcloud functions deploy tebraTestConnection \
-  --gen2 --region us-central1 --project luknerlumina-firebase \
-  --runtime nodejs20 --entry-point=tebraTestConnection \
-  --source functions \
-  --set-env-vars \
-TEBRA_CLOUD_RUN_URL=https://tebra-php-api-623450773640.us-central1.run.app,\
-TEBRA_INTERNAL_API_KEY=$KEY
+  --gen2 \
+  --region=us-central1 \
+  --project=luknerlumina-firebase \
+  --runtime=nodejs20 \
+  --entry-point=tebraTestConnection \
+  --source=functions \
+  --set-env-vars="TEBRA_CLOUD_RUN_URL=https://tebra-php-api-623450773640.us-central1.run.app,TEBRA_INTERNAL_API_KEY=$KEY"
 ```
 
 Replace `$KEY` with your actual API key.
@@ -44,13 +45,14 @@ To deploy all four callables, you can use a loop:
 
 ```bash
 for FUNCTION in tebraTestConnection tebraGetProviders tebraSyncTodaysSchedule tebraGetAppointments; do
-  gcloud functions deploy $FUNCTION \
-    --gen2 --region us-central1 --project luknerlumina-firebase \
-    --runtime nodejs20 --entry-point=$FUNCTION \
-    --source functions \
-    --set-env-vars \
-  TEBRA_CLOUD_RUN_URL=https://tebra-php-api-623450773640.us-central1.run.app,\
-  TEBRA_INTERNAL_API_KEY=$KEY
+  gcloud functions deploy "$FUNCTION" \
+    --gen2 \
+    --region=us-central1 \
+    --project=luknerlumina-firebase \
+    --runtime=nodejs20 \
+    --entry-point="$FUNCTION" \
+    --source=functions \
+    --set-env-vars="TEBRA_CLOUD_RUN_URL=https://tebra-php-api-623450773640.us-central1.run.app,TEBRA_INTERNAL_API_KEY=$KEY"
 done
 ```
 
@@ -59,8 +61,8 @@ done
 After deployment, you can validate that the functions are working correctly with:
 
 ```bash
-curl -s -X POST -H "Content-Type: application/json" \
-     -d '{"data":{}}' \
+curl -s -X POST -H "Content-Type: application/json"
+     -d '{"data":{}}'
      https://us-central1-luknerlumina-firebase.cloudfunctions.net/tebraTestConnection | jq
 ```
 

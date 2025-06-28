@@ -1,13 +1,15 @@
-docs: Move markdown files to docs directory
+docs(error-handling): Add correlation ID implementation documentation
 
-Reorganized the repository by moving all markdown (.md) files to the docs
-directory for better organization and maintainability. This change makes
-the repository structure cleaner and more consistent.
+Add comprehensive documentation explaining the correlation ID implementation
+for error tracing in the Tebra PHP API. The documentation covers:
 
-Changes:
-- Moved all documentation files to the docs directory
-- Kept README.md in the root directory as it's conventionally used as the landing page
-- Maintained git history for all moved files
+- Utility functions for generating and logging correlation IDs
+- Standardized error response structure
+- Different error types and their correlation ID patterns
+- Benefits of consistent correlation ID implementation
+- Usage examples and migration notes
 
-This implements the requested change to "move the .md files into the docs
-directory and put them in there from now on."
+This documentation provides a clear reference for developers working with
+the error handling system and explains the traceability improvements.
+
+Fixed markdown formatting issues to comply with linting requirements.

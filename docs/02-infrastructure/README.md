@@ -1,2 +1,2 @@
 
-# infrastructure (placeholder)\n\n> TODO: replace this stub with real content in later phases.
+# infrastructure (placeholder)\n\n> TODO: replace this stub with real content in later phases

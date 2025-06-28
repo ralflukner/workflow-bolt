@@ -35,9 +35,9 @@ expansion plan.
 
 4. Added new test files to increase coverage:
 
-   - Created `PatientList.test.tsx` to test the PatientList component
-   - Created `PatientCard.test.tsx` to test the PatientCard component
-   - Created `ImportSchedule.test.tsx` to test the ImportSchedule component
+   - Created `PatientList.test.tsx` to test the PatientList componen
+   - Created `PatientCard.test.tsx` to test the PatientCard componen
+   - Created `ImportSchedule.test.tsx` to test the ImportSchedule componen
 
 5. Added utilities to support testing:
    - Created a `formatters.ts` utility for consistent date/time formatting
@@ -72,4 +72,4 @@ testing-expansion-plan.md.
 ## Reviewer Notes
 
 While most TypeScript errors have been fixed, there are still a few failing tests
-that will need to be addressed in future PRs. This PR focuses on fixing the most
+that will need to be addressed in future PRs. This PR focuses on fixing the mos

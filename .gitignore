@@ -30,6 +30,9 @@ gcloud-key.json
 gcr.json
 keyfile.json
 *-credentials.json
+# Firebase Admin SDK
+**/config/*firebase*.json
+**/config/*adminsdk*.json
 
 # API Keys and Secrets
 **/secrets.json
@@ -44,10 +47,6 @@ apikeys.json
 *.crt
 
 # Tebra specific
-tebra-tools/test-tebra.php
-tebra-tools/test-tebra-env.php
-tebra-tools/check-setup.php
-tebra-tools/debug-proxy-dates.php
 **/tebra-credentials*
 **/tebra-config*
 tebra_test.php
@@ -113,6 +112,9 @@ Thumbs.db
 desktop.ini
 
 # ===== Project Specific =====
+# Firebase config (generated from template)
+.firebaserc
+
 # Local config overrides
 config.local.php
 config.local.json
@@ -164,3 +166,9 @@ src/vite-env.d.ts
 tebra-tools/credential-rotation-state.json
 key.json
 key.json
+
+# Ignore any environment templates or files with .txt extension
+**/env*.txt
+
+# ===== Husky =====
+.husky/

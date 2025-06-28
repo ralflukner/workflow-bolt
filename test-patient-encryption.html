@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Patient Encryption Key</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
+</head>
+<body>
+    <h1>Test Patient Encryption Key Access</h1>
+    <button onclick="testGetSecret()">Test Get Secret</button>
+    <pre id="output"></pre>
+
+    <script>
+        // Initialize Firebase with public config
+        const firebaseConfig = {
+            apiKey: "AIzaSyAu45Z0T7d-qFJdCySJJoQsZBuQCGhUBmM",
+            authDomain: "luknerlumina-firebase.firebaseapp.com",
+            projectId: "luknerlumina-firebase",
+            storageBucket: "luknerlumina-firebase.firebasestorage.app",
+            messagingSenderId: "623450773640",
+            appId: "1:623450773640:web:9afd63d3ccbb1fcb6fe73d",
+            measurementId: "G-W6TX8WRN2Z"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const functions = firebase.functions();
+        const auth = firebase.auth();
+
+        function log(message) {
+            document.getElementById('output').textContent += message + '\n';
+        }
+
+        async function testGetSecret() {
+            try {
+                log('Signing in anonymously...');
+                await auth.signInAnonymously();
+                log('Signed in successfully');
+
+                log('Calling getSecret function...');
+                const getSecret = functions.httpsCallable('getSecret');
+                const result = await getSecret({ secretKey: 'PATIENT_ENCRYPTION_KEY' });
+                
+                log('Success! Encryption key retrieved: ' + (result.data.value ? '✓ (key hidden for security)' : '✗ Missing'));
+                log('Key length: ' + (result.data.value ? result.data.value.length : 0) + ' characters');
+            } catch (error) {
+                log('Error: ' + error.message);
+                console.error('Full error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

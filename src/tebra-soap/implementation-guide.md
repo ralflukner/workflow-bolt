@@ -11,7 +11,7 @@ This implementation provides a secure, HIPAA-compliant integration between your 
 
 Replace your existing App.tsx with the enhanced version:
 
-```typescript
+```typescrip
 // src/App.tsx
 import { TimeProvider } from './context/TimeProvider';
 import { EnhancedPatientProvider } from './context/EnhancedPatientContext';
@@ -53,7 +53,7 @@ export default App;
 
 Update your Dashboard component to include the Tebra integration:
 
-```typescript
+```typescrip
 // Add to your Dashboard.tsx imports
 import { TebraIntegrationPanel } from './TebraIntegrationPanel';
 import { usePatientContext } from '../hooks/usePatientContext';
@@ -66,7 +66,7 @@ const {
   syncFromTebra,
   lastTebraSync,
   tebraConnected
-} = usePatientContext() as any; // Type assertion for enhanced context
+} = usePatientContext() as any; // Type assertion for enhanced contex
 
 // Add button to header section
 <button
@@ -79,7 +79,7 @@ const {
   {tebraConnected ? 'Tebra Connected' : 'Setup Tebra'}
 </button>
 
-// Add modal at the end of your Dashboard component
+// Add modal at the end of your Dashboard componen
 {showTebraPanel && (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
     <div className="bg-gray-800 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -110,7 +110,7 @@ REACT_APP_TEBRA_LOOKAHEAD_DAYS=1
 
 **⚠️ CRITICAL Security Note:**
 
-- Never store API credentials in client-side code or environment variables accessible to React
+- Never store API credentials in client-side code or environment variables accessible to Reac
 
 - Implement a secure backend service to proxy SOAP API calls
 
@@ -156,7 +156,7 @@ REACT_APP_TEBRA_LOOKAHEAD_DAYS=1
 
 The integration includes robust error handling:
 
-```typescript
+```typescrip
 // Automatic fallback to mock data if Tebra is unavailable
 const config = createTebraConfig(credentials, {
   fallbackToMockData: true, // Ensures clinical workflow continues
@@ -203,7 +203,7 @@ The integration automatically maps Tebra statuses to your internal workflow:
 
 #### Health Checks
 
-```typescript
+```typescrip
 // Check integration health
 const checkTebraHealth = async () => {
   const service = TebraIntegrationHook.getInstance();
@@ -233,7 +233,7 @@ const checkTebraHealth = async () => {
 
 #### Unit Tests
 
-```typescript
+```typescrip
 // Test status mapping
 describe("TebraDataTransformer", () => {
   it("should map Tebra statuses correctly", () => {
@@ -250,7 +250,7 @@ describe("TebraDataTransformer", () => {
 
 #### Integration Tests
 
-```typescript
+```typescrip
 // Test API connectivity
 describe("Tebra API Integration", () => {
   it("should connect to Tebra API", async () => {
@@ -272,10 +272,10 @@ describe("Tebra API Integration", () => {
 
 ### 9. Deployment Considerations
 
-#### Production Environment
+#### Production Environmen
 
-```typescript
-// Use secure credential management
+```typescrip
+// Use secure credential managemen
 const getTebraCredentials = () => {
   if (process.env.NODE_ENV === "production") {
     return {
@@ -328,7 +328,7 @@ const getTebraCredentials = () => {
 
 #### Debug Mode
 
-```typescript
+```typescrip
 // Enable detailed logging
 const debugConfig = createTebraConfig(credentials, {
   syncInterval: 5, // More frequent syncing
@@ -351,7 +351,7 @@ const debugConfig = createTebraConfig(credentials, {
 
 This integration is designed with HIPAA compliance in mind:
 
-- Data encryption in transit and at rest
+- Data encryption in transit and at res
 
 - Automatic data purging after 24 hours
 

@@ -1,0 +1,58 @@
+{
+  "generatedAt": "2025-06-22T21:00:12.362Z",
+  "analysisConfig": {
+    "days": 1,
+    "service": "api",
+    "project": "luknerlumina-firebase"
+  },
+  "analysis": {
+    "summary": {
+      "totalLogs": 1000,
+      "errorCount": 3,
+      "warningCount": 1,
+      "infoCount": 148,
+      "errorRate": "0.30"
+    },
+    "errorPatterns": {
+      "OTHER": {
+        "count": 3,
+        "examples": [
+          {
+            "timestamp": "2025-06-22T20:42:15.608846Z",
+            "message": "Unknown error"
+          },
+          {
+            "timestamp": "2025-06-22T20:34:13.129388Z",
+            "message": "Unknown error"
+          },
+          {
+            "timestamp": "2025-06-22T20:31:11.701061Z",
+            "message": "Unknown error"
+          }
+        ]
+      }
+    },
+    "performanceMetrics": {
+      "sampleCount": 801,
+      "averageMs": 25101,
+      "medianMs": 435,
+      "p95Ms": 6645,
+      "minMs": 0,
+      "maxMs": 774182
+    },
+    "tebraFaults": {
+      "totalFaults": 0,
+      "faultsByAction": {},
+      "faultsByTime": {},
+      "recentFaults": []
+    },
+    "recommendations": [
+      {
+        "priority": "MEDIUM",
+        "category": "PERFORMANCE",
+        "message": "95th percentile response time is 6645ms - consider caching or optimization"
+      }
+    ]
+  },
+  "rawLogCount": 1000
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { TebraApiService } from '../../services/tebraApiService';
+import tebraApi from '../../services/tebraApi';
 
 /**
  * Tebra Connection Diagnostics Tests
@@ -11,10 +11,8 @@ import { TebraApiService } from '../../services/tebraApiService';
  */
 const real = process.env.RUN_REAL_API_TESTS === 'true' ? describe : describe.skip;
 real('🔧 Tebra Connection Diagnostics - Real API Tests', () => {
-  let tebraService: TebraApiService;
-
   beforeEach(() => {
-    tebraService = new TebraApiService();
+    // Using the tebraApi module directly
   });
 
   describe('1. Missing or Incorrect API Credentials', () => {
@@ -22,7 +20,7 @@ real('🔧 Tebra Connection Diagnostics - Real API Tests', () => {
       console.log('🔍 Testing missing customer key scenario...');
       
       // Test connection - this should fail if customer key is missing
-      const result = await tebraService.testConnection();
+      const result = await tebraApi.testConnection();
       
       if (!result) {
         console.log('❌ Connection failed - likely due to missing customer key');
@@ -38,7 +36,7 @@ real('🔧 Tebra Connection Diagnostics - Real API Tests', () => {
       console.log('🔍 Testing authentication with current credentials...');
       
       try {
-        const result = await tebraService.testConnection();
+        const result = await tebraApi.testConnection();
         
         if (!result) {
           console.log('❌ Authentication failed with current credentials');
@@ -64,7 +62,7 @@ real('🔧 Tebra Connection Diagnostics - Real API Tests', () => {
       console.log('🔍 Testing API endpoint connectivity...');
       
       // Expected endpoint: https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?singleWsdl
-      const result = await tebraService.testConnection();
+      const result = await tebraApi.testConnection();
       
       if (!result) {
         console.log('❌ Endpoint connection failed');
@@ -86,7 +84,7 @@ real('🔧 Tebra Connection Diagnostics - Real API Tests', () => {
       
       // Try to access providers - this typically requires System Admin role
       try {
-        const providers = await tebraService.getProviders();
+        const providers = await tebraApi.getProviders();
         
         if (!Array.isArray(providers) || providers.length === 0) {
           console.log('❌ Provider access failed - possible permission issue');
@@ -119,7 +117,7 @@ real('🔧 Tebra Connection Diagnostics - Real API Tests', () => {
         
         if (connectionResult) {
           // If connection works, test a simple API operation
-          const patients = await tebraService.searchPatients({ lastName: 'Test' });
+          const patients = await tebraApi.searchPatients({ lastName: 'Test' });
           
           if (Array.isArray(patients)) {
             console.log('✅ API access is enabled and functional');
@@ -160,7 +158,7 @@ real('🔧 Tebra Connection Diagnostics - Real API Tests', () => {
       try {
         // Test 1: Basic connection
         console.log('1️⃣ Testing basic connection...');
-        diagnosticReport.connectionTest = await tebraService.testConnection();
+        diagnosticReport.connectionTest = await tebraApi.testConnection();
         
         if (diagnosticReport.connectionTest) {
           console.log('   ✅ Basic connection successful');
@@ -169,7 +167,7 @@ real('🔧 Tebra Connection Diagnostics - Real API Tests', () => {
           
           // Test 2: Provider access (System Admin test)
           console.log('2️⃣ Testing System Admin access...');
-          const providers = await tebraService.getProviders();
+          const providers = await tebraApi.getProviders();
           if (Array.isArray(providers) && providers.length > 0) {
             diagnosticReport.systemAdminAccess = true;
             console.log('   ✅ System Admin access confirmed');
@@ -177,7 +175,7 @@ real('🔧 Tebra Connection Diagnostics - Real API Tests', () => {
           
           // Test 3: API functionality
           console.log('3️⃣ Testing API functionality...');
-          const patients = await tebraService.searchPatients({ lastName: 'Test' });
+          const patients = await tebraApi.searchPatients({ lastName: 'Test' });
           if (Array.isArray(patients)) {
             diagnosticReport.apiAccessEnabled = true;
             console.log('   ✅ API access confirmed');

@@ -2,7 +2,7 @@
 
 ## Overview
 
-I've implemented a solution to send HIPAA security alert emails through Google Workspace (Gmail) using OAuth2 authentication. This implementation allows the monitoring system to send security alerts to lukner@luknerclinic.com when security events are detected.
+I've implemented a solution to send HIPAA security alert emails through Google Workspace (Gmail) using OAuth2 authentication. This implementation allows the monitoring system to send security alerts to <lukner@luknerclinic.com> when security events are detected.
 
 ## Changes Made
 
@@ -30,7 +30,7 @@ I've implemented a solution to send HIPAA security alert emails through Google W
 
 1. When a security event is detected, the `triggerSecurityAlert` method is called
 2. This method calls `sendEmailAlert` with the alert details
-3. `sendEmailAlert` uses the email service to send an email to lukner@luknerclinic.com
+3. `sendEmailAlert` uses the email service to send an email to <lukner@luknerclinic.com>
 4. The email includes details about the security event and recommended actions
 
 ## Required Configuration
@@ -54,7 +54,7 @@ After configuring the OAuth2 credentials and environment variables, deploy the f
 gcloud functions deploy FUNCTION_NAME \
   --gen2 \
   --runtime=nodejs20 \
-  --region=us-central1 \
+  --region=us-central1
   --set-env-vars="GMAIL_CLIENT_ID=YOUR_CLIENT_ID,GMAIL_CLIENT_SECRET=YOUR_CLIENT_SECRET,GMAIL_REFRESH_TOKEN=YOUR_REFRESH_TOKEN"
 ```
 
@@ -68,7 +68,7 @@ To test the email functionality, you can trigger a security alert by:
 2. Creating unusual PHI access patterns
 3. Exceeding rate limits
 
-The system will detect these anomalies and send an email alert to lukner@luknerclinic.com.
+The system will detect these anomalies and send an email alert to <lukner@luknerclinic.com>.
 
 ## Benefits
 
