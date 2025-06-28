@@ -9,20 +9,46 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// -------------------------
 // Configuration
-const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || 'luknerlumina-firebase';
+// -------------------------
+
+// Resolve project ID (arg ▸ env ▸ gcloud default)
+let PROJECT_ID = process.argv[2] || process.env.GOOGLE_CLOUD_PROJECT;
+if (!PROJECT_ID) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { execSync } = await import('child_process');
+    PROJECT_ID = execSync('gcloud config get-value project', { encoding: 'utf8' }).trim();
+  } catch {
+    // ignore – handled below
+  }
+}
+
+if (!PROJECT_ID) {
+  console.error('❌ PROJECT_ID not specified. Pass it as CLI arg, set GOOGLE_CLOUD_PROJECT env var, or run "gcloud config set project".');
+  process.exit(1);
+}
+
 const SECRETS_TO_PULL = [
   // Auth0 secrets
-  { name: 'VITE_AUTH0_DOMAIN', envVar: 'VITE_AUTH0_DOMAIN' },
-  { name: 'VITE_AUTH0_CLIENT_ID', envVar: 'VITE_AUTH0_CLIENT_ID' },
-  { name: 'VITE_AUTH0_REDIRECT_URI', envVar: 'VITE_AUTH0_REDIRECT_URI' },
-  { name: 'VITE_AUTH0_AUDIENCE', envVar: 'VITE_AUTH0_AUDIENCE' },
-  { name: 'VITE_AUTH0_SCOPE', envVar: 'VITE_AUTH0_SCOPE' },
-  // Tebra secrets
-  { name: 'VITE_TEBRA_USERNAME', envVar: 'VITE_TEBRA_USERNAME' },
-  { name: 'VITE_TEBRA_PASSWORD', envVar: 'VITE_TEBRA_PASSWORD' },
-  { name: 'VITE_TEBRA_CUSTOMER_KEY', envVar: 'VITE_TEBRA_CUSTOMER_KEY' },
-  { name: 'VITE_TEBRA_WSDL_URL', envVar: 'VITE_TEBRA_WSDL_URL' },
+  { name: 'AUTH0_DOMAIN', envVar: 'VITE_AUTH0_DOMAIN' },
+  { name: 'AUTH0_CLIENT_ID', envVar: 'VITE_AUTH0_CLIENT_ID' },
+  { name: 'AUTH0_REDIRECT_URI', envVar: 'VITE_AUTH0_REDIRECT_URI' },
+  { name: 'AUTH0_AUDIENCE', envVar: 'VITE_AUTH0_AUDIENCE' },
+  { name: 'AUTH0_SCOPE', envVar: 'VITE_AUTH0_SCOPE' },
+  // Patient Encryption
+  { name: 'REACT_APP_PATIENT_ENCRYPTION_KEY', envVar: 'VITE_PATIENT_ENCRYPTION_KEY' },
+  // Tebra / Gmail (legacy naming)
+  { name: 'TEBRA_CLIENT_ID', envVar: 'GMAIL_CLIENT_ID' },
+  { name: 'TEBRA_CLIENT_SECRET', envVar: 'GMAIL_CLIENT_SECRET' },
+  { name: 'TEBRA_INTERNAL_API_KEY', envVar: 'TEBRA_INTERNAL_API_KEY' },
+  { name: 'TEBRA_REDIRECT_URI', envVar: 'VITE_TEBRA_REDIRECT_URI' },
+  { name: 'TEBRA_CLOUD_RUN_URL', envVar: 'TEBRA_CLOUD_RUN_URL' },
+  { name: 'TEBRA_USERNAME', envVar: 'VITE_TEBRA_USERNAME' },
+  { name: 'TEBRA_PASSWORD', envVar: 'VITE_TEBRA_PASSWORD' },
+  { name: 'TEBRA_CUSTOMER_KEY', envVar: 'VITE_TEBRA_CUSTOMER_KEY' },
+  { name: 'TEBRA_WSDL_URL', envVar: 'VITE_TEBRA_WSDL_URL' },
   // Gmail OAuth2 secrets
   { name: 'GMAIL_CLIENT_ID', envVar: 'GMAIL_CLIENT_ID' },
   { name: 'GMAIL_CLIENT_SECRET', envVar: 'GMAIL_CLIENT_SECRET' },
@@ -32,12 +58,12 @@ const SECRETS_TO_PULL = [
   // Gmail Service Account secrets (for Domain-Wide Delegation)
   { name: 'GMAIL_SERVICE_ACCOUNT_EMAIL', envVar: 'GMAIL_SERVICE_ACCOUNT_EMAIL' },
   { name: 'GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY', envVar: 'GMAIL_SERVICE_ACCOUNT_PRIVATE_KEY' },
-  // Patient encryption key
-  { name: 'VITE_PATIENT_ENCRYPTION_KEY', envVar: 'VITE_PATIENT_ENCRYPTION_KEY' },
-  // --- Runtime configuration / proxy ---
+  // Runtime configuration / proxy
   { name: 'VITE_TEBRA_PROXY_API_KEY', envVar: 'VITE_TEBRA_PROXY_API_KEY' },
   { name: 'VITE_FIREBASE_CONFIG', envVar: 'VITE_FIREBASE_CONFIG' },
   { name: 'GOOGLE_CLOUD_PROJECT', envVar: 'GOOGLE_CLOUD_PROJECT' },
+  // Misc
+  { name: 'GOOGLE_APPLICATION_CREDENTIALS', envVar: 'GOOGLE_APPLICATION_CREDENTIALS' },
 ];
 
 async function readSecret(secretName) {
