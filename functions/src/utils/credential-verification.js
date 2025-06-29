@@ -15,16 +15,28 @@ function ok(result){return {status:'success', ...result};}
 function warn(message, extra){return {status:'warning', message, ...extra};}
 function fail(message, extra){return {status:'failed', message, ...extra};}
 
-async function checkFirebaseProject(){
-  try{
-    const pid=process.env.GCLOUD_PROJECT||process.env.FIREBASE_PROJECT_ID||admin.app().options.projectId;
-    if(!pid) throw new Error('Project id not set');
-    return ok({projectId:pid});
-  }catch(e){return fail(e.message);} }
+async function checkFirebaseProject() {
+  try {
+    const app = getAdminApp();
+    const pid =
+      process.env.GCLOUD_PROJECT ||
+      process.env.FIREBASE_PROJECT_ID ||
+      app.options.projectId;
+    if (!pid) throw new Error('Project id not set');
+    return ok({ projectId: pid });
+  } catch (e) {
+    return fail(e.message);
+  }
+}
 
-async function checkAdmin(){
-  try{const app=admin.app();return ok({projectId:app.options.projectId});}
-  catch(e){return fail(e.message);} }
+async function checkAdmin() {
+  try {
+    const app = getAdminApp();
+    return ok({ projectId: app.options.projectId, name: app.name });
+  } catch (e) {
+    return fail(e.message);
+  }
+}
 
 async function checkFirestore(){
   try{const ref=admin.firestore().doc('_cred_check/tmp'); await ref.set({ts:Date.now()}); await ref.delete(); return ok({});}
@@ -52,18 +64,59 @@ async function checkServiceAccount(){
     return ok({email});
   }catch(e){return warn(e.message);} }
 
+// --------------------------------------------
+// Tebra EHR integration credential check
+// --------------------------------------------
+
+async function checkTebra() {
+  try {
+    const cfg = {
+      clientId: process.env.TEBRA_CLIENT_ID,
+      cloudRunUrl: process.env.TEBRA_CLOUD_RUN_URL,
+      hasSecret: !!process.env.TEBRA_CLIENT_SECRET,
+      hasApiKey: !!process.env.TEBRA_INTERNAL_API_KEY
+    };
+
+    const missing = [];
+    if (!cfg.clientId) missing.push('TEBRA_CLIENT_ID');
+    if (!cfg.cloudRunUrl) missing.push('TEBRA_CLOUD_RUN_URL');
+
+    if (missing.length) {
+      return fail(`Missing Tebra vars: ${missing.join(', ')}`);
+    }
+
+    if (!cfg.cloudRunUrl.startsWith('https://')) {
+      return warn('TEBRA_CLOUD_RUN_URL should be https', cfg);
+    }
+
+    return ok(cfg);
+  } catch (e) {
+    return fail(e.message);
+  }
+}
+
 const checks=[
   ['firebaseProject',checkFirebaseProject],
   ['firebaseAdmin',checkAdmin],
   ['firestore',checkFirestore],
   ['auth0',checkAuth0],
+  ['tebra',checkTebra],
   ['secretManager',checkSecretManager],
   ['serviceAccount',checkServiceAccount]
 ];
 
-exports.runCredentialVerification=async function(){
-  const results={};
-  const settled=await Promise.all(checks.map(([name,fn])=>fn().then(r=>[name,r])));
+async function runCredentialVerification() {
+  const results = {};
+
+  const settled = await Promise.all(
+    checks.map(async ([name, fn]) => {
+      try {
+        return [name, await fn()];
+      } catch (e) {
+        return [name, fail(`Unexpected error: ${e.message}`)];
+      }
+    })
+  );
   for(const [n,r] of settled) results[n]=r;
   const statuses=Object.values(results).map(r=>r.status);
   return {
@@ -76,7 +129,7 @@ exports.runCredentialVerification=async function(){
     },
     isValid: !statuses.includes('failed'),
   };
-};
+}
 
 /**
  * Express middleware for credential verification
@@ -84,7 +137,7 @@ exports.runCredentialVerification=async function(){
 function credentialVerificationMiddleware() {
   return async (req, res, next) => {
     try {
-      const verificationResult = await exports.runCredentialVerification();
+      const verificationResult = await runCredentialVerification();
       
       if (!verificationResult.isValid) {
         console.error('❌ Credential verification failed, blocking request');
@@ -108,11 +161,30 @@ function credentialVerificationMiddleware() {
   };
 }
 
+// ------------------------------------------------------------
+// 🔚 Export public API (place at end so all refs are defined)
+// ------------------------------------------------------------
+
 module.exports = {
-  verifyFirebaseCredentials: checkFirebaseProject,
-  verifySecretManagerCredentials: checkSecretManager,
-  verifyIAMPermissions: checkFirestore,
-  runCredentialVerification: exports.runCredentialVerification,
-  credentialVerificationMiddleware: credentialVerificationMiddleware,
-  CredentialVerificationResult: results
+  // individual checks
+  checkFirebaseProject,
+  checkAdmin,
+  checkFirestore,
+  checkAuth0,
+  checkTebra,
+  checkSecretManager,
+  checkServiceAccount,
+  // main runner & middleware
+  runCredentialVerification,
+  credentialVerificationMiddleware,
+  // helpers for unit-testing
+  _helpers: { ok, warn, fail }
 };
+
+// Helper: ensure there is a default Firebase app and return it
+function getAdminApp() {
+  if (!admin.apps.length) {
+    admin.initializeApp();
+  }
+  return admin.app();
+}

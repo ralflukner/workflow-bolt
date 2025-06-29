@@ -36,28 +36,28 @@ const getFirebaseConfig = onRequest({
       res.status(204).send('');
       return;
     }
-    try {
-      // Return Firebase config from environment variables only
-      const config = {
-        apiKey: process.env.VITE_FIREBASE_API_KEY,
-        authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-        storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.VITE_FIREBASE_APP_ID,
-        measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID
-      };
+    
+    // Return Firebase config from environment variables only
+    const config = {
+      apiKey: process.env.VITE_FIREBASE_API_KEY,
+      authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+      storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+      appId: process.env.VITE_FIREBASE_APP_ID,
+      measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID
+    };
 
-      // Validate all required fields are present
-      const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
-      const missingFields = requiredFields.filter(field => !config[field]);
-      
-      if (missingFields.length > 0) {
-        throw new Error(`Missing required Firebase config fields: ${missingFields.join(', ')}`);
-      }
-   
-      console.log('✅ Firebase config returned successfully');
-      res.status(200).json(config);
+    // Validate all required fields are present
+    const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+    const missingFields = requiredFields.filter(field => !config[field]);
+    
+    if (missingFields.length > 0) {
+      throw new Error(`Missing required Firebase config fields: ${missingFields.join(', ')}`);
+    }
+ 
+    console.log('✅ Firebase config returned successfully');
+    res.status(200).json(config);
   } catch (error) {
     console.error('❌ Error returning Firebase config:', error);
     res.status(500).json({ 
