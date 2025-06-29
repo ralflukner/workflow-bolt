@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { usePatientContext } from '../hooks/usePatientContext';
-import { Patient, PatientApptStatus, AppointmentType } from '../types';
+import { useTimeContext } from '../hooks/useTimeContext';
+import { Patient } from '../types';
 import { X, Check, AlertCircle } from 'lucide-react';
 import { debugLogger } from '../services/debugLogger';
+import { parseSchedule } from '../utils/parseSchedule';
 
 interface ImportScheduleProps {
   onClose: () => void;
