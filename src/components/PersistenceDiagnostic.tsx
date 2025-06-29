@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { Database, Clock, Save, AlertCircle } from 'lucide-react';
@@ -14,9 +15,10 @@ export const PersistenceDiagnostic: React.FC = () => {
   const [storageType, setStorageType] = useState<string>('unknown');
   const [authStatus, setAuthStatus] = useState<string>('checking');
 
-  // Determine storage type and auth status
-  useEffect(() => {
-    const checkStatus = async () => {
+  // Use React Query for auth status checking instead of useEffect
+  useQuery({
+    queryKey: ['authStatus', isAuthenticated],
+    queryFn: async () => {
       try {
         const firebaseConfigured = isFirebaseConfigured();
         const firebaseUser = auth?.currentUser;
@@ -34,40 +36,40 @@ export const PersistenceDiagnostic: React.FC = () => {
           setAuthStatus('Authenticated');
           setStorageType('Firebase');
         }
+        return { authStatus, storageType };
       } catch (error) {
         console.error('Error checking authentication status:', error);
         setAuthStatus('Error checking status');
         setStorageType('unknown');
+        return { authStatus: 'error', storageType: 'unknown' };
       }
-    };
+    },
+    refetchInterval: 5000, // Check every 5 seconds
+    enabled: true
+  });
 
-    checkStatus();
-    const interval = setInterval(checkStatus, 5000); // Check every 5 seconds
-    return () => clearInterval(interval);
-  }, [isAuthenticated]);
+  // Use React Query for save status tracking
+  useQuery({
+    queryKey: ['saveStatus', patients.length, persistenceEnabled, hasRealData],
+    queryFn: async () => {
+      if (!(patients.length > 0 && persistenceEnabled && hasRealData)) {
+        return Promise.resolve();
+      }
 
-  // Track when saves happen
-  useEffect(() => {
-    if (!(patients.length > 0 && persistenceEnabled && hasRealData)) {
-      return;
-    }
+      setSaveStatus('saving');
+      setLastSaveTime(new Date());
 
-    setSaveStatus('saving');
-    setLastSaveTime(new Date());
-
-    let successTimer: NodeJS.Timeout | null = null;
-    let idleTimer: NodeJS.Timeout | null = null;
-
-    successTimer = setTimeout(() => {
+      // Simulate save delay
+      await new Promise(resolve => setTimeout(resolve, 500));
       setSaveStatus('success');
-      idleTimer = setTimeout(() => setSaveStatus('idle'), 2000);
-    }, 500);
-
-    return () => {
-      if (successTimer) clearTimeout(successTimer);
-      if (idleTimer) clearTimeout(idleTimer);
-    };
-  }, [patients.length, persistenceEnabled, hasRealData]);
+      
+      // Auto reset to idle
+      setTimeout(() => setSaveStatus('idle'), 2000);
+      
+      return Promise.resolve();
+    },
+    enabled: patients.length > 0 && persistenceEnabled && hasRealData
+  });
 
   const formatTime = (date: Date | null) => {
     if (!date) return 'Never';

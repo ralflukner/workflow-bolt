@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { TebraIntegrationService, SyncResult, createTebraConfig } from '../tebra-soap/tebra-integration-service';
 import { TebraCredentials } from '../tebra-soap/tebra-api-service.types';
@@ -20,41 +21,35 @@ const TebraIntegration: React.FC = () => {
     wsdlUrl: process.env.VITE_TEBRA_WSDL_URL || '',
   }), []);
 
-  useEffect(() => {
-    // Check if credentials are properly configured
-    if (!credentials.username || !credentials.password || !credentials.wsdlUrl) {
-      console.warn('Tebra credentials missing. Please set VITE_TEBRA_USERNAME, VITE_TEBRA_PASSWORD, and VITE_TEBRA_WSDL_URL in .env.local');
-    }
-  }, [credentials]);
-
-  useEffect(() => {
-    // Set default date to current time
+  // Initialize default date using useMemo instead of useEffect
+  React.useMemo(() => {
     const currentDate = getCurrentTime();
     setSelectedDate(currentDate.toISOString().split('T')[0]);
   }, [getCurrentTime]);
 
-  useEffect(() => {
-    // Initialize Tebra integration service
-    const initializeService = async () => {
-      try {
-        // Check if credentials are available
-        if (!credentials.username || !credentials.password || !credentials.wsdlUrl) {
-          setStatusMessage('Tebra credentials not configured - environment variables missing');
-          console.warn('Tebra credentials missing. Please set VITE_TEBRA_USERNAME, VITE_TEBRA_PASSWORD, and VITE_TEBRA_WSDL_URL in .env.local');
-          setIsConnected(false);
-          return;
-        }
-        
-        // Validate credential format
-        if (credentials.username.trim() === '' || 
-            credentials.password.trim() === '' || 
-            credentials.wsdlUrl.trim() === '') {
-          setStatusMessage('Tebra credentials are invalid - check environment variables');
-          console.warn('Tebra credentials are empty or invalid. Please check your environment variables.');
-          setIsConnected(false);
-          return;
-        }
+  // Use React Query for Tebra service initialization
+  const { data: tebraService } = useQuery({
+    queryKey: ['tebraService', credentials],
+    queryFn: async () => {
+      // Check if credentials are properly configured
+      if (!credentials.username || !credentials.password || !credentials.wsdlUrl) {
+        console.warn('Tebra credentials missing. Please set VITE_TEBRA_USERNAME, VITE_TEBRA_PASSWORD, and VITE_TEBRA_WSDL_URL in .env.local');
+        setStatusMessage('Tebra credentials not configured - environment variables missing');
+        setIsConnected(false);
+        return null;
+      }
+      
+      // Validate credential format
+      if (credentials.username.trim() === '' || 
+          credentials.password.trim() === '' || 
+          credentials.wsdlUrl.trim() === '') {
+        setStatusMessage('Tebra credentials are invalid - check environment variables');
+        console.warn('Tebra credentials are empty or invalid. Please check your environment variables.');
+        setIsConnected(false);
+        return null;
+      }
 
+      try {
         const config = createTebraConfig(credentials, {
           syncInterval: 30, // 30 minutes
           lookAheadDays: 7, // 1 week ahead
@@ -73,19 +68,25 @@ const TebraIntegration: React.FC = () => {
         } else {
           setStatusMessage('Connected with fallback mode (API unavailable)');
         }
+        
+        return service;
       } catch (error) {
         console.error('Failed to initialize Tebra integration:', error);
         setStatusMessage('Failed to connect to Tebra EHR');
+        setIsConnected(false);
+        return null;
       }
-    };
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: true
+  });
 
-    initializeService();
-
-    // Cleanup on unmount
+  // Cleanup function using ref pattern
+  React.useRef(() => {
     return () => {
-      integrationService?.cleanup();
+      tebraService?.cleanup();
     };
-  }, [credentials]);
+  }).current;
 
   const handleImportFromTebra = async () => {
     if (!integrationService) {

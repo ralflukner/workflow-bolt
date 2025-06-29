@@ -1,23 +1,52 @@
-import React, { useRef } from 'react';
+import React, { createRef } from 'react';
 import type { Patient } from '../types';
-import { usePatientContext } from '../hooks/usePatientContext';
+// import { usePatientContext } from '../hooks/usePatientContext';
 
 interface DebugTextWindowProps {
   scrollPosition?: number;
   onScroll?: (position: number) => void;
+  patients: Patient[];
+  getWaitTime: (patient: Patient) => number | undefined;
 }
 
-export const DebugTextWindow: React.FC<DebugTextWindowProps> = ({ 
-  scrollPosition = 0, 
-  onScroll 
-}) => {
-  const { patients, getWaitTime } = usePatientContext();
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+// NOTE: useEffect is not allowed in this project. See docs/NO_USE_EFFECT_POLICY.md
+export class DebugTextWindow extends React.Component<DebugTextWindowProps> {
+  textAreaRef: React.RefObject<HTMLTextAreaElement>;
 
-  const formatPatientData = (patient: Patient): string => {
-    const waitTime = getWaitTime(patient);
+  constructor(props: DebugTextWindowProps) {
+    super(props);
+    this.textAreaRef = createRef();
+  }
+
+  componentDidUpdate(prevProps: DebugTextWindowProps) {
+    // Log patient updates for debugging
+    if (this.props.patients !== prevProps.patients) {
+      console.log('[DebugTextWindow] Patients updated:', this.props.patients.length, 'patients');
+      console.log('[DebugTextWindow] Patient data:', this.props.patients);
+    }
+    // Sync scroll position when it changes from parent
+    if (
+      this.props.scrollPosition !== undefined &&
+      this.props.scrollPosition !== prevProps.scrollPosition &&
+      this.textAreaRef.current
+    ) {
+      const maxScroll = this.textAreaRef.current.scrollHeight - this.textAreaRef.current.clientHeight;
+      this.textAreaRef.current.scrollTop = this.props.scrollPosition * maxScroll;
+    }
+  }
+
+  handleScroll = () => {
+    const { onScroll } = this.props;
+    if (this.textAreaRef.current && onScroll) {
+      const maxScroll = this.textAreaRef.current.scrollHeight - this.textAreaRef.current.clientHeight;
+      const relativePosition = maxScroll > 0 ? this.textAreaRef.current.scrollTop / maxScroll : 0;
+      onScroll(relativePosition);
+    }
+  };
+
+  formatPatientData = (patient: Patient): string => {
+    const waitTime = this.props.getWaitTime(patient);
     const waitTimeStr = waitTime ? `Wait: ${waitTime}min` : '';
-    
     return [
       `ID: ${patient.id}`,
       `Name: ${patient.name}`,
@@ -36,43 +65,45 @@ export const DebugTextWindow: React.FC<DebugTextWindowProps> = ({
     ].filter(Boolean).join('\n');
   };
 
-  const allPatientsText = patients
-    .sort((a, b) => {
-      // Sort by status order similar to how they appear in sections
-      const statusOrder = [
-        'scheduled', 'Confirmed', 'Rescheduled', 'arrived', 
-        'appt-prep', 'ready-for-md', 'With Doctor', 
-        'seen-by-md', 'completed', 'Cancelled', 'No Show'
-      ];
-      const aIndex = statusOrder.indexOf(a.status);
-      const bIndex = statusOrder.indexOf(b.status);
-      if (aIndex !== bIndex) return aIndex - bIndex;
-      
-      // Then by appointment time
-      return a.appointmentTime.localeCompare(b.appointmentTime);
-    })
-    .map(formatPatientData)
-    .join('\n\n');
+  render() {
+    const { patients } = this.props;
+    const allPatientsText = patients
+      .sort((a, b) => {
+        // Sort by status order similar to how they appear in sections
+        const statusOrder = [
+          'scheduled', 'Confirmed', 'Rescheduled', 'arrived',
+          'appt-prep', 'ready-for-md', 'With Doctor',
+          'seen-by-md', 'completed', 'Cancelled', 'No Show'
+        ];
+        const aIndex = statusOrder.indexOf(a.status);
+        const bIndex = statusOrder.indexOf(b.status);
+        if (aIndex !== bIndex) return aIndex - bIndex;
+        // Then by appointment time
+        return a.appointmentTime.localeCompare(b.appointmentTime);
+      })
+      .map(this.formatPatientData)
+      .join('\n\n');
 
-  return (
-    <div className="bg-gray-800 rounded-lg shadow-md h-full flex flex-col">
-      <div className="bg-gray-700 px-4 py-3">
-        <h3 className="text-white font-semibold">Debug Text View</h3>
+    return (
+      <div className="bg-gray-800 rounded-lg shadow-md h-full flex flex-col">
+        <div className="bg-gray-700 px-4 py-3">
+          <h3 className="text-white font-semibold">Debug Text View</h3>
+        </div>
+        <div className="flex-1 p-4">
+          <label htmlFor="debug-textarea" className="sr-only">
+            Debug patient data text view
+          </label>
+          <textarea
+            id="debug-textarea"
+            ref={this.textAreaRef}
+            value={allPatientsText}
+            readOnly
+            onScroll={this.handleScroll}
+            className="w-full h-full bg-gray-900 text-gray-300 font-mono text-xs p-3 rounded border border-gray-700 resize-none min-h-[400px]"
+            aria-label="Debug patient data text view"
+          />
+        </div>
       </div>
-      <div className="flex-1 p-4">
-        <label htmlFor="debug-textarea" className="sr-only">
-          Debug patient data text view
-        </label>
-        <textarea
-          id="debug-textarea"
-          ref={textAreaRef}
-          value={allPatientsText}
-          readOnly
-          onScroll={handleScroll}
-          className="w-full h-full bg-gray-900 text-gray-300 font-mono text-xs p-3 rounded border border-gray-700 resize-none min-h-[400px]"
-          aria-label="Debug patient data text view"
-        />
-      </div>
-    </div>
-  );
-};
+    );
+  }
+}
