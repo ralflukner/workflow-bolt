@@ -19,7 +19,13 @@ class TimeControlClass extends React.Component<{
 }, TimeControlState> {
   intervalId: any;
 
-  constructor(props: TimeControlProps) {
+  constructor(props: {
+    timeMode: any;
+    toggleSimulation: () => void;
+    adjustTime: (minutes: number, newTime?: Date) => void;
+    getCurrentTime: () => Date;
+    formatTime: (date: Date) => string;
+  }) {
     super(props);
     const currentTime = props.getCurrentTime();
     const hours = currentTime.getHours();

@@ -1,9 +1,28 @@
 /**
  * Integration tests for TebraApiService
  * Tests the actual Firebase Functions integration
+ *
+ * NOTE: The Tebra SOAP API is expected to be available 24/7.
+ * Any failures in these tests indicate a real issue with the API or connectivity.
+ *
+ * All test logs are also written to /logs/tebraApiService.integration.log for review.
  */
 
 import { tebraApiService } from '../services/tebraApiService';
+import fs from 'fs';
+import path from 'path';
+
+const logFilePath = path.join(__dirname, '../../logs/tebraApiService.integration.log');
+function logToFile(...args: any[]) {
+  const msg = args.map(a => (typeof a === 'string' ? a : JSON.stringify(a, null, 2))).join(' ');
+  fs.appendFileSync(logFilePath, `[${new Date().toISOString()}] ${msg}\n`);
+}
+
+// Patch console.log and console.error to also write to the log file
+const origLog = console.log;
+const origError = console.error;
+console.log = (...args) => { origLog(...args); logToFile(...args); };
+console.error = (...args) => { origError(...args); logToFile(...args); };
 
 describe('TebraApiService Integration Tests', () => {
   beforeAll(() => {
