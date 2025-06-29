@@ -10,15 +10,18 @@
     <script>
         async function testCORS() {
             const results = document.getElementById('results');
-            results.innerHTML = '<p>Testing CORS...</p>';
+            results.innerHTML = '<p>Testing CORS with updated functions...</p>';
             
             try {
-                // Test getFirebaseConfig function
-                console.log('Testing getFirebaseConfig...');
+                // Test getFirebaseConfig function with more detailed logging
+                console.log('Testing getFirebaseConfig with CORS fixes...');
+                results.innerHTML += '<p>🔍 Testing getFirebaseConfig...</p>';
+                
                 const response = await fetch('https://us-central1-luknerlumina-firebase.cloudfunctions.net/getFirebaseConfig', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     }
                 });
                 

@@ -11,8 +11,8 @@ const { onRequest } = require('firebase-functions/v2/https');
  * CORS is handled by Firebase Functions v2 automatically when cors array is specified
  */
 const getFirebaseConfig = onRequest({ 
-  memory: '256MiB',
-  cors: true  // Allow all origins for now - we'll make headers more specific
+  memory: '256MiB'
+  // Remove cors: true - we'll handle CORS manually with proper security
 }, async (req, res) => {
   try {
     console.log('📡 Firebase config request from:', req.headers.origin);
@@ -28,11 +28,12 @@ const getFirebaseConfig = onRequest({
       'https://luknerlumina-firebase.firebaseapp.com'
     ];
     
-    // Allow file:// protocol for local HTML testing
-    if (origin && (allowedOrigins.includes(origin) || origin.startsWith('file://') || origin.includes('localhost'))) {
+    // Only allow specific, secure origins
+    if (origin && allowedOrigins.includes(origin)) {
       res.set('Access-Control-Allow-Origin', origin);
-    } else {
-      res.set('Access-Control-Allow-Origin', '*'); // Allow all for testing
+    } else if (!origin) {
+      // For direct requests (like your app), allow specific localhost for development
+      res.set('Access-Control-Allow-Origin', 'http://localhost:5173');
     }
     
     res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
