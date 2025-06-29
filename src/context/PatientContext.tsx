@@ -136,26 +136,16 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     firebaseAuthReady
   });
 
-  // Set up an interval to force re-renders and periodic saves
-  React.useEffect(() => {
-    let intervalId: ReturnType<typeof setInterval> | undefined;
-
-    const tick = () => {
+  // Use React Query's refetch interval for periodic updates instead of useEffect
+  const { refetch: refetchPatients } = useQuery({
+    queryKey: ['periodicUpdate', timeMode.simulated],
+    queryFn: () => {
       setTickCounter(prev => prev + 1);
-    };
-
-    if (timeMode.simulated) {
-      intervalId = setInterval(tick, 1000);
-    } else {
-      intervalId = setInterval(tick, 60000); // 1 minute for real time - update wait times every minute
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [timeMode.simulated]);
+      return Promise.resolve();
+    },
+    refetchInterval: timeMode.simulated ? 1000 : 60000,
+    enabled: true
+  });
 
   const clearPatients = () => {
     debugLogger.addLog(`🗑️ PatientContext: Clearing all patients`, 'PatientContext');
