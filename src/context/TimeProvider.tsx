@@ -25,8 +25,9 @@ export const TimeProvider: React.FC<TimeProviderProps> = ({ children }) => {
           ...prev,
           currentTime: now.toISOString(),
         }));
+        return Promise.resolve({ time: now.toISOString() });
       }
-      return Promise.resolve();
+      return Promise.resolve({ time: timeMode.currentTime });
     },
     refetchInterval: timeMode.simulated ? false : 1000,
     enabled: true

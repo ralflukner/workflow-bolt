@@ -15,10 +15,9 @@ export const PersistenceDiagnostic: React.FC = () => {
   const [storageType, setStorageType] = useState<string>('unknown');
   const [authStatus, setAuthStatus] = useState<string>('checking');
 
-  // Use React Query for auth status checking instead of useEffect
-  useQuery({
-    queryKey: ['authStatus', isAuthenticated],
-    queryFn: async () => {
+  // Check auth status periodically
+  React.useEffect(() => {
+    const checkStatus = async () => {
       try {
         const firebaseConfigured = isFirebaseConfigured();
         const firebaseUser = auth?.currentUser;
@@ -36,40 +35,35 @@ export const PersistenceDiagnostic: React.FC = () => {
           setAuthStatus('Authenticated');
           setStorageType('Firebase');
         }
-        return { authStatus, storageType };
       } catch (error) {
         console.error('Error checking authentication status:', error);
         setAuthStatus('Error checking status');
         setStorageType('unknown');
-        return { authStatus: 'error', storageType: 'unknown' };
       }
-    },
-    refetchInterval: 5000, // Check every 5 seconds
-    enabled: true
-  });
+    };
 
-  // Use React Query for save status tracking
-  useQuery({
-    queryKey: ['saveStatus', patients.length, persistenceEnabled, hasRealData],
-    queryFn: async () => {
-      if (!(patients.length > 0 && persistenceEnabled && hasRealData)) {
-        return Promise.resolve();
-      }
+    checkStatus();
+    const interval = setInterval(checkStatus, 5000); // Check every 5 seconds
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
-      setSaveStatus('saving');
-      setLastSaveTime(new Date());
+  // Track when saves happen
+  React.useEffect(() => {
+    if (!(patients.length > 0 && persistenceEnabled && hasRealData)) {
+      return;
+    }
 
-      // Simulate save delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+    setSaveStatus('saving');
+    setLastSaveTime(new Date());
+
+    const successTimer = setTimeout(() => {
       setSaveStatus('success');
-      
-      // Auto reset to idle
-      setTimeout(() => setSaveStatus('idle'), 2000);
-      
-      return Promise.resolve();
-    },
-    enabled: patients.length > 0 && persistenceEnabled && hasRealData
-  });
+      const idleTimer = setTimeout(() => setSaveStatus('idle'), 2000);
+      return () => clearTimeout(idleTimer);
+    }, 500);
+
+    return () => clearTimeout(successTimer);
+  }, [patients.length, persistenceEnabled, hasRealData]);
 
   const formatTime = (date: Date | null) => {
     if (!date) return 'Never';

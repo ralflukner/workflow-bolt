@@ -141,7 +141,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     queryKey: ['periodicUpdate', timeMode.simulated],
     queryFn: () => {
       setTickCounter(prev => prev + 1);
-      return Promise.resolve();
+      return Promise.resolve({ timestamp: Date.now() }); // Return actual data instead of undefined
     },
     refetchInterval: timeMode.simulated ? 1000 : 60000,
     enabled: true

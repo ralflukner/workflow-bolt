@@ -81,12 +81,12 @@ const TebraIntegration: React.FC = () => {
     enabled: true
   });
 
-  // Cleanup function using ref pattern
-  React.useRef(() => {
+  // Cleanup when component unmounts using useEffect
+  React.useEffect(() => {
     return () => {
       tebraService?.cleanup();
     };
-  }).current;
+  }, [tebraService]);
 
   const handleImportFromTebra = async () => {
     if (!integrationService) {

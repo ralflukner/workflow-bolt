@@ -42,23 +42,26 @@ export const PersistenceStatus: React.FC = () => {
    
   }, []);
 
-  // Use React Query for session statistics instead of useEffect
-  const { data: sessionStatsQuery } = useQuery({
-    queryKey: ['sessionStats', persistenceEnabled, patients.length, storageType],
-    queryFn: async () => {
+  // Load session statistics on component mount
+  React.useEffect(() => {
+    const loadStats = async () => {
+      if (!persistenceEnabled) return;
+      
       try {
         const stats = await storageService.getSessionStats();
         setSessionStats(stats);
-        return stats;
       } catch (error) {
         console.error(`Failed to load session stats from ${storageType}:`, error);
-        return null;
       }
-    },
-    enabled: persistenceEnabled,
-    refetchInterval: 120000, // Refresh stats every 2 minutes
-    staleTime: 60000 // Consider data stale after 1 minute
-  });
+    };
+
+    loadStats();
+    
+    if (persistenceEnabled) {
+      const interval = setInterval(loadStats, 120000); // Refresh stats every 2 minutes
+      return () => clearInterval(interval);
+    }
+  }, [persistenceEnabled, patients.length, storageService, storageType]);
 
   // Use timeout-based state management for toast instead of useEffect
   const showToastMessage = (message: string, type: 'success' | 'info' | 'error') => {
