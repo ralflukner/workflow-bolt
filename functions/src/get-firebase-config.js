@@ -10,45 +10,28 @@ const { onRequest } = require('firebase-functions/v2/https');
  * 
  * CORS is handled by Firebase Functions v2 automatically when cors array is specified
  */
+const cors = require('cors')({
+  origin: [
+    'http://localhost:3000',           // Development
+    'http://localhost:5173',           // Vite dev server
+    'http://localhost:5000',           // Firebase hosting emulator
+    'https://luknerlumina-firebase.web.app',         // Production Firebase hosting
+    'https://luknerlumina-firebase.firebaseapp.com'  // Firebase hosting
+  ],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+});
+
 const getFirebaseConfig = onRequest({ 
   memory: '256MiB'
-  // Remove cors: true - we'll handle CORS manually with proper security
 }, async (req, res) => {
-  try {
-    console.log('📡 Firebase config request from:', req.headers.origin);
-    console.log('🔍 Request method:', req.method);
+  return cors(req, res, async () => {
+    try {
+      console.log('📡 Firebase config request from:', req.headers.origin);
+      console.log('🔍 Request method:', req.method);
     
-    // Set explicit CORS headers that work with all browsers
-    const origin = req.headers.origin;
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:5000',
-      'https://luknerlumina-firebase.web.app',
-      'https://luknerlumina-firebase.firebaseapp.com'
-    ];
-    
-    // Only allow specific, secure origins
-    if (origin && allowedOrigins.includes(origin)) {
-      res.set('Access-Control-Allow-Origin', origin);
-    } else if (!origin) {
-      // For direct requests (like your app), allow specific localhost for development
-      res.set('Access-Control-Allow-Origin', 'http://localhost:5173');
-    }
-    
-    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-    res.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control');
-    res.set('Access-Control-Allow-Credentials', 'false');
-    res.set('Access-Control-Max-Age', '86400'); // 24 hours
-    
-    // Handle preflight requests
-    if (req.method === 'OPTIONS') {
-      console.log('✅ CORS preflight request handled');
-      res.status(204).send('');
-      return;
-    }
-    
-    // Return Firebase config from environment variables only
+      // Return Firebase config from environment variables only
     const config = {
       apiKey: process.env.VITE_FIREBASE_API_KEY,
       authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -67,16 +50,17 @@ const getFirebaseConfig = onRequest({
       throw new Error(`Missing required Firebase config fields: ${missingFields.join(', ')}`);
     }
  
-    console.log('✅ Firebase config returned successfully');
-    res.status(200).json(config);
-  } catch (error) {
-    console.error('❌ Error returning Firebase config:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch Firebase configuration',
-      message: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
+      console.log('✅ Firebase config returned successfully');
+      res.status(200).json(config);
+    } catch (error) {
+      console.error('❌ Error returning Firebase config:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch Firebase configuration',
+        message: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
 });
 
 module.exports = { getFirebaseConfig };
