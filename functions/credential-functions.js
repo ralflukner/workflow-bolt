@@ -88,6 +88,25 @@ const healthCheck = onRequest({
   cors: true
 }, async (request, response) => {
   try {
+    // Set explicit CORS headers
+    const origin = request.headers.origin;
+    if (origin && (origin.includes('localhost') || origin.startsWith('file://') || origin.includes('luknerlumina-firebase'))) {
+      response.set('Access-Control-Allow-Origin', origin);
+    } else {
+      response.set('Access-Control-Allow-Origin', '*');
+    }
+    
+    response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    response.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    response.set('Access-Control-Max-Age', '86400');
+    
+    // Handle preflight requests
+    if (request.method === 'OPTIONS') {
+      console.log('✅ Health check CORS preflight handled');
+      response.status(204).send('');
+      return;
+    }
+  try {
     const timestamp = new Date().toISOString();
     const uptime = process.uptime();
     
