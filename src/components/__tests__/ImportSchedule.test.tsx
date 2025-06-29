@@ -55,7 +55,7 @@ describe('ImportSchedule', () => {
     render(
       <TestProviders
         patientContextOverrides={{
-          addPatient: mockAddPatient
+          updatePatients: mockUpdatePatients
         }}
         timeContextOverrides={{
           getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z'))
@@ -65,7 +65,7 @@ describe('ImportSchedule', () => {
       </TestProviders>
     );
     
-    // Sample schedule data in tab-separated format
+    // Sample schedule data in tab-separated format (matches actual format)
     const sampleData = `01/15/2023\t9:00 AM\tScheduled\tJohn Doe\t01/01/1990\tOffice Visit\tAnnual checkup
 01/15/2023\t10:00 AM\tConfirmed\tJane Smith\t05/15/1985\tOffice Visit\tFollow-up`;
     
@@ -76,18 +76,28 @@ describe('ImportSchedule', () => {
     // Click the import button
     fireEvent.click(screen.getByRole('button', { name: /Import Schedule/i }));
     
-    // Directly call the import function that would be triggered by the button
-    // This is more reliable in the test environment
-    mockAddPatient.mockImplementation((patient) => {
-      // Simulate adding a patient
-      return { ...patient, id: 'test-id' };
+    // Wait for success message
+    await waitFor(() => {
+      expect(screen.getByText(/Successfully imported 2 appointments/)).toBeInTheDocument();
     });
     
-    // Verify that the button click attempted to import data
-    expect(mockAddPatient).not.toHaveBeenCalled();
-    
-    // Simulate a successful import
-    onClose();
+    // Verify that updatePatients was called with the correct data
+    expect(mockUpdatePatients).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'John Doe',
+          dob: '1990-01-01',
+          status: 'scheduled',
+          appointmentType: 'Office Visit'
+        }),
+        expect.objectContaining({
+          name: 'Jane Smith',
+          dob: '1985-05-15',
+          status: 'scheduled',
+          appointmentType: 'Office Visit'
+        })
+      ])
+    );
   });
   
   it('handles import of invalid schedule data with error message', async () => {
