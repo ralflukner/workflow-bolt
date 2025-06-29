@@ -481,7 +481,7 @@ const { getFirebaseConfig } = require('./src/get-firebase-config');
 exports.getFirebaseConfig = getFirebaseConfig;
 
 // Secure Auth0 token exchange function (HIPAA Compliant) - HTTPS Function
-const cors = require('cors')({
+const exchangeCors = require('cors')({
   origin: [
     'https://luknerlumina-firebase.web.app',
     'https://luknerlumina-firebase.firebaseapp.com',
@@ -492,7 +492,7 @@ const cors = require('cors')({
 });
 
 exports.exchangeAuth0Token = functions.https.onRequest((req, res) => {
-  return cors(req, res, async () => {
+  return exchangeCors(req, res, async () => {
     try {
       if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
