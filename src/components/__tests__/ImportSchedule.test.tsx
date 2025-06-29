@@ -27,6 +27,12 @@ jest.mock('../../services/debugLogger', () => ({
   }
 }));
 
+/**
+ * ImportSchedule Component Integration Tests
+ * 
+ * These tests focus on UI interactions and integration with the parseSchedule utility.
+ * Comprehensive parsing logic tests are in src/utils/__tests__/parseSchedule.test.ts
+ */
 describe('ImportSchedule', () => {
   const onClose = jest.fn();
   const user = userEvent.setup();
