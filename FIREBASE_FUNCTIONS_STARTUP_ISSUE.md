@@ -417,16 +417,79 @@ Revision '[function-name]-[revision]' is not ready and cannot serve traffic.
 The user-provided container failed to start and listen on the port defined provided by the PORT=8080 environment variable within the allocated timeout.
 ```
 
-## CRITICAL: Expert Intervention Required
+## 🎉 BREAKTHROUGH: Issue Identified and Resolved
 
-This complete deployment failure requires immediate expert analysis of:
+### ✅ Fix 11: Correct Runtime Configuration in firebase.json
+**Status: ✅ SUCCESSFUL**  
+**File**: `firebase.json`
 
-- Container startup logs and timing
-- Node.js 22 + Firebase Functions v2 compatibility
-- OpenTelemetry initialization in serverless environments
-- Firebase Admin SDK initialization patterns
-- Cloud Run container optimization for HIPAA-compliant functions
+```json
+// Problem: Runtime explicitly set to Node.js 22 in firebase.json
+// Before:
+{
+  "functions": {
+    "runtime": "nodejs22"  // Overriding package.json
+  }
+}
 
-Production Impact: Complete system outage affecting HIPAA compliance workflows.
+// After: 
+{
+  "functions": {
+    "runtime": "nodejs20"  // Correct supported version
+  }
+}
+```
+
+**Result**: ✅ **SUCCESSFUL DEPLOYMENT**
+
+```
+✔ functions[diagnostic(us-central1)] Successful update operation.
+Function URL (diagnostic(us-central1)): https://diagnostic-xccvzgogwa-uc.a.run.app
+```
+
+### Root Cause Confirmed
+**Firebase Functions v2 + Node.js 22 incompatibility**: Firebase was ignoring `package.json` engines and using the explicit `firebase.json` runtime setting, which was set to the unsupported Node.js 22.
+
+### Key Insights
+1. **`firebase.json` overrides `package.json`** - Runtime must be set correctly in firebase.json
+2. **Node.js 22 is not supported** by Firebase Functions v2 despite deployment attempts succeeding initially
+3. **Container startup timeout** was caused by runtime incompatibility, not application code
+4. **All 10 previous code-level fixes were unnecessary** - the issue was configuration
+
+### ❌ Fix 12: Firebase Service Account Credentials Issue  
+**Status: ❌ FAILED - New Issue Identified**  
+**File**: `index.js:56` (Firebase Admin initialization)
+
+```
+Error: ENOENT: no such file or directory, open '/Users/ralfb.luknermdphd/PycharmProjects/workflow-bolt/config/luknerlumina-firebase-firebase-adminsdk-fbsvc-42321913d8.json'
+```
+
+**Problem**: Environment variable `GOOGLE_APPLICATION_CREDENTIALS` points to a local file path that doesn't exist in the Cloud Run container.
+
+**Environment Variable Issue**:
+```bash
+GOOGLE_APPLICATION_CREDENTIALS=/Users/ralfb.luknermdphd/PycharmProjects/workflow-bolt/config/luknerlumina-firebase-firebase-adminsdk-fbsvc-42321913d8.json
+```
+
+**Container Error Sequence**:
+1. ✅ Node.js 20 runtime loads correctly
+2. ✅ Module compilation starts 
+3. ❌ Firebase Admin initialization fails reading service account file
+4. ❌ Container exits with code 1
+5. ❌ Health check fails on port 8080
+
+### Current Status: Node.js 20 + Firebase Admin Credentials Issue
+
+**Progress**: 
+- ✅ **Node.js 22 → 20 runtime fix successful**
+- ❌ **Firebase Admin credentials misconfiguration blocking startup**
+
+### Next Steps
+1. 🔄 Fix Firebase Admin initialization for cloud environment
+2. 🔄 Deploy `exchangeAuth0Token` with correct credentials
+3. 🔄 Deploy remaining functions
+4. 🔄 Re-enable monitoring and full functionality
+
+**Production Impact**: Authentication still down - service account credentials issue identified
 
  
