@@ -63,11 +63,16 @@ async function pullSecrets() {
   const envContent = [];
   const existingEnvPath = path.join(process.cwd(), '.env');
 
-  // Read existing .env file if it exists
-  let existingEnv = '';
+  // Backup existing .env file (if present) instead of merging its content.
+  // The backup file is named .env.bak.<YYYYMMDDHHMMSS> and kept in the same
+  // directory so developers can diff or restore if needed.
+  let existingEnvBackedUp = false;
   if (fs.existsSync(existingEnvPath)) {
-    existingEnv = fs.readFileSync(existingEnvPath, 'utf8');
-    console.log('📄 Found existing .env file');
+    const ts = new Date().toISOString().replace(/[-:T]/g, '').split('.')[0];
+    const backupPath = path.join(process.cwd(), `.env.bak.${ts}`);
+    fs.copyFileSync(existingEnvPath, backupPath);
+    existingEnvBackedUp = true;
+    console.log(`📦 Existing .env backed up to ${path.basename(backupPath)}`);
   }
 
   // Add header
@@ -96,23 +101,16 @@ async function pullSecrets() {
     }
   }
 
-  // Add any existing non-VITE_ variables
-  if (existingEnv) {
-    envContent.push('');
-    envContent.push('# Existing environment variables');
-    const existingLines = existingEnv.split('\n').filter(line => 
-      line.trim() && 
-      !line.startsWith('#') && 
-      !line.startsWith('VITE_')
-    );
-    envContent.push(...existingLines);
-  }
+  // NOTE: We intentionally do NOT merge the previous .env contents. Developers
+  // should review the backup file and manually copy over anything that is
+  // still required (e.g., purely local dev variables). This avoids duplicated
+  // or outdated secrets lingering at the bottom of the new .env.
 
   // Write to .env file
   const envPath = path.join(process.cwd(), '.env');
   fs.writeFileSync(envPath, envContent.join('\n') + '\n');
 
-  console.log(`📝 Wrote ${envContent.length} lines to .env`);
+  console.log(`📝 Wrote ${envContent.length} lines to .env${existingEnvBackedUp ? ' (old file backed up)' : ''}`);
   console.log('🎉 Secrets pulled successfully!');
 }
 
