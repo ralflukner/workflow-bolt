@@ -16,5 +16,7 @@ Welcome to the **workflow-bolt** documentation set.  Everything is grouped by li
 * [Ops ‑ Firebase Functions Startup Failure](04-ops/firebase-functions-startup-issue.md)
 * [Compliance ‑ HIPAA Setup Guide](01-compliance/HIPAA_SETUP_GUIDE.md)
 * [Infrastructure ‑ Cloud-Run design](02-infrastructure/tebra-cloudrun-design.md)
+* [Governance ‑ Contribution Instructions](05-governance/instructions.md)
+* [Overview ‑ Implementation Summary](00-overview/IMPLEMENTATION_SUMMARY.md)
 
 > Tip: use the GitHub file finder (**`t`** key) and search by filename or heading.
