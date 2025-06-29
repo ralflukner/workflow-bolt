@@ -11,6 +11,8 @@ tags:
 
 # 🛠️ Operational Improvement Backlog
 
+> For the full post-mortem that generated this backlog see [Deployment Crisis – Resolution Guide](firebase-functions-startup-issue.md).
+
 _A living list of follow-up tasks that emerged from recent incidents and retrospectives.  Owners are provisional; update during sprint planning._
 
 ## 📑 Index
