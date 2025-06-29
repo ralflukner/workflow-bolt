@@ -34,9 +34,8 @@ const ALIAS_ENV_VARS = {
   // Cloud project id (backend code expects GCLOUD_PROJECT or FIREBASE_PROJECT_ID)
   GCLOUD_PROJECT: 'GOOGLE_CLOUD_PROJECT',
   FIREBASE_PROJECT_ID: 'GOOGLE_CLOUD_PROJECT',
-  // If your project stores TEBRA_CLOUD_RUN_URL as VITE_TEBRA_WSDL_URL or a
-  // separate secret, map accordingly (adjust key below if you add a VITE_*)
-  // TEBRA_CLOUD_RUN_URL: 'VITE_TEBRA_CLOUD_RUN_URL',
+  // Frontend needs VITE_TEBRA_CLOUD_RUN_URL - map from backend secret
+  VITE_TEBRA_CLOUD_RUN_URL: 'TEBRA_CLOUD_RUN_URL',
 };
 
 const SECRETS_TO_PULL = [
@@ -85,10 +84,66 @@ async function readSecret(secretName) {
   };
 
   try {
-    return await tryFetch(secretName);
+    const rawValue = await tryFetch(secretName);
+    
+    // Check for trailing newlines - this is a critical issue that causes JWT verification failures
+    if (rawValue && rawValue.endsWith('\n')) {
+      console.error(`❌ CRITICAL: Secret ${secretName} contains trailing newline!`);
+      console.error(`   This will cause authentication failures. Run fix-secret-newlines.sh to fix.`);
+      console.error(`   Raw value ends with: ${JSON.stringify(rawValue.slice(-5))}`);
+      throw new Error(`Secret ${secretName} has trailing newline - authentication will fail`);
+    }
+    
+    return rawValue;
   } catch (err) {
-    console.warn(`Warning: Could not read secret ${secretName}:`, err.message);
+    if (err.message.includes('trailing newline')) {
+      throw err; // Re-throw newline errors as critical
+    }
+    console.warn(`⚠️  Warning: Could not read secret ${secretName}: ${err.message}`);
     return null;
+  }
+}
+
+async function validateSecretFunctionality(envMap) {
+  // Test Auth0 domain accessibility
+  if (envMap['VITE_AUTH0_DOMAIN']) {
+    try {
+      const domain = envMap['VITE_AUTH0_DOMAIN'].replace(/['"]/g, '');
+      const jwksUrl = `https://${domain}/.well-known/jwks.json`;
+      console.log(`🔍 Testing Auth0 domain: ${domain}`);
+      
+      // Use dynamic import for node-fetch
+      const fetch = (await import('node-fetch')).default;
+      const response = await fetch(jwksUrl, { timeout: 10000 });
+      
+      if (response.ok) {
+        console.log('✅ Auth0 domain is accessible');
+      } else {
+        console.error(`❌ Auth0 domain returned HTTP ${response.status}`);
+      }
+    } catch (error) {
+      console.error(`❌ Auth0 domain test failed: ${error.message}`);
+    }
+  }
+  
+  // Validate Auth0 audience format
+  if (envMap['VITE_AUTH0_AUDIENCE']) {
+    const audience = envMap['VITE_AUTH0_AUDIENCE'].replace(/['"]/g, '');
+    if (audience.startsWith('https://') || audience.includes('api')) {
+      console.log('✅ Auth0 audience format looks correct');
+    } else {
+      console.warn(`⚠️  Auth0 audience format unusual: ${audience}`);
+    }
+  }
+  
+  // Validate Tebra WSDL URL if present
+  if (envMap['VITE_TEBRA_WSDL_URL']) {
+    const wsdlUrl = envMap['VITE_TEBRA_WSDL_URL'].replace(/['"]/g, '');
+    if (wsdlUrl.startsWith('https://') && wsdlUrl.includes('wsdl')) {
+      console.log('✅ Tebra WSDL URL format looks correct');
+    } else {
+      console.warn(`⚠️  Tebra WSDL URL format unusual: ${wsdlUrl.substring(0, 50)}...`);
+    }
   }
 }
 
@@ -152,18 +207,73 @@ async function pullSecrets() {
   }
 
   // -------------------------------------------------------------------
-  // Step 3: Sanity-check for placeholder values before writing the file.
+  // Step 3: Comprehensive validation of secret values
   // -------------------------------------------------------------------
-  const placeholderRegex = /example\.com|placeholder|changeme|dummy|YOUR[_-]/i;
+  console.log('\n🔍 Validating secret values...');
+  
+  // Check for placeholder values
+  const placeholderRegex = /example\.com|placeholder|changeme|dummy|YOUR[_-]|test[_-]value|replace[_-]me|fix[_-]me|todo|temp/i;
   const badEntries = Object.entries(envMap).filter(([, v]) => placeholderRegex.test(v));
+  
+  // Check for suspicious values
+  const suspiciousRegex = /^(null|undefined|empty|tbd|pending|missing)$/i;
+  const suspiciousEntries = Object.entries(envMap).filter(([, v]) => suspiciousRegex.test(v));
+  
+  // Check for values that are too short (likely incomplete)
+  const tooShortEntries = Object.entries(envMap).filter(([k, v]) => {
+    // Skip certain vars that can legitimately be short
+    if (k.includes('REDIRECT_URI') || k.includes('SCOPE')) return false;
+    return v.replace(/['"]/g, '').length < 5;
+  });
+  
+  // Check critical Auth0 and Tebra secrets specifically
+  const criticalSecrets = ['VITE_AUTH0_DOMAIN', 'VITE_AUTH0_CLIENT_ID', 'VITE_AUTH0_AUDIENCE'];
+  const missingCritical = criticalSecrets.filter(key => !envMap[key] || envMap[key] === '(not found in GSM)');
+  
+  let hasErrors = false;
+  
   if (badEntries.length) {
-    console.error('❌ Placeholder values detected in secrets:');
+    console.error('❌ CRITICAL: Placeholder values detected in secrets:');
     for (const [k, v] of badEntries) {
       console.error(`    ${k} = ${v.slice(0, 40)}…`);
     }
-    console.error('Aborting .env write. Please fix the offending secrets in GSM.');
+    hasErrors = true;
+  }
+  
+  if (suspiciousEntries.length) {
+    console.error('❌ CRITICAL: Suspicious placeholder values detected:');
+    for (const [k, v] of suspiciousEntries) {
+      console.error(`    ${k} = ${v}`);
+    }
+    hasErrors = true;
+  }
+  
+  if (tooShortEntries.length) {
+    console.error('⚠️  WARNING: Suspiciously short secret values:');
+    for (const [k, v] of tooShortEntries) {
+      console.error(`    ${k} = ${v} (${v.replace(/['"]/g, '').length} chars)`);
+    }
+  }
+  
+  if (missingCritical.length) {
+    console.error('❌ CRITICAL: Missing critical authentication secrets:');
+    for (const key of missingCritical) {
+      console.error(`    ${key} - Required for Auth0 authentication`);
+    }
+    hasErrors = true;
+  }
+  
+  if (hasErrors) {
+    console.error('\n💥 CRITICAL ERRORS FOUND: Cannot proceed with authentication setup.');
+    console.error('Please fix the above secrets in Google Secret Manager before continuing.');
+    console.error('\n🔧 To fix:');
+    console.error('1. Update secrets in Google Cloud Console → Secret Manager');
+    console.error('2. Ensure no trailing newlines: run fix-secret-newlines.sh');
+    console.error('3. Re-run this script: node scripts/pull-secrets.js');
     process.exit(1);
   }
+  
+  console.log('✅ All secret validations passed!');
 
   // NOTE: We intentionally do NOT merge the previous .env contents. Developers
   // should review the backup file and manually copy over anything that is
@@ -175,7 +285,16 @@ async function pullSecrets() {
   fs.writeFileSync(envPath, envContent.join('\n') + '\n');
 
   console.log(`📝 Wrote ${envContent.length} lines to .env${existingEnvBackedUp ? ' (old file backed up)' : ''}`);
-  console.log('🎉 Secrets pulled successfully!');
+  
+  // Final validation: verify critical secrets are functional
+  console.log('\n🧪 Running functional validation of critical secrets...');
+  await validateSecretFunctionality(envMap);
+  
+  console.log('\n🎉 Secrets pulled and validated successfully!');
+  console.log('\n📋 Next steps:');
+  console.log('1. Run: node test-deployed-functions.cjs (to verify Firebase Functions)');
+  console.log('2. Test authentication flow in browser');
+  console.log('3. Clear browser cache if needed: localStorage.clear(); location.reload();');
 }
 
 // Run if called directly
