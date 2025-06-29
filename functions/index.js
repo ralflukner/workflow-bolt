@@ -434,6 +434,10 @@ exports.tebraUpdateAppointment = onCall({ cors: true }, async (request) => {
 const { tebraSyncTodaysSchedule } = require('./src/tebra-sync/index');
 exports.tebraSyncTodaysSchedule = tebraSyncTodaysSchedule;
 
+// Import and export getFirebaseConfig function
+const { getFirebaseConfig } = require('./src/get-firebase-config');
+exports.getFirebaseConfig = getFirebaseConfig;
+
 // Secure Auth0 token exchange function (HIPAA Compliant)
 exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
   const { auth0Token } = request.data || {};

@@ -2,6 +2,7 @@
 // This is needed to bootstrap the Firebase SDK on the client
 
 const { onCall } = require('firebase-functions/v2/https');
+const functions = require('firebase-functions');
 const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 
 const gsm = new SecretManagerServiceClient();
