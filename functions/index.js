@@ -564,3 +564,9 @@ exports.verifyCredentials = credentialFunctions.verifyCredentials;
 exports.checkCredentials = credentialFunctions.checkCredentials;
 exports.healthCheck = credentialFunctions.healthCheck;
 exports.scheduledCredentialCheck = credentialFunctions.scheduledCredentialCheck;
+
+// Credential verification system
+const {
+  credentialVerificationMiddleware,
+  healthCheck: credHealthCheck
+} = require('./src/utils/credential-verification');
