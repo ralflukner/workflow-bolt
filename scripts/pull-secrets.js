@@ -31,6 +31,9 @@ const ALIAS_ENV_VARS = {
   TEBRA_PASSWORD: 'VITE_TEBRA_PASSWORD',
   TEBRA_CUSTOMER_KEY: 'VITE_TEBRA_CUSTOMER_KEY',
   TEBRA_WSDL_URL: 'VITE_TEBRA_WSDL_URL',
+  // Cloud project id (backend code expects GCLOUD_PROJECT or FIREBASE_PROJECT_ID)
+  GCLOUD_PROJECT: 'GOOGLE_CLOUD_PROJECT',
+  FIREBASE_PROJECT_ID: 'GOOGLE_CLOUD_PROJECT',
   // If your project stores TEBRA_CLOUD_RUN_URL as VITE_TEBRA_WSDL_URL or a
   // separate secret, map accordingly (adjust key below if you add a VITE_*)
   // TEBRA_CLOUD_RUN_URL: 'VITE_TEBRA_CLOUD_RUN_URL',
@@ -48,6 +51,7 @@ const SECRETS_TO_PULL = [
   { name: 'VITE_TEBRA_PASSWORD', envVar: 'VITE_TEBRA_PASSWORD' },
   { name: 'VITE_TEBRA_CUSTOMER_KEY', envVar: 'VITE_TEBRA_CUSTOMER_KEY' },
   { name: 'VITE_TEBRA_WSDL_URL', envVar: 'VITE_TEBRA_WSDL_URL' },
+  { name: 'VITE_TEBRA_CLOUD_RUN_URL', envVar: 'VITE_TEBRA_CLOUD_RUN_URL' },
   // Gmail OAuth2 secrets
   { name: 'GMAIL_CLIENT_ID', envVar: 'GMAIL_CLIENT_ID' },
   { name: 'GMAIL_CLIENT_SECRET', envVar: 'GMAIL_CLIENT_SECRET' },
@@ -63,15 +67,14 @@ const SECRETS_TO_PULL = [
   { name: 'VITE_TEBRA_PROXY_API_KEY', envVar: 'VITE_TEBRA_PROXY_API_KEY' },
   { name: 'VITE_FIREBASE_CONFIG', envVar: 'VITE_FIREBASE_CONFIG' },
   { name: 'GOOGLE_CLOUD_PROJECT', envVar: 'GOOGLE_CLOUD_PROJECT' },
+  // Backend-only secret
+  { name: 'TEBRA_CLOUD_RUN_URL', envVar: 'TEBRA_CLOUD_RUN_URL' },
 ];
 
-// Add alias secrets to the pull list if they aren't already present so we can
-// try to fetch them from GSM first (real secret may exist).
-for (const [aliasName] of Object.entries(ALIAS_ENV_VARS)) {
-  if (!SECRETS_TO_PULL.find(s => s.name === aliasName)) {
-    SECRETS_TO_PULL.push({ name: aliasName, envVar: aliasName });
-  }
-}
+// We intentionally do NOT add alias names to SECRETS_TO_PULL – they will be
+// replicated from their canonical counterpart after GSM fetch. This avoids
+// confusing "secret not found" warnings for variables that only exist as
+// aliases.
 
 async function readSecret(secretName) {
   const client = new SecretManagerServiceClient();
@@ -145,7 +148,22 @@ async function pullSecrets() {
     if (!envMap[primaryVar]) continue; // no value to mirror
 
     envContent.push(`${aliasVar}=${envMap[primaryVar]}`);
+    envMap[aliasVar] = envMap[primaryVar];
     console.log(`🔁 ${aliasVar} mapped from ${primaryVar}`);
+  }
+
+  // -------------------------------------------------------------------
+  // Step 3: Sanity-check for placeholder values before writing the file.
+  // -------------------------------------------------------------------
+  const placeholderRegex = /example\.com|placeholder|changeme|dummy|YOUR[_-]/i;
+  const badEntries = Object.entries(envMap).filter(([, v]) => placeholderRegex.test(v));
+  if (badEntries.length) {
+    console.error('❌ Placeholder values detected in secrets:');
+    for (const [k, v] of badEntries) {
+      console.error(`    ${k} = ${v.slice(0, 40)}…`);
+    }
+    console.error('Aborting .env write. Please fix the offending secrets in GSM.');
+    process.exit(1);
   }
 
   // NOTE: We intentionally do NOT merge the previous .env contents. Developers
