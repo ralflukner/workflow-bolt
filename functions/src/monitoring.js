@@ -4,7 +4,6 @@
  */
 
 const admin = require('firebase-admin');
-if (!admin.apps.length) admin.initializeApp();
 
 // Alert configuration
 const ALERT_EMAIL = 'lukner@luknerclinic.com';
@@ -22,12 +21,22 @@ const MAX_SECURITY_EVENTS_PER_USER = 1000; // Maximum number of security events 
  */
 class UserActivityTracker {
   constructor() {
-    this.db = admin.firestore();
-    this.activitiesCollection = this.db.collection('user-activities');
-    this.securityEventsCollection = this.db.collection('security-events');
+    this.db = null;
+    this.activitiesCollection = null;
+    this.securityEventsCollection = null;
+  }
+
+  // Lazy initialization to avoid Firebase Admin issues at module load time
+  _initializeDb() {
+    if (!this.db) {
+      this.db = admin.firestore();
+      this.activitiesCollection = this.db.collection('user-activities');
+      this.securityEventsCollection = this.db.collection('security-events');
+    }
   }
 
   async trackActivity(userId, action, metadata = {}) {
+    this._initializeDb();
     const now = Date.now();
     const minuteAgo = now - (60 * 1000); // One minute window
 
@@ -83,6 +92,7 @@ class UserActivityTracker {
   }
 
   async cleanupOldData(userId) {
+    this._initializeDb();
     try {
       const now = Date.now();
       const activityRetentionCutoff = now - (ACTIVITY_RETENTION_MINUTES * 60 * 1000);
@@ -171,6 +181,7 @@ class UserActivityTracker {
   }
 
   async triggerSecurityAlert(alertType, details) {
+    this._initializeDb();
     try {
       const alert = {
         type: alertType,
@@ -198,6 +209,7 @@ class UserActivityTracker {
   }
 
   async logError(errorType, details) {
+    this._initializeDb();
     try {
       const errorLog = {
         type: errorType,
@@ -460,6 +472,7 @@ const monitorValidationFailure = (userId, validationType, error) => {
 
 const generateSecurityReport = async () => {
   try {
+    activityTracker._initializeDb();
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
