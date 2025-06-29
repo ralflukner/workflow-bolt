@@ -34,9 +34,20 @@ const getFirebaseConfig = functions.https.onRequest((req, res) => {
         // Removed: storageBucket, messagingSenderId, appId - not needed for auth
       };
       
+      // Debug logging to help troubleshoot missing environment variables
+      console.log('Available config values:', {
+        hasApiKey: !!config.apiKey,
+        hasAuthDomain: !!config.authDomain,
+        hasProjectId: !!config.projectId,
+        gcloudProject: process.env.GCLOUD_PROJECT,
+        availableEnvVars: Object.keys(process.env).filter(key => 
+          key.includes('FIREBASE') || key.includes('VITE_FIREBASE')
+        )
+      });
+      
       // Validate only essential fields
       if (!config.apiKey || !config.authDomain || !config.projectId) {
-        throw new Error('Missing critical Firebase config');
+        throw new Error(`Missing critical Firebase config: apiKey=${!!config.apiKey}, authDomain=${!!config.authDomain}, projectId=${!!config.projectId}`);
       }
       
       res.json(config);
