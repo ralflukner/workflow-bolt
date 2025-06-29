@@ -1,17 +1,22 @@
 import React from 'react';
-// import { useTimeContext } from '../hooks/useTimeContext';
+import { useTimeContext } from '../hooks/useTimeContext';
 import { Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
-interface TimeControlProps {
+interface TimeControlState {
+  currentTime: Date;
+  timeInput: string;
+  dateInput: string;
+  isPM: boolean;
+}
+
+// NOTE: useEffect is not allowed in this project. See docs/NO_USE_EFFECT_POLICY.md
+class TimeControlClass extends React.Component<{
   timeMode: any;
   toggleSimulation: () => void;
   adjustTime: (minutes: number, newTime?: Date) => void;
   getCurrentTime: () => Date;
   formatTime: (date: Date) => string;
-}
-
-// NOTE: useEffect is not allowed in this project. See docs/NO_USE_EFFECT_POLICY.md
-class TimeControl extends React.Component<TimeControlProps, any> {
+}, TimeControlState> {
   intervalId: any;
 
   constructor(props: TimeControlProps) {
@@ -237,5 +242,20 @@ class TimeControl extends React.Component<TimeControlProps, any> {
     );
   }
 }
+
+// Wrapper component that connects to TimeContext
+const TimeControl: React.FC = () => {
+  const { timeMode, toggleSimulation, adjustTime, getCurrentTime, formatTime } = useTimeContext();
+  
+  return (
+    <TimeControlClass
+      timeMode={timeMode}
+      toggleSimulation={toggleSimulation}
+      adjustTime={adjustTime}
+      getCurrentTime={getCurrentTime}
+      formatTime={formatTime}
+    />
+  );
+};
 
 export default TimeControl;
