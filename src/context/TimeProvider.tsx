@@ -1,4 +1,5 @@
-import React, { useState, useEffect, ReactNode } from 'react';
+import React, { useState, ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { TimeMode } from '../types';
 import { TimeContext } from './TimeContextDef';
 
@@ -14,31 +15,22 @@ export const TimeProvider: React.FC<TimeProviderProps> = ({ children }) => {
     currentTime: getCurrentTime().toISOString(),
   });
 
-  // Update real time every second
-  useEffect(() => {
-    let intervalId: number | undefined;
-
-    const updateTime = () => {
-      const now = new Date();
-      setTimeMode(prev => ({
-        ...prev,
-        currentTime: now.toISOString(),
-      }));
-    };
-
-    if (!timeMode.simulated) {
-      // Update immediately
-      updateTime();
-      // Then set up interval for subsequent updates
-      intervalId = window.setInterval(updateTime, 1000);
-    }
-
-    return () => {
-      if (intervalId !== undefined) {
-        clearInterval(intervalId);
+  // Use React Query for real-time updates instead of useEffect
+  useQuery({
+    queryKey: ['currentTime', timeMode.simulated],
+    queryFn: () => {
+      if (!timeMode.simulated) {
+        const now = new Date();
+        setTimeMode(prev => ({
+          ...prev,
+          currentTime: now.toISOString(),
+        }));
       }
-    };
-  }, [timeMode.simulated]);
+      return Promise.resolve();
+    },
+    refetchInterval: timeMode.simulated ? false : 1000,
+    enabled: true
+  });
 
   const toggleSimulation = () => {
     const now = new Date();

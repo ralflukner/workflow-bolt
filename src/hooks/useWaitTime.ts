@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { Patient, PatientApptStatus } from '../types';
 import { useTimeContext } from './useTimeContext';
 
@@ -149,8 +149,11 @@ export const useWaitTime = (patient: Patient) => {
     }
   }, [patient, getCurrentTime]);
 
-  // Update state when calculation changes
-  useEffect(() => {
+  // Use useMemo for derived state instead of useEffect
+  const waitTimeResult = useMemo(() => {
+    // Force cache invalidation when patient status changes
+    cacheRef.current = null;
+    
     const result = calculateWaitTime();
     setState({
       currentWaitTime: result.currentWaitTime,
@@ -158,12 +161,8 @@ export const useWaitTime = (patient: Patient) => {
       lastCalculated: new Date(),
       error: result.error || null
     });
-  }, [calculateWaitTime]);
-
-  // Force cache invalidation when patient status changes
-  useEffect(() => {
-    cacheRef.current = null;
-  }, [patient.status, patient.checkInTime, patient.withDoctorTime, patient.completedTime]);
+    return result;
+  }, [calculateWaitTime, patient.status, patient.checkInTime, patient.withDoctorTime, patient.completedTime]);
 
   return {
     ...state,

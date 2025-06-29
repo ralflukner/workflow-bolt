@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 
 interface SecureStorageOptions<T> {
   key: string;
@@ -19,15 +19,25 @@ export const useSecureStorage = <T>({ key, defaultValue, storageType }: SecureSt
     }
   });
 
-  useEffect(() => {
-    try {
-      if (storageType === 'session') {
-        sessionStorage.setItem(key, JSON.stringify(value));
+  // Replace useEffect with callback-based storage sync
+  const setValueWithStorage = useCallback((newValue: React.SetStateAction<T>) => {
+    setValue(prevValue => {
+      const actualNewValue = typeof newValue === 'function' 
+        ? (newValue as (prev: T) => T)(prevValue) 
+        : newValue;
+      
+      // Sync to storage immediately
+      try {
+        if (storageType === 'session') {
+          sessionStorage.setItem(key, JSON.stringify(actualNewValue));
+        }
+      } catch (error: unknown) {
+        console.error('Error saving to storage:', error);
       }
-    } catch (error: unknown) {
-      console.error('Error saving to storage:', error);
-    }
-  }, [key, value, storageType]);
+      
+      return actualNewValue;
+    });
+  }, [key, storageType]);
 
-  return [value, setValue] as [T, React.Dispatch<React.SetStateAction<T>>];
+  return [value, setValueWithStorage] as [T, React.Dispatch<React.SetStateAction<T>>];
 };
