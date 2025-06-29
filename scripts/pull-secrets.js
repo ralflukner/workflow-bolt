@@ -11,6 +11,31 @@ const __dirname = path.dirname(__filename);
 
 // Configuration
 const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || 'luknerlumina-firebase';
+
+// Map "alias" env vars → canonical env var whose value should be reused when
+// the alias secret is missing.  This lets us write both front-end (VITE_*) and
+// back-end env var names to the .env file without having to store two copies of
+// every secret in GSM.
+// Example: AUTH0_DOMAIN will mirror VITE_AUTH0_DOMAIN if it isn't found as a
+// standalone secret.
+const ALIAS_ENV_VARS = {
+  // Auth0
+  AUTH0_DOMAIN: 'VITE_AUTH0_DOMAIN',
+  AUTH0_CLIENT_ID: 'VITE_AUTH0_CLIENT_ID',
+  AUTH0_REDIRECT_URI: 'VITE_AUTH0_REDIRECT_URI',
+  AUTH0_AUDIENCE: 'VITE_AUTH0_AUDIENCE',
+  AUTH0_SCOPE: 'VITE_AUTH0_SCOPE',
+
+  // Tebra – many server components expect un-prefixed vars
+  TEBRA_CLIENT_ID: 'VITE_TEBRA_USERNAME',
+  TEBRA_PASSWORD: 'VITE_TEBRA_PASSWORD',
+  TEBRA_CUSTOMER_KEY: 'VITE_TEBRA_CUSTOMER_KEY',
+  TEBRA_WSDL_URL: 'VITE_TEBRA_WSDL_URL',
+  // If your project stores TEBRA_CLOUD_RUN_URL as VITE_TEBRA_WSDL_URL or a
+  // separate secret, map accordingly (adjust key below if you add a VITE_*)
+  // TEBRA_CLOUD_RUN_URL: 'VITE_TEBRA_CLOUD_RUN_URL',
+};
+
 const SECRETS_TO_PULL = [
   // Auth0 secrets
   { name: 'VITE_AUTH0_DOMAIN', envVar: 'VITE_AUTH0_DOMAIN' },
@@ -40,6 +65,14 @@ const SECRETS_TO_PULL = [
   { name: 'GOOGLE_CLOUD_PROJECT', envVar: 'GOOGLE_CLOUD_PROJECT' },
 ];
 
+// Add alias secrets to the pull list if they aren't already present so we can
+// try to fetch them from GSM first (real secret may exist).
+for (const [aliasName] of Object.entries(ALIAS_ENV_VARS)) {
+  if (!SECRETS_TO_PULL.find(s => s.name === aliasName)) {
+    SECRETS_TO_PULL.push({ name: aliasName, envVar: aliasName });
+  }
+}
+
 async function readSecret(secretName) {
   const client = new SecretManagerServiceClient();
   const tryFetch = async (name) => {
@@ -61,6 +94,7 @@ async function pullSecrets() {
   console.log('🔐 Pulling secrets from Google Secret Manager...');
 
   const envContent = [];
+  const envMap = {}; // envVar -> value (after quoting/escaping)
   const existingEnvPath = path.join(process.cwd(), '.env');
 
   // Backup existing .env file (if present) instead of merging its content.
@@ -91,6 +125,7 @@ async function pullSecrets() {
         safeVal = `"${safeVal.replace(/"/g, '\\"')}"`;
       }
       envContent.push(`${envVar}=${safeVal}`);
+      envMap[envVar] = safeVal;
       // Mask sensitive values in logs
       const maskedValue = envVar.match(/PASSWORD|PRIVATE_KEY|TOKEN|SECRET/i)
         ? '********'
@@ -99,6 +134,18 @@ async function pullSecrets() {
     } else {
       console.log(`⚠️  ${envVar} = (not found in GSM)`);
     }
+  }
+
+  // -------------------------------------------------------------------
+  // Step 2:  Write alias env vars that weren't retrieved directly but whose
+  //          canonical counterpart was.
+  // -------------------------------------------------------------------
+  for (const [aliasVar, primaryVar] of Object.entries(ALIAS_ENV_VARS)) {
+    if (envMap[aliasVar]) continue; // alias already set from GSM
+    if (!envMap[primaryVar]) continue; // no value to mirror
+
+    envContent.push(`${aliasVar}=${envMap[primaryVar]}`);
+    console.log(`🔁 ${aliasVar} mapped from ${primaryVar}`);
   }
 
   // NOTE: We intentionally do NOT merge the previous .env contents. Developers
