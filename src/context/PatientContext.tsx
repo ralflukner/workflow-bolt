@@ -10,6 +10,7 @@ import { usePatientData } from '../hooks/usePatientData';
 import { mockPatients } from '../data/mockData';
 import { dailySessionService } from '../services/firebase/dailySessionService';
 import { localSessionService } from '../services/localStorage/localSessionService';
+import { debugLogger } from '../services/debugLogger';
 
 interface PatientProviderProps {
   children: ReactNode;
@@ -157,6 +158,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   }, [timeMode.simulated]);
 
   const clearPatients = () => {
+    debugLogger.addLog(`🗑️ PatientContext: Clearing all patients`, 'PatientContext');
     updatePatients([]);
   };
 
@@ -166,6 +168,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
       id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     };
 
+    debugLogger.addLog(`➕ PatientContext: Adding patient ${newPatient.name} (ID: ${newPatient.id})`, 'PatientContext');
     addPatientToQuery(newPatient);
   };
 
@@ -375,6 +378,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     tickCounter,
     clearPatients,
     addPatient,
+    updatePatients,
     deletePatient,
     loadMockData,
     updatePatientStatus,

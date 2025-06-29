@@ -18,7 +18,7 @@ const HAS_CHECKED_IN = ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', '
 const STATUS_IN_ROOM = ['appt-prep', 'ready-for-md', 'With Doctor'];
 
 const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
-  const { addPatient, clearPatients } = usePatientContext();
+  const { updatePatients } = usePatientContext();
   const [scheduleText, setScheduleText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -218,18 +218,26 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
       addLog('📋 About to parse schedule text: ' + scheduleText.substring(0, 100) + '...');
       const patients = parseSchedule(scheduleText);
 
+      addLog(`✅ Parsing complete. Found ${patients.length} valid patients`);
+
       if (patients.length === 0) {
+        addLog('❌ No valid appointments found');
         setError('No valid appointments found in the schedule.');
         return;
       }
 
-      // Clear existing patients before importing new ones
-      clearPatients();
+      // Add unique IDs to all patients
+      addLog(`🏷️ Adding unique IDs to ${patients.length} patients`);
+      const patientsWithIds = patients.map(patientData => ({
+        ...patientData,
+        id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      }));
 
-      for (const patient of patients) {
-        addPatient(patient);
-      }
+      // Update all patients at once to avoid race conditions
+      addLog(`➕ Updating context with all ${patientsWithIds.length} patients at once`);
+      updatePatients(patientsWithIds);
 
+      addLog('✅ Import process completed successfully');
       setSuccess(`Successfully imported ${patients.length} appointments`);
 
       // Show a success message briefly then close
@@ -279,16 +287,7 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
           </div>
         )}
 
-        <div className="flex justify-between">
-          <button
-            onClick={downloadLogs}
-            disabled={debugLogs.length === 0}
-            className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-500 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-          >
-            Download Debug Logs
-          </button>
-          
-          <div className="flex space-x-3">
+        <div className="flex justify-end space-x-3">
             <button
               onClick={onClose}
               className={`px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors ${success ? 'hidden' : ''}`}
@@ -314,7 +313,6 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
                 </>
               )}
             </button>
-          </div>
         </div>
       </div>
     </div>

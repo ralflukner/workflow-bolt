@@ -5,6 +5,7 @@ import MetricsPanel from './MetricsPanel';
 import TimeControl from './TimeControl';
 import TebraIntegration from './TebraIntegrationNew';
 import MonitoringStatus from './MonitoringStatus';
+import { debugLogger } from '../services/debugLogger';
 
 interface DashboardHeaderProps {
   showDebugPanels: boolean;
@@ -90,6 +91,13 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 {showDebugTextWindow ? 'Hide' : 'Show'} Text View
               </button>
             )}
+            <button 
+              onClick={() => debugLogger.downloadLogs('import-debug-logs.txt')}
+              className="flex items-center px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-500 transition-colors"
+            >
+              <Download size={18} className="mr-1" />
+              Debug Logs
+            </button>
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { mockPatients } from '../data/mockData';
 import { dailySessionService } from '../services/firebase/dailySessionService';
 import { localSessionService } from '../services/localStorage/localSessionService';
 import { useMemo } from 'react';
+import { debugLogger } from '../services/debugLogger';
 
 interface UsePatientDataOptions {
   persistenceEnabled: boolean;
@@ -132,6 +133,7 @@ export const usePatientData = (options: UsePatientDataOptions) => {
 
   // Helper function to update patients in cache and save
   const updatePatients = (newPatients: Patient[]) => {
+    debugLogger.addLog(`🔄 usePatientData: Updating patients cache with ${newPatients.length} patients`, 'usePatientData');
     // Optimistically update the cache
     queryClient.setQueryData(['patients', useFirebase, persistenceEnabled, storageType], newPatients);
     
@@ -141,7 +143,9 @@ export const usePatientData = (options: UsePatientDataOptions) => {
 
   // Helper function to add a patient
   const addPatient = (newPatient: Patient) => {
+    debugLogger.addLog(`➕ usePatientData: Adding ${newPatient.name} to current array of ${patients.length} patients`, 'usePatientData');
     const updatedPatients = [...patients, newPatient];
+    debugLogger.addLog(`➕ usePatientData: New array will have ${updatedPatients.length} patients`, 'usePatientData');
     updatePatients(updatedPatients);
   };
 
