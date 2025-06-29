@@ -87,12 +87,50 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Reduce console noise
+// Console error detection to catch React errors during testing
+let consoleErrorSpy: jest.SpyInstance;
+
+beforeEach(() => {
+  // Clear any previous spy
+  if (consoleErrorSpy) {
+    consoleErrorSpy.mockRestore();
+  }
+  
+  // Set up spy to catch console.error calls
+  consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation((...args) => {
+    const errorMessage = args.join(' ');
+    
+    // Allow certain expected errors to pass through silently
+    const allowedErrors = [
+      /Not wrapped in act/i,
+      /Warning: ReactDOM.render is no longer supported/i,
+      /Warning: validateDOMNesting/i,
+      /Warning: Function components cannot be given refs/i,
+      // Add other expected warnings/errors as needed
+    ];
+    
+    const isAllowedError = allowedErrors.some(pattern => pattern.test(errorMessage));
+    
+    if (!isAllowedError) {
+      // Fail the test if unexpected console.error is called
+      throw new Error(`Unexpected console.error during test execution:\n${errorMessage}`);
+    }
+  });
+});
+
+afterEach(() => {
+  // Clean up spy
+  if (consoleErrorSpy) {
+    consoleErrorSpy.mockRestore();
+  }
+});
+
+// Reduce console noise for non-error output
 global.console = {
   ...console,
   log: jest.fn(),
   warn: jest.fn(),
-  error: jest.fn(),
+  // Don't mock error here since we're handling it above
 };
 
 // ---------------------------------------------------------------------------
