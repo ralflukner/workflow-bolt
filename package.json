@@ -22,7 +22,11 @@
     "test:tebra-integration": "RUN_INTEGRATION_TESTS=true jest --config jest.config.cjs --testNamePattern='Tebra.*Integration'",
     "test:tebra-real": "RUN_REAL_API_TESTS=true jest --config jest.config.cjs --testNamePattern='Tebra.*Real'",
     "test:tebra-all": "RUN_INTEGRATION_TESTS=true RUN_REAL_API_TESTS=true jest --config jest.config.cjs --testNamePattern='Tebra'",
-    "diagnose": "node scripts/tebra-diagnose.mjs"
+    "diagnose": "node scripts/tebra-diagnose.mjs",
+    "deploy:check": "./scripts/pre-deploy-check.sh",
+    "deploy:functions": "cd functions && npm ci && firebase deploy --only functions",
+    "deploy:verify": "node test-functions-deployment.cjs",
+    "deploy:safe": "npm run deploy:check && npm run deploy:functions && npm run deploy:verify"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
