@@ -106,7 +106,7 @@ const healthCheck = onRequest({
       response.status(204).send('');
       return;
     }
-  try {
+    
     const timestamp = new Date().toISOString();
     const uptime = process.uptime();
     
