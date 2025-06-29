@@ -1,0 +1,205 @@
+# Firebase Functions Alerting Policies
+# Deploy with: gcloud alpha monitoring policies create --policy-from-file=alerting-policies.yaml
+
+# High Error Rate Alert
+- displayName: "Firebase Functions - High Error Rate"
+  documentation:
+    content: |
+      This alert fires when Firebase Functions have an error rate above 5% for 5 minutes.
+      
+      Troubleshooting steps:
+      1. Check function logs: gcloud functions logs read FUNCTION_NAME
+      2. Run health check: node test-functions-deployment.cjs
+      3. Check recent deployments for issues
+      4. Verify credentials and permissions
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "Error rate > 5%"
+      conditionThreshold:
+        filter: |
+          resource.type="cloud_function" OR resource.type="cloud_run_revision"
+          severity>=ERROR
+        aggregations:
+          - alignmentPeriod: "300s"
+            perSeriesAligner: "ALIGN_RATE"
+            crossSeriesReducer: "REDUCE_SUM"
+            groupByFields:
+              - "resource.label.function_name"
+        comparison: "COMPARISON_GT"
+        thresholdValue: 0.05  # 5% error rate
+        duration: "300s"  # 5 minutes
+        evaluationMissingData: "EVALUATION_MISSING_DATA_INACTIVE"
+  alertStrategy:
+    autoClose: "1800s"  # Auto-close after 30 minutes
+  combiner: "OR"
+  enabled: true
+  notificationChannels: []  # Add your notification channels here
+
+# Container Startup Failures
+- displayName: "Firebase Functions - Container Startup Failures"
+  documentation:
+    content: |
+      This alert fires when Firebase Functions fail to start their containers.
+      This usually indicates deployment or runtime configuration issues.
+      
+      Common causes:
+      - Node.js version incompatibility
+      - Dependency loading issues
+      - Memory/timeout constraints
+      - OpenTelemetry initialization problems
+      
+      Immediate actions:
+      1. Check recent deployments
+      2. Verify Node.js version in firebase.json
+      3. Run pre-deployment checks: ./scripts/pre-deploy-check.sh
+      4. Check container logs for startup errors
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "Container healthcheck failures"
+      conditionThreshold:
+        filter: |
+          resource.type="cloud_run_revision"
+          textPayload=~"Container Healthcheck failed"
+        aggregations:
+          - alignmentPeriod: "60s"
+            perSeriesAligner: "ALIGN_COUNT"
+            crossSeriesReducer: "REDUCE_SUM"
+        comparison: "COMPARISON_GT"
+        thresholdValue: 0
+        duration: "60s"
+        evaluationMissingData: "EVALUATION_MISSING_DATA_INACTIVE"
+  combiner: "OR"
+  enabled: true
+  notificationChannels: []
+
+# High Memory Usage
+- displayName: "Firebase Functions - High Memory Usage"
+  documentation:
+    content: |
+      This alert fires when Firebase Functions are using more than 80% of allocated memory.
+      High memory usage can lead to function timeouts and poor performance.
+      
+      Actions:
+      1. Check for memory leaks in recent code changes
+      2. Consider increasing memory allocation
+      3. Optimize data processing and caching
+      4. Review dependency usage
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "Memory usage > 80%"
+      conditionThreshold:
+        filter: |
+          resource.type="cloud_function" OR resource.type="cloud_run_revision"
+          metric.type="cloudfunctions.googleapis.com/function/user_memory_bytes"
+        aggregations:
+          - alignmentPeriod: "300s"
+            perSeriesAligner: "ALIGN_MEAN"
+            crossSeriesReducer: "REDUCE_MEAN"
+            groupByFields:
+              - "resource.label.function_name"
+        comparison: "COMPARISON_GT"
+        thresholdValue: 419430400  # 400MB (80% of 512MB default)
+        duration: "300s"
+        evaluationMissingData: "EVALUATION_MISSING_DATA_INACTIVE"
+  combiner: "OR"
+  enabled: true
+  notificationChannels: []
+
+# Slow Function Performance
+- displayName: "Firebase Functions - Slow Performance"
+  documentation:
+    content: |
+      This alert fires when Firebase Functions take longer than 10 seconds to execute.
+      Slow functions can impact user experience and may timeout.
+      
+      Optimization steps:
+      1. Profile function execution time
+      2. Check for slow database queries
+      3. Optimize external API calls
+      4. Review cold start performance
+      5. Consider caching strategies
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "Execution time > 10 seconds"
+      conditionThreshold:
+        filter: |
+          jsonPayload.type="FUNCTION_METRIC"
+          jsonPayload.duration_ms>10000
+        aggregations:
+          - alignmentPeriod: "300s"
+            perSeriesAligner: "ALIGN_COUNT"
+            crossSeriesReducer: "REDUCE_SUM"
+            groupByFields:
+              - "jsonPayload.function"
+        comparison: "COMPARISON_GT"
+        thresholdValue: 5  # More than 5 slow executions in 5 minutes
+        duration: "300s"
+        evaluationMissingData: "EVALUATION_MISSING_DATA_INACTIVE"
+  combiner: "OR"
+  enabled: true
+  notificationChannels: []
+
+# Security Events
+- displayName: "Firebase Functions - Security Events"
+  documentation:
+    content: |
+      This alert fires when security events are detected in Firebase Functions.
+      Security events include authentication failures, rate limiting, and suspicious activity.
+      
+      Immediate actions:
+      1. Review security event details in logs
+      2. Check for brute force attacks
+      3. Verify authentication mechanisms
+      4. Review rate limiting configuration
+      5. Consider blocking suspicious IPs
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "Security events detected"
+      conditionThreshold:
+        filter: |
+          jsonPayload.type="SECURITY_EVENT"
+        aggregations:
+          - alignmentPeriod: "300s"
+            perSeriesAligner: "ALIGN_COUNT"
+            crossSeriesReducer: "REDUCE_SUM"
+            groupByFields:
+              - "jsonPayload.event_type"
+        comparison: "COMPARISON_GT"
+        thresholdValue: 10  # More than 10 security events in 5 minutes
+        duration: "60s"
+        evaluationMissingData: "EVALUATION_MISSING_DATA_INACTIVE"
+  combiner: "OR"
+  enabled: true
+  notificationChannels: []
+
+# Function Deployment Failures
+- displayName: "Firebase Functions - Deployment Failures"
+  documentation:
+    content: |
+      This alert fires when Firebase Function deployments fail.
+      
+      Troubleshooting:
+      1. Check deployment logs
+      2. Verify Node.js version compatibility
+      3. Run pre-deployment checks
+      4. Check for syntax or dependency errors
+      5. Verify Firebase project permissions
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "Deployment errors"
+      conditionThreshold:
+        filter: |
+          resource.type="cloud_build"
+          textPayload=~"ERROR"
+          textPayload=~"firebase.*deploy"
+        aggregations:
+          - alignmentPeriod: "60s"
+            perSeriesAligner: "ALIGN_COUNT"
+            crossSeriesReducer: "REDUCE_SUM"
+        comparison: "COMPARISON_GT"
+        thresholdValue: 0
+        duration: "60s"
+        evaluationMissingData: "EVALUATION_MISSING_DATA_INACTIVE"
+  combiner: "OR"
+  enabled: true
+  notificationChannels: []
