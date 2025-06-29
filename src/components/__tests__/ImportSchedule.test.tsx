@@ -1,12 +1,14 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ImportSchedule from '../ImportSchedule';
 import { TestProviders } from '../../test/testHelpers';
 
 // Mock the usePatientContext hook
 const mockAddPatient = jest.fn();
+const mockUpdatePatients = jest.fn();
 jest.mock('../../hooks/usePatientContext', () => ({
   usePatientContext: () => ({
-    addPatient: mockAddPatient
+    addPatient: mockAddPatient,
+    updatePatients: mockUpdatePatients
   })
 }));
 
