@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { useClickOutside } from '../hooks/useClickOutside';
 import { Patient, PatientApptStatus } from '../types';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
@@ -16,20 +17,11 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
   const [checkInTimeInput, setCheckInTimeInput] = useState('');
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
-  const statusDropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
-        setIsStatusDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  // Use custom hook for click outside detection instead of useEffect
+  const statusDropdownRef = useClickOutside<HTMLDivElement>({
+    onClickOutside: () => setIsStatusDropdownOpen(false),
+    enabled: isStatusDropdownOpen
+  });
 
   const getStatusColor = (status: string): string => {
     switch (status) {

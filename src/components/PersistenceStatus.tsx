@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { dailySessionService } from '../services/firebase/dailySessionService';
 import { localSessionService } from '../services/localStorage/localSessionService';
@@ -41,39 +42,37 @@ export const PersistenceStatus: React.FC = () => {
    
   }, []);
 
-  // Load session statistics
-  useEffect(() => {
-    const loadStats = async () => {
+  // Use React Query for session statistics instead of useEffect
+  const { data: sessionStatsQuery } = useQuery({
+    queryKey: ['sessionStats', persistenceEnabled, patients.length, storageType],
+    queryFn: async () => {
       try {
         const stats = await storageService.getSessionStats();
         setSessionStats(stats);
+        return stats;
       } catch (error) {
         console.error(`Failed to load session stats from ${storageType}:`, error);
+        return null;
       }
-    };
+    },
+    enabled: persistenceEnabled,
+    refetchInterval: 120000, // Refresh stats every 2 minutes
+    staleTime: 60000 // Consider data stale after 1 minute
+  });
 
-    if (persistenceEnabled) {
-    // Refresh stats every 2 minutes
-    const interval = setInterval(loadStats, 120000);
-      return () => clearInterval(interval);
-    }
-  }, [persistenceEnabled, patients.length, storageService, storageType]);
-
-  // Toast auto-hide effect
-  useEffect(() => {
-    if (showToast) {
-      const timer = setTimeout(() => {
-        setShowToast(false);
-      }, 4000); // Hide after 4 seconds
-      return () => clearTimeout(timer);
-    }
-  }, [showToast]);
-
+  // Use timeout-based state management for toast instead of useEffect
   const showToastMessage = (message: string, type: 'success' | 'info' | 'error') => {
     setToastMessage(message);
     setToastType(type);
     setShowToast(true);
+    
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+      setShowToast(false);
+    }, 4000);
   };
+
+  // Function was moved above, removing duplicate
 
   const handleManualSave = async () => {
     if (!hasRealData) {
