@@ -72,7 +72,12 @@ if (!admin.apps.length) {
 
 // Note: Secrets management moved to environment variables for this deployment
 
-/** Verifies an Auth0 RS256 access / ID token and returns the decoded payload */
+/**
+ * Verifies an Auth0 RS256 access or ID token and returns the decoded payload.
+ * @param {string} token - The Auth0 JWT to verify.
+ * @returns {Promise<Object>} A promise that resolves to the decoded JWT payload if verification succeeds.
+ * @throws {Error} If the token is invalid or verification fails.
+ */
 async function verifyAuth0Jwt(token) {
   // Use hardcoded values for now to avoid Secret Manager issues during deployment
   const domain = 'dev-uex7qzqmd8c4qnde.us.auth0.com';
