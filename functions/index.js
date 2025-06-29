@@ -557,3 +557,9 @@ exports.getSecurityReport = onCall({
     };
   }
 });
+
+// Import and export credential verification functions
+const credentialFunctions = require('./src/credential-check-function');
+exports.verifyCredentials = credentialFunctions.verifyCredentials;
+exports.checkCredentials = credentialFunctions.checkCredentials;
+exports.healthCheck = credentialFunctions.healthCheck;
