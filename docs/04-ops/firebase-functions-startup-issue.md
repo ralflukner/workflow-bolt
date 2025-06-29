@@ -34,6 +34,24 @@ This document chronicles the complete resolution of Firebase Functions deploymen
 
 > **Achievement:** 60+ fast unit tests covering all edge cases, improved maintainability.
 
+### Credential Verification v2 (2025-06-29)
+
+A fully-featured `functions/src/utils/credential-verification.js` replaced the preliminary checker.  Highlights:
+
+* **Seven discrete service checks** (Firebase Admin, Firestore, Env Vars, Project ID, Auth0, Tebra, Secret Manager) with granular success/warning/error states.
+* **Execution summary & timing** returned in one object – easy to emit as a Cloud Monitoring metric.
+* **Middleware helper** – can be plugged into Express routes (`blockOnFailure` flag) so production traffic is automatically gated if credentials break.
+* **Five-minute in-memory cache** avoids hammering Firestore/Secret Manager.
+* **CLI mode** – running `node functions/src/utils/credential-verification.js` exits non-zero on failure → perfect for CI.
+* **Placeholder detection & secret aliasing** integrated via the updated `pull-secrets.js` pipeline (see previous section).
+
+Risk notes:
+1. **Duplicate implementations** – remove the older lightweight checker to avoid drift.
+2. **ENV names** – still references plain `AUTH0_*` / `TEBRA_*` vars; ensure `pull-secrets.js` keeps mirroring from the `VITE_` counterparts.
+3. **Firestore read‐only test** – uses collection `_health_check`; maintain its IAM permissions (read-only required).
+
+Overall this is a clear improvement and is now the authoritative verification module.  CI job `npm run check:creds` already invokes the CLI entrypoint.
+
 ---
 
 ## Table of Contents

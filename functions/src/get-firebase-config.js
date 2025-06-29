@@ -26,9 +26,10 @@ const getFirebaseConfig = functions.https.onRequest((req, res) => {
       }
 
       // Return MINIMAL config needed for authentication only
+      // Use environment variables available in Firebase Functions
       const config = {
-        apiKey: process.env.VITE_FIREBASE_API_KEY,
-        authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+        apiKey: process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY,
+        authDomain: process.env.FIREBASE_AUTH_DOMAIN || process.env.VITE_FIREBASE_AUTH_DOMAIN || `${process.env.GCLOUD_PROJECT}.firebaseapp.com`,
         projectId: process.env.GCLOUD_PROJECT || process.env.VITE_FIREBASE_PROJECT_ID
         // Removed: storageBucket, messagingSenderId, appId - not needed for auth
       };
