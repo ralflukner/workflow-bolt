@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useFirebaseAuth } from '../services/authBridge';
 import { isFirebaseConfigured } from '../config/firebase';
@@ -26,40 +26,35 @@ export const DiagnosticPanel: React.FC = () => {
   const [storageStats, setStorageStats] = useState<SessionStats | null>(null);
 
   // Check authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const success = await ensureFirebaseAuth();
-        setAuthStatus(success ? 'authenticated' : 'failed');
-      } catch (error) {
-        setAuthStatus('failed');
-        console.error('Auth check failed:', error);
-      }
-    };
-
-    const firebaseReady = isFirebaseConfigured();
-    if (firebaseReady) {
-      checkAuth();
-    } else {
-      setAuthStatus('authenticated'); // localStorage doesn't need auth
+  const checkAuth = async () => {
+    try {
+      const success = await ensureFirebaseAuth();
+      setAuthStatus(success ? 'authenticated' : 'failed');
+    } catch (error) {
+      setAuthStatus('failed');
+      console.error('Auth check failed:', error);
     }
-  }, [ensureFirebaseAuth]);
+  };
+
+  const firebaseReady = isFirebaseConfigured();
+  if (firebaseReady) {
+    checkAuth();
+  } else {
+    setAuthStatus('authenticated'); // localStorage doesn't need auth
+  }
 
   // Load storage stats
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const firebaseReady = isFirebaseConfigured();
-        const service = firebaseReady ? dailySessionService : localSessionService;
-        const stats = await service.getSessionStats();
-        setStorageStats(stats);
-      } catch (error) {
-        console.error('Failed to load storage stats:', error);
-      }
-    };
+  const loadStats = async () => {
+    try {
+      const service = isFirebaseConfigured() ? dailySessionService : localSessionService;
+      const stats = await service.getSessionStats();
+      setStorageStats(stats);
+    } catch (error) {
+      console.error('Failed to load storage stats:', error);
+    }
+  };
 
-    loadStats();
-  }, [patients.length]);
+  loadStats();
 
   // Test manual save
   const testManualSave = async () => {

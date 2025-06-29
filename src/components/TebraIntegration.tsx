@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { TebraIntegrationService, SyncResult, createTebraConfig } from '../tebra-soap/tebra-integration-service';
 import { TebraCredentials } from '../tebra-soap/tebra-api-service.types';

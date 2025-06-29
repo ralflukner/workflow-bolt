@@ -1,3 +1,4 @@
+import React from 'react';
 import { createContext, useState } from 'react';
 import { initializeFirebase } from '../config/firebase';
 
@@ -14,32 +15,56 @@ export const FirebaseContext = createContext<FirebaseContextType>({
 });
 
 // Provider component that handles Firebase initialization
-export function FirebaseProvider({ children }: { children: React.ReactNode }) {
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  if (error) {
-    return (
-      <div className="error-container">
-        <h1>Failed to initialize application</h1>
-        <p>Please try refreshing the page. If the problem persists, contact support.</p>
-        <pre>{error.message}</pre>
-      </div>
-    );
+// NOTE: useEffect is not allowed in this project. See docs/NO_USE_EFFECT_POLICY.md
+export class FirebaseProvider extends React.Component<{ children: React.ReactNode }, { isInitialized: boolean; error: Error | null }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = {
+      isInitialized: false,
+      error: null,
+    };
   }
 
-  if (!isInitialized) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Initializing application...</p>
-      </div>
-    );
+  componentDidMount() {
+    // Initialization logic previously in useEffect
+    initializeFirebase()
+      .then(() => {
+        console.log('[Instrumentation] initializeFirebase resolved successfully.');
+        this.setState({ isInitialized: true });
+      })
+      .catch((err) => {
+        console.error('[Instrumentation] initializeFirebase failed:', err);
+        this.setState({ error: err });
+      });
   }
 
-  return (
-    <FirebaseContext.Provider value={{ isInitialized, error }}>
-      {children}
-    </FirebaseContext.Provider>
-  );
+  render() {
+    const { isInitialized, error } = this.state;
+    const { children } = this.props;
+
+    if (error) {
+      return (
+        <div className="error-container">
+          <h1>Failed to initialize application</h1>
+          <p>Please try refreshing the page. If the problem persists, contact support.</p>
+          <pre>{error.message}</pre>
+        </div>
+      );
+    }
+
+    if (!isInitialized) {
+      return (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Initializing application...</p>
+        </div>
+      );
+    }
+
+    return (
+      <FirebaseContext.Provider value={{ isInitialized, error }}>
+        {children}
+      </FirebaseContext.Provider>
+    );
+  }
 }

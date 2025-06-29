@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Terminal, Filter, Download, Trash2, Play, Pause } from 'lucide-react';
 
 interface LogEntry {
@@ -32,7 +32,7 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
   const [highlightCorrelationId, setHighlightCorrelationId] = useState<string | null>(null);
 
   // Generate mock logs for demonstration
-  useEffect(() => {
+  const generateLogs = () => {
     if (isPaused) return;
 
     const components = ['TebraAPI', 'Firebase', 'CloudRun', 'Frontend', 'AuthBridge'];
@@ -75,56 +75,6 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
     }, Math.random() * 2000 + 500);
 
     return () => clearInterval(interval);
-  }, [isPaused, maxEntries]);
-
-  useEffect(() => {
-    if (autoScroll && !isPaused && logContainerRef.current) {
-      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-    }
-  }, [logs, autoScroll, isPaused]);
-
-  const filteredLogs = logs.filter(log => {
-    const matchesText = !filter || 
-      log.message.toLowerCase().includes(filter.toLowerCase()) ||
-      log.component.toLowerCase().includes(filter.toLowerCase()) ||
-      (log.correlationId && log.correlationId.includes(filter));
-
-    const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
-
-    return matchesText && matchesLevel;
-  });
-
-  const getLevelColor = (level: LogEntry['level']) => {
-    switch (level) {
-      case 'error': return 'text-red-400';
-      case 'warning': return 'text-yellow-400';
-      case 'info': return 'text-blue-400';
-      case 'debug': return 'text-gray-400';
-      default: return 'text-gray-400';
-    }
-  };
-
-  const getLevelBgColor = (level: LogEntry['level']) => {
-    switch (level) {
-      case 'error': return 'bg-red-900/20';
-      case 'warning': return 'bg-yellow-900/20';
-      case 'info': return 'bg-blue-900/20';
-      case 'debug': return 'bg-gray-900/20';
-      default: return 'bg-gray-900/20';
-    }
-  };
-
-  const exportLogs = () => {
-    const logText = filteredLogs.map(log => 
-      `[${log.timestamp.toISOString()}] [${log.level.toUpperCase()}] [${log.component}] ${log.message}${log.correlationId ? ` (ID: ${log.correlationId})` : ''}`
-    ).join('\n');
-
-    const blob = new Blob([logText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tebra-logs-${new Date().toISOString()}.txt`;
-    a.click();
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,7 +91,7 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
         <div className="flex items-center space-x-3">
           <Terminal className="w-5 h-5 text-green-400" />
           <h3 className="text-lg font-semibold text-white">Live API Logs</h3>
-          <span className="text-sm text-gray-400">({filteredLogs.length} entries)</span>
+          <span className="text-sm text-gray-400">({logs.length} entries)</span>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -156,11 +106,15 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
             }
           </button>
           <button
-            onClick={exportLogs}
+            onClick={() => {
+              const interval = generateLogs();
+              // Optionally, you can clear the interval if you want to stop generating logs
+              // clearInterval(interval);
+            }}
             className="p-2 rounded hover:bg-gray-700 transition-colors"
-            title="Export logs"
+            title="Generate new logs"
           >
-            <Download className="w-4 h-4 text-gray-400" />
+            Generate Logs
           </button>
           <button
             onClick={() => setLogs([])}
@@ -207,12 +161,12 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
         ref={logContainerRef}
         className="h-96 overflow-y-auto space-y-1 font-mono text-sm"
       >
-        {filteredLogs.length === 0 ? (
+        {logs.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
             {filter || levelFilter !== 'all' ? 'No logs match the current filter' : 'No logs yet...'}
           </div>
         ) : (
-          filteredLogs.map((log) => (
+          logs.map((log) => (
             <div
               key={log.id}
               className={`p-2 rounded ${getLevelBgColor(log.level)} ${

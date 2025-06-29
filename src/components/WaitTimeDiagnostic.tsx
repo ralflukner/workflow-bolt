@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { Patient } from '../types';
@@ -18,27 +18,21 @@ export const WaitTimeDiagnostic: React.FC = () => {
   const [tickChangeCount, setTickChangeCount] = useState<number>(0);
 
   // Track time updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      try {
-        const newTime = getCurrentTime();
-        setCurrentTime(newTime);
-        setTimeCallCount(prev => prev + 1);
-      } catch (error) {
-        console.error('Error calling getCurrentTime:', error);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [getCurrentTime]);
+  const interval = setInterval(() => {
+    try {
+      const newTime = getCurrentTime();
+      setCurrentTime(newTime);
+      setTimeCallCount(prev => prev + 1);
+    } catch (error) {
+      console.error('Error calling getCurrentTime:', error);
+    }
+  }, 1000);
 
   // Track tick counter changes
-  useEffect(() => {
-    if (tickCounter !== lastTickCounter) {
-      setLastTickCounter(tickCounter);
-      setTickChangeCount(prev => prev + 1);
-    }
-  }, [tickCounter, lastTickCounter]);
+  if (tickCounter !== lastTickCounter) {
+    setLastTickCounter(tickCounter);
+    setTickChangeCount(prev => prev + 1);
+  }
 
   // Get patients with wait times for analysis
   const patientsWithWaitTimes = patients
