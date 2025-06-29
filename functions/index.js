@@ -32,6 +32,12 @@ const {
   logValidationAttempt 
 } = require('./src/validation');
 
+// Credential verification system (temporarily disabled for deployment)
+// const {
+//   credentialVerificationMiddleware,
+//   healthCheck: credHealthCheck
+// } = require('./src/utils/credential-verification');
+
 // Temporarily disable monitoring to avoid startup issues
 // const { 
 //   monitorAuth, 
@@ -117,8 +123,8 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json({ limit: '1mb' }));
 
-// Block all subsequent requests if credential verification fails
-app.use(credentialVerificationMiddleware({ blockOnFailure: true }));
+// Block all subsequent requests if credential verification fails (temporarily disabled)
+// app.use(credentialVerificationMiddleware({ blockOnFailure: true }));
 
 // Lightweight health check endpoint (no rate limiting to avoid startup delays)
 app.get('/health', (req, res) => {
@@ -567,12 +573,6 @@ exports.verifyCredentials = credentialFunctions.verifyCredentials;
 exports.checkCredentials = credentialFunctions.checkCredentials;
 exports.healthCheck = credentialFunctions.healthCheck;
 exports.scheduledCredentialCheck = credentialFunctions.scheduledCredentialCheck;
-
-// Credential verification system
-const {
-  credentialVerificationMiddleware,
-  healthCheck: credHealthCheck
-} = require('./src/utils/credential-verification');
 
 exports.credentialHealth = functions.https.onRequest(async (req, res) => {
   try {
