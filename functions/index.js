@@ -117,6 +117,9 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json({ limit: '1mb' }));
 
+// Block all subsequent requests if credential verification fails
+app.use(credentialVerificationMiddleware({ blockOnFailure: true }));
+
 // Lightweight health check endpoint (no rate limiting to avoid startup delays)
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -570,3 +573,13 @@ const {
   credentialVerificationMiddleware,
   healthCheck: credHealthCheck
 } = require('./src/utils/credential-verification');
+
+exports.credentialHealth = functions.https.onRequest(async (req, res) => {
+  try {
+    const report = await credHealthCheck();
+    res.status(report.status === 'healthy' ? 200 : 503).json(report);
+  } catch (err) {
+    console.error('Cred health check error:', err);
+    res.status(500).json({ error: 'internal', message: err.message });
+  }
+});
