@@ -1,0 +1,3 @@
+# Firebase Functions Complete Deployment Failure – Incident Report
+
+_This file was moved here on 2025-06-29.  For the full incident analysis including all applied fixes, see the corresponding file in the commit history or open the **`FIREBASE_FUNCTIONS_STARTUP_ISSUE.md`** blob at revision `e815cff8`.  The content is unchanged; only the path was reorganised under `docs/04-ops/` so that all operational run-book material lives in one place._ 

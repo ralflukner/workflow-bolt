@@ -23,8 +23,8 @@ This directory contains comprehensive debugging guides, troubleshooting procedur
 
 ### Troubleshooting Guides
 
+- [Firebase Functions Startup Issue](FIREBASE_FUNCTIONS_STARTUP_ISSUE.md) - **RESOLVED**: Complete troubleshooting guide for Firebase Functions deployment failures
 - [Firebase Failures](firebase-failures.md) - Common Firebase issues and solutions
-- [Tebra API Failures](tebra-api-failures.md) - Tebra-specific error catalog
 - [Test Failures Summary](test-failures-summary.md) - Common test failures and fixes
 
 ## 🚀 Quick Debugging Workflows

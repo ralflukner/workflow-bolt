@@ -8,6 +8,9 @@ const api = require('@opentelemetry/api');
 const { TraceExporter } = require('@google-cloud/opentelemetry-cloud-trace-exporter');
 const crypto = require('crypto');
 
+// Initialize OpenTelemetry with error handling to prevent startup failures
+let tracingEnabled = false;
+
 // ---------------------------------------------------------------------------
 // Custom ID generator – if a correlationId is present on global.otelCorrelationId,
 // it will be used as the traceId, enabling 1-to-1 mapping between our existing
@@ -56,23 +59,36 @@ class CorrelationIdGenerator {
 // ---------------------------------------------------------------------------
 // Tracer provider & exporter registration
 // ---------------------------------------------------------------------------
-const provider = new NodeTracerProvider({
-  resource: new Resource({
-    [SemanticResourceAttributes.SERVICE_NAME]: 'workflow-bolt-functions',
-  }),
-  idGenerator: new CorrelationIdGenerator(),
-});
-provider.addSpanProcessor(new SimpleSpanProcessor(new TraceExporter()));
-provider.register();
+try {
+  const provider = new NodeTracerProvider({
+    resource: new Resource({
+      [SemanticResourceAttributes.SERVICE_NAME]: 'workflow-bolt-functions',
+    }),
+    idGenerator: new CorrelationIdGenerator(),
+  });
+  provider.addSpanProcessor(new SimpleSpanProcessor(new TraceExporter()));
+  provider.register();
 
-registerInstrumentations({
-  instrumentations: [getNodeAutoInstrumentations()],
-});
+  registerInstrumentations({
+    instrumentations: [getNodeAutoInstrumentations()],
+  });
+  
+  tracingEnabled = true;
+  console.log('OpenTelemetry tracing initialized successfully');
+} catch (error) {
+  console.warn('OpenTelemetry initialization failed, continuing without tracing:', error.message);
+  tracingEnabled = false;
+}
 
 // Helper function used elsewhere to run code inside a root span that uses a
 // specific correlationId. It sets global.otelCorrelationId so the custom ID
 // generator picks it up.
 module.exports.runWithCorrelation = async function runWithCorrelation(correlationId, fn) {
+  if (!tracingEnabled) {
+    // If tracing is disabled, just run the function directly
+    return await fn();
+  }
+  
   const prev = global.otelCorrelationId;
   global.otelCorrelationId = correlationId;
   try {
@@ -87,4 +103,4 @@ module.exports.runWithCorrelation = async function runWithCorrelation(correlatio
   } finally {
     global.otelCorrelationId = prev; // restore
   }
-}; 
+};

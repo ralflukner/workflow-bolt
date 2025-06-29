@@ -1,4 +1,4 @@
-const { functions } = require('firebase-functions');
+const functions = require('firebase-functions');
 
 /**
  * HIPAA-compliant input validation utilities

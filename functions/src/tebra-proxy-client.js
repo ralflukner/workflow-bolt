@@ -95,7 +95,16 @@ class TebraProxyClient {
     });
 
     try {
-      const { runWithCorrelation } = require('../otel-init');
+      // Lazy load OpenTelemetry to prevent startup blocking
+      let runWithCorrelation;
+      try {
+        const otel = require('../otel-init');
+        runWithCorrelation = otel.runWithCorrelation;
+      } catch (otelError) {
+        // Fallback if OpenTelemetry fails to load
+        console.warn('OpenTelemetry not available, falling back to direct execution:', otelError.message);
+        runWithCorrelation = async (correlationId, fn) => await fn();
+      }
 
       return await runWithCorrelation(this.logger.correlationId, async () => {
         await this.initialize();

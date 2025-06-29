@@ -1,7 +1,11 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { consoleLogger } = require('../services/logger');
 const { firestoreDailySessionRepo } = require('../services/firestoreDailySession');
-const { tebraProxyClient } = require('../tebra-proxy-client');
+// Lazy load tebraProxyClient to prevent startup issues
+const getTebraProxyClient = () => {
+  const { tebraProxyClient } = require('../tebra-proxy-client');
+  return tebraProxyClient;
+};
 const { syncSchedule } = require('./syncSchedule');
 
 const tebraSyncTodaysSchedule = onCall({ cors: true }, async (req) => {
@@ -18,7 +22,7 @@ const tebraSyncTodaysSchedule = onCall({ cors: true }, async (req) => {
       if (!isoDateRegex.test(fromDate) || !isoDateRegex.test(toDate)) {
         throw new HttpsError(
           'invalid-argument',
-          "Both 'fromDate' and 'toDate' must be strings in YYYY-MM-DD format."
+          "'fromDate' and 'toDate' must be strings in YYYY-MM-DD format."
         );
       }
       dateParam = { fromDate, toDate };
@@ -44,7 +48,7 @@ const tebraSyncTodaysSchedule = onCall({ cors: true }, async (req) => {
 
     const count = await syncSchedule(
       {
-        tebra: tebraProxyClient,
+        tebra: getTebraProxyClient(),
         repo: firestoreDailySessionRepo,
         logger: consoleLogger,
         now: () => new Date(),
