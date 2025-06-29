@@ -22,6 +22,7 @@ const FIREBASE_CONFIG_ENDPOINT = import.meta.env.VITE_FIREBASE_CONFIG_ENDPOINT |
  */
 function validateFirebaseConfig(config: unknown): config is FirebaseConfigType {
   if (!config || typeof config !== 'object') {
+    console.error('[Instrumentation] Config is not an object or is falsy:', config);
     return false;
   }
 
@@ -30,7 +31,7 @@ function validateFirebaseConfig(config: unknown): config is FirebaseConfigType {
   for (const field of requiredFields) {
     const record = config as Record<string, unknown>;
     if (!record[field] || typeof record[field] !== 'string' || (record[field] as string).trim() === '') {
-      console.error(`Invalid or missing Firebase config field: ${field}`);
+      console.error(`[Instrumentation] Invalid or missing Firebase config field: ${field}`);
       return false;
     }
   }
@@ -45,6 +46,7 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
   const FETCH_TIMEOUT = 10000; // 10 seconds
 
   try {
+    console.log('[Instrumentation] Fetching Firebase config from backend endpoint:', FIREBASE_CONFIG_ENDPOINT);
     // Fetch from the configurable getFirebaseConfig endpoint
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
@@ -59,6 +61,8 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
 
     clearTimeout(timeoutId);
 
+    console.log('[Instrumentation] Received response from backend:', response.status);
+
     if (!response.ok) {
       throw Object.assign(
         new Error(`Failed to fetch Firebase config: ${response.status}`),
@@ -67,9 +71,12 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
     }
 
     const responseData = await response.json();
+    console.log('[Instrumentation] Raw response data:', responseData);
 
     // Check if response has a data property (Firebase callable function wrapper)
     const config = responseData.data ? responseData.data : responseData;
+    const maskedConfig = { ...config, apiKey: '***', appId: '***' };
+    console.log('[Instrumentation] Parsed config:', maskedConfig);
 
     if (!validateFirebaseConfig(config)) {
       throw Object.assign(
@@ -81,13 +88,13 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
     return config;
   } catch (error: unknown) {
     if (error instanceof Error && error.name === 'AbortError') {
-      console.error('Firebase config fetch timed out');
+      console.error('[Instrumentation] Firebase config fetch timed out');
     } else {
-      console.error('Failed to fetch Firebase config from backend:', error);
+      console.error('[Instrumentation] Failed to fetch Firebase config from backend:', error);
     }
     // Fall back to environment variables if available
     if (import.meta.env?.VITE_FIREBASE_API_KEY) {
-      console.warn('Using Firebase config from environment variables as fallback');
+      console.warn('[Instrumentation] Using Firebase config from environment variables as fallback');
       const fallbackConfig = {
         apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
         authDomain:
@@ -106,6 +113,8 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
         measurementId:
           import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-W6TX8WRN2Z'
       };
+      const maskedFallback = { ...fallbackConfig, apiKey: '***', appId: '***' };
+      console.log('[Instrumentation] Fallback config:', maskedFallback);
 
       if (!validateFirebaseConfig(fallbackConfig)) {
         throw Object.assign(
@@ -125,9 +134,10 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
  */
 export async function getFirebaseConfigWithGSM(): Promise<FirebaseConfigType> {
   try {
+    console.log('[Instrumentation] Calling fetchFirebaseConfigFromBackend...');
     return await fetchFirebaseConfigFromBackend();
   } catch (error) {
-    console.error('Failed to get Firebase config:', error);
+    console.error('[Instrumentation] Failed to get Firebase config:', error);
     throw error;
   }
 }

@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { renderHook, act } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PatientProvider } from '../PatientContext';
 import { usePatientContext } from '../../hooks/usePatientContext';
 import { TimeProvider } from '../TimeContext';
@@ -60,11 +61,23 @@ jest.mock('firebase/firestore', () => ({
 }));
 
 // Test wrapper component
-const TestWrapper = ({ children }: { children: ReactNode }) => (
-  <TimeProvider>
-    <PatientProvider>{children}</PatientProvider>
-  </TimeProvider>
-);
+const TestWrapper = ({ children }: { children: ReactNode }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TimeProvider>
+        <PatientProvider>{children}</PatientProvider>
+      </TimeProvider>
+    </QueryClientProvider>
+  );
+};
 
 describe('PatientContext - Wait Time Calculations', () => {
   beforeEach(() => {

@@ -45,18 +45,25 @@ export async function initializeFirebase(): Promise<void> {
 
   try {
     // Fetch configuration from backend
+    console.log('[Instrumentation] Fetching Firebase config using getFirebaseConfigWithGSM...');
     const firebaseConfig = await getFirebaseConfigWithGSM();
-    console.log('Firebase config loaded from GSM');
+    const maskedConfig = { ...firebaseConfig, apiKey: '***', appId: '***' };
+    console.log('[Instrumentation] Firebase config loaded:', maskedConfig);
     
     app = initializeApp(firebaseConfig);
+    console.log('[Instrumentation] Firebase app initialized.');
     db = getFirestore(app);
+    console.log('[Instrumentation] Firestore initialized.');
     auth = getAuth(app);
+    console.log('[Instrumentation] Auth initialized.');
     functions = getFunctions(app);
+    console.log('[Instrumentation] Functions initialized.');
     
     // Only initialize analytics if we have a valid API key and measurement ID
     if (firebaseConfig.apiKey && firebaseConfig.apiKey !== 'VALUE' && firebaseConfig.measurementId) {
       try {
         analytics = getAnalytics(app);
+        console.log('[Instrumentation] Analytics initialized.');
       } catch (error) {
         console.warn('⚠️ Analytics initialization failed, continuing without analytics:', error);
         analytics = null;
@@ -79,7 +86,7 @@ export async function initializeFirebase(): Promise<void> {
     
     console.log('✅ Firebase initialized successfully');
   } catch (error) {
-    console.error('❌ Firebase initialization failed:', error);
+    console.error('[Instrumentation] Firebase initialization failed:', error);
     throw error;
   }
 }

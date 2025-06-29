@@ -169,3 +169,6 @@ key.json
 
 # ===== Husky =====
 .husky/
+
+# Ignore sensitive-backup.git backup repository and all its contents
+sensitive-backup.git/

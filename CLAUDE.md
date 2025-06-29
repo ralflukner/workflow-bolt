@@ -546,3 +546,23 @@ echo "✅ Configuration sync complete"
 - Always verify Auth0 domain exists before updating configuration
 - This document should be versioned alongside code changes
 - Consider creating executable runbooks for common procedures
+
+# Firebase Callable Function vs HTTP Endpoint Issue
+
+## Problem
+
+A recurring problem in this project is calling Firebase callable functions (deployed with `onCall`) as if they were HTTP endpoints. This causes CORS 403 errors and failed preflight requests.
+
+## Symptoms
+- 403 errors on preflight or function call
+- CORS errors in browser
+- Function works in Firebase console but not from frontend
+
+## Solution
+- Always use the Firebase SDK's `httpsCallable` to call callable functions from the frontend.
+- Do not use `fetch` or direct HTTP requests for callable functions.
+- See `docs/FIREBASE_FUNCTIONS_STARTUP_ISSUE.md` for full troubleshooting steps and examples.
+
+---
+
+**Reference this section and the troubleshooting doc whenever this issue recurs.**

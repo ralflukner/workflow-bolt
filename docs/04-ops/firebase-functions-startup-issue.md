@@ -525,6 +525,91 @@ This resolution demonstrates the value of persistent debugging combined with sys
 
 ---
 
+## 🔄 RECURRING ISSUE: CORS/Auth Startup Problems (2025-06-29)
+
+### Problem Description
+
+**⚠️ This issue has occurred at least 3 times and keeps coming back!**
+
+**Symptoms**:
+- CORS 403 errors when calling `exchangeAuth0Token`
+- "Preflight response is not successful. Status code: 403"
+- "Missing or insufficient permissions" Firestore errors
+- Firebase internal assertion failures
+- Frontend falls back to environment variables for Firebase config
+
+### Root Causes (Always one or more of these)
+
+#### 1. Firebase Config Incomplete ✅ FIXED (Current Session)
+- Backend `getFirebaseConfig` function missing required fields (`storageBucket`, `messagingSenderId`, `appId`)
+- **Solution**: Updated `functions/.env` with all Firebase config variables using `VITE_` prefix
+- **Verification**: `curl -H "User-Agent: test" "https://getfirebaseconfig-xccvzgogwa-uc.a.run.app"` returns complete config
+
+#### 2. Function Type Mismatch (Callable vs HTTPS)
+- `exchangeAuth0Token` deployed as **callable** function but frontend calls it as **HTTPS** endpoint
+- **Detection**: `firebase functions:list` shows `callable` but frontend makes HTTP requests
+- **Solutions**: 
+  - Convert to HTTPS function (recommended)
+  - Update frontend to use Firebase Functions SDK callable
+
+#### 3. Test Infrastructure Missing QueryClient
+- React Query components fail without `QueryClientProvider`
+- **Solution**: Updated `src/test/testHelpers.tsx` to include QueryClient
+
+### Emergency Recovery Steps
+
+When this happens again (it will), follow these steps:
+
+1. **Check function types**:
+   ```bash
+   firebase functions:list | grep exchangeAuth0Token
+   ```
+
+2. **Verify Firebase config completeness**:
+   ```bash
+   curl -H "User-Agent: test" "https://getfirebaseconfig-xccvzgogwa-uc.a.run.app"
+   ```
+
+3. **Ensure functions/.env has all Firebase variables**:
+   ```bash
+   cd functions && grep VITE_FIREBASE .env
+   ```
+
+4. **If missing, add them**:
+   ```bash
+   cat >> functions/.env << 'EOF'
+   VITE_FIREBASE_API_KEY=AIzaSyAJAj8WXD6qteQmMimwuQMj8FprOhYPppM
+   VITE_FIREBASE_AUTH_DOMAIN=luknerlumina-firebase.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=luknerlumina-firebase
+   VITE_FIREBASE_STORAGE_BUCKET=luknerlumina-firebase.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=623450773640
+   VITE_FIREBASE_APP_ID=1:623450773640:web:9afd63d3ccbb1fcb6fe73d
+   VITE_FIREBASE_MEASUREMENT_ID=G-W6TX8WRN2Z
+   EOF
+   ```
+
+5. **Redeploy**:
+   ```bash
+   firebase deploy --only functions:getFirebaseConfig,functions:exchangeAuth0Token
+   ```
+
+### Prevention
+
+1. **Always check Firebase config completeness** first when debugging auth issues
+2. **Verify function types match frontend expectations**
+3. **Keep functions/.env in sync** with frontend variables
+4. **Document any auth changes** in this file
+5. **Reference this section** when the issue recurs
+
+### Related Files
+- `functions/src/get-firebase-config.js` - Backend config endpoint
+- `functions/index.js` - exchangeAuth0Token function  
+- `functions/.env` - Function environment variables
+- `src/services/authBridge.ts` - Frontend auth service
+- `src/test/testHelpers.tsx` - Test infrastructure
+
+---
+
 ## ✅ Post-mortem Checklist
 
 - [x] Incident document written
@@ -533,6 +618,7 @@ This resolution demonstrates the value of persistent debugging combined with sys
 - [x] Test suite enhancements implemented
 - [x] Security improvements applied
 - [x] Knowledge transfer completed
+- [x] **Recurring issue documented** ⭐
 - [ ] RCA reviewed by peer
 - [ ] Action items assigned in project management
 - [ ] Archive in quarterly compliance bundle

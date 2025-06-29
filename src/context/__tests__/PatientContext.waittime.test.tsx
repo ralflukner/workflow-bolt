@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PatientProvider } from '../PatientContext';
 import { PatientContext } from '../PatientContextDef';
 import { TimeContext } from '../TimeContext';
@@ -25,13 +26,25 @@ const MockTimeProvider: React.FC<{ children: React.ReactNode }> = ({ children })
 };
 
 // Wrapper component that provides both TimeContext and PatientContext
-const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <MockTimeProvider>
-    <PatientProvider>
-      {children}
-    </PatientProvider>
-  </MockTimeProvider>
-);
+const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <MockTimeProvider>
+        <PatientProvider>
+          {children}
+        </PatientProvider>
+      </MockTimeProvider>
+    </QueryClientProvider>
+  );
+};
 
 // Test component that consumes PatientContext
 const WaitTimeTestComponent: React.FC<{ patient: Patient }> = ({ patient }) => {

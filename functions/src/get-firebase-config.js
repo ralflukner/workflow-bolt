@@ -25,13 +25,16 @@ const getFirebaseConfig = functions.https.onRequest((req, res) => {
         return res.status(400).json({ error: 'Invalid request' });
       }
 
-      // Return MINIMAL config needed for authentication only
+      // Return complete config needed for Firebase initialization
       // Use environment variables available in Firebase Functions
       const config = {
         apiKey: process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY,
         authDomain: process.env.FIREBASE_AUTH_DOMAIN || process.env.VITE_FIREBASE_AUTH_DOMAIN || `${process.env.GCLOUD_PROJECT}.firebaseapp.com`,
-        projectId: process.env.GCLOUD_PROJECT || process.env.VITE_FIREBASE_PROJECT_ID
-        // Removed: storageBucket, messagingSenderId, appId - not needed for auth
+        projectId: process.env.GCLOUD_PROJECT || process.env.VITE_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET || `${process.env.GCLOUD_PROJECT}.appspot.com`,
+        messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.FIREBASE_APP_ID || process.env.VITE_FIREBASE_APP_ID,
+        measurementId: process.env.FIREBASE_MEASUREMENT_ID || process.env.VITE_FIREBASE_MEASUREMENT_ID
       };
       
       // Debug logging to help troubleshoot missing environment variables
@@ -39,16 +42,27 @@ const getFirebaseConfig = functions.https.onRequest((req, res) => {
         hasApiKey: !!config.apiKey,
         hasAuthDomain: !!config.authDomain,
         hasProjectId: !!config.projectId,
+        hasStorageBucket: !!config.storageBucket,
+        hasMessagingSenderId: !!config.messagingSenderId,
+        hasAppId: !!config.appId,
+        hasMeasurementId: !!config.measurementId,
         gcloudProject: process.env.GCLOUD_PROJECT,
         availableEnvVars: Object.keys(process.env).filter(key => 
           key.includes('FIREBASE') || key.includes('VITE_FIREBASE')
         )
       });
       
-      // Validate only essential fields
+      // Validate essential fields (storageBucket can be auto-generated, others are required)
       if (!config.apiKey || !config.authDomain || !config.projectId) {
         throw new Error(`Missing critical Firebase config: apiKey=${!!config.apiKey}, authDomain=${!!config.authDomain}, projectId=${!!config.projectId}`);
       }
+      
+      // Filter out undefined values to keep response clean
+      Object.keys(config).forEach(key => {
+        if (config[key] === undefined) {
+          delete config[key];
+        }
+      });
       
       res.json(config);
     } catch (error) {

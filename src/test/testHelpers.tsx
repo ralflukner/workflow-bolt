@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PatientContext } from '../context/PatientContextDef';
 import { TimeContext } from '../context/TimeContextDef';
 import { createMockPatientContext, createMockTimeContext } from './contextMocks';
@@ -15,11 +16,21 @@ export const TestProviders = ({
   patientContextOverrides?: Partial<ReturnType<typeof createMockPatientContext>>,
   timeContextOverrides?: Partial<ReturnType<typeof createMockTimeContext>>
 }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
   return (
-    <TimeContext.Provider value={createMockTimeContext(timeContextOverrides)}>
-      <PatientContext.Provider value={createMockPatientContext(patientContextOverrides)}>
-        {children}
-      </PatientContext.Provider>
-    </TimeContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <TimeContext.Provider value={createMockTimeContext(timeContextOverrides)}>
+        <PatientContext.Provider value={createMockPatientContext(patientContextOverrides)}>
+          {children}
+        </PatientContext.Provider>
+      </TimeContext.Provider>
+    </QueryClientProvider>
   );
 };

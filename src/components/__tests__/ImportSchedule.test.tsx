@@ -3,22 +3,9 @@ import userEvent from '@testing-library/user-event';
 import ImportSchedule from '../ImportSchedule';
 import { TestProviders } from '../../test/testHelpers';
 
-// Mock the usePatientContext hook
+// Mock functions that will be provided via TestProviders  
 const mockAddPatient = jest.fn();
 const mockUpdatePatients = jest.fn();
-jest.mock('../../hooks/usePatientContext', () => ({
-  usePatientContext: () => ({
-    addPatient: mockAddPatient,
-    updatePatients: mockUpdatePatients
-  })
-}));
-
-// Mock the useTimeContext hook
-jest.mock('../../hooks/useTimeContext', () => ({
-  useTimeContext: () => ({
-    getCurrentTime: () => new Date('2023-01-01T10:00:00.000Z')
-  })
-}));
 
 // Mock the debugLogger
 jest.mock('../../services/debugLogger', () => ({
@@ -45,8 +32,12 @@ describe('ImportSchedule', () => {
     return render(
       <TestProviders
         patientContextOverrides={{
+          addPatient: mockAddPatient,
           updatePatients: mockUpdatePatients,
           ...overrides
+        }}
+        timeContextOverrides={{
+          getCurrentTime: () => new Date('2023-01-01T10:00:00.000Z')
         }}
       >
         <ImportSchedule onClose={onClose} />

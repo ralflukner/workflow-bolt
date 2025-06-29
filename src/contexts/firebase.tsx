@@ -19,12 +19,14 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    console.log('[Instrumentation] Calling initializeFirebase...');
     initializeFirebase()
       .then(() => {
+        console.log('[Instrumentation] initializeFirebase resolved successfully.');
         setIsInitialized(true);
       })
       .catch((err) => {
-        console.error('Failed to initialize Firebase:', err);
+        console.error('[Instrumentation] initializeFirebase failed:', err);
         setError(err);
       });
   }, []);
