@@ -332,14 +332,24 @@ export class AuthBridge {
 
       this.logDebug('🔐 Exchanging Auth0 token for Firebase token (HIPAA compliant)');
       
-      // Exchange token with retry logic
+      // Exchange token with retry logic using HTTP endpoint
       const result = await this.withRetry(async () => {
-        return await this.exchangeTokenFunction!({ 
-          auth0Token
+        const response = await fetch(this.exchangeTokenUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ auth0Token })
         });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return await response.json();
       }, 'Token exchange');
 
-      const response = result.data;
+      const response = result;
 
       if (!response.success || !response.firebaseToken) {
         throw new Error(response.message || 'Token exchange failed');
