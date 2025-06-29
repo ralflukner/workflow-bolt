@@ -480,53 +480,89 @@ exports.tebraSyncTodaysSchedule = tebraSyncTodaysSchedule;
 const { getFirebaseConfig } = require('./src/get-firebase-config');
 exports.getFirebaseConfig = getFirebaseConfig;
 
-// Secure Auth0 token exchange function (HIPAA Compliant)
-exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
-  const { auth0Token } = request.data || {};
-  if (!auth0Token) {
-    throw new functions.https.HttpsError(
-      'invalid-argument',
-      'auth0Token is required'
-    );
-  }
+// Secure Auth0 token exchange function (HIPAA Compliant) - HTTPS Function
+const cors = require('cors')({
+  origin: [
+    'https://luknerlumina-firebase.web.app',
+    'https://luknerlumina-firebase.firebaseapp.com',
+    'http://localhost:5173'
+  ],
+  methods: ['POST', 'OPTIONS'],
+  credentials: false
+});
 
-  let decoded;
-  try {
-    decoded = await verifyAuth0Jwt(auth0Token);   // ① Full JWT verification
-  } catch (err) {
-    console.error('Invalid Auth0 JWT', err);
-    throw new functions.https.HttpsError('unauthenticated', 'JWT verification failed', { originalError: err.message });
-  }
+exports.exchangeAuth0Token = functions.https.onRequest((req, res) => {
+  return cors(req, res, async () => {
+    try {
+      if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+      }
 
-  // ② Derive a stable, safe Firebase UID
-  const rawSub = decoded.sub || 'unknown_sub';
-  const firebaseUid = rawSub.replace(/[^a-zA-Z0-9:_-]/g, '_').slice(0, 128); // Firebase UID rules
+      const { auth0Token } = req.body || {};
+      if (!auth0Token) {
+        return res.status(400).json({
+          success: false,
+          message: 'auth0Token is required'
+        });
+      }
 
-  // ③ Mint Firebase custom token
-  let customToken;
-  try {
-    customToken = await admin.auth().createCustomToken(firebaseUid, {
-      // Add custom claims for HIPAA compliance
-      provider: 'auth0',
-      hipaaCompliant: true,
-      email: decoded.email,
-      email_verified: decoded.email_verified,
-      timestamp: Date.now()
-    });
-  } catch (err) {
-    console.error('Failed to mint custom token', err);
-    throw new functions.https.HttpsError('internal', 'Could not mint custom token', { originalError: err.message });
-  }
+      let decoded;
+      try {
+        decoded = await verifyAuth0Jwt(auth0Token);   // ① Full JWT verification
+      } catch (err) {
+        console.error('Invalid Auth0 JWT', err);
+        return res.status(401).json({
+          success: false,
+          message: 'JWT verification failed',
+          error: err.message
+        });
+      }
 
-  // HIPAA Audit Log
-  console.log('HIPAA_AUDIT:', JSON.stringify({
-    type: 'TOKEN_EXCHANGE_SUCCESS',
-    userId: firebaseUid,
-    auth0Sub: rawSub,
-    timestamp: new Date().toISOString()
-  }));
+      // ② Derive a stable, safe Firebase UID
+      const rawSub = decoded.sub || 'unknown_sub';
+      const firebaseUid = rawSub.replace(/[^a-zA-Z0-9:_-]/g, '_').slice(0, 128); // Firebase UID rules
 
-  return { success: true, firebaseToken: customToken };
+      // ③ Mint Firebase custom token
+      let customToken;
+      try {
+        customToken = await admin.auth().createCustomToken(firebaseUid, {
+          // Add custom claims for HIPAA compliance
+          provider: 'auth0',
+          hipaaCompliant: true,
+          email: decoded.email,
+          email_verified: decoded.email_verified,
+          timestamp: Date.now()
+        });
+      } catch (err) {
+        console.error('Failed to mint custom token', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Could not mint custom token',
+          error: err.message
+        });
+      }
+
+      // HIPAA Audit Log
+      console.log('HIPAA_AUDIT:', JSON.stringify({
+        type: 'TOKEN_EXCHANGE_SUCCESS',
+        userId: firebaseUid,
+        auth0Sub: rawSub,
+        timestamp: new Date().toISOString()
+      }));
+
+      res.json({ 
+        success: true, 
+        firebaseToken: customToken,
+        uid: firebaseUid
+      });
+    } catch (error) {
+      console.error('Token exchange error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  });
 });
 
 // Security monitoring endpoint for HIPAA compliance

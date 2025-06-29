@@ -20,7 +20,7 @@ export async function initializeFirebase(): Promise<void> {
     app = existingApp;
     db = getFirestore(existingApp);
     auth = getAuth(existingApp);
-    functions = getFunctions(existingApp);
+    functions = getFunctions(existingApp, 'us-central1');
     
     // Only try to get analytics if it was previously initialized
     try {
@@ -56,7 +56,7 @@ export async function initializeFirebase(): Promise<void> {
     console.log('[Instrumentation] Firestore initialized.');
     auth = getAuth(app);
     console.log('[Instrumentation] Auth initialized.');
-    functions = getFunctions(app);
+    functions = getFunctions(app, 'us-central1');
     console.log('[Instrumentation] Functions initialized.');
     
     // Only initialize analytics if we have a valid API key and measurement ID

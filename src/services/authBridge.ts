@@ -95,6 +95,7 @@ interface HealthCheckDetails {
 export class AuthBridge {
   private static instance: AuthBridge;
   private exchangeTokenFunction: HttpsCallable<TokenExchangeRequest, TokenExchangeResponse> | null = null;
+  private exchangeTokenUrl: string;
   private tokenCache = new Map<string, TokenCacheEntry>();
   private debugLog: AuthDebugInfo[] = [];
   private maxDebugEntries = 100;
@@ -105,12 +106,13 @@ export class AuthBridge {
   };
   
   private constructor() {
-    // Initialize the token exchange function
+    // Initialize the token exchange URL (now using HTTP endpoint)
+    this.exchangeTokenUrl = 'https://us-central1-luknerlumina-firebase.cloudfunctions.net/exchangeAuth0Token';
+    this.logDebug('🔐 Firebase HTTP endpoint initialized for Auth Bridge');
+    
+    // Keep the old callable function for backward compatibility
     if (functions) {
       this.exchangeTokenFunction = httpsCallable(functions, 'exchangeAuth0Token');
-      this.logDebug('🔐 Firebase Functions initialized for Auth Bridge');
-    } else {
-      this.logDebug('⚠️ Firebase Functions not available - Auth Bridge disabled');
     }
 
     // Set up Firebase auth state monitoring for debugging
