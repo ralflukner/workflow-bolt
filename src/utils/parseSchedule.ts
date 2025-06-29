@@ -23,6 +23,8 @@ const STATUS_ARRIVED = ['arrived', 'checked in'];
 const STATUS_APPT_PREP = ['roomed', 'appt prep started'];
 const STATUS_CHECKED_OUT = ['checked out', 'checkedout'];
 const STATUS_CANCELLED = ['cancelled', 'canceled'];
+
+// These are the PatientApptStatus values that indicate check-in
 const HAS_CHECKED_IN = ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'];
 const STATUS_IN_ROOM = ['appt-prep', 'ready-for-md', 'With Doctor'];
 
@@ -52,7 +54,8 @@ export function parseSchedule(
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const parts = line.trim().split('\t');
+    // Only trim spaces and newlines, not tabs (which are field separators)
+    const parts = line.replace(/^[ \r\n]+|[ \r\n]+$/g, '').split('\t');
     logFunction(`Line ${i + 1}: ${parts.length} parts: [${parts.slice(0, 6).join(', ')}]`);
     
     if (parts.length < 6) {
@@ -73,7 +76,14 @@ export function parseSchedule(
 
     const [, hours, minutes, period] = timeMatch;
     let hour = parseInt(hours);
+    const minuteInt = parseInt(minutes);
     const isPM = period.toUpperCase() === 'PM';
+
+    // Validate hour and minute ranges
+    if (hour < 1 || hour > 12 || minuteInt < 0 || minuteInt > 59) {
+      logFunction(`Skipping line ${i + 1}: invalid time values "${time}"`);
+      continue;
+    }
 
     if (isPM && hour !== 12) {
       hour += 12;
@@ -88,6 +98,20 @@ export function parseSchedule(
       continue;
     }
     const [month, day, year] = dobParts;
+    
+    // Validate DOB components are numeric and in valid ranges
+    const dobMonthInt = parseInt(month);
+    const dobDayInt = parseInt(day);
+    const dobYearInt = parseInt(year);
+    
+    if (isNaN(dobMonthInt) || isNaN(dobDayInt) || isNaN(dobYearInt) ||
+        dobMonthInt < 1 || dobMonthInt > 12 ||
+        dobDayInt < 1 || dobDayInt > 31 ||
+        dobYearInt < 1900 || dobYearInt > 2030) {
+      logFunction(`Skipping line ${i + 1}: invalid DOB values "${dob}"`);
+      continue;
+    }
+    
     const formattedDOB = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
     // Parse and validate appointment date (MM/DD/YYYY)
@@ -97,17 +121,30 @@ export function parseSchedule(
       continue;
     }
     const [appointmentMonth, appointmentDay, appointmentYear] = dateParts;
+    
+    // Validate date components are numeric and in valid ranges
+    const monthInt = parseInt(appointmentMonth);
+    const dayInt = parseInt(appointmentDay);
+    const yearInt = parseInt(appointmentYear);
+    
+    if (isNaN(monthInt) || isNaN(dayInt) || isNaN(yearInt) ||
+        monthInt < 1 || monthInt > 12 ||
+        dayInt < 1 || dayInt > 31 ||
+        yearInt < 1900 || yearInt > 2100) {
+      logFunction(`Skipping line ${i + 1}: invalid date values "${date}"`);
+      continue;
+    }
 
-    // Create appointment time
-    const appointmentDate = new Date(
+    // Create appointment time in UTC to avoid timezone issues
+    const appointmentDate = new Date(Date.UTC(
       parseInt(appointmentYear), 
       parseInt(appointmentMonth) - 1, // Month is 0-indexed in JavaScript
       parseInt(appointmentDay),
       hour, 
-      parseInt(minutes), 
+      minuteInt, 
       0, 
       0
-    );
+    ));
 
     // Validate the created date
     if (isNaN(appointmentDate.getTime())) {
@@ -174,15 +211,15 @@ function mapStatusToInternal(externalStatus: string): PatientApptStatus {
     return 'scheduled';
   } else if (STATUS_ARRIVED.includes(statusLower)) {
     return 'arrived';
-  } else if (STATUS_APPT_PREP.includes(statusLower)) {
+  } else if (STATUS_APPT_PREP.includes(statusLower) || statusLower === 'appt-prep') {
     return 'appt-prep';
-  } else if (statusLower === 'ready for md') {
+  } else if (statusLower === 'ready for md' || statusLower === 'ready-for-md') {
     return 'ready-for-md';
   } else if (statusLower === 'with doctor') {
     return 'With Doctor';
-  } else if (statusLower === 'seen by md') {
+  } else if (statusLower === 'seen by md' || statusLower === 'seen-by-md') {
     return 'seen-by-md';
-  } else if (STATUS_CHECKED_OUT.includes(statusLower)) {
+  } else if (STATUS_CHECKED_OUT.includes(statusLower) || statusLower === 'completed') {
     return 'completed';
   } else if (statusLower === 'rescheduled') {
     return 'Rescheduled';

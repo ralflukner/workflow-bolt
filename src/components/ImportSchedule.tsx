@@ -10,204 +10,16 @@ interface ImportScheduleProps {
   onClose: () => void;
 }
 
-// Status constants to prevent string drift
-const STATUS_CONFIRMED = ['confirmed', 'scheduled', 'reminder sent'];
-const STATUS_ARRIVED = ['arrived', 'checked in'];
-const STATUS_APPT_PREP = ['roomed', 'appt prep started'];
-const STATUS_CHECKED_OUT = ['checked out', 'checkedout'];
-const STATUS_CANCELLED = ['cancelled', 'canceled'];
-const HAS_CHECKED_IN = ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'];
-const STATUS_IN_ROOM = ['appt-prep', 'ready-for-md', 'With Doctor'];
-
 const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
   const { updatePatients } = usePatientContext();
+  const { getCurrentTime } = useTimeContext();
   const [scheduleText, setScheduleText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  
   const addLog = (message: string) => {
     debugLogger.addLog(message, 'ImportSchedule');
-  };
-
-  const parseSchedule = (text: string) => {
-    const lines = text.trim().split('\n');
-    const patients: Omit<Patient, 'id'>[] = [];
-
-    addLog(`Processing ${lines.length} lines`);
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const parts = line.trim().split('\t');
-      addLog(`Line ${i + 1}: ${parts.length} parts: [${parts.slice(0, 6).join(', ')}]`);
-      
-      if (parts.length < 6) {
-        addLog(`Skipping line ${i + 1}: not enough columns (${parts.length})`);
-        continue;
-      }
-
-      // Extract parts based on your actual data format
-      // Format: Date, Time, Status, Name, DOB, Type, [more columns], Insurance, Amount
-      const [date, time, status, name, dob, type] = parts;
-      
-      // Use the appointment type or default to "Office Visit"
-      const chiefComplaint = type || "Follow-up";
-      const checkInTimeStr = undefined; // Not present in this format
-      const roomStr = undefined; // Not present in this format
-
-      // Parse time
-      const timeMatch = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-      if (!timeMatch) {
-        addLog(`Skipping line ${i + 1}: invalid time format "${time}"`);
-        continue;
-      }
-
-      const [, hours, minutes, period] = timeMatch;
-      let hour = parseInt(hours);
-      const isPM = period.toUpperCase() === 'PM';
-
-      if (isPM && hour !== 12) {
-        hour += 12;
-      } else if (!isPM && hour === 12) {
-        hour = 0;
-      }
-
-      // Parse date
-      const dobParts = dob.split('/');
-      if (dobParts.length !== 3) {
-        addLog(`Skipping line ${i + 1}: invalid DOB format "${dob}"`);
-        continue;
-      }
-      const [month, day, year] = dobParts;
-      const formattedDOB = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-
-      // Parse appointment date (MM/DD/YYYY)
-      const dateParts = date.split('/');
-      if (dateParts.length !== 3) {
-        addLog(`Skipping line ${i + 1}: invalid date format "${date}"`);
-        continue;
-      }
-      const [appointmentMonth, appointmentDay, appointmentYear] = dateParts;
-
-      // Create appointment time
-      const appointmentDate = new Date(
-        parseInt(appointmentYear), 
-        parseInt(appointmentMonth) - 1, // Month is 0-indexed in JavaScript
-        parseInt(appointmentDay),
-        hour, 
-        parseInt(minutes), 
-        0, 
-        0
-      );
-
-      // Convert status to proper PatientApptStatus type
-      const externalStatus = status.trim() as PatientApptStatus;
-
-      // Map external status to internal workflow status
-      let patientStatus: PatientApptStatus = 'scheduled';
-      const statusLower = externalStatus.toLowerCase();
-      
-      if (STATUS_CONFIRMED.includes(statusLower)) {
-        patientStatus = 'scheduled';
-      } else if (STATUS_ARRIVED.includes(statusLower)) {
-        patientStatus = 'arrived';
-      } else if (STATUS_APPT_PREP.includes(statusLower)) {
-        patientStatus = 'appt-prep';
-      } else if (statusLower === 'ready for md') {
-        patientStatus = 'ready-for-md';
-      } else if (statusLower === 'with doctor') {
-        patientStatus = 'With Doctor';
-      } else if (statusLower === 'seen by md') {
-        patientStatus = 'seen-by-md';
-      } else if (STATUS_CHECKED_OUT.includes(statusLower)) {
-        patientStatus = 'completed';
-      } else if (statusLower === 'rescheduled') {
-        patientStatus = 'Rescheduled';
-      } else if (STATUS_CANCELLED.includes(statusLower)) {
-        patientStatus = 'Cancelled';
-      } else if (statusLower === 'no show') {
-        patientStatus = 'No Show';
-      }
-
-      // Set check-in time for patients who have already checked in
-      let checkInTime = undefined;
-      let room = undefined;
-
-      // Check if this patient has checked in (based on status)
-      const hasCheckedIn = HAS_CHECKED_IN.includes(patientStatus);
-      
-      if (hasCheckedIn) {
-        if (checkInTimeStr) {
-          // Parse check-in time from import data if available (format: "12:31 PM")
-          const checkInMatch = checkInTimeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-          if (checkInMatch) {
-            const [, checkInHours, checkInMinutes, checkInPeriod] = checkInMatch;
-            let checkInHour = parseInt(checkInHours);
-            const isCheckInPM = checkInPeriod.toUpperCase() === 'PM';
-
-            if (isCheckInPM && checkInHour !== 12) {
-              checkInHour += 12;
-            } else if (!isCheckInPM && checkInHour === 12) {
-              checkInHour = 0;
-            }
-
-            // Create check-in time using the appointment date but with check-in time
-            const checkInDate = new Date(
-              parseInt(appointmentYear), 
-              parseInt(appointmentMonth) - 1,
-              parseInt(appointmentDay),
-              checkInHour,
-              parseInt(checkInMinutes),
-              0,
-              0
-            );
-
-            checkInTime = checkInDate.toISOString();
-          } else {
-            // Fallback: If checkInTimeStr exists but regex fails, 
-            // set check-in time to 30 minutes before appointment
-            const fallbackCheckInTime = new Date(appointmentDate);
-            fallbackCheckInTime.setMinutes(fallbackCheckInTime.getMinutes() - 30);
-            checkInTime = fallbackCheckInTime.toISOString();
-          }
-        } else {
-          // If no explicit check-in time but patient has checked in status,
-          // set check-in time to 30 minutes before appointment for testing
-          const defaultCheckInTime = new Date(appointmentDate);
-          defaultCheckInTime.setMinutes(defaultCheckInTime.getMinutes() - 30);
-          checkInTime = defaultCheckInTime.toISOString();
-        }
-      }
-
-      // Use room from import data if available, otherwise assign a default room for patients who are in a room
-      if (roomStr) {
-        room = roomStr.trim();
-      } else if (STATUS_IN_ROOM.includes(patientStatus)) {
-        room = 'Waiting'; // Default room assignment
-      }
-
-      // Map appointment type to valid enum values
-      let appointmentType: AppointmentType = 'Office Visit';
-      if (type && type.toLowerCase().includes('lab')) {
-        appointmentType = 'LABS';
-      }
-
-      const patient = {
-        name: name.trim(),
-        dob: formattedDOB,
-        appointmentTime: appointmentDate.toISOString(),
-        appointmentType,
-        chiefComplaint: chiefComplaint.trim(),
-        provider: 'Dr. Lukner',
-        status: patientStatus,
-        checkInTime,
-        room,
-      };
-      
-      patients.push(patient);
-      addLog(`Successfully parsed line ${i + 1}: ${patient.name} - ${patient.status}`);
-    }
-
-    return patients;
   };
 
   const handleImport = () => {
@@ -218,7 +30,7 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
 
     try {
       addLog('📋 About to parse schedule text: ' + scheduleText.substring(0, 100) + '...');
-      const patients = parseSchedule(scheduleText);
+      const patients = parseSchedule(scheduleText, getCurrentTime(), { logFunction: addLog });
 
       addLog(`✅ Parsing complete. Found ${patients.length} valid patients`);
 
@@ -230,7 +42,7 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
 
       // Add unique IDs to all patients
       addLog(`🏷️ Adding unique IDs to ${patients.length} patients`);
-      const patientsWithIds = patients.map(patientData => ({
+      const patientsWithIds: Patient[] = patients.map(patientData => ({
         ...patientData,
         id: `pat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       }));

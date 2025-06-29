@@ -274,8 +274,7 @@ describe('parseSchedule', () => {
         'Office Visit',
         'Consultation',
         'Follow-up',
-        'Annual Physical',
-        ''
+        'Annual Physical'
       ];
 
       officeTypes.forEach(officeType => {
@@ -284,8 +283,37 @@ describe('parseSchedule', () => {
         
         expect(result).toHaveLength(1);
         expect(result[0].appointmentType).toBe('Office Visit');
-        expect(result[0].chiefComplaint).toBe(officeType || 'Follow-up');
+        expect(result[0].chiefComplaint).toBe(officeType);
       });
+    });
+
+    it('handles empty appointment type correctly', () => {
+      const mockLog = jest.fn();
+      const tsv = createRow({ type: '' });
+      
+      // Manually check what createRow produces
+      const parts = tsv.split('\t');
+      
+      expect(parts).toHaveLength(6); // Should have 6 parts
+      expect(parts[5]).toBe(''); // Last part should be empty string
+      
+      const result = parseSchedule(tsv, MOCK_NOW, { logFunction: mockLog });
+      
+      // Check what the log says
+      const logCalls = mockLog.mock.calls.map(call => call[0]);
+      expect(logCalls).toContain('Processing 1 lines');
+      
+      if (result.length === 0) {
+        // If parsing failed, check why
+        const skipMessage = logCalls.find(log => log.includes('Skipping'));
+        if (skipMessage) {
+          throw new Error(`Parsing failed: ${skipMessage}`);
+        }
+      }
+      
+      expect(result).toHaveLength(1);
+      expect(result[0].appointmentType).toBe('Office Visit');
+      expect(result[0].chiefComplaint).toBe('Follow-up');
     });
   });
 
@@ -417,13 +445,17 @@ describe('parseSchedule', () => {
 
   describe('Performance', () => {
     it('handles large datasets efficiently', () => {
-      // Generate 1000 rows of test data
-      const largeDataset = Array.from({ length: 1000 }, (_, i) => 
-        createRow({ 
+      // Generate 1000 rows of test data with valid times
+      const largeDataset = Array.from({ length: 1000 }, (_, i) => {
+        const hour = (9 + (i % 4)); // 9, 10, 11, 12 AM
+        const minute = ((i * 15) % 60);
+        const time = `${hour}:${String(minute).padStart(2, '0')} AM`;
+        
+        return createRow({ 
           name: `Patient ${i + 1}`,
-          time: `${(9 + (i % 8))}:${String((i * 15) % 60).padStart(2, '0')} AM`
-        })
-      ).join('\n');
+          time: time
+        });
+      }).join('\n');
 
       const startTime = Date.now();
       const result = parseSchedule(largeDataset, MOCK_NOW);
