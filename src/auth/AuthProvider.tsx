@@ -77,16 +77,28 @@ VITE_AUTH0_SCOPE=openid profile email (optional)`}
 const DevHelpers: React.FC = () => {
   const { getAccessTokenSilently, loginWithPopup } = useAuth0();
 
-  React.useEffect(() => {
+  // Set up dev helpers immediately without useEffect
+  React.useMemo(() => {
     (window as unknown as Record<string, unknown>).getToken = () => getAccessTokenSilently();
     (window as unknown as Record<string, unknown>).loginPopup = () => loginWithPopup();
     console.log('🔧 Dev helpers available: getToken() • loginPopup()');
+  }, [getAccessTokenSilently, loginWithPopup]);
 
-    return () => {
+  // Cleanup using a ref callback pattern
+  const cleanupRef = React.useRef<() => void>();
+  React.useMemo(() => {
+    cleanupRef.current = () => {
       delete (window as unknown as Record<string, unknown>).getToken;
       delete (window as unknown as Record<string, unknown>).loginPopup;
     };
-  }, [getAccessTokenSilently, loginWithPopup]);
+    
+    // Return cleanup for when component unmounts
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+      }
+    };
+  }, []);
 
   return null;
 };
