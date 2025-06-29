@@ -313,6 +313,32 @@ export function secureLog(message: string, data?: unknown): void {
 
 </details>
 
+### getFirebaseConfig Hardening (2025-06-29)
+
+A new HIPAA-compliant **pre-authentication configuration endpoint** was implemented to eliminate the CORS "chicken-and-egg" issue (the SPA needs Firebase config to authenticate, but authenticated calls were blocked by CORS).
+
+Key controls:
+
+1. **First-gen Cloud Function (`functions.https.onRequest`)** – avoids v2 cold-start issues and keeps deployment simple.
+2. **Tight CORS allow-list** – only prod domains and `http://localhost:5173`; methods limited to `GET, OPTIONS`; `credentials:false` to block cookie leakage.
+3. **Minimal data exposure** – returns only `apiKey`, `authDomain`, `projectId` (other fields removed).
+4. **Audit logging** – logs `origin` + `user-agent` for every call (HIPAA traceability).
+5. **Basic request validation** – rejects requests missing `User-Agent` header or sent from disallowed origins.
+6. **Rate-limiting inheritance** – once the function is migrated into the shared Express app, it will automatically inherit global DDoS limits.
+7. **Environment source of truth** – values pulled from GSM via the new `pull-secrets.js` pipeline so prod and local stay in sync.
+
+### Secret Integrity Guard (2025-06-29)
+
+`scripts/pull-secrets.js` now aborts if any secret value contains common placeholder patterns (`example.com`, `placeholder`, `changeme`, `dummy`, `YOUR_…`). This prevents accidental deployment of dummy credentials.
+
+Outcome:
+
+* Local **credential-verification** suite passes end-to-end (`isValid: true`).
+* Browser CORS tests succeed for both `health` and `getFirebaseConfig`.
+* Deployment log shows `functions[getFirebaseConfig]` updated without errors.
+
+> See [src/get-firebase-config.js](../../functions/src/get-firebase-config.js) for the final reference implementation.
+
 ---
 
 ## Development Process Improvements
