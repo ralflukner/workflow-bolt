@@ -439,7 +439,14 @@ const { getFirebaseConfig } = require('./src/get-firebase-config');
 exports.getFirebaseConfig = getFirebaseConfig;
 
 // Secure Auth0 token exchange function (HIPAA Compliant)
-exports.exchangeAuth0Token = onCall({ cors: true }, async (request) => {
+exports.exchangeAuth0Token = onCall({ 
+  cors: {
+    origin: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+  }
+}, async (request) => {
   const { auth0Token } = request.data || {};
   if (!auth0Token) {
     throw new functions.https.HttpsError(

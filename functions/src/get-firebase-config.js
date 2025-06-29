@@ -1,9 +1,14 @@
 // Public endpoint to get Firebase configuration
 // This is needed to bootstrap the Firebase SDK on the client
 
-const { onCall } = require('firebase-functions/v2/https');
-const functions = require('firebase-functions');
+const { onRequest } = require('firebase-functions/v2/https');
 const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
+const cors = require('cors')({
+  origin: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false
+});
 
 const gsm = new SecretManagerServiceClient();
 const PROJECT_ID = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || 'luknerlumina-firebase';
@@ -15,27 +20,28 @@ const PROJECT_ID = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJEC
  */
 let cachedConfig;          // <-- module-level cache
 
-const getFirebaseConfig = onCall({ cors: true, memory: '1GiB' }, async (request) => {
-  // Require authentication for HIPAA compliance
-  if (!request.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
-  }
+const getFirebaseConfig = onRequest({ 
+  memory: '1GiB' 
+}, async (req, res) => {
+  // Handle CORS preflight requests
+  cors(req, res, async () => {
 
-  try {
-    if (!cachedConfig) {
-      const name = `projects/${PROJECT_ID}/secrets/firebase-config/versions/latest`;
-      const [version] = await gsm.accessSecretVersion({ name });
-      const configData = version.payload?.data?.toString() || '';
-      if (!configData) throw new Error('Firebase config not found in Secret Manager');
+    try {
+      if (!cachedConfig) {
+        const name = `projects/${PROJECT_ID}/secrets/firebase-config/versions/latest`;
+        const [version] = await gsm.accessSecretVersion({ name });
+        const configData = version.payload?.data?.toString() || '';
+        if (!configData) throw new Error('Firebase config not found in Secret Manager');
 
-      cachedConfig = JSON.parse(configData);
+        cachedConfig = JSON.parse(configData);
+      }
+   
+      res.status(200).json(cachedConfig);
+    } catch (error) {
+      console.error('Error fetching Firebase config:', error);
+      res.status(500).json({ error: 'Failed to fetch Firebase configuration' });
     }
- 
-    return cachedConfig;
-  } catch (error) {
-    console.error('Error fetching Firebase config:', error);
-    throw new functions.https.HttpsError('internal', 'Failed to fetch Firebase configuration');
-  }
+  });
 });
 
 module.exports = { getFirebaseConfig };
