@@ -484,12 +484,46 @@ GOOGLE_APPLICATION_CREDENTIALS=/Users/ralfb.luknermdphd/PycharmProjects/workflow
 - ✅ **Node.js 22 → 20 runtime fix successful**
 - ❌ **Firebase Admin credentials misconfiguration blocking startup**
 
+### ✅ Fix 13: Firebase Admin Credentials Configuration  
+**Status: ✅ APPLIED**  
+**File**: `functions/index.js:49-71`
+
+```javascript
+// Problem: GOOGLE_APPLICATION_CREDENTIALS pointing to local file in cloud
+// Before:
+admin.initializeApp({
+  projectId: 'luknerlumina-firebase'
+});
+
+// After: Use default credentials in cloud, explicit credentials in emulator only
+if (!admin.apps.length) {
+  const config = { projectId: 'luknerlumina-firebase' };
+  
+  // Only set credential if running in emulator and file exists
+  if (process.env.FUNCTIONS_EMULATOR && process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    try {
+      const fs = require('fs');
+      if (fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
+        const serviceAccount = require(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+        config.credential = admin.credential.cert(serviceAccount);
+      }
+    } catch (error) {
+      console.warn('Could not load service account credentials, using default:', error.message);
+    }
+  }
+  
+  admin.initializeApp(config);
+}
+```
+
+**Solution**: Firebase Functions automatically provide default service account credentials in the cloud environment. Only use explicit credentials file in emulator mode when file exists.
+
 ### Next Steps
-1. 🔄 Fix Firebase Admin initialization for cloud environment
-2. 🔄 Deploy `exchangeAuth0Token` with correct credentials
-3. 🔄 Deploy remaining functions
+1. 🔄 Deploy `exchangeAuth0Token` with fixed credentials
+2. 🔄 Deploy remaining functions
+3. 🔄 Test authentication flow end-to-end
 4. 🔄 Re-enable monitoring and full functionality
 
-**Production Impact**: Authentication still down - service account credentials issue identified
+**Expected Outcome**: Authentication system restored - service account credentials fixed
 
  
