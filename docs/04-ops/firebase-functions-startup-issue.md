@@ -64,10 +64,11 @@ The user-provided container failed to start and listen on the port defined provi
 </details>
 
 ### Failed Attempts (Fixes 1-10)
-Before identifying the root cause, numerous code-level fixes were attempted:
+
+<details><summary>🔄 Code-level Fixes Attempted (All Failed)</summary>
 
 1. **Node.js Version Alignment** - Updated package.json engines
-2. **Firebase Admin Duplicate Initialization** - Removed duplicate app creation
+2. **Firebase Admin Duplicate Initialization** - Removed duplicate app creation  
 3. **Lazy Database Initialization** - Deferred Firestore access
 4. **Monitoring Module Disabled** - Stubbed complex monitoring
 5. **Lazy Loading Implementation** - Deferred heavy module loading
@@ -76,6 +77,8 @@ Before identifying the root cause, numerous code-level fixes were attempted:
 8. **Function Deletion and Fresh Deployment** - Complete redeployment
 9. **Minimal Function Implementation** - Ultra-minimal code
 10. **Import Syntax Corrections** - Fixed module imports
+
+</details>
 
 > **Result**: All code-level fixes failed - same container timeout error
 
@@ -240,13 +243,19 @@ const handleImport = () => {
 
 ### Performance Improvements
 
+<details><summary>📊 Before/After Performance Metrics</summary>
+
 **Before**: Complex React tests taking seconds to render and validate business logic
 **After**: 
 - **Pure data tests**: Run in milliseconds (`1.215s` for 60 tests)
 - **UI tests**: Focus only on user interactions
 - **Performance test**: 1000 records parsed in <100ms
 
+</details>
+
 ### Test Coverage Achievements
+
+<details><summary>📈 Comprehensive Test Coverage Details</summary>
 
 | Category | Test Count | Coverage |
 |----------|------------|----------|
@@ -256,6 +265,8 @@ const handleImport = () => {
 | Error Handling | 8 tests | Malformed data, insufficient columns |
 | Performance | 1 test | Large dataset processing |
 | **Total** | **60 tests** | **Comprehensive edge case coverage** |
+
+</details>
 
 ---
 
@@ -403,19 +414,9 @@ node test-functions-properly.cjs
 
 ---
 
-## Future Improvements Pipeline
+## Future Improvements
 
-### Immediate Next Steps (Ready to Implement)
-1. **Console error detection** - Add Jest setup for catching React errors
-2. **npm script optimization** - Implement `--runInBand` for test stability  
-3. **Runtime error sentinel** - Add App startup smoke test
-4. **Coverage reporting** - Weekly coverage reports with 80%+ target
-
-### Long-term Enhancements
-1. **Additional utility extraction** - Other complex logic components
-2. **End-to-end testing** - Cypress/Playwright for user flows
-3. **Performance monitoring** - Automated performance regression testing
-4. **Security scanning** - Automated dependency vulnerability checks
+See the [Operational Improvement Backlog](improvement-backlog.md) for detailed enhancement plans and implementation priorities.
 
 ---
 
@@ -432,7 +433,8 @@ node test-functions-properly.cjs
 
 **Total Resolution Time**: ~8 hours of focused debugging + enhancement  
 **Systems Affected**: Firebase Functions + Test Suite  
-**Final Status**: Both issues completely resolved with improvements
+
+> **Final Status**: Both issues completely resolved with improvements
 
 ---
 
@@ -466,6 +468,20 @@ node test-functions-properly.cjs
 5. **Knowledge Preservation**: Comprehensive documentation for future reference
 
 This resolution demonstrates the value of persistent debugging combined with systematic quality improvements, resulting in both immediate issue resolution and long-term codebase enhancement.
+
+---
+
+## ✅ Post-mortem Checklist
+
+- [x] Incident document written
+- [x] Root cause analysis completed
+- [x] Fix verification documented
+- [x] Test suite enhancements implemented
+- [x] Security improvements applied
+- [x] Knowledge transfer completed
+- [ ] RCA reviewed by peer
+- [ ] Action items assigned in project management
+- [ ] Archive in quarterly compliance bundle
 
 ---
 
