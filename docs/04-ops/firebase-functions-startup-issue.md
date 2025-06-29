@@ -275,6 +275,9 @@ const handleImport = () => {
 ### File System Protection Enhancement
 
 #### Enhanced redact.ts Security Constraints
+
+<details><summary>🔒 Security Implementation Details</summary>
+
 ```typescript
 // CRITICAL SECURITY CONSTRAINTS ADDED
 const isTestEnvironment = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
@@ -293,7 +296,12 @@ if (input.includes('/') && (input.includes('.ts') || input.includes('.js') || in
 - Processing of file paths in redaction functions
 - Dangerous Node.js API access outside test environment
 
+</details>
+
 #### HIPAA Compliance Improvements
+
+<details><summary>🏥 HIPAA Logging Implementation</summary>
+
 ```typescript
 export function secureLog(message: string, data?: unknown): void {
   if (typeof data === 'object') {
@@ -302,6 +310,8 @@ export function secureLog(message: string, data?: unknown): void {
   }
 }
 ```
+
+</details>
 
 ---
 
