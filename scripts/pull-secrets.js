@@ -51,7 +51,6 @@ const SECRETS_TO_PULL = [
   { name: 'VITE_TEBRA_PASSWORD', envVar: 'VITE_TEBRA_PASSWORD' },
   { name: 'VITE_TEBRA_CUSTOMER_KEY', envVar: 'VITE_TEBRA_CUSTOMER_KEY' },
   { name: 'VITE_TEBRA_WSDL_URL', envVar: 'VITE_TEBRA_WSDL_URL' },
-  { name: 'VITE_TEBRA_CLOUD_RUN_URL', envVar: 'VITE_TEBRA_CLOUD_RUN_URL' },
   // Gmail OAuth2 secrets
   { name: 'GMAIL_CLIENT_ID', envVar: 'GMAIL_CLIENT_ID' },
   { name: 'GMAIL_CLIENT_SECRET', envVar: 'GMAIL_CLIENT_SECRET' },
