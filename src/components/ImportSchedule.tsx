@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { Patient, PatientApptStatus, AppointmentType } from '../types';
 import { X, Check, AlertCircle } from 'lucide-react';
+import { debugLogger } from '../services/debugLogger';
 
 interface ImportScheduleProps {
   onClose: () => void;
@@ -22,21 +23,41 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const addLog = (message: string) => {
+    debugLogger.addLog(message, 'ImportSchedule');
+  };
 
   const parseSchedule = (text: string) => {
     const lines = text.trim().split('\n');
     const patients: Omit<Patient, 'id'>[] = [];
 
-    for (const line of lines) {
-      const parts = line.trim().split('\t');
-      if (parts.length < 7) continue;
+    addLog(`Processing ${lines.length} lines`);
 
-      // Extract all parts, with check-in time and room being optional (last columns)
-      const [date, time, status, name, dob, type, chiefComplaint, checkInTimeStr, roomStr] = parts;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const parts = line.trim().split('\t');
+      addLog(`Line ${i + 1}: ${parts.length} parts: [${parts.slice(0, 6).join(', ')}]`);
+      
+      if (parts.length < 6) {
+        addLog(`Skipping line ${i + 1}: not enough columns (${parts.length})`);
+        continue;
+      }
+
+      // Extract parts based on your actual data format
+      // Format: Date, Time, Status, Name, DOB, Type, [more columns], Insurance, Amount
+      const [date, time, status, name, dob, type] = parts;
+      
+      // Use the appointment type or default to "Office Visit"
+      const chiefComplaint = type || "Follow-up";
+      const checkInTimeStr = undefined; // Not present in this format
+      const roomStr = undefined; // Not present in this format
 
       // Parse time
       const timeMatch = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-      if (!timeMatch) continue;
+      if (!timeMatch) {
+        addLog(`Skipping line ${i + 1}: invalid time format "${time}"`);
+        continue;
+      }
 
       const [, hours, minutes, period] = timeMatch;
       let hour = parseInt(hours);
@@ -49,11 +70,21 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
       }
 
       // Parse date
-      const [month, day, year] = dob.split('/');
+      const dobParts = dob.split('/');
+      if (dobParts.length !== 3) {
+        addLog(`Skipping line ${i + 1}: invalid DOB format "${dob}"`);
+        continue;
+      }
+      const [month, day, year] = dobParts;
       const formattedDOB = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
       // Parse appointment date (MM/DD/YYYY)
-      const [appointmentMonth, appointmentDay, appointmentYear] = date.split('/');
+      const dateParts = date.split('/');
+      if (dateParts.length !== 3) {
+        addLog(`Skipping line ${i + 1}: invalid date format "${date}"`);
+        continue;
+      }
+      const [appointmentMonth, appointmentDay, appointmentYear] = dateParts;
 
       // Create appointment time
       const appointmentDate = new Date(
@@ -88,11 +119,11 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
       } else if (STATUS_CHECKED_OUT.includes(statusLower)) {
         patientStatus = 'completed';
       } else if (statusLower === 'rescheduled') {
-        patientStatus = 'rescheduled';
+        patientStatus = 'Rescheduled';
       } else if (STATUS_CANCELLED.includes(statusLower)) {
-        patientStatus = 'cancelled';
+        patientStatus = 'Cancelled';
       } else if (statusLower === 'no show') {
-        patientStatus = 'no-show';
+        patientStatus = 'No Show';
       }
 
       // Set check-in time for patients who have already checked in
@@ -152,28 +183,39 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
         room = 'Waiting'; // Default room assignment
       }
 
-      patients.push({
+      // Map appointment type to valid enum values
+      let appointmentType: AppointmentType = 'Office Visit';
+      if (type && type.toLowerCase().includes('lab')) {
+        appointmentType = 'LABS';
+      }
+
+      const patient = {
         name: name.trim(),
         dob: formattedDOB,
         appointmentTime: appointmentDate.toISOString(),
-        appointmentType: type as AppointmentType,
+        appointmentType,
         chiefComplaint: chiefComplaint.trim(),
         provider: 'Dr. Lukner',
         status: patientStatus,
         checkInTime,
         room,
-      });
+      };
+      
+      patients.push(patient);
+      addLog(`Successfully parsed line ${i + 1}: ${patient.name} - ${patient.status}`);
     }
 
     return patients;
   };
 
   const handleImport = () => {
+    addLog('🎯 Starting import process...');
     setProcessing(true);
     setError(null);
     setSuccess(null);
 
     try {
+      addLog('📋 About to parse schedule text: ' + scheduleText.substring(0, 100) + '...');
       const patients = parseSchedule(scheduleText);
 
       if (patients.length === 0) {
@@ -225,7 +267,7 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
             className={`w-full h-64 bg-gray-700 text-white border rounded p-2 font-mono ${
               error ? 'border-red-500' : success ? 'border-green-500' : 'border-gray-600'
             }`}
-            placeholder="MM/DD/YYYY&#9;9:00AM&#9;Confirmed&#9;PATIENT NAME&#9;MM/DD/YYYY&#9;Office Visit&#9;Follow-Up&#9;12:31 PM&#9;Room 1"
+            placeholder="06/28/2025&#9;09:00 AM&#9;Confirmed&#9;TONYA LEWIS&#9;04/03/1956&#9;Office Visit&#9;INSURANCE 2025&#9;$0.00"
             disabled={processing}
           />
         </div>
@@ -237,32 +279,42 @@ const ImportSchedule: React.FC<ImportScheduleProps> = ({ onClose }) => {
           </div>
         )}
 
-        <div className="flex justify-end space-x-3">
+        <div className="flex justify-between">
           <button
-            onClick={onClose}
-            className={`px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors ${success ? 'hidden' : ''}`}
-            disabled={processing}
+            onClick={downloadLogs}
+            disabled={debugLogs.length === 0}
+            className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-500 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
           >
-            Cancel
+            Download Debug Logs
           </button>
-          <button
-            onClick={success ? onClose : handleImport}
-            disabled={!scheduleText.trim() || processing}
-            className={`px-4 py-2 text-white rounded transition-colors flex items-center gap-2 ${
-              processing ? 'bg-blue-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500'
-            }`}
-          >
-            {processing ? (
-              <>
-                <span className="animate-spin">⏳</span>
-                Processing...
-              </>
-            ) : (
-              <>
-                {success ? 'Close' : 'Import Schedule'}
-              </>
-            )}
-          </button>
+          
+          <div className="flex space-x-3">
+            <button
+              onClick={onClose}
+              className={`px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors ${success ? 'hidden' : ''}`}
+              disabled={processing}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={success ? onClose : handleImport}
+              disabled={!scheduleText.trim() || processing}
+              className={`px-4 py-2 text-white rounded transition-colors flex items-center gap-2 ${
+                processing ? 'bg-blue-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500'
+              }`}
+            >
+              {processing ? (
+                <>
+                  <span className="animate-spin">⏳</span>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  {success ? 'Close' : 'Import Schedule'}
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

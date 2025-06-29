@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { FirebaseProvider } from './contexts/firebase';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { testTebraGetAppointments } from './utils/testTebraAppointments';
 import { testTebraGetAppointmentsViaFirebase } from './utils/testTebraViaFirebase';
 import { debugFirebaseAuth } from './debug-firebase-auth';
@@ -17,6 +18,16 @@ declare global {
     decodeAuth0Token: typeof decodeAuth0Token;
   }
 }
+
+// Create QueryClient instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 // Make test functions available globally for console testing
 if (import.meta.env.DEV && typeof window !== 'undefined') {
@@ -33,8 +44,10 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <FirebaseProvider>
-      <App />
-    </FirebaseProvider>
+    <QueryClientProvider client={queryClient}>
+      <FirebaseProvider>
+        <App />
+      </FirebaseProvider>
+    </QueryClientProvider>
   </StrictMode>
 );
