@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import type { Patient } from '../types';
 import { usePatientContext } from '../hooks/usePatientContext';
 
@@ -13,29 +13,6 @@ export const DebugTextWindow: React.FC<DebugTextWindowProps> = ({
 }) => {
   const { patients, getWaitTime } = usePatientContext();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Debug logging
-  useEffect(() => {
-    console.log('[DebugTextWindow] Patients updated:', patients.length, 'patients');
-    console.log('[DebugTextWindow] Patient data:', patients);
-  }, [patients]);
-
-  // Sync scroll position when it changes from parent
-  useEffect(() => {
-    if (textAreaRef.current && scrollPosition !== undefined) {
-      const maxScroll = textAreaRef.current.scrollHeight - textAreaRef.current.clientHeight;
-      textAreaRef.current.scrollTop = scrollPosition * maxScroll;
-    }
-  }, [scrollPosition]);
-
-  // Handle local scroll and notify parent
-  const handleScroll = () => {
-    if (textAreaRef.current && onScroll) {
-      const maxScroll = textAreaRef.current.scrollHeight - textAreaRef.current.clientHeight;
-      const relativePosition = maxScroll > 0 ? textAreaRef.current.scrollTop / maxScroll : 0;
-      onScroll(relativePosition);
-    }
-  };
 
   const formatPatientData = (patient: Patient): string => {
     const waitTime = getWaitTime(patient);

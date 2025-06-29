@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Clock, Wifi, Activity, ExternalLink, AlertCircle } from 'lucide-react';
 import { tebraTestConnection } from '../services/tebraApi';
 
@@ -132,16 +132,6 @@ const MonitoringStatus: React.FC<MonitoringStatusProps> = ({ className = '' }) =
     
     return 'unknown';
   };
-
-  useEffect(() => {
-    // Initial check
-    checkProxyHealth();
-    
-    // Check every 2 minutes for better responsiveness
-    const interval = setInterval(checkProxyHealth, 120000);
-    
-    return () => clearInterval(interval);
-  }, [checkProxyHealth]);
 
   const getStatusIcon = () => {
     switch (status.proxy) {

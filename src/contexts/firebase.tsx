@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useState } from 'react';
 import { initializeFirebase } from '../config/firebase';
 
 // Define the context type
@@ -17,19 +17,6 @@ export const FirebaseContext = createContext<FirebaseContextType>({
 export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    console.log('[Instrumentation] Calling initializeFirebase...');
-    initializeFirebase()
-      .then(() => {
-        console.log('[Instrumentation] initializeFirebase resolved successfully.');
-        setIsInitialized(true);
-      })
-      .catch((err) => {
-        console.error('[Instrumentation] initializeFirebase failed:', err);
-        setError(err);
-      });
-  }, []);
 
   if (error) {
     return (

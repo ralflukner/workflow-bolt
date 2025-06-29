@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -15,22 +15,6 @@ const TimeControl: React.FC = () => {
     currentTime.toISOString().split('T')[0]
   );
   const [isPM, setIsPM] = React.useState(currentTime.getHours() >= 12);
-
-  // Update states when time changes
-  useEffect(() => {
-    const newCurrentTime = getCurrentTime();
-    setCurrentTime(newCurrentTime);
-
-    if (!timeMode.simulated) {
-      // Only update inputs in real-time mode
-      const hours = newCurrentTime.getHours();
-      const minutes = newCurrentTime.getMinutes();
-      const h = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-      setTimeInput(`${h.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
-      setDateInput(newCurrentTime.toISOString().split('T')[0]);
-      setIsPM(hours >= 12);
-    }
-  }, [timeMode.currentTime, timeMode.simulated, getCurrentTime]);
 
   const updateTimeInputFromDate = (date: Date) => {
     const hours = date.getHours();

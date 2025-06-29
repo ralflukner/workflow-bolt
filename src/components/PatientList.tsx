@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 import type { PatientApptStatus } from '../types';
 import { usePatientContext } from '../hooks/usePatientContext';
 import PatientCard from './PatientCard';
@@ -31,14 +31,6 @@ const PatientList: React.FC<PatientListProps> = ({ status, title, scrollPosition
       default: return 'bg-gray-700';
     }
   };
-
-  // Sync scroll position when it changes from parent
-  useEffect(() => {
-    if (scrollContainerRef.current && scrollPosition !== undefined) {
-      const maxScroll = scrollContainerRef.current.scrollHeight - scrollContainerRef.current.clientHeight;
-      scrollContainerRef.current.scrollTop = scrollPosition * maxScroll;
-    }
-  }, [scrollPosition]);
 
   // Handle local scroll and notify parent
   const handleScroll = () => {
