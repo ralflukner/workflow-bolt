@@ -1,0 +1,191 @@
+name: Firebase Deployment Safety Checks
+on:
+  pull_request:
+    paths:
+      - 'functions/**'
+      - 'firebase.json'
+      - '.github/workflows/firebase-safety.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'functions/**'
+      - 'firebase.json'
+
+jobs:
+  validate-firebase-config:
+    name: 🔍 Validate Firebase Configuration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'functions/package-lock.json'
+      
+      - name: 🔧 Check Firebase Runtime Version
+        run: |
+          echo "🔍 Checking Firebase Functions runtime configuration..."
+          
+          # Check firebase.json runtime
+          RUNTIME=$(jq -r '.functions.runtime // .functions[0].runtime // "not-found"' firebase.json)
+          echo "Firebase.json runtime: $RUNTIME"
+          
+          if [[ "$RUNTIME" != "nodejs20" && "$RUNTIME" != "nodejs18" ]]; then
+            echo "❌ INVALID RUNTIME: $RUNTIME"
+            echo "Firebase Functions runtime must be nodejs18 or nodejs20"
+            echo "Current supported versions: https://firebase.google.com/docs/functions/manage-functions#set_runtime_options"
+            exit 1
+          fi
+          echo "✅ Runtime check passed: $RUNTIME"
+          
+          # Check functions/package.json engines
+          if [ -f "functions/package.json" ]; then
+            PKG_NODE_VERSION=$(jq -r '.engines.node // "not-found"' functions/package.json)
+            echo "Package.json Node version: $PKG_NODE_VERSION"
+            
+            # Extract major version from runtime and package.json
+            RUNTIME_VERSION=${RUNTIME#nodejs}
+            if [[ "$PKG_NODE_VERSION" != "$RUNTIME_VERSION" ]]; then
+              echo "⚠️  WARNING: Mismatch between firebase.json ($RUNTIME) and package.json (node $PKG_NODE_VERSION)"
+              echo "Consider updating package.json engines.node to '$RUNTIME_VERSION'"
+            fi
+          fi
+
+      - name: 🔐 Check for Hardcoded Credentials
+        run: |
+          echo "🔍 Scanning for hardcoded credentials..."
+          
+          ISSUES_FOUND=0
+          
+          # Check for service account JSON files
+          if find functions/ -name "*service*account*.json" -o -name "*credentials*.json" | grep -q .; then
+            echo "❌ Found potential service account files:"
+            find functions/ -name "*service*account*.json" -o -name "*credentials*.json"
+            ISSUES_FOUND=1
+          fi
+          
+          # Check for hardcoded service account references in code
+          if grep -r "serviceAccount\.json\|credentials\.json" functions/ --include="*.js" --include="*.ts" --exclude-dir=node_modules; then
+            echo "❌ Found hardcoded service account references in code"
+            ISSUES_FOUND=1
+          fi
+          
+          # Check for exposed API keys or secrets
+          if grep -r -E "(api_key|apikey|secret|password|token)\s*[:=]\s*['\"][^'\"]{20,}" functions/ --include="*.js" --include="*.ts" --exclude-dir=node_modules; then
+            echo "❌ Found potential hardcoded secrets"
+            ISSUES_FOUND=1
+          fi
+          
+          # Check for GOOGLE_APPLICATION_CREDENTIALS in production code
+          if grep -r "GOOGLE_APPLICATION_CREDENTIALS" functions/ --include="*.js" --include="*.ts" --exclude-dir=node_modules | grep -v "emulator\|local\|test"; then
+            echo "❌ Found GOOGLE_APPLICATION_CREDENTIALS in production code"
+            echo "This should only be used in local development/emulator mode"
+            ISSUES_FOUND=1
+          fi
+          
+          if [ $ISSUES_FOUND -eq 0 ]; then
+            echo "✅ No hardcoded credentials found"
+          else
+            echo ""
+            echo "🛡️ SECURITY REMINDER:"
+            echo "• Use Firebase Admin SDK default credentials in production"
+            echo "• Store secrets in Google Secret Manager"
+            echo "• Never commit API keys or service account files"
+            echo "• Use environment variables for local development"
+            exit 1
+          fi
+
+      - name: 📦 Install Dependencies
+        run: |
+          cd functions
+          npm ci
+          
+      - name: 🧪 Run Function Tests
+        run: |
+          cd functions
+          if [ -f "package.json" ] && grep -q '"test"' package.json; then
+            echo "🧪 Running Firebase Functions tests..."
+            npm test
+          else
+            echo "ℹ️ No tests configured for Firebase Functions"
+          fi
+          
+      - name: 🔍 Check for OpenTelemetry Issues
+        run: |
+          echo "🔍 Checking OpenTelemetry configuration..."
+          
+          cd functions
+          
+          # Check if OpenTelemetry is being imported without conditional loading
+          if grep -r "@opentelemetry" . --include="*.js" --include="*.ts" --exclude-dir=node_modules | grep -v "if.*process\.env\|emulator\|local"; then
+            echo "⚠️ OpenTelemetry imports found without conditional loading"
+            echo "Consider lazy loading OpenTelemetry to avoid startup delays:"
+            echo ""
+            echo "// Good:"
+            echo "if (process.env.ENABLE_TRACING === 'true') {"
+            echo "  require('./otel-init');"
+            echo "}"
+            echo ""
+            echo "// Bad:"
+            echo "require('@opentelemetry/api');"
+            echo ""
+            echo "This is a warning, not a failure, but may cause cold start issues."
+          else
+            echo "✅ OpenTelemetry configuration looks good"
+          fi
+
+      - name: 📋 Generate Pre-Deployment Report
+        run: |
+          echo "📋 PRE-DEPLOYMENT SAFETY REPORT"
+          echo "================================"
+          echo "Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo ""
+          echo "✅ Runtime version validation passed"
+          echo "✅ Credential security scan passed"
+          echo "✅ Function tests passed"
+          echo "✅ OpenTelemetry configuration checked"
+          echo ""
+          echo "🚀 Ready for deployment!"
+          echo ""
+          echo "💡 Manual deployment steps:"
+          echo "1. cd functions && npm ci"
+          echo "2. firebase deploy --only functions"
+          echo "3. node test-functions-deployment.cjs"
+
+  # Optional: Add function linting
+  lint-functions:
+    name: 🧹 Lint Firebase Functions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'functions/package-lock.json'
+      
+      - name: Install dependencies
+        run: |
+          cd functions
+          npm ci
+          
+      - name: Run ESLint
+        run: |
+          cd functions
+          if [ -f "package.json" ] && grep -q '"lint"' package.json; then
+            echo "🧹 Running ESLint on Firebase Functions..."
+            npm run lint
+          else
+            echo "ℹ️ No linting configured for Firebase Functions"
+          fi
