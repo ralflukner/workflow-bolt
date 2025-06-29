@@ -285,8 +285,8 @@ export class AuthBridge {
     };
 
     try {
-      if (!this.exchangeTokenFunction) {
-        throw new Error('Firebase Functions not available');
+      if (!this.exchangeTokenUrl) {
+        throw new Error('Firebase Functions endpoint not available');
       }
 
       // Validate Auth0 token
@@ -500,7 +500,7 @@ export class AuthBridge {
       firebaseAuth: !!auth,
       firebaseAuthCurrentUser: !!auth?.currentUser,
       firebaseFunctions: !!functions,
-      exchangeFunction: !!this.exchangeTokenFunction,
+      exchangeFunction: !!this.exchangeTokenUrl,
     };
 
     const failedChecks = Object.values(checks).filter(check => !check).length;
