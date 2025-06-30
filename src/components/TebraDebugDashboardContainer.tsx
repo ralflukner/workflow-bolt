@@ -96,8 +96,45 @@ export default class TebraDebugDashboardContainer extends Component<{}, State, P
         let status: 'healthy' | 'warning' | 'error' | 'unknown' = 'unknown';
         let errorMessage: string | undefined;
         try {
-          // Placeholder: real checks would call tebraDebugApi just like hook version.
-          status = step.id === STEP_IDS.FRONTEND ? 'healthy' : 'warning';
+          // Real health checks using tebraDebugApi service
+          switch (step.id) {
+            case STEP_IDS.FRONTEND:
+              const frontendResult = await tebraDebugApi.testFrontendHealth();
+              status = frontendResult.status;
+              break;
+            case STEP_IDS.FIREBASE_FUNCTIONS:
+              const functionsResult = await tebraDebugApi.testFirebaseFunctions();
+              status = functionsResult.status;
+              break;
+            case STEP_IDS.TEBRA_PROXY:
+              const proxyResult = await tebraDebugApi.testTebraProxy();
+              status = proxyResult.status;
+              break;
+            case STEP_IDS.CLOUD_RUN:
+            case STEP_IDS.TEBRA_API:
+              const apiResult = await tebraDebugApi.testTebraApi();
+              status = apiResult.status;
+              break;
+            case STEP_IDS.DATA_TRANSFORM:
+              const transformResult = await tebraDebugApi.testDataTransform();
+              status = transformResult.status;
+              break;
+            case STEP_IDS.DASHBOARD_UPDATE:
+              const dashboardResult = await tebraDebugApi.testDashboardUpdate();
+              status = dashboardResult.status;
+              // Add patient context validation
+              if (patients.length > 100) {
+                status = 'warning';
+                errorMessage = `Dashboard handling ${patients.length} patients - performance may be impacted`;
+              } else if (patients.length === 0) {
+                status = 'warning';
+                errorMessage = 'No patients loaded - verify data sync is working';
+              }
+              break;
+            default:
+              status = 'error';
+              errorMessage = `Unknown step ID: ${step.id}`;
+          }
         } catch (e) {
           status = 'error';
           errorMessage = (e as Error).message;
