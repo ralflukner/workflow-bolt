@@ -15,7 +15,7 @@ interface State {
   isMonitoring: boolean;
 }
 
-export default class TebraDebugDashboardContainer extends Component<{}, State> {
+export default class TebraDebugDashboardContainer extends Component<{}, State, PatientContextType> {
   static contextType = PatientContext as React.Context<PatientContextType>;
   declare context: React.ContextType<typeof PatientContext>;
   private refreshInterval: NodeJS.Timeout | null = null;
@@ -88,12 +88,12 @@ export default class TebraDebugDashboardContainer extends Component<{}, State> {
     if (this.state.isMonitoring) return;
     this.setState({ isMonitoring: true });
 
-    const patients = this.context?.patients || [];
+    const patients = this.context?.patients ?? [];
 
     const updatedSteps = await Promise.all(
       this.state.dataFlowSteps.map(async (step) => {
         const start = Date.now();
-        let status: 'healthy' | 'warning' | 'error' = 'warning';
+        let status: 'healthy' | 'warning' | 'error' | 'unknown' = 'unknown';
         let errorMessage: string | undefined;
         try {
           // Placeholder: real checks would call tebraDebugApi just like hook version.
