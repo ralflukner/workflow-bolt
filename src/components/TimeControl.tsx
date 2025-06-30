@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTimeContext } from '../hooks/useTimeContext';
+import { withContexts, WithContextsProps } from './withContexts';
 import { Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface TimeControlState {
@@ -10,24 +10,12 @@ interface TimeControlState {
 }
 
 // NOTE: useEffect is not allowed in this project. See docs/NO_USE_EFFECT_POLICY.md
-class TimeControlClass extends React.Component<{
-  timeMode: any;
-  toggleSimulation: () => void;
-  adjustTime: (minutes: number, newTime?: Date) => void;
-  getCurrentTime: () => Date;
-  formatTime: (date: Date) => string;
-}, TimeControlState> {
-  intervalId: any;
+class TimeControlClass extends React.Component<WithContextsProps, TimeControlState> {
+  intervalId: NodeJS.Timeout | null = null;
 
-  constructor(props: {
-    timeMode: any;
-    toggleSimulation: () => void;
-    adjustTime: (minutes: number, newTime?: Date) => void;
-    getCurrentTime: () => Date;
-    formatTime: (date: Date) => string;
-  }) {
+  constructor(props: WithContextsProps) {
     super(props);
-    const currentTime = props.getCurrentTime();
+    const currentTime = props.timeContext.getCurrentTime();
     const hours = currentTime.getHours();
     const minutes = currentTime.getMinutes();
     const h = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
@@ -41,9 +29,9 @@ class TimeControlClass extends React.Component<{
 
   componentDidMount() {
     this.intervalId = setInterval(() => {
-      const currentTime = this.props.getCurrentTime();
+      const currentTime = this.props.timeContext.getCurrentTime();
       this.setState({ currentTime });
-      if (!this.props.timeMode.simulated) {
+      if (!this.props.timeContext.timeMode.simulated) {
         const hours = currentTime.getHours();
         const minutes = currentTime.getMinutes();
         const h = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
@@ -57,7 +45,9 @@ class TimeControlClass extends React.Component<{
   }
 
   componentWillUnmount() {
-    clearInterval(this.intervalId);
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
   }
 
   updateTimeInputFromDate = (date: Date) => {
@@ -73,7 +63,7 @@ class TimeControlClass extends React.Component<{
   handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     this.setState({ timeInput: value });
-    const { timeMode, adjustTime } = this.props;
+    const { timeMode, adjustTime } = this.props.timeContext;
     const { isPM, currentTime } = this.state;
     if (timeMode.simulated) {
       if (/^\d{1,2}:\d{2}$/.test(value)) {
@@ -92,7 +82,7 @@ class TimeControlClass extends React.Component<{
   handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     this.setState({ dateInput: value });
-    const { timeMode, adjustTime } = this.props;
+    const { timeMode, adjustTime } = this.props.timeContext;
     const { timeInput, isPM, currentTime } = this.state;
     if (timeMode.simulated) {
       const [hours, minutes] = timeInput.split(':');
@@ -115,7 +105,7 @@ class TimeControlClass extends React.Component<{
     const newIsPM = !this.state.isPM;
     this.setState({ isPM: newIsPM });
     const { timeInput, currentTime } = this.state;
-    const { adjustTime, timeMode } = this.props;
+    const { adjustTime, timeMode } = this.props.timeContext;
     if (timeInput) {
       const [hours, minutes] = timeInput.split(':');
       let hour = parseInt(hours);
@@ -130,14 +120,14 @@ class TimeControlClass extends React.Component<{
 
   handleTimeAdjustment = (minutesToAdd: number) => {
     const { currentTime } = this.state;
-    const { adjustTime } = this.props;
+    const { adjustTime } = this.props.timeContext;
     const newTime = new Date(currentTime.getTime() + minutesToAdd * 60000);
     this.updateTimeInputFromDate(newTime);
     adjustTime(minutesToAdd, undefined);
   };
 
   render() {
-    const { timeMode, toggleSimulation, formatTime } = this.props;
+    const { timeMode, toggleSimulation, formatTime } = this.props.timeContext;
     const { currentTime, timeInput, dateInput, isPM } = this.state;
     return (
       <div className="bg-gray-800 rounded-lg p-4 shadow-md">
@@ -249,19 +239,6 @@ class TimeControlClass extends React.Component<{
   }
 }
 
-// Wrapper component that connects to TimeContext
-const TimeControl: React.FC = () => {
-  const { timeMode, toggleSimulation, adjustTime, getCurrentTime, formatTime } = useTimeContext();
-  
-  return (
-    <TimeControlClass
-      timeMode={timeMode}
-      toggleSimulation={toggleSimulation}
-      adjustTime={adjustTime}
-      getCurrentTime={getCurrentTime}
-      formatTime={formatTime}
-    />
-  );
-};
-
+// Export the wrapped component
+const TimeControl = withContexts(TimeControlClass);
 export default TimeControl;
