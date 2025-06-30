@@ -9,6 +9,7 @@ import { testTebraGetAppointmentsViaFirebase } from './utils/testTebraViaFirebas
 import { debugFirebaseAuth } from './debug-firebase-auth';
 import { decodeAuth0Token } from './test-auth0-token';
 import { useTestAuth0Audience } from './test-auth0-audience';
+import { testPhpDiagnostics } from './utils/testPhpDiagnostics';
 
 declare global {
   interface Window {
@@ -16,6 +17,7 @@ declare global {
     testTebraViaFirebase: typeof testTebraGetAppointmentsViaFirebase;
     debugFirebaseAuth: typeof debugFirebaseAuth;
     decodeAuth0Token: typeof decodeAuth0Token;
+    testPhpDiagnostics: typeof testPhpDiagnostics;
   }
 }
 
@@ -35,11 +37,13 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
   window.testTebraViaFirebase = testTebraGetAppointmentsViaFirebase;
   window.debugFirebaseAuth = debugFirebaseAuth;
   window.decodeAuth0Token = decodeAuth0Token;
+  window.testPhpDiagnostics = testPhpDiagnostics;
   console.log('✅ Tebra test functions loaded:');
   console.log('   - testTebraGetAppointments() for direct SOAP (will fail due to CORS)');
   console.log('   - testTebraViaFirebase() for Firebase Functions proxy (recommended)');
   console.log('   - debugFirebaseAuth() for Firebase authentication debugging');
   console.log('   - decodeAuth0Token(token) for Auth0 token analysis');
+  console.log('   - testPhpDiagnostics() for comprehensive PHP proxy debugging 🔧');
 }
 
 createRoot(document.getElementById('root')!).render(

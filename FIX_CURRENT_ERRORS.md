@@ -8,7 +8,7 @@ The PHP API is returning 401 because it's checking for an internal API key that 
 
 ```bash
 # Set the internal API key in Google Secret Manager
-echo -n "UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=" | gcloud secrets create tebra-internal-api-key --data-file=- --project=luknerlumina-firebase
+echo -n "<YOUR_API_KEY>=" | gcloud secrets create tebra-internal-api-key --data-file=- --project=luknerlumina-firebase
 
 # Grant the Cloud Run service account access to read the secret
 gcloud secrets add-iam-policy-binding tebra-internal-api-key \
@@ -22,7 +22,7 @@ gcloud secrets add-iam-policy-binding tebra-internal-api-key \
 ```bash
 # Update the Cloud Run service with the API key as an environment variable
 gcloud run services update tebra-php-api \
-  --update-env-vars="INTERNAL_API_KEY=UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=" \
+  --update-env-vars="INTERNAL_API_KEY=<YOUR_API_KEY>=" \
   --region=us-central1 \
   --project=luknerlumina-firebase
 ```

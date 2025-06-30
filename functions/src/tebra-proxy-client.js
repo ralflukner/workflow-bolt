@@ -1,6 +1,6 @@
 const { GoogleAuth } = require('google-auth-library');
 const { DebugLogger } = require('./debug-logger');
-// const functions = require('firebase-functions'); // Not needed for v2 functions
+const functions = require('firebase-functions');
 
 // Shared initialization promise to prevent parallel secret fetches
 let sharedInitializationPromise = null;
@@ -64,14 +64,19 @@ class TebraProxyClient {
    * Fetch secrets only once and cache them for all instances
    */
   async _fetchSecretsOnce() {
-    this.logger.info('TEMPORARY: Using hardcoded Cloud Run configuration');
+    this.logger.info('Using environment-based Cloud Run configuration');
     
-    // TEMPORARY FIX: Hardcode the working PHP Cloud Run service
-    const cloudRunUrl = 'https://tebra-php-api-623450773640.us-central1.run.app';
-    const internalApiKey = 'UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=';
+    // Get configuration from environment variables or Firebase Functions config
+    const cloudRunUrl = process.env.TEBRA_CLOUD_RUN_URL || 'https://tebra-php-api-623450773640.us-central1.run.app';
+    const internalApiKey = process.env.TEBRA_INTERNAL_API_KEY || 
+                          functions.config().tebra?.internal_api_key;
     
-    this.logger.info(`Using hardcoded Cloud Run URL: ${cloudRunUrl}`);
-    this.logger.info(`Using hardcoded API Key: ${internalApiKey ? '[SET]' : '[NOT SET]'}`);
+    if (!internalApiKey) {
+      throw new Error('TEBRA_INTERNAL_API_KEY environment variable or tebra.internal_api_key config is required');
+    }
+    
+    this.logger.info(`Using Cloud Run URL: ${cloudRunUrl}`);
+    this.logger.info(`Using API Key: ${internalApiKey ? '[SET]' : '[NOT SET]'}`);
 
     // Cache the secrets for future instances
     sharedSecrets = { cloudRunUrl, internalApiKey };
@@ -125,9 +130,32 @@ class TebraProxyClient {
         // Log the API call (headers will be sanitized)
         requestLogger.apiCall('POST', this.cloudRunUrl, requestOptions.headers, requestOptions.data);
 
+        // Enhanced logging for PHP proxy debugging
+        requestLogger.info(`Making request to PHP proxy`, {
+          url: this.cloudRunUrl,
+          action: action,
+          hasApiKey: !!this.internalApiKey,
+          correlationId: this.logger.correlationId,
+          paramsKeys: Object.keys(params)
+        });
+
         // Make the request using authClient for Google Auth + API key for internal auth
         const requestStart = Date.now();
-        const response = await this.authClient.request(requestOptions);
+        let response;
+        try {
+          response = await this.authClient.request(requestOptions);
+        } catch (requestError) {
+          requestLogger.error(`HTTP request to PHP proxy failed`, {
+            error: requestError.message,
+            status: requestError.response?.status,
+            statusText: requestError.response?.statusText,
+            headers: requestError.response?.headers,
+            data: requestError.response?.data,
+            url: this.cloudRunUrl,
+            hasApiKey: !!this.internalApiKey
+          });
+          throw requestError;
+        }
         const requestDuration = Date.now() - requestStart;
         
         requestLogger.info(`HTTP request completed`, { 
@@ -311,6 +339,219 @@ class TebraProxyClient {
       this.logger.error('Test connection error:', e.message);
       return false;
     }
+  }
+
+  /**
+   * Enhanced debugging function to test PHP proxy health and Tebra connectivity
+   */
+  async debugPhpProxy() {
+    const debugLogger = this.logger.child('debugPhpProxy');
+    const diagnostics = {
+      timestamp: new Date().toISOString(),
+      nodeJsToPhp: { status: 'unknown', details: {} },
+      phpHealth: { status: 'unknown', details: {} },
+      phpToTebra: { status: 'unknown', details: {} },
+      configuration: {},
+      recommendations: []
+    };
+
+    try {
+      await this.initialize();
+      
+      // Test 1: Node.js → PHP proxy connectivity
+      debugLogger.info('Testing Node.js → PHP proxy connectivity...');
+      try {
+        const healthCheckOptions = {
+          url: `${this.cloudRunUrl}/health`,
+          method: 'GET',
+          headers: {
+            'X-API-Key': this.internalApiKey,
+            'X-Correlation-Id': this.logger.correlationId,
+          }
+        };
+        
+        const healthResponse = await this.authClient.request(healthCheckOptions);
+        diagnostics.nodeJsToPhp = {
+          status: 'healthy',
+          details: {
+            httpStatus: healthResponse.status,
+            responseTime: Date.now(),
+            canAuthenticate: true
+          }
+        };
+        debugLogger.info('Node.js → PHP proxy: HEALTHY');
+      } catch (error) {
+        diagnostics.nodeJsToPhp = {
+          status: 'error',
+          details: {
+            error: error.message,
+            httpStatus: error.response?.status,
+            canAuthenticate: false,
+            possibleCause: this._diagnosePHPConnectionError(error)
+          }
+        };
+        debugLogger.error('Node.js → PHP proxy: ERROR', error.message);
+      }
+
+      // Test 2: PHP proxy internal health
+      debugLogger.info('Testing PHP proxy internal health...');
+      try {
+        const phpHealthOptions = {
+          url: this.cloudRunUrl,
+          method: 'POST',
+          headers: {
+            'X-API-Key': this.internalApiKey,
+            'Content-Type': 'application/json',
+            'X-Correlation-Id': this.logger.correlationId,
+          },
+          data: { action: 'healthCheck', params: {} }
+        };
+        
+        const phpHealthResponse = await this.authClient.request(phpHealthOptions);
+        const phpHealth = phpHealthResponse.data;
+        
+        diagnostics.phpHealth = {
+          status: phpHealth.success ? 'healthy' : 'error',
+          details: {
+            phpResponse: phpHealth,
+            canProcessRequests: phpHealth.success,
+            phpVersion: phpHealth.data?.phpVersion,
+            environment: phpHealth.data?.environment
+          }
+        };
+        debugLogger.info(`PHP proxy health: ${phpHealth.success ? 'HEALTHY' : 'ERROR'}`);
+      } catch (error) {
+        diagnostics.phpHealth = {
+          status: 'error',
+          details: {
+            error: error.message,
+            httpStatus: error.response?.status,
+            possibleCause: 'PHP proxy cannot process requests'
+          }
+        };
+        debugLogger.error('PHP proxy health: ERROR', error.message);
+      }
+
+      // Test 3: PHP → Tebra SOAP connectivity
+      debugLogger.info('Testing PHP → Tebra SOAP connectivity...');
+      try {
+        const tebraTestOptions = {
+          url: this.cloudRunUrl,
+          method: 'POST',
+          headers: {
+            'X-API-Key': this.internalApiKey,
+            'Content-Type': 'application/json',
+            'X-Correlation-Id': this.logger.correlationId,
+          },
+          data: { action: 'testTebraConnection', params: {} }
+        };
+        
+        const tebraTestResponse = await this.authClient.request(tebraTestOptions);
+        const tebraTest = tebraTestResponse.data;
+        
+        diagnostics.phpToTebra = {
+          status: tebraTest.success ? 'healthy' : 'error',
+          details: {
+            tebraResponse: tebraTest,
+            canConnectToTebra: tebraTest.success,
+            tebraError: tebraTest.error,
+            soapAvailable: !!tebraTest.data?.soapClient,
+            authenticationWorking: !tebraTest.error?.includes('Unauthorized')
+          }
+        };
+        debugLogger.info(`PHP → Tebra SOAP: ${tebraTest.success ? 'HEALTHY' : 'ERROR'}`);
+      } catch (error) {
+        diagnostics.phpToTebra = {
+          status: 'error',
+          details: {
+            error: error.message,
+            httpStatus: error.response?.status,
+            possibleCause: this._diagnoseTebraConnectionError(error)
+          }
+        };
+        debugLogger.error('PHP → Tebra SOAP: ERROR', error.message);
+      }
+
+      // Configuration summary
+      diagnostics.configuration = {
+        cloudRunUrl: this.cloudRunUrl,
+        hasInternalApiKey: !!this.internalApiKey,
+        environment: process.env.NODE_ENV || 'development',
+        correlationId: this.logger.correlationId
+      };
+
+      // Generate recommendations
+      diagnostics.recommendations = this._generateRecommendations(diagnostics);
+
+      debugLogger.info('PHP proxy diagnostics completed', {
+        nodeJsToPhp: diagnostics.nodeJsToPhp.status,
+        phpHealth: diagnostics.phpHealth.status,
+        phpToTebra: diagnostics.phpToTebra.status,
+        recommendationsCount: diagnostics.recommendations.length
+      });
+
+      return diagnostics;
+
+    } catch (error) {
+      debugLogger.error('PHP proxy diagnostics failed', error.message);
+      diagnostics.nodeJsToPhp.status = 'error';
+      diagnostics.nodeJsToPhp.details = { error: error.message };
+      return diagnostics;
+    }
+  }
+
+  _diagnosePHPConnectionError(error) {
+    if (error.response?.status === 401) {
+      return 'Internal API key mismatch between Node.js and PHP';
+    } else if (error.response?.status === 403) {
+      return 'PHP proxy rejecting requests - check CORS or authentication';
+    } else if (error.response?.status === 404) {
+      return 'Cloud Run service not found or wrong URL';
+    } else if (error.response?.status >= 500) {
+      return 'PHP proxy internal server error';
+    } else if (error.message.includes('network')) {
+      return 'Network connectivity issue to Cloud Run';
+    }
+    return 'Unknown connection error';
+  }
+
+  _diagnoseTebraConnectionError(error) {
+    if (error.message.includes('Unauthorized')) {
+      return 'Tebra OAuth credentials invalid - check TEBRA_CLIENT_ID/SECRET';
+    } else if (error.message.includes('WSDL')) {
+      return 'Tebra WSDL URL unreachable or invalid';
+    } else if (error.message.includes('SOAP')) {
+      return 'SOAP client configuration error in PHP';
+    } else if (error.message.includes('timeout')) {
+      return 'Tebra SOAP API not responding - service may be down';
+    }
+    return 'Unknown Tebra connection error';
+  }
+
+  _generateRecommendations(diagnostics) {
+    const recommendations = [];
+    
+    if (diagnostics.nodeJsToPhp.status === 'error') {
+      recommendations.push('Fix Node.js → PHP connectivity: Check TEBRA_INTERNAL_API_KEY matches between services');
+    }
+    
+    if (diagnostics.phpHealth.status === 'error') {
+      recommendations.push('Fix PHP proxy health: Check Cloud Run service logs for PHP errors');
+    }
+    
+    if (diagnostics.phpToTebra.status === 'error') {
+      if (diagnostics.phpToTebra.details.tebraError?.includes('Unauthorized')) {
+        recommendations.push('Fix Tebra authentication: Update TEBRA_CLIENT_ID and TEBRA_CLIENT_SECRET in Cloud Run secrets');
+      } else {
+        recommendations.push('Fix Tebra connectivity: Check TEBRA_WSDL_URL and network connectivity from Cloud Run');
+      }
+    }
+    
+    if (recommendations.length === 0) {
+      recommendations.push('All systems healthy - no action needed');
+    }
+    
+    return recommendations;
   }
 
   async getAppointments(fromDate, toDate) {

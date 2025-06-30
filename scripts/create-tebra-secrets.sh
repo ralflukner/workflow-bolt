@@ -42,7 +42,7 @@ echo -n "j57wt68dc39q" | \
   echo "Secret TEBRA_CUSTOMER_KEY already exists"
 
 # INTERNAL_API_KEY
-echo -n "UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=" | \
+echo -n "<YOUR_API_KEY>" | \
   gcloud secrets create tebra-internal-api-key \
   --project=$PROJECT_ID \
   --replication-policy="automatic" \

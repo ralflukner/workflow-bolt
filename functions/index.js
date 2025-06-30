@@ -312,6 +312,59 @@ exports.tebraTestConnection = onCall(
   }
 });
 
+// Enhanced PHP proxy debugging function
+exports.tebraDebugPhpProxy = onCall(
+  {
+    cors: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:5002',
+      'https://luknerlumina-firebase.web.app',
+      'https://luknerlumina-firebase.firebaseapp.com'
+    ]
+  },
+  async (request) => {
+    // Check authentication
+    if (!request.auth) {
+      throw new functions.https.HttpsError(
+        'unauthenticated', 
+        'User must be authenticated'
+      );
+    }
+    
+    console.log('Running PHP proxy diagnostics...');
+    console.log('Authenticated user:', request.auth.uid);
+    
+    try {
+      // Run comprehensive PHP proxy diagnostics
+      const diagnostics = await getTebraProxyClient().debugPhpProxy();
+      
+      console.log('PHP proxy diagnostics completed:', {
+        nodeJsToPhp: diagnostics.nodeJsToPhp.status,
+        phpHealth: diagnostics.phpHealth.status,
+        phpToTebra: diagnostics.phpToTebra.status,
+        recommendationsCount: diagnostics.recommendations.length
+      });
+      
+      return { 
+        success: true, 
+        data: diagnostics,
+        userId: request.auth.uid,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('PHP proxy diagnostics failed:', error);
+      console.error('Full error details:', error.stack);
+      return { 
+        success: false, 
+        message: error.message || 'PHP proxy diagnostics failed',
+        userId: request.auth.uid,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+);
+
 // Get patient by ID
 exports.tebraGetPatient = onCall({ 
   cors: true,

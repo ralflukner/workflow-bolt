@@ -1,7 +1,28 @@
+/**
+ * Tebra Debug Dashboard - Architecture Overview
+ * 
+ * CORRECT DATA FLOW (never deviate from this):
+ * Frontend → Firebase Functions (Node.js) → Cloud Run PHP Service → Tebra SOAP API
+ * 
+ * CRITICAL: Node.js will NEVER communicate directly with Tebra SOAP API
+ * - Tebra SOAP API only works reliably with PHP
+ * - All SOAP communication must go through the PHP proxy
+ * - Any "Node.js → Tebra SOAP" tests will FAIL 100% of the time
+ * 
+ * This dashboard tests each step in the chain:
+ * 1. Frontend Dashboard (always healthy if running)
+ * 2. Firebase Callable Functions (Node.js health)  
+ * 3. Node.js → PHP Proxy Connection (internal API key auth)
+ * 4. Cloud Run PHP Service Health (PHP proxy status)
+ * 5. PHP → Tebra SOAP API (OAuth authentication, the ONLY valid SOAP connection)
+ * 6. Data Transformation (Node.js data processing)
+ * 7. Dashboard State Update (React state management)
+ */
 import React, { useState, useEffect, useCallback } from 'react';
 import { Activity, AlertTriangle, CheckCircle, Wifi, WifiOff, RefreshCw, Users, Calendar } from 'lucide-react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { tebraApiService } from '../services/tebraApiService';
 
 interface DataFlowStep {
   id: string;
@@ -52,21 +73,21 @@ export const TebraDebugDashboard: React.FC = () => {
     },
     {
       id: 'tebra-proxy',
-      name: 'Tebra Proxy Client',
+      name: 'Node.js → PHP Proxy Connection',
       status: 'unknown',
       lastCheck: new Date(),
       responseTime: 0
     },
     {
       id: 'cloud-run',
-      name: 'Cloud Run PHP Service',
+      name: 'Cloud Run PHP Service Health',
       status: 'unknown',
       lastCheck: new Date(),
       responseTime: 0
     },
     {
       id: 'tebra-api',
-      name: 'Tebra SOAP API',
+      name: 'PHP → Tebra SOAP API',
       status: 'unknown',
       lastCheck: new Date(),
       responseTime: 0
@@ -104,6 +125,7 @@ export const TebraDebugDashboard: React.FC = () => {
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [showAdvancedTools, setShowAdvancedTools] = useState(false);
+  const [phpDiagnostics, setPhpDiagnostics] = useState<any>(null);
 
   // Update patient count and date range when patients change
   useEffect(() => {
@@ -271,28 +293,43 @@ export const TebraDebugDashboard: React.FC = () => {
           }
         
         case 'cloud-run':
-          // Test the new HTTP API endpoint
+          // Test the PHP proxy main endpoint with a simple request
           try {
+            const testPayload = { action: 'getProviders' };
             const response = await Promise.race([
-              fetch('https://us-central1-luknerlumina-firebase.cloudfunctions.net/api/health'),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+              fetch('https://tebra-php-api-623450773640.us-central1.run.app/', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-API-Key': process.env.VITE_TEBRA_PROXY_API_KEY || '',
+                  'Authorization': `Bearer ${await (await import('firebase/auth')).getAuth().currentUser?.getIdToken()}`
+                },
+                body: JSON.stringify(testPayload)
+              }),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
             ]) as Response;
             
             if (response.ok) {
-              updateStepError(stepId, null);
-              return 'healthy';
+              const data = await response.json();
+              if (data.success) {
+                updateStepError(stepId, null);
+                return 'healthy';
+              } else {
+                updateStepError(stepId, `PHP proxy responded but with error: ${data.message || 'Unknown error'}`, correlationId);
+                return 'error';
+              }
             } else {
               updateStepError(stepId, `HTTP ${response.status}: ${response.statusText}`, correlationId);
               return 'error';
             }
           } catch (error) {
-            const errorMsg = error instanceof Error ? error.message : 'Cloud Run service unreachable';
+            const errorMsg = error instanceof Error ? error.message : 'PHP proxy unreachable';
             updateStepError(stepId, errorMsg, correlationId);
             return 'error';
           }
         
         case 'tebra-api':
-          // Test actual Tebra SOAP API connectivity
+          // Test PHP → Tebra SOAP API connectivity (PHP-only, never Node.js)
           try {
             const functions = getFunctions();
             const testAppointments = httpsCallable(functions, 'tebraTestAppointments');
@@ -301,30 +338,34 @@ export const TebraDebugDashboard: React.FC = () => {
               new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout after 15s')), 15000))
             ]) as { data?: { success?: boolean; message?: string } };
             
-            console.log('Tebra API test result:', result);
+            console.log('PHP → Tebra SOAP test result:', result);
             
             if (result?.data?.success) {
               updateStepError(stepId, null);
               return 'healthy';
             } else {
-              const errorMsg = result?.data?.message || result?.message || 'Tebra SOAP API test failed';
+              const errorMsg = result?.data?.message || result?.message || 'PHP → Tebra SOAP API connection failed';
               updateStepError(stepId, errorMsg, correlationId);
               return 'error';
             }
           } catch (error) {
-            console.error('Tebra API error:', error);
-            let errorMsg = 'Tebra API connection failed';
+            console.error('PHP → Tebra SOAP API error:', error);
+            let errorMsg = 'PHP → Tebra SOAP API connection failed';
             
             if (error instanceof Error) {
               errorMsg = error.message;
               
-              // Provide specific error context
+              // Provide specific error context for PHP → Tebra issues
               if (error.message.includes('internal')) {
-                errorMsg = 'Tebra API internal error - check credentials and WSDL URL';
+                errorMsg = 'PHP proxy internal error - check Tebra OAuth credentials in Cloud Run secrets';
+              } else if (error.message.includes('Unauthorized')) {
+                errorMsg = 'PHP → Tebra OAuth authentication failed - check TEBRA_CLIENT_ID/SECRET';
               } else if (error.message.includes('network')) {
-                errorMsg = 'Network error connecting to Tebra API';
+                errorMsg = 'PHP proxy cannot reach Tebra SOAP API - network issue';
               } else if (error.message.includes('timeout')) {
-                errorMsg = 'Tebra API timeout - service may be slow or unavailable';
+                errorMsg = 'Tebra SOAP API timeout - service slow or unavailable';
+              } else if (error.message.includes('unauthenticated')) {
+                errorMsg = 'Node.js → PHP authentication failed - check TEBRA_INTERNAL_API_KEY';
               }
             }
             
@@ -410,6 +451,38 @@ export const TebraDebugDashboard: React.FC = () => {
 
   const generateCorrelationId = () => {
     return Math.random().toString(36).substring(2, 10);
+  };
+
+  const runPhpProxyDiagnostics = async () => {
+    setIsMonitoring(true);
+    try {
+      console.log('Running PHP proxy diagnostics...');
+      const result = await tebraApiService.debugPhpProxy();
+      
+      if (result.success) {
+        setPhpDiagnostics(result.data);
+        console.log('PHP proxy diagnostics completed:', result.data);
+      } else {
+        console.error('PHP proxy diagnostics failed:', result.message);
+        // Set error state for diagnostics
+        setPhpDiagnostics({
+          nodeJsToPhp: { status: 'error', details: { error: result.message } },
+          phpHealth: { status: 'unknown', details: {} },
+          phpToTebra: { status: 'unknown', details: {} },
+          recommendations: ['PHP proxy diagnostics failed - check authentication and function logs']
+        });
+      }
+    } catch (error) {
+      console.error('Failed to run PHP proxy diagnostics:', error);
+      setPhpDiagnostics({
+        nodeJsToPhp: { status: 'error', details: { error: error.message } },
+        phpHealth: { status: 'unknown', details: {} },
+        phpToTebra: { status: 'unknown', details: {} },
+        recommendations: ['Failed to call diagnostics function - check user authentication']
+      });
+    } finally {
+      setIsMonitoring(false);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -575,14 +648,16 @@ export const TebraDebugDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Integration Instructions */}
+      {/* Architecture Notes */}
       <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded">
-        <h5 className="font-medium text-blue-300 mb-2">Integration Notes</h5>
+        <h5 className="font-medium text-blue-300 mb-2">Architecture Notes</h5>
         <div className="text-sm text-blue-200 space-y-1">
-          <p>• This dashboard monitors the complete Tebra API data flow chain</p>
+          <p>• <strong>CRITICAL:</strong> Node.js NEVER talks directly to Tebra SOAP API - only PHP does</p>
+          <p>• Data flow: Frontend → Firebase Functions → Cloud Run PHP → Tebra SOAP</p>
+          <p>• Internal API key authenticates Node.js → PHP communication</p>
+          <p>• OAuth credentials authenticate PHP → Tebra SOAP communication</p>
           <p>• Correlation IDs help trace requests across all components</p>
-          <p>• In production, connect to actual monitoring APIs and Cloud Logging</p>
-          <p>• Use the enhanced debugging system (DEBUG-TOOLKIT.md) for deeper analysis</p>
+          <p>• Any "Unauthorized" errors likely indicate PHP → Tebra OAuth issues</p>
         </div>
       </div>
 
@@ -600,8 +675,71 @@ export const TebraDebugDashboard: React.FC = () => {
       {showAdvancedTools && (
         <div className="mt-6 space-y-6">
           <div className="bg-gray-700 p-4 rounded border">
-            <h5 className="text-white font-medium mb-2">Advanced Tools</h5>
-            <p className="text-gray-300 text-sm">Live Log Viewer and Request Replay tools coming soon...</p>
+            <h5 className="text-white font-medium mb-4">PHP Proxy Deep Diagnostics</h5>
+            <button
+              onClick={runPhpProxyDiagnostics}
+              disabled={isMonitoring}
+              className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-500 disabled:opacity-50 mr-4"
+            >
+              Run PHP Proxy Diagnostics
+            </button>
+            <p className="text-gray-300 text-sm mt-2">
+              Comprehensive testing of Node.js → PHP → Tebra SOAP chain with detailed error analysis and recommendations.
+            </p>
+            
+            {phpDiagnostics && (
+              <div className="mt-4 space-y-4">
+                <h6 className="text-white font-medium">Diagnostics Results:</h6>
+                
+                {/* Node.js → PHP */}
+                <div className={`p-3 rounded border-l-4 ${
+                  phpDiagnostics.nodeJsToPhp.status === 'healthy' ? 'bg-green-900 border-green-500' :
+                  phpDiagnostics.nodeJsToPhp.status === 'error' ? 'bg-red-900 border-red-500' : 'bg-gray-900 border-gray-500'
+                }`}>
+                  <div className="font-medium text-white">Node.js → PHP Connection</div>
+                  <div className="text-sm text-gray-300">Status: {phpDiagnostics.nodeJsToPhp.status}</div>
+                  {phpDiagnostics.nodeJsToPhp.details.possibleCause && (
+                    <div className="text-sm text-red-300">{phpDiagnostics.nodeJsToPhp.details.possibleCause}</div>
+                  )}
+                </div>
+
+                {/* PHP Health */}
+                <div className={`p-3 rounded border-l-4 ${
+                  phpDiagnostics.phpHealth.status === 'healthy' ? 'bg-green-900 border-green-500' :
+                  phpDiagnostics.phpHealth.status === 'error' ? 'bg-red-900 border-red-500' : 'bg-gray-900 border-gray-500'
+                }`}>
+                  <div className="font-medium text-white">PHP Proxy Health</div>
+                  <div className="text-sm text-gray-300">Status: {phpDiagnostics.phpHealth.status}</div>
+                  {phpDiagnostics.phpHealth.details.possibleCause && (
+                    <div className="text-sm text-red-300">{phpDiagnostics.phpHealth.details.possibleCause}</div>
+                  )}
+                </div>
+
+                {/* PHP → Tebra */}
+                <div className={`p-3 rounded border-l-4 ${
+                  phpDiagnostics.phpToTebra.status === 'healthy' ? 'bg-green-900 border-green-500' :
+                  phpDiagnostics.phpToTebra.status === 'error' ? 'bg-red-900 border-red-500' : 'bg-gray-900 border-gray-500'
+                }`}>
+                  <div className="font-medium text-white">PHP → Tebra SOAP</div>
+                  <div className="text-sm text-gray-300">Status: {phpDiagnostics.phpToTebra.status}</div>
+                  {phpDiagnostics.phpToTebra.details.possibleCause && (
+                    <div className="text-sm text-red-300">{phpDiagnostics.phpToTebra.details.possibleCause}</div>
+                  )}
+                </div>
+
+                {/* Recommendations */}
+                {phpDiagnostics.recommendations.length > 0 && (
+                  <div className="bg-blue-900/20 border border-blue-500/20 p-3 rounded">
+                    <h6 className="text-blue-300 font-medium mb-2">Recommendations:</h6>
+                    <ul className="text-sm text-blue-200 space-y-1">
+                      {phpDiagnostics.recommendations.map((rec, index) => (
+                        <li key={index}>• {rec}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

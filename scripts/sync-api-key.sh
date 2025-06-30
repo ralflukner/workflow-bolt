@@ -4,7 +4,7 @@
 echo "🔍 Synchronizing API key across all environment files..."
 
 # The correct API key that works
-CORRECT_API_KEY="UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y="
+CORRECT_API_KEY=$(gcloud secrets versions access latest --secret=TEBRA_INTERNAL_API_KEY --project=${PROJECT_ID})
 
 # List all ACTUAL env files (not .example files)
 ENV_FILES=(

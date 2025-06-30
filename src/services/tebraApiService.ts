@@ -220,6 +220,33 @@ export const tebraApiService = {
         error: error instanceof Error ? error.message : 'Status check failed'
       };
     }
+  },
+
+  /**
+   * Run comprehensive PHP proxy diagnostics
+   */
+  debugPhpProxy: async (): Promise<any> => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    
+    if (!user) {
+      throw new Error('User must be authenticated');
+    }
+    
+    try {
+      await user.getIdToken(true);
+      console.log('Running PHP proxy diagnostics for user:', user.uid);
+      
+      const functions = getFunctions();
+      const debugPhpProxy = httpsCallable(functions, 'tebraDebugPhpProxy');
+      
+      const result = await debugPhpProxy();
+      console.log('PHP proxy diagnostics result:', result.data);
+      return result.data;
+    } catch (error) {
+      console.error('[TebraAPI] PHP proxy diagnostics failed:', error);
+      throw error;
+    }
   }
 };
 

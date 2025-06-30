@@ -45,10 +45,7 @@ if echo "$ENV_VARS" | grep -q "INTERNAL_API_KEY"; then
 else
   echo "❌ INTERNAL_API_KEY is NOT configured"
   echo "   Run this command to add it:"
-  echo "   gcloud run services update tebra-php-api \\"
-  echo "     --update-env-vars=\"INTERNAL_API_KEY=UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=\" \\"
-  echo "     --region=us-central1 \\"
-  echo "     --project=luknerlumina-firebase"
+  echo "   gcloud run services update tebra-php-api \\\n  echo "     --update-env-vars=\"INTERNAL_API_KEY=<YOUR_API_KEY>\" \\\n"
 fi
 
 # Check secrets
@@ -60,7 +57,7 @@ if echo "$SECRETS" | grep -q "tebra-internal-api-key"; then
 else
   echo "❌ tebra-internal-api-key NOT found in Secret Manager"
   echo "   Run this command to create it:"
-  echo "   echo -n \"UlmgPDMHoMqP2KAMKGIJK4tudPlm7z7ertoJ6eTV3+Y=\" | \\"
+  echo "   echo -n \"<YOUR_API_KEY>\" | \\\n"
   echo "   gcloud secrets create tebra-internal-api-key --data-file=- --project=luknerlumina-firebase"
 fi
 
