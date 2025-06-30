@@ -7,7 +7,17 @@ import React, { Component, ComponentType } from 'react';
 import { PatientContext } from '../context/PatientContextDef';
 import { PatientContextType } from '../context/PatientContextType';
 import { TimeContext } from '../context/TimeContextDef';
-import { TimeContextType } from '../context/TimeContextType';
+import { TimeMode } from '../types';
+
+// Define TimeContextType to match the one in TimeContextDef.ts
+interface TimeContextType {
+  timeMode: TimeMode;
+  toggleSimulation: () => void;
+  adjustTime: (minutesToAdd: number, newTime?: Date) => void;
+  getCurrentTime: () => Date;
+  formatTime: (date: Date) => string;
+  formatDateTime: (date: Date) => string;
+}
 
 export interface WithContextsProps {
   patientContext: PatientContextType;

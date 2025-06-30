@@ -1,4 +1,4 @@
-# Tebra Debug Dashboard Refactor – Production-Ready Design
+Mo# Tebra Debug Dashboard Refactor – Production-Ready Design
 
 _Updated: 2025-06-23_
 
