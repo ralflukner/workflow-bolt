@@ -36,13 +36,21 @@ export function withContexts<P extends object>(
         <PatientContext.Consumer>
           {(patientContext) => (
             <TimeContext.Consumer>
-              {(timeContext) => (
-                <WrappedComponent
-                  {...(this.props as P)}
-                  patientContext={patientContext}
-                  timeContext={timeContext}
-                />
-              )}
+              {(timeContext) => {
+                // Ensure contexts are available
+                if (!patientContext || !timeContext) {
+                  console.error('Context not available in withContexts HOC');
+                  return <div>Context Error</div>;
+                }
+                
+                return (
+                  <WrappedComponent
+                    {...(this.props as P)}
+                    patientContext={patientContext}
+                    timeContext={timeContext}
+                  />
+                );
+              }}
             </TimeContext.Consumer>
           )}
         </PatientContext.Consumer>

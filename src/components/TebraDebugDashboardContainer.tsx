@@ -16,7 +16,8 @@ interface State {
 }
 
 export default class TebraDebugDashboardContainer extends Component<{}, State> {
-  static contextType = PatientContext as React.Context<PatientContextType | undefined>;
+  static contextType = PatientContext as React.Context<PatientContextType>;
+  declare context: React.ContextType<typeof PatientContext>;
 
   private refreshInterval: NodeJS.Timeout | null = null;
 
