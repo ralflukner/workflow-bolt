@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Activity, AlertTriangle, CheckCircle, Wifi, WifiOff, RefreshCw, Users, Calendar } from 'lucide-react';
 import { usePatientContext } from '../hooks/usePatientContext';
-import { LiveLogViewer } from './LiveLogViewer';
-import { RequestReplayTool } from './RequestReplayTool';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { useFirebaseAuth } from '../services/authBridge';
 
 interface DataFlowStep {
   id: string;
