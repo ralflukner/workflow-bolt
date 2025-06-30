@@ -269,6 +269,9 @@ export const useHealthChecks = () => {
   return { 
     checkStepHealth, 
     checkAllSteps,
-    parseStepError 
+    parseStepError,
+    validateStepDependencies,
+    getStepCriticality,
+    getStepRecommendations
   };
 };
