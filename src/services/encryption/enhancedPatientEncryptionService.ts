@@ -129,7 +129,8 @@ class EnhancedPatientEncryptionService {
       };
     } catch (error) {
       console.error('Encryption failed:', error);
-      captureException(error);
+      // TODO: Add Sentry integration when available
+      // captureException(error);
       throw new Error('Failed to encrypt patient data');
     }
   }

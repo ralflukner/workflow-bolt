@@ -316,7 +316,7 @@ class ReencryptionService {
     return snapshot.docs.map(doc => ({
       ...doc.data(),
       id: doc.id
-    } as EncryptionMigrationLog));
+    } as unknown as EncryptionMigrationLog));
   }
 }
 
