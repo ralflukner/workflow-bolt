@@ -25,6 +25,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, './src'),
       'node:fs/promises': 'node-stdlib-browser/mock/empty',
       'node:os': 'node-stdlib-browser/mock/os',
       'node:path': 'path-browserify',
