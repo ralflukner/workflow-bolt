@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render } from '@/test/test-utils';
 import { TimeProvider } from '../context/TimeProvider';
 
 describe('App Startup', () => {

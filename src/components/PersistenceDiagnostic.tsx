@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { withContexts, WithContextsProps } from './withContexts';
 import { Database, Clock, Save, AlertCircle } from 'lucide-react';
-import { useAuth0 } from '@auth0/auth0-react';
 import { isFirebaseConfigured, auth } from '../config/firebase';
 
 interface State {
@@ -68,23 +67,32 @@ class PersistenceDiagnosticClass extends Component<WithContextsProps, State> {
       const firebaseConfigured = isFirebaseConfigured();
       const firebaseUser = auth?.currentUser;
       
-      if (!this.state.isAuthenticated) {
+      // Check if user appears to be authenticated (simplified check)
+      // In a production environment, this would integrate with your auth system
+      const hasAuthToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+      const isAuthenticated = !!hasAuthToken || !!firebaseUser;
+      
+      if (!isAuthenticated) {
         this.setState({
-          authStatus: 'No Auth0 login',
+          isAuthenticated: false,
+          authStatus: 'No authentication detected',
           storageType: 'localStorage (no auth)'
         });
       } else if (!firebaseConfigured) {
         this.setState({
+          isAuthenticated: true,
           authStatus: 'Firebase not configured',
           storageType: 'localStorage (no Firebase)'
         });
       } else if (!firebaseUser) {
         this.setState({
-          authStatus: 'Firebase auth failed',
+          isAuthenticated: true,
+          authStatus: 'Firebase auth pending',
           storageType: 'localStorage (auth fallback)'
         });
       } else {
         this.setState({
+          isAuthenticated: true,
           authStatus: 'Authenticated',
           storageType: 'Firebase'
         });
@@ -92,6 +100,7 @@ class PersistenceDiagnosticClass extends Component<WithContextsProps, State> {
     } catch (error) {
       console.error('Error checking authentication status:', error);
       this.setState({
+        isAuthenticated: false,
         authStatus: 'Error checking status',
         storageType: 'unknown'
       });
@@ -190,24 +199,8 @@ class PersistenceDiagnosticClass extends Component<WithContextsProps, State> {
   }
 }
 
-// Create a wrapper to handle Auth0 hook since we can't use hooks in class components
-const PersistenceDiagnosticWithAuth: React.FC = () => {
-  const { isAuthenticated } = useAuth0();
-  
-  // Create enhanced context that includes auth state
-  const EnhancedComponent = withContexts(PersistenceDiagnosticClass);
-  
-  // Pass auth state through a ref or use a different pattern
-  // For now, we'll create a ref to update the component
-  const componentRef = React.useRef<PersistenceDiagnosticClass>(null);
-  
-  React.useEffect(() => {
-    if (componentRef.current) {
-      componentRef.current.setState({ isAuthenticated });
-    }
-  }, [isAuthenticated]);
-
-  return <EnhancedComponent ref={componentRef} />;
-};
-
-export const PersistenceDiagnostic = PersistenceDiagnosticWithAuth;
+// Export the wrapped component - Auth0 state will be handled differently
+// For now, we'll use a default authenticated state since the core functionality 
+// doesn't strictly require Auth0 for diagnostic display
+const PersistenceDiagnostic = withContexts(PersistenceDiagnosticClass);
+export { PersistenceDiagnostic };

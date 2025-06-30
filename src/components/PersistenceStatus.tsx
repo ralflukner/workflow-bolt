@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { Component } from 'react';
 // import { useQuery } from '@tanstack/react-query'; // TODO: Implement query for persistence status
-import { usePatientContext } from '../hooks/usePatientContext';
+import { withContexts, WithContextsProps } from './withContexts';
 import { dailySessionService } from '../services/firebase/dailySessionService';
 import { localSessionService } from '../services/localStorage/localSessionService';
 import { isFirebaseConfigured } from '../config/firebase';
