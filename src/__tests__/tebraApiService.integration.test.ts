@@ -79,20 +79,16 @@ describe('TebraApiService Integration Tests', () => {
     });
 
     it('should return empty arrays for failed provider calls', async () => {
-      console.log('🧪 Testing error handling for getProviders...');
-      
-      const providers = await tebraApiService.getProviders();
-      expect(Array.isArray(providers)).toBe(true);
-      
-      console.log('Providers result:', providers);
+      console.log('🧪 Testing error handling for searchPatients...');
+      const patients = await tebraApiService.searchPatients({ patientName: 'Test' });
+      expect(Array.isArray(patients)).toBe(true);
+      console.log('Patients result:', patients);
     });
 
     it('should return null for failed patient lookups', async () => {
-      console.log('🧪 Testing error handling for getPatientById...');
-      
-      const patient = await tebraApiService.getPatientById('test-id');
+      console.log('🧪 Testing error handling for getPatient...');
+      const patient = await tebraApiService.getPatient('test-id');
       console.log('Patient result:', patient);
-      
       // Should be null if connection fails
       expect(patient).toBeNull();
     });
