@@ -1,6 +1,8 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import { afterEach, afterAll, jest, beforeEach } from '@jest/globals';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as rtl from '@testing-library/react';
 
 // Determine if we are running real API tests (Firebase should not be mocked)
 const isRealApiRun = process.env.RUN_REAL_API_TESTS === 'true';
@@ -187,4 +189,18 @@ if (!isRealApiRun) {
     getFirebaseServices: jest.fn(),
     isLocalDevelopment: true,
   }));
-} 
+}
+
+// -------------------------------------------------------------
+// Provide React Query context globally so components under test
+// that call useQuery() don\'t error: "No QueryClient set"
+// -------------------------------------------------------------
+
+const testQueryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+// Re-export everything
+export * from '@testing-library/react';
+
+// Override render with one that injects QueryClientProvider
+export const render = (ui: React.ReactElement, options?: Parameters<typeof rtl.render>[1]) =>
+  rtl.render(<QueryClientProvider client={testQueryClient}>{ui}</QueryClientProvider>, options); 
