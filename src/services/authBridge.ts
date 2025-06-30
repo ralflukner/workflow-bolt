@@ -528,19 +528,28 @@ export class AuthBridge {
 
 /**
  * React hook for Firebase authentication
- * @returns {Object} Firebase auth utilities
- * @property {Function} ensureFirebaseAuth - Ensures Firebase authentication is active
- * @property {Function} refreshToken - Refreshes the Firebase token
- * @property {Function} getDebugInfo - Gets debug information
- * @property {Function} clearCache - Clears the token cache
- * @property {Function} healthCheck - Performs a health check
  * @example
  * ```typescript
  * const { ensureFirebaseAuth, refreshToken } = useFirebaseAuth();
  * await ensureFirebaseAuth();
  * ```
  */
-export const useFirebaseAuth = () => {
+export const useFirebaseAuth = (): {
+  ensureFirebaseAuth: (forceRefresh?: boolean) => Promise<boolean>;
+  refreshToken: () => Promise<boolean>;
+  getDebugInfo: () => {
+    recentLog: AuthDebugInfo[];
+    cacheSize: number;
+    cacheEntries: Array<{ uid: string; expiresAt: string; expiresIn: number }>;
+  };
+  clearCache: () => void;
+  healthCheck: () => Promise<{
+    status: 'healthy' | 'degraded' | 'unhealthy';
+    checks: Record<string, boolean>;
+    details: HealthCheckDetails;
+  }>;
+  getFirebaseIdToken: (forceRefresh?: boolean) => Promise<string>;
+} => {
   const { getAccessTokenSilently, isAuthenticated, getAccessTokenWithPopup } = useAuth0();
   const authBridge = AuthBridge.getInstance();
 
