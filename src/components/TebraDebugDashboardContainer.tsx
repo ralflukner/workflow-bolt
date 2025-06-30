@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import { Activity, RefreshCw } from 'lucide-react';
-import { PatientContext } from '../context/PatientContextDef';
-import { PatientContextType } from '../context/PatientContextType';
-import { tebraDebugApi } from '../services/tebraDebugApi';
-import { DataFlowStep, TebraMetrics, STEP_IDS, StepStatus } from '../constants/tebraDebug';
+import { PatientContext } from '@/context/PatientContextDef';
+import { PatientContextType } from '@/context/PatientContextType';
+import { tebraDebugApi } from '@/services/tebraDebugApi';
+import { DataFlowStep, TebraMetrics, STEP_IDS, StepStatus } from '@/constants/tebraDebug';
 import { MetricsCard } from './TebraDebug/MetricsCard';
 import { DataFlowStepCard } from './TebraDebug/DataFlowStepCard';
 
@@ -19,7 +19,7 @@ export default class TebraDebugDashboardContainer extends Component<{}, State> {
   static contextType = PatientContext as React.Context<PatientContextType | undefined>;
   declare context: PatientContextType;
 
-  private refreshInterval: NodeJS.Timeout | null = null;
+  private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(props: {}) {
     super(props);
