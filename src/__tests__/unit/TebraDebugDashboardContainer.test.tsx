@@ -14,19 +14,24 @@ const mockContext: PatientContextType = {
   assignRoom: jest.fn(),
   updateCheckInTime: jest.fn(),
   getPatientsByStatus: jest.fn(() => []),
-  getMetrics: jest.fn(() => ({ totalPatients: 0, patientsByStatus: {}, averageWaitTime: 0, patientsSeenToday: 0 } as any)),
+  getMetrics: jest.fn(() => ({
+    totalPatients: 0,
+    patientsByStatus: {},
+    averageWaitTime: 0,
+    patientsSeenToday: 0
+  }) as any),
   getWaitTime: jest.fn(() => 0),
   clearPatients: jest.fn(),
   exportPatientsToJSON: jest.fn(),
   importPatientsFromJSON: jest.fn(),
   tickCounter: 0,
   isLoading: false,
-  persistenceEnabled: true,
+  persistenceEnabled: false,
   saveCurrentSession: jest.fn(),
   togglePersistence: jest.fn(),
   hasRealData: false,
   loadMockData: jest.fn(),
-  refreshFromFirebase: jest.fn(),
+  refreshFromFirebase: jest.fn()
 };
 
 jest.mock('../../services/tebraDebugApi', () => ({
@@ -45,5 +50,7 @@ describe('TebraDebugDashboardContainer', () => {
 
     expect(screen.getByText(/Success Rate/i)).toBeInTheDocument();
     expect(screen.getByText(/Avg Response/i)).toBeInTheDocument();
+    expect(screen.getByText(/Active Errors/i)).toBeInTheDocument();
+    expect(screen.getByText(/Last Success/i)).toBeInTheDocument();
   });
 }); 
