@@ -6,7 +6,7 @@
 import { useCallback } from 'react';
 import { STEP_IDS } from '../constants/tebraConfig';
 import { tebraDebugApi, HealthCheckResult } from '../services/tebraDebugApi';
-import { usePatientContext } from '../context/PatientContext';
+import { usePatientContext } from '../contexts/PatientContext';
 
 export type StepId = typeof STEP_IDS[keyof typeof STEP_IDS];
 export type StepStatus = 'healthy' | 'warning' | 'error' | 'unknown';

@@ -168,6 +168,16 @@ export class TebraDebugApiService {
       }
 
       // Check if Functions instance can be created
+      if (!app) {
+        return {
+          status: 'error',
+          message: 'Firebase app not initialized',
+          duration: Date.now() - startTime,
+          correlationId,
+          details: { appInitialized: false }
+        };
+      }
+
       const functions = getFunctions(app);
       if (!functions) {
         return {
