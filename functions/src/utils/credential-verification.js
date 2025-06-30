@@ -38,35 +38,54 @@ async function checkAdmin() {
   }
 }
 
-async function checkFirestore(){
-  try{const ref=admin.firestore().doc('_cred_check/tmp'); await ref.set({ts:Date.now()}); await ref.delete(); return ok({});}
-  catch(e){return fail(e.message);} }
+async function checkFirestore() {
+  try {
+    const ref = admin.firestore().doc('_credential_test/tmp');
+    await ref.set({ timestamp: Date.now() });
+    await ref.delete();
+    return ok({ message: 'Firestore read/write test passed' });
+  } catch (error) {
+    return fail(`Firestore access failed: ${error.message}`, {
+      errorCode: error.code,
+      errorDetails: error.details
+    });
+  }
+}
 
-async function checkAuth0(){
- try{
-  const {AUTH0_DOMAIN:domain, AUTH0_AUDIENCE:aud}=process.env;
-  if(!domain||!aud) throw new Error('Auth0 env not set');
-  return ok({domain,audience:aud});
- }catch(e){return fail(e.message);} }
+async function checkAuth0() {
+  try {
+    // Get project ID for Secret Manager path construction
+    const projectId = process.env.GCLOUD_PROJECT || admin.app().options.projectId;
+    if (!projectId) {
+      throw new Error('GCP project ID not available');
+    }
 
-async function checkSecretManager(){
-  try{
-   const projectId=process.env.GCLOUD_PROJECT||admin.app().options.projectId;
-   const [secs]=await secretsClient.listSecrets({parent:`projects/${projectId}`,pageSize:1});
-   return ok({secretCount:secs.length});
-  }catch(e){return warn(e.message);} }
+    // Fetch Auth0 domain from Secret Manager
+    const domainSecretName = `projects/${projectId}/secrets/AUTH0_DOMAIN/versions/latest`;
+    const [domainVersion] = await secretsClient.accessSecretVersion({ name: domainSecretName });
+    const domain = domainVersion.payload?.data?.toString();
+    
+    if (!domain) {
+      throw new Error('AUTH0_DOMAIN secret not found or empty');
+    }
 
-async function checkServiceAccount(){
-  try{
-    const res=await fetch('http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email',{headers:{'Metadata-Flavor':'Google'}});
-    if(!res.ok) throw new Error('metadata HTTP '+res.status);
-    const email=await res.text();
-    return ok({email});
-  }catch(e){return warn(e.message);} }
+    // Fetch Auth0 audience from Secret Manager  
+    const audienceSecretName = `projects/${projectId}/secrets/AUTH0_AUDIENCE/versions/latest`;
+    const [audienceVersion] = await secretsClient.accessSecretVersion({ name: audienceSecretName });
+    const audience = audienceVersion.payload?.data?.toString();
+    
+    if (!audience) {
+      throw new Error('AUTH0_AUDIENCE secret not found or empty');
+    }
 
-// --------------------------------------------
-// Tebra EHR integration credential check
-// --------------------------------------------
+    return ok({ 
+      domain: domain.trim(), 
+      audience: audience.trim() 
+    });
+  } catch (error) {
+    return fail(`Auth0 configuration error: ${error.message}`);
+  }
+}
 
 async function checkTebra() {
   try {
@@ -94,6 +113,25 @@ async function checkTebra() {
     return fail(e.message);
   }
 }
+
+async function checkSecretManager(){
+  try{
+   const projectId=process.env.GCLOUD_PROJECT||admin.app().options.projectId;
+   const [secs]=await secretsClient.listSecrets({parent:`projects/${projectId}`,pageSize:1});
+   return ok({secretCount:secs.length});
+  }catch(e){return warn(e.message);} }
+
+async function checkServiceAccount(){
+  try{
+    const res=await fetch('http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email',{headers:{'Metadata-Flavor':'Google'}});
+    if(!res.ok) throw new Error('metadata HTTP '+res.status);
+    const email=await res.text();
+    return ok({email});
+  }catch(e){return warn(e.message);} }
+
+// --------------------------------------------
+// Tebra EHR integration credential check
+// --------------------------------------------
 
 const checks=[
   ['firebaseProject',checkFirebaseProject],

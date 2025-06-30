@@ -160,12 +160,17 @@ firebase functions:log --only FUNCTION_NAME
 #### Issue: "Container Healthcheck failed"
 
 **Symptoms**:
+
+ 
 ```
 ERROR: (gcloud.functions.deploy) OperationError: code=3 message=Build failed
 Container Healthcheck failed. Revision 'xxx' is not ready and cannot serve traffic.
 ```
 
+ 
+
 **Solutions**:
+
 1. Check Node.js version in firebase.json
 2. Verify package.json dependencies
 3. Check for OpenTelemetry initialization issues
@@ -253,8 +258,6 @@ firebase emulators:start --only functions
 ### Dashboard Links
 
 - [Firebase Functions Dashboard](https://console.cloud.google.com/monitoring/dashboards)
-- [Cloud Logging](https://console.cloud.google.com/logs)
-- [Error Reporting](https://console.cloud.google.com/errors)
 
 ---
 
@@ -290,27 +293,47 @@ Monitor for:
 A successful deployment must meet all of these criteria:
 
 ### Functional Requirements
+
+ 
+
 - [ ] All functions return expected HTTP status codes
 - [ ] Integration tests pass
 - [ ] Critical user flows work end-to-end
 
+ 
+
 ### Performance Requirements
+
+ 
+
 - [ ] Error rate < 1%
 - [ ] Average response time < 2 seconds
 - [ ] Cold start time < 3 seconds
 - [ ] Memory usage < 80% of allocated
 
+ 
+
 ### Security Requirements
+
+ 
+
 - [ ] Authentication working correctly
 - [ ] Rate limiting active
 - [ ] Audit logging functional
 - [ ] No security vulnerabilities introduced
 
+ 
+
 ### Operational Requirements
+
+ 
+
 - [ ] Monitoring alerts active
 - [ ] Logs properly structured
 - [ ] Rollback procedure tested
 - [ ] Documentation updated
+
+ 
 
 ---
 
@@ -322,7 +345,7 @@ A successful deployment must meet all of these criteria:
 - **Escalation**: CTO
 
 ### External Support
-- **Firebase Support**: https://firebase.google.com/support
+- **Firebase Support**: [https://firebase.google.com/support](https://firebase.google.com/support)
 - **Google Cloud Support**: [Support case link]
 
 ---

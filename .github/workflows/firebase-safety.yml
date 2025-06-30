@@ -32,7 +32,7 @@ jobs:
           echo "🔍 Checking Firebase Functions runtime configuration..."
           
           # Check firebase.json runtime
-          RUNTIME=$(jq -r '.functions.runtime // .functions[0].runtime // "not-found"' firebase.json)
+          RUNTIME=$(jq -r 'if .functions | type == "array" then .functions[0].runtime else .functions.runtime end // "not-found"' firebase.json)
           echo "Firebase.json runtime: $RUNTIME"
           
           if [[ "$RUNTIME" != "nodejs20" && "$RUNTIME" != "nodejs18" ]]; then
