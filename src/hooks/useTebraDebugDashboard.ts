@@ -13,7 +13,7 @@ import {
 } from '../constants/tebraDebug';
 import { HEALTH_CHECK_CONFIG } from '../constants/tebraConfig';
 import { useHealthChecks, StepId, StepResult } from './useHealthChecks';
-import { usePatientContext } from '../contexts/PatientContext';
+import { usePatientContext } from '../context/PatientContext';
 import { tebraDebugApi } from '../services/tebraDebugApi';
 
 const initialSteps: DataFlowStep[] = [
@@ -146,26 +146,30 @@ export const useTebraDebugDashboard = () => {
       const diagnostics: PhpDiagnostics = {
         nodeJsToPhp: { 
           status: connectionResult.status === 'fulfilled' && 
-                  (connectionResult.value as any)?.data?.success ? 'healthy' : 'error',
+                  connectionResult.value.status === 'healthy' ? 'healthy' : 'error',
           details: { 
             error: connectionResult.status === 'rejected' ? 
-                   tebraDebugApi.parseFirebaseError(connectionResult.reason as Error) : null
+                   connectionResult.reason?.message : 
+                   connectionResult.status === 'fulfilled' && connectionResult.value.status !== 'healthy' ?
+                   connectionResult.value.message : null
           }
         },
         phpHealth: { 
           status: providersResult.status === 'fulfilled' && 
-                  (providersResult.value as any)?.data?.success ? 'healthy' : 'error',
+                  providersResult.value.status === 'healthy' ? 'healthy' : 'error',
           details: { 
             error: providersResult.status === 'rejected' ? 
-                   tebraDebugApi.parseFirebaseError(providersResult.reason as Error) : null
+                   providersResult.reason?.message :
+                   providersResult.status === 'fulfilled' && providersResult.value.status !== 'healthy' ?
+                   providersResult.value.message : null
           }
         },
         phpToTebra: { 
           status: providersResult.status === 'fulfilled' && 
-                  (providersResult.value as any)?.data?.success ? 'healthy' : 'error',
+                  providersResult.value.status === 'healthy' ? 'healthy' : 'error',
           details: { 
-            providerCount: providersResult.status === 'fulfilled' ? 
-                          (providersResult.value as any)?.data?.data?.length || 0 : 0
+            providerCount: providersResult.status === 'fulfilled' && providersResult.value.details ?
+                          (providersResult.value.details as any)?.providersSuccess ? 1 : 0 : 0
           }
         },
         recommendations: generateRecommendations(connectionResult, providersResult)
@@ -199,7 +203,7 @@ export const useTebraDebugDashboard = () => {
   useEffect(() => {
     if (!autoRefresh) return;
     
-    const interval = setInterval(runHealthChecks, TEBRA_CONFIG.HEALTH_CHECK_INTERVAL);
+    const interval = setInterval(runHealthChecks, HEALTH_CHECK_CONFIG.AUTO_REFRESH_INTERVAL);
     return () => clearInterval(interval);
   }, [autoRefresh, runHealthChecks]);
 
