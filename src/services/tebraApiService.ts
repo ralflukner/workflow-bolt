@@ -6,6 +6,7 @@
  */
 
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getAuth } from 'firebase/auth';
 
 export interface TebraConnection {
   success: boolean;
@@ -46,11 +47,24 @@ export const tebraApiService = {
    * Test connection to Tebra API
    */
   testConnection: async (): Promise<TebraConnection> => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    
+    if (!user) {
+      throw new Error('User must be authenticated');
+    }
+    
     try {
+      // Force token refresh to ensure it's valid
+      await user.getIdToken(true);
+      console.log('Got Firebase ID token for user:', user.uid);
+      
       const functions = getFunctions();
       const testConnection = httpsCallable(functions, 'tebraTestConnection');
       
+      console.log('Calling tebraTestConnection function...');
       const result = await testConnection();
+      console.log('Function result:', result.data);
       return result.data as TebraConnection;
     } catch (error) {
       console.error('[TebraAPI] Connection test failed:', error);
