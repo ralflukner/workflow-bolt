@@ -26,7 +26,8 @@
   "exclude": [
     "src/**/__tests__/**/*",
     "src/**/*.test.*",
-    "src/**/test/**/*"
+    "src/**/test/**/*",
+    "src/utils/test-integration.ts"
   ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
