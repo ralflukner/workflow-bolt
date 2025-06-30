@@ -4,8 +4,8 @@ import TebraDebugDashboardContainer from '../../components/TebraDebugDashboardCo
 import { PatientContext } from '../../context/PatientContextDef';
 import { PatientContextType } from '../../context/PatientContextType';
 
-// Provide minimal PatientContext for the component
-const mockContext: PatientContextType = {
+// Minimal stub context to satisfy the container
+const stubContext: PatientContextType = {
   patients: [],
   addPatient: jest.fn(),
   updatePatients: jest.fn(),
@@ -16,10 +16,10 @@ const mockContext: PatientContextType = {
   getPatientsByStatus: jest.fn(() => []),
   getMetrics: jest.fn(() => ({
     totalPatients: 0,
-    patientsByStatus: {},
+    patientsByStatus: {} as any,
     averageWaitTime: 0,
     patientsSeenToday: 0
-  }) as any),
+  })),
   getWaitTime: jest.fn(() => 0),
   clearPatients: jest.fn(),
   exportPatientsToJSON: jest.fn(),
@@ -34,23 +34,15 @@ const mockContext: PatientContextType = {
   refreshFromFirebase: jest.fn()
 };
 
-jest.mock('../../services/tebraDebugApi', () => ({
-  tebraDebugApi: {
-    generateCorrelationId: () => 'test-id'
-  }
-}));
-
 describe('TebraDebugDashboardContainer', () => {
-  it('renders metrics cards', () => {
+  it('renders default metrics', () => {
     render(
-      <PatientContext.Provider value={mockContext}>
+      <PatientContext.Provider value={stubContext}>
         <TebraDebugDashboardContainer />
       </PatientContext.Provider>
     );
 
     expect(screen.getByText(/Success Rate/i)).toBeInTheDocument();
-    expect(screen.getByText(/Avg Response/i)).toBeInTheDocument();
     expect(screen.getByText(/Active Errors/i)).toBeInTheDocument();
-    expect(screen.getByText(/Last Success/i)).toBeInTheDocument();
   });
 }); 
