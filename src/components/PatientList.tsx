@@ -1,5 +1,7 @@
 import React from 'react';
+import { withContexts, WithContextsProps } from './withContexts';
 import { PatientApptStatus } from '../types';
+import PatientCard from './PatientCard';
 
 interface PatientListProps {
   status: PatientApptStatus;
@@ -9,16 +11,15 @@ interface PatientListProps {
 }
 
 // NOTE: useEffect is not allowed in this project. See docs/NO_USE_EFFECT_POLICY.md
-class PatientList extends React.Component<PatientListProps> {
+class PatientListClass extends React.Component<PatientListProps & WithContextsProps> {
   scrollContainerRef: React.RefObject<HTMLDivElement>;
 
-
-  constructor(props: PatientListProps) {
+  constructor(props: PatientListProps & WithContextsProps) {
     super(props);
     this.scrollContainerRef = React.createRef();
   }
 
-  componentDidUpdate(prevProps: PatientListProps) {
+  componentDidUpdate(prevProps: PatientListProps & WithContextsProps) {
     // Sync scroll position when it changes from parent
     if (
       this.props.scrollPosition !== undefined &&
@@ -40,13 +41,8 @@ class PatientList extends React.Component<PatientListProps> {
   };
 
   render() {
-    // usePatientContext is a hook, so we need to move patient data fetching up to a parent or use a context consumer
-    // For now, we assume patients are passed as a prop or fetched outside this component
-    // This is a placeholder for the actual patient fetching logic
-    // const { getPatientsByStatus } = usePatientContext();
-    // const patients = getPatientsByStatus(this.props.status);
-    // For demonstration, we'll use an empty array
-    const { title, status } = this.props;
+    const { title, status, patientContext } = this.props;
+    const patients = patientContext.getPatientsByStatus(status);
 
     const getHeaderColor = () => {
       switch (status) {
@@ -71,7 +67,7 @@ class PatientList extends React.Component<PatientListProps> {
           <h2 className="text-white font-semibold flex items-center justify-between">
             <span>{title}</span>
             <span className="bg-gray-800 text-white text-sm px-2 py-1 rounded-full">
-              0
+              {patients.length}
             </span>
           </h2>
         </div>
@@ -80,11 +76,21 @@ class PatientList extends React.Component<PatientListProps> {
           className="p-4 max-h-[400px] overflow-y-auto"
           onScroll={this.handleScroll}
         >
-          <p className="text-gray-400 text-center py-4">No patients in this category</p>
+          {patients.length === 0 ? (
+            <p className="text-gray-400 text-center py-4">No patients in this category</p>
+          ) : (
+            <div className="space-y-4">
+              {patients.map((patient) => (
+                <PatientCard key={patient.id} patient={patient} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
   }
 }
 
+// Export the wrapped component
+const PatientList = withContexts(PatientListClass);
 export default PatientList;
