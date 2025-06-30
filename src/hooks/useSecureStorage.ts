@@ -21,7 +21,7 @@ export const useSecureStorage = <T>({ key, defaultValue, storageType }: SecureSt
 
   // Replace useEffect with callback-based storage sync
   const setValueWithStorage = useCallback((newValue: React.SetStateAction<T>) => {
-    setValue(prevValue => {
+    setValue((prevValue: T) => {
       const actualNewValue = typeof newValue === 'function' 
         ? (newValue as (prev: T) => T)(prevValue) 
         : newValue;

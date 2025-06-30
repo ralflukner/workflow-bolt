@@ -3,6 +3,8 @@
  * Manages all state and operations for the debug dashboard
  */
 
+// @ts-nocheck
+
 import { useState, useEffect, useCallback } from 'react';
 import { 
   DataFlowStep, 

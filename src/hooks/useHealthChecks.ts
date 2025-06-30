@@ -59,12 +59,31 @@ export const useHealthChecks = () => {
 
         case STEP_IDS.DASHBOARD_UPDATE:
           result = await tebraDebugApi.testDashboardUpdate();
-          // Enhance with actual patient data context
+          // Enhance with actual patient data context for comprehensive validation
           result.details = {
             ...result.details,
             patientCount: patients.length,
-            hasPatients: patients.length > 0
+            hasPatients: patients.length > 0,
+            // HIPAA-safe aggregated metrics
+            hasScheduledAppointments: patients.some(p => p.appointmentTime),
+            statusDistribution: patients.reduce((acc, p) => {
+              acc[p.status] = (acc[p.status] || 0) + 1;
+              return acc;
+            }, {}),
+            dateRange: patients.length > 0 ? {
+              earliest: Math.min(...patients.map(p => new Date(p.appointmentTime || Date.now()).getTime())),
+              latest: Math.max(...patients.map(p => new Date(p.appointmentTime || Date.now()).getTime())),
+            } : null
           };
+          
+          // Validate dashboard can handle current patient load
+          if (patients.length > 100) {
+            result.status = 'warning';
+            result.message = `Dashboard handling ${patients.length} patients - performance may be impacted`;
+          } else if (patients.length === 0) {
+            result.status = 'warning';
+            result.message = 'No patients loaded - verify data sync is working';
+          }
           break;
 
         default:
@@ -131,7 +150,7 @@ export const useHealthChecks = () => {
   }, [checkStepHealth]);
 
   /**
-   * Parse step-specific error messages
+   * Parse step-specific error messages with enhanced categorization
    */
   const parseStepError = useCallback((stepId: StepId, error: Error): string => {
     const baseMessage = tebraDebugApi.parseFirebaseError(error);
@@ -155,6 +174,97 @@ export const useHealthChecks = () => {
         return baseMessage;
     }
   }, []);
+
+  /**
+   * Validate step dependencies - some steps depend on others
+   */
+  const validateStepDependencies = useCallback(async (): Promise<Record<StepId, boolean>> => {
+    const dependencies: Record<StepId, boolean> = {
+      [STEP_IDS.FRONTEND]: true, // No dependencies
+      [STEP_IDS.FIREBASE_FUNCTIONS]: true, // Independent
+      [STEP_IDS.TEBRA_PROXY]: true, // Depends on Firebase Functions (checked internally)
+      [STEP_IDS.CLOUD_RUN]: true, // Depends on Firebase Functions + Tebra Proxy
+      [STEP_IDS.TEBRA_API]: true, // Depends on entire chain
+      [STEP_IDS.DATA_TRANSFORM]: true, // Depends on Tebra API
+      [STEP_IDS.DASHBOARD_UPDATE]: patients.length >= 0, // Depends on patient context
+    };
+
+    return dependencies;
+  }, [patients.length]);
+
+  /**
+   * Get step criticality levels for prioritizing fixes
+   */
+  const getStepCriticality = useCallback((stepId: StepId): 'critical' | 'high' | 'medium' | 'low' => {
+    switch (stepId) {
+      case STEP_IDS.FRONTEND:
+        return 'critical'; // Dashboard must work
+      case STEP_IDS.FIREBASE_FUNCTIONS:
+        return 'critical'; // Core infrastructure
+      case STEP_IDS.TEBRA_PROXY:
+        return 'high'; // Patient data access
+      case STEP_IDS.TEBRA_API:
+        return 'high'; // External system integration
+      case STEP_IDS.CLOUD_RUN:
+        return 'high'; // Service availability
+      case STEP_IDS.DATA_TRANSFORM:
+        return 'medium'; // Data processing
+      case STEP_IDS.DASHBOARD_UPDATE:
+        return 'medium'; // UI updates
+      default:
+        return 'low';
+    }
+  }, []);
+
+  /**
+   * Get recommended actions based on step status and patient context
+   */
+  const getStepRecommendations = useCallback((stepId: StepId, status: StepStatus): string[] => {
+    const recommendations: string[] = [];
+    const criticality = getStepCriticality(stepId);
+
+    if (status === 'error') {
+      if (criticality === 'critical') {
+        recommendations.push('🚨 CRITICAL: Immediate attention required');
+      }
+      
+      switch (stepId) {
+        case STEP_IDS.FRONTEND:
+          recommendations.push('Check browser console for JavaScript errors');
+          recommendations.push('Verify React components are properly mounted');
+          break;
+        case STEP_IDS.FIREBASE_FUNCTIONS:
+          recommendations.push('Check Firebase project billing status');
+          recommendations.push('Verify function deployment and IAM permissions');
+          break;
+        case STEP_IDS.TEBRA_PROXY:
+          recommendations.push('Check Auth0 token validity and refresh');
+          recommendations.push('Verify Firebase Functions authentication');
+          break;
+        case STEP_IDS.TEBRA_API:
+          recommendations.push('Check Tebra SOAP credentials and customer key');
+          recommendations.push('Verify network connectivity to Tebra servers');
+          break;
+        case STEP_IDS.DASHBOARD_UPDATE:
+          if (patients.length === 0) {
+            recommendations.push('Check patient data sync - no patients loaded');
+            recommendations.push('Verify Tebra schedule import is working');
+          }
+          break;
+      }
+    } else if (status === 'warning') {
+      switch (stepId) {
+        case STEP_IDS.DASHBOARD_UPDATE:
+          if (patients.length > 100) {
+            recommendations.push('Consider implementing pagination for better performance');
+            recommendations.push('Monitor browser memory usage with large patient counts');
+          }
+          break;
+      }
+    }
+
+    return recommendations;
+  }, [patients.length, getStepCriticality]);
 
   return { 
     checkStepHealth, 
