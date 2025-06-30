@@ -16,100 +16,152 @@ const isLocalStats = (stats: SessionStats): stats is SessionStats & { lastUpdate
   return stats.backend === 'local' && 'lastUpdated' in stats;
 };
 
-export const PersistenceStatus: React.FC = () => {
-  const { 
-    persistenceEnabled, 
-    togglePersistence, 
-    saveCurrentSession, 
-    patients,
-    hasRealData,
-    isLoading 
-  } = usePatientContext();
-  
-  const [sessionStats, setSessionStats] = useState<SessionStats | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isPurging, setIsPurging] = useState(false);
-  const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'info' | 'error'>('info');
+interface State {
+  sessionStats: SessionStats | null;
+  isSaving: boolean;
+  isPurging: boolean;
+  lastSaved: string | null;
+  showToast: boolean;
+  toastMessage: string;
+  toastType: 'success' | 'info' | 'error';
+  storageService: StorageService;
+  storageType: 'Firebase' | 'LocalStorage';
+}
 
-  // Determine which storage service to use (stable ref)
-  const { storageService, storageType } = React.useMemo(() => {
-    return isFirebaseConfigured()
+// NOTE: useEffect is not allowed in this project. See docs/NO_USE_EFFECT_POLICY.md
+class PersistenceStatusClass extends Component<WithContextsProps, State> {
+  private statsInterval: NodeJS.Timeout | null = null;
+  private toastTimeout: NodeJS.Timeout | null = null;
+
+  constructor(props: WithContextsProps) {
+    super(props);
+
+    // Determine which storage service to use (stable during component lifetime)
+    const { storageService, storageType } = isFirebaseConfigured()
       ? { storageService: dailySessionService as StorageService, storageType: 'Firebase' as const }
       : { storageService: localSessionService as StorageService, storageType: 'LocalStorage' as const };
-   
-  }, []);
 
-  // Load session statistics on component mount
-  React.useEffect(() => {
-    const loadStats = async () => {
-      if (!persistenceEnabled) return;
-      
-      try {
-        const stats = await storageService.getSessionStats();
-        setSessionStats(stats);
-      } catch (error) {
-        console.error(`Failed to load session stats from ${storageType}:`, error);
-      }
+    this.state = {
+      sessionStats: null,
+      isSaving: false,
+      isPurging: false,
+      lastSaved: null,
+      showToast: false,
+      toastMessage: '',
+      toastType: 'info',
+      storageService,
+      storageType,
     };
+  }
 
-    loadStats();
-    
-    if (persistenceEnabled) {
-      const interval = setInterval(loadStats, 120000); // Refresh stats every 2 minutes
-      return () => clearInterval(interval);
+  componentDidMount() {
+    this.loadStats();
+    if (this.props.patientContext.persistenceEnabled) {
+      this.statsInterval = setInterval(() => this.loadStats(), 120000); // Refresh stats every 2 minutes
     }
-  }, [persistenceEnabled, patients.length, storageService, storageType]);
+  }
 
-  // Use timeout-based state management for toast instead of useEffect
-  const showToastMessage = (message: string, type: 'success' | 'info' | 'error') => {
-    setToastMessage(message);
-    setToastType(type);
-    setShowToast(true);
+  componentDidUpdate(prevProps: WithContextsProps) {
+    const { persistenceEnabled, patients } = this.props.patientContext;
+    const prevPersistenceEnabled = prevProps.patientContext.persistenceEnabled;
+    const prevPatientsLength = prevProps.patientContext.patients.length;
+
+    // Handle persistence enabled state changes
+    if (persistenceEnabled !== prevPersistenceEnabled) {
+      if (persistenceEnabled) {
+        this.loadStats();
+        this.statsInterval = setInterval(() => this.loadStats(), 120000);
+      } else {
+        if (this.statsInterval) {
+          clearInterval(this.statsInterval);
+          this.statsInterval = null;
+        }
+      }
+    }
+
+    // Reload stats when patient count changes
+    if (persistenceEnabled && patients.length !== prevPatientsLength) {
+      this.loadStats();
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.statsInterval) {
+      clearInterval(this.statsInterval);
+    }
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+    }
+  }
+
+  loadStats = async () => {
+    const { persistenceEnabled } = this.props.patientContext;
+    if (!persistenceEnabled) return;
+
+    try {
+      const stats = await this.state.storageService.getSessionStats();
+      this.setState({ sessionStats: stats });
+    } catch (error) {
+      console.error(`Failed to load session stats from ${this.state.storageType}:`, error);
+    }
+  };
+
+  showToastMessage = (message: string, type: 'success' | 'info' | 'error') => {
+    this.setState({
+      toastMessage: message,
+      toastType: type,
+      showToast: true,
+    });
     
+    // Clear any existing timeout
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+    }
+
     // Auto-hide toast after 4 seconds
-    setTimeout(() => {
-      setShowToast(false);
+    this.toastTimeout = setTimeout(() => {
+      this.setState({ showToast: false });
     }, 4000);
   };
 
-  // Function was moved above, removing duplicate
+  handleManualSave = async () => {
+    const { hasRealData, saveCurrentSession } = this.props.patientContext;
+    const { storageService, storageType } = this.state;
 
-  const handleManualSave = async () => {
     if (!hasRealData) {
-      showToastMessage(
+      this.showToastMessage(
         'No real patient data to save. Add or import patients first, or load mock data and then modify it to make it "real".',
         'info'
       );
       return;
     }
 
-    setIsSaving(true);
+    this.setState({ isSaving: true });
     try {
       await saveCurrentSession();
-      setLastSaved(new Date().toLocaleTimeString());
+      this.setState({ lastSaved: new Date().toLocaleTimeString() });
       
       // Refresh stats
       const stats = await storageService.getSessionStats();
-      setSessionStats(stats);
+      this.setState({ sessionStats: stats });
       
-      showToastMessage(`Session saved successfully to ${storageType}!`, 'success');
+      this.showToastMessage(`Session saved successfully to ${storageType}!`, 'success');
     } catch (error) {
       console.error('Manual save failed:', error);
-      showToastMessage(`Failed to save session to ${storageType}. Check console for details.`, 'error');
+      this.showToastMessage(`Failed to save session to ${storageType}. Check console for details.`, 'error');
     } finally {
-      setIsSaving(false);
+      this.setState({ isSaving: false });
     }
   };
 
-  const handlePurgeData = async () => {
+  handlePurgeData = async () => {
+    const { storageService, storageType } = this.state;
+
     if (!confirm(`This will clear all session data from ${storageType}. Are you sure?`)) {
       return;
     }
 
-    setIsPurging(true);
+    this.setState({ isPurging: true });
     try {
       if (storageService.clearSession) {
         await storageService.clearSession();
@@ -117,29 +169,34 @@ export const PersistenceStatus: React.FC = () => {
       
       // Refresh stats
       const stats = await storageService.getSessionStats();
-      setSessionStats(stats);
+      this.setState({ sessionStats: stats });
       
-      showToastMessage(`Session data cleared from ${storageType}!`, 'success');
+      this.showToastMessage(`Session data cleared from ${storageType}!`, 'success');
     } catch (error) {
       console.error('Purge failed:', error);
-      showToastMessage(`Failed to clear session data from ${storageType}. Check console for details.`, 'error');
+      this.showToastMessage(`Failed to clear session data from ${storageType}. Check console for details.`, 'error');
     } finally {
-      setIsPurging(false);
+      this.setState({ isPurging: false });
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4">
-        <div className="flex items-center space-x-2">
-          <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-          <span className="text-sm text-gray-600">Loading session data...</span>
-        </div>
-      </div>
-    );
-  }
+  render() {
+    const { patientContext } = this.props;
+    const { persistenceEnabled, togglePersistence, patients, hasRealData, isLoading } = patientContext;
+    const { sessionStats, isSaving, isPurging, lastSaved, showToast, toastMessage, toastType, storageType } = this.state;
 
-  return (
+    if (isLoading) {
+      return (
+        <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4">
+          <div className="flex items-center space-x-2">
+            <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+            <span className="text-sm text-gray-600">Loading session data...</span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
     <div className="bg-gray-800 rounded-lg p-4 shadow-lg mb-4">
       {/* Toast Notification */}
       {showToast && (
@@ -307,5 +364,9 @@ export const PersistenceStatus: React.FC = () => {
         </div>
       )}
     </div>
-  );
-}; 
+    );
+  }
+}
+
+// Export the wrapped component
+export const PersistenceStatus = withContexts(PersistenceStatusClass); 
