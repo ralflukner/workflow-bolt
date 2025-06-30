@@ -1,7 +1,5 @@
-import React, { createRef } from 'react';
-import type { PatientApptStatus } from '../types';
-import { usePatientContext } from '../hooks/usePatientContext';
-import PatientCard from './PatientCard';
+import React from 'react';
+import { PatientApptStatus } from '../types';
 
 interface PatientListProps {
   status: PatientApptStatus;
@@ -13,11 +11,11 @@ interface PatientListProps {
 // NOTE: useEffect is not allowed in this project. See docs/NO_USE_EFFECT_POLICY.md
 class PatientList extends React.Component<PatientListProps> {
   scrollContainerRef: React.RefObject<HTMLDivElement>;
-  static contextType = React.createContext(undefined);
+
 
   constructor(props: PatientListProps) {
     super(props);
-    this.scrollContainerRef = createRef();
+    this.scrollContainerRef = React.createRef();
   }
 
   componentDidUpdate(prevProps: PatientListProps) {
@@ -48,7 +46,6 @@ class PatientList extends React.Component<PatientListProps> {
     // const { getPatientsByStatus } = usePatientContext();
     // const patients = getPatientsByStatus(this.props.status);
     // For demonstration, we'll use an empty array
-    const patients: any[] = [];
     const { title, status } = this.props;
 
     const getHeaderColor = () => {
@@ -74,7 +71,7 @@ class PatientList extends React.Component<PatientListProps> {
           <h2 className="text-white font-semibold flex items-center justify-between">
             <span>{title}</span>
             <span className="bg-gray-800 text-white text-sm px-2 py-1 rounded-full">
-              {patients.length}
+              0
             </span>
           </h2>
         </div>
@@ -83,13 +80,7 @@ class PatientList extends React.Component<PatientListProps> {
           className="p-4 max-h-[400px] overflow-y-auto"
           onScroll={this.handleScroll}
         >
-          {patients.length > 0 ? (
-            patients.map((patient) => (
-              <PatientCard key={patient.id} patient={patient} />
-            ))
-          ) : (
-            <p className="text-gray-400 text-center py-4">No patients in this category</p>
-          )}
+          <p className="text-gray-400 text-center py-4">No patients in this category</p>
         </div>
       </div>
     );

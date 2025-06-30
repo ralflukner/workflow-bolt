@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { usePatientContext } from '../hooks/usePatientContext';
-import { useFirebaseAuth } from '../services/authBridge';
-import { isFirebaseConfigured } from '../config/firebase';
-import { dailySessionService } from '../services/firebase/dailySessionService';
-import { localSessionService } from '../services/localStorage/localSessionService';
-import { SessionStats } from '../services/storageService';
+import React, { useState, useRef } from 'react';
+import { usePatientContext } from '@/hooks/usePatientContext';
+import { useFirebaseAuth } from '@/services/authBridge';
+import { isFirebaseConfigured } from '@/config/firebase';
+import { dailySessionService } from '@/services/firebase/dailySessionService';
+import { localSessionService } from '@/services/localStorage/localSessionService';
+import { SessionStats } from '@/services/storageService';
 
 export const DiagnosticPanel: React.FC = () => {
   const {
@@ -25,35 +25,52 @@ export const DiagnosticPanel: React.FC = () => {
   const [saveError, setSaveError] = useState<string>('');
   const [storageStats, setStorageStats] = useState<SessionStats | null>(null);
 
-  // Check authentication status
+  // Track auth check to prevent repeated execution
+  const authCheckedRef = useRef(false);
+  // Track if stats have been loaded to prevent repeated calls
+  const statsLoadedRef = useRef(false);
+
+  // Check authentication status once per component lifecycle
   const checkAuth = async () => {
+    // Prevent repeated execution on re-renders
+    if (authCheckedRef.current) return;
+    
     try {
-      const success = await ensureFirebaseAuth();
-      setAuthStatus(success ? 'authenticated' : 'failed');
+      const firebaseReady = isFirebaseConfigured();
+      if (firebaseReady) {
+        const success = await ensureFirebaseAuth();
+        setAuthStatus(success ? 'authenticated' : 'failed');
+      } else {
+        setAuthStatus('authenticated');
+      }
+      authCheckedRef.current = true; // Mark as checked
     } catch (error) {
       setAuthStatus('failed');
       console.error('Auth check failed:', error);
+      // Don't mark as checked on error, allow retry
     }
   };
 
-  const firebaseReady = isFirebaseConfigured();
-  if (firebaseReady) {
-    checkAuth();
-  } else {
-    setAuthStatus('authenticated'); // localStorage doesn't need auth
-  }
+  // Execute auth check once - safe because ref prevents repeated calls
+  checkAuth();
 
-  // Load storage stats
+  // Load storage stats once per component lifecycle
   const loadStats = async () => {
+    // Prevent repeated execution on re-renders
+    if (statsLoadedRef.current) return;
+    
     try {
       const service = isFirebaseConfigured() ? dailySessionService : localSessionService;
       const stats = await service.getSessionStats();
       setStorageStats(stats);
+      statsLoadedRef.current = true; // Mark as loaded
     } catch (error) {
       console.error('Failed to load storage stats:', error);
+      // Don't mark as loaded on error, allow retry
     }
   };
 
+  // Execute once - safe because ref prevents repeated calls
   loadStats();
 
   // Test manual save

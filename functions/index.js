@@ -4,7 +4,6 @@ if (process.env.FUNCTIONS_EMULATOR) {
 }
 
 const functions = require('firebase-functions');
-const functionsV1 = require('firebase-functions/v1');
 const { onCall } = require('firebase-functions/v2/https');
 const express = require('express');
 const cors = require('cors');
@@ -12,7 +11,6 @@ const rateLimit = require('express-rate-limit');
 const admin = require('firebase-admin');
 const jwt = require('jsonwebtoken');
 const jwksRsa = require('jwks-rsa');
-const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 
 // Lazy loading for heavy dependencies to prevent startup timeouts
 let tebraProxyClient = null;
@@ -28,29 +26,19 @@ const {
   validatePatientId, 
   validateDate, 
   validateSearchCriteria, 
-  validateAppointmentData,
   logValidationAttempt 
 } = require('./src/validation');
 
-// Credential verification system (temporarily disabled for deployment)
-// const {
-//   credentialVerificationMiddleware,
-//   healthCheck: credHealthCheck
-// } = require('./src/utils/credential-verification');
+// Credential verification system (CRITICAL: Re-enabled for security)
+const {
+  credentialVerificationMiddleware
+} = require('./src/utils/credential-verification');
 
-// Temporarily disable monitoring to avoid startup issues
-// const { 
-//   monitorAuth, 
-//   monitorPhiAccess, 
-//   monitorValidationFailure,
-//   generateSecurityReport 
-// } = require('./src/monitoring');
-
-// Stub monitoring functions to avoid startup issues
-const monitorAuth = () => Promise.resolve();
-const monitorPhiAccess = () => Promise.resolve();
-const monitorValidationFailure = () => Promise.resolve();
-const generateSecurityReport = () => Promise.resolve({ status: 'monitoring disabled' });
+// Security monitoring system (CRITICAL: Re-enabled for HIPAA compliance)
+const { 
+  monitorPhiAccess, 
+  generateSecurityReport 
+} = require('./src/monitoring');
 
 // Initialize Firebase Admin (avoid duplicate app error)
 if (!admin.apps.length) {
@@ -80,14 +68,53 @@ if (!admin.apps.length) {
 
 /** Verifies an Auth0 RS256 access / ID token and returns the decoded payload */
 async function verifyAuth0Jwt(token) {
-  // Use hardcoded values for now to avoid Secret Manager issues during deployment
-  const domain = 'dev-uex7qzqmd8c4qnde.us.auth0.com';
-  const audience = 'https://api.patientflow.com';
+  // Read Auth0 configuration from environment variables
+  const domain = process.env.AUTH0_DOMAIN;
+  const audience = process.env.AUTH0_AUDIENCE;
   
+  // Expected values for comparison (for verification purposes)
+  const expectedDomain = 'dev-uex7qzqmd8c4qnde.us.auth0.com';
+  const expectedAudience = 'https://api.patientflow.com';
+  
+  // Validate environment variables are set
   if (!domain || !audience) {
-    throw new Error('Missing Auth0 configuration');
+    console.error('Missing Auth0 environment variables:', {
+      AUTH0_DOMAIN: domain ? 'SET' : 'MISSING',
+      AUTH0_AUDIENCE: audience ? 'SET' : 'MISSING'
+    });
+    throw new Error('Missing Auth0 configuration: AUTH0_DOMAIN and AUTH0_AUDIENCE environment variables must be set');
   }
-
+  
+  // Verify the retrieved values match expected configuration
+  if (domain !== expectedDomain) {
+    console.warn('Auth0 domain mismatch:', {
+      retrieved: domain,
+      expected: expectedDomain,
+      status: 'VERIFICATION_FAILED'
+    });
+  } else {
+    console.log('Auth0 domain verification: PASSED');
+  }
+  
+  if (audience !== expectedAudience) {
+    console.warn('Auth0 audience mismatch:', {
+      retrieved: audience,
+      expected: expectedAudience,
+      status: 'VERIFICATION_FAILED'
+    });
+  } else {
+    console.log('Auth0 audience verification: PASSED');
+  }
+  
+  // Additional validation for proper format
+  if (!domain.includes('.auth0.com')) {
+    throw new Error('Invalid Auth0 domain format: must be a valid Auth0 domain');
+  }
+  
+  if (!audience.startsWith('https://')) {
+    throw new Error('Invalid Auth0 audience format: must be a valid HTTPS URL');
+  }
+  
   // Create JWKS client with Auth0 domain
   const jwksClient = jwksRsa({
     jwksUri: `https://${domain}/.well-known/jwks.json`,
@@ -123,8 +150,8 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json({ limit: '1mb' }));
 
-// Block all subsequent requests if credential verification fails (temporarily disabled)
-// app.use(credentialVerificationMiddleware({ blockOnFailure: true }));
+// Block all subsequent requests if credential verification fails
+app.use(credentialVerificationMiddleware({ blockOnFailure: true }));
 
 // Lightweight health check endpoint (no rate limiting to avoid startup delays)
 app.get('/health', (req, res) => {
@@ -222,7 +249,7 @@ app.post('/api/tebra', async (req, res) => {
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error('Express error:', err.stack);
   const payload = process.env.NODE_ENV === 'development'
     ? { error: 'Internal server error', message: err.message }
@@ -239,7 +266,7 @@ exports.validateHIPAACompliance = validateHIPAACompliance;
 exports.testSecretRedaction = testSecretRedaction;
 
 // Tebra API Functions
-exports.tebraTestConnection = onCall({ cors: true }, async (request) => {
+exports.tebraTestConnection = onCall({ cors: true }, async (_request) => {
   console.log('Testing Tebra connection...');
   console.log('Environment - TEBRA_CLOUD_RUN_URL:', process.env.TEBRA_CLOUD_RUN_URL);
   console.log('Environment - GOOGLE_APPLICATION_CREDENTIALS:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
@@ -398,7 +425,7 @@ exports.tebraGetAppointments = onCall({ cors: true }, async (request) => {
 });
 
 // Get providers
-exports.tebraGetProviders = onCall({ cors: true }, async (request) => {
+exports.tebraGetProviders = onCall({ cors: true }, async (_request) => {
   console.log('Getting providers...');
   
   try {

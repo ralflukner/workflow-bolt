@@ -112,14 +112,12 @@ export const TebraDebugDashboard: React.FC = () => {
       const appointmentTimes = patients
         .map(p => p.appointmentTime)
         .filter(time => {
-          // Handle both string and Date types
-          if (typeof time === 'string') {
-            const parsed = new Date(time);
-            return !isNaN(parsed.getTime());
-          }
-          return time && typeof time === 'object' && 'getTime' in time;
+          // appointmentTime is always a string in our Patient type
+          if (!time) return false;
+          const parsed = new Date(time);
+          return !isNaN(parsed.getTime());
         })
-        .map(time => typeof time === 'string' ? new Date(time) : time as Date)
+        .map(time => new Date(time))
         .sort((a, b) => a.getTime() - b.getTime());
       
       setMetrics(prev => ({
@@ -217,7 +215,7 @@ export const TebraDebugDashboard: React.FC = () => {
             ]) as Response;
             
             if (response.ok) {
-              const data = await response.json();
+              await response.json(); // Verify response is valid JSON
               updateStepError(stepId, null); // Clear any previous errors
               return 'healthy';
             } else {
@@ -239,7 +237,7 @@ export const TebraDebugDashboard: React.FC = () => {
             const result = await Promise.race([
               testConnection(),
               new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout after 10s')), 10000))
-            ]) as any;
+            ]) as { data?: { success?: boolean; message?: string } };
             
             console.log('Tebra test connection result:', result);
             
@@ -301,7 +299,7 @@ export const TebraDebugDashboard: React.FC = () => {
             const result = await Promise.race([
               testAppointments({ date: new Date().toISOString().split('T')[0] }),
               new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout after 15s')), 15000))
-            ]) as any;
+            ]) as { data?: { success?: boolean; message?: string } };
             
             console.log('Tebra API test result:', result);
             
@@ -400,8 +398,7 @@ export const TebraDebugDashboard: React.FC = () => {
             };
             
             // Keep only last 10 errors
-            const updatedErrors = [newError, ...prevErrors].slice(0, 10);
-            return updatedErrors;
+            return [newError, ...prevErrors].slice(0, 10);
           });
         }
         
@@ -602,8 +599,10 @@ export const TebraDebugDashboard: React.FC = () => {
       {/* Advanced Debugging Tools */}
       {showAdvancedTools && (
         <div className="mt-6 space-y-6">
-          <LiveLogViewer />
-          <RequestReplayTool />
+          <div className="bg-gray-700 p-4 rounded border">
+            <h5 className="text-white font-medium mb-2">Advanced Tools</h5>
+            <p className="text-gray-300 text-sm">Live Log Viewer and Request Replay tools coming soon...</p>
+          </div>
         </div>
       )}
     </div>

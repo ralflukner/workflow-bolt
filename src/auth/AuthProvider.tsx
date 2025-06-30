@@ -84,23 +84,19 @@ const DevHelpers: React.FC = () => {
     console.log('🔧 Dev helpers available: getToken() • loginPopup()');
   }, [getAccessTokenSilently, loginWithPopup]);
 
-  // Cleanup using a ref callback pattern
-  const cleanupRef = React.useRef<() => void>();
-  React.useMemo(() => {
-    cleanupRef.current = () => {
+  // Cleanup pattern using ref callback (runs on unmount without useEffect)
+  const cleanupCallbackRef = React.useCallback((node: HTMLElement | null) => {
+    // This callback runs when the ref is attached/detached
+    if (node === null) {
+      // Component is unmounting - clean up window properties
       delete (window as unknown as Record<string, unknown>).getToken;
       delete (window as unknown as Record<string, unknown>).loginPopup;
-    };
-    
-    // Return cleanup for when component unmounts
-    return () => {
-      if (cleanupRef.current) {
-        cleanupRef.current();
-      }
-    };
+      console.log('🧹 Dev helpers cleaned up on unmount');
+    }
   }, []);
 
-  return null;
+  // Hidden div that triggers cleanup on unmount via ref callback
+  return <div ref={cleanupCallbackRef} style={{ display: 'none' }} />;
 };
 
 export default AuthProvider; 

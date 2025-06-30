@@ -114,20 +114,32 @@ async function checkTebra() {
   }
 }
 
-async function checkSecretManager(){
-  try{
-   const projectId=process.env.GCLOUD_PROJECT||admin.app().options.projectId;
-   const [secs]=await secretsClient.listSecrets({parent:`projects/${projectId}`,pageSize:1});
-   return ok({secretCount:secs.length});
-  }catch(e){return warn(e.message);} }
+async function checkSecretManager() {
+  try {
+    const projectId = process.env.GCLOUD_PROJECT || admin.app().options.projectId;
+    const [secs] = await secretsClient.listSecrets({
+      parent: `projects/${projectId}`,
+      pageSize: 1
+    });
+    return ok({ secretCount: secs.length });
+  } catch (e) {
+    return warn(e.message);
+  }
+}
 
-async function checkServiceAccount(){
-  try{
-    const res=await fetch('http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email',{headers:{'Metadata-Flavor':'Google'}});
-    if(!res.ok) throw new Error('metadata HTTP '+res.status);
-    const email=await res.text();
-    return ok({email});
-  }catch(e){return warn(e.message);} }
+async function checkServiceAccount() {
+  try {
+    const res = await fetch(
+      'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email',
+      { headers: { 'Metadata-Flavor': 'Google' } }
+    );
+    if (!res.ok) throw new Error('metadata HTTP ' + res.status);
+    const email = await res.text();
+    return ok({ email });
+  } catch (e) {
+    return warn(e.message);
+  }
+}
 
 // --------------------------------------------
 // Tebra EHR integration credential check
@@ -179,7 +191,7 @@ function credentialVerificationMiddleware() {
       
       if (!verificationResult.isValid) {
         console.error('❌ Credential verification failed, blocking request');
-        return res.status(500).json({
+        return res.status(503).json({
           error: 'Service configuration error',
           message: 'Authentication credentials are not properly configured',
           details: process.env.NODE_ENV === 'development' ? verificationResult : undefined

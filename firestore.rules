@@ -13,8 +13,15 @@ service cloud.firestore {
     
     // Patient data rules - sessions/{date}/patients/{patientId}
     match /sessions/{date}/patients/{patientId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow read: if isAuthenticated() && (
+        request.auth.token.role == 'provider' ||
+        request.auth.token.role == 'admin' ||
+        request.auth.uid == resource.data.assignedUserId
+      );
+      allow write: if isAuthenticated() && (
+        request.auth.token.role == 'provider' ||
+        request.auth.token.role == 'admin'
+      );
     }
     
     // Daily sessions data
@@ -45,9 +52,20 @@ service cloud.firestore {
       allow write: if false; // Admin SDK only for HIPAA compliance
     }
     
-    // Test collections for credential verification
+    // Test collections for credential verification (SECURED)
     match /_credential_test/{document=**} {
-      allow read, write: if true; // Allow for automated testing
+      allow read, write: if isAuthenticated() && (
+        // Allow specific test accounts for automated testing
+        request.auth.token.email in [
+          'test@luknerclinic.com',
+          'dev@luknerclinic.com', 
+          'automation@luknerclinic.com'
+        ] ||
+        // Allow admin role for manual testing
+        request.auth.token.role == 'admin' ||
+        // Allow provider role for integration testing
+        request.auth.token.role == 'provider'
+      );
     }
     
     // Health check collection for monitoring

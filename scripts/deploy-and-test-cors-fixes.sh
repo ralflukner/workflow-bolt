@@ -55,6 +55,14 @@ else
     exit 1
 fi
 
+# Check gcloud CLI
+if command -v gcloud &> /dev/null; then
+    pass "gcloud CLI is available"
+else
+    warn "gcloud CLI not found. Log checking will be skipped"
+    SKIP_LOG_CHECK=true
+fi
+
 # Run pre-deployment checks
 echo ""
 info "Running pre-deployment safety checks..."
@@ -187,8 +195,17 @@ echo "-----------------------------------------"
 info "Checking recent function logs for errors..."
 
 # Check for recent errors (last 10 minutes)
-ERROR_COUNT=$(gcloud functions logs read --limit=50 --filter="severity>=ERROR AND timestamp>=\"$(date -u -d '10 minutes ago' +%Y-%m-%dT%H:%M:%SZ)\"" 2>/dev/null | grep -c "ERROR" || echo "0")
-
+# Portable date calculation
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    TIMESTAMP=$(date -u -v-10M '+%Y-%m-%dT%H:%M:%SZ')
+else
+    TIMESTAMP=$(date -u -d '10 minutes ago' '+%Y-%m-%dT%H:%M:%SZ')
+fi
+ERROR_COUNT=$(gcloud functions logs read \
+  --limit=50 \
+  --filter="severity>=ERROR AND timestamp>=\"$TIMESTAMP\"" \
+  2>/dev/null \
+  | grep -c "ERROR" || echo "0")
 if [ "$ERROR_COUNT" -eq 0 ]; then
     pass "No recent errors found in function logs"
 else
