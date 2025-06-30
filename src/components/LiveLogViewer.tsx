@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Terminal, Filter, Download, Trash2, Play, Pause } from 'lucide-react';
+import { Terminal, Filter, Trash2, Play, Pause } from 'lucide-react';
 
 interface LogEntry {
   id: string;
@@ -20,9 +20,30 @@ interface LiveLogViewerProps {
   autoScroll?: boolean;
 }
 
+// Utility functions for log styling
+const getLevelBgColor = (level: string): string => {
+  switch (level) {
+    case 'error': return 'bg-red-900/30';
+    case 'warning': return 'bg-yellow-900/30';
+    case 'info': return 'bg-blue-900/30';
+    case 'debug': return 'bg-gray-900/30';
+    default: return 'bg-gray-800';
+  }
+};
+
+const getLevelColor = (level: string): string => {
+  switch (level) {
+    case 'error': return 'text-red-400';
+    case 'warning': return 'text-yellow-400';
+    case 'info': return 'text-blue-400';
+    case 'debug': return 'text-gray-400';
+    default: return 'text-gray-300';
+  }
+};
+
 export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({ 
   maxEntries = 500,
-  autoScroll = true 
+  autoScroll: _autoScroll = true 
 }) => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [filter, setFilter] = useState('');
@@ -107,9 +128,7 @@ export const LiveLogViewer: React.FC<LiveLogViewerProps> = ({
           </button>
           <button
             onClick={() => {
-              const interval = generateLogs();
-              // Optionally, you can clear the interval if you want to stop generating logs
-              // clearInterval(interval);
+              generateLogs();
             }}
             className="p-2 rounded hover:bg-gray-700 transition-colors"
             title="Generate new logs"

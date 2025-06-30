@@ -85,23 +85,20 @@ const checkCredentials = onCall({
 const healthCheck = onRequest({
   maxInstances: 10,
   timeoutSeconds: 10,
-  cors: true
+  cors: {
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5000',
+      'https://luknerlumina-firebase.web.app',
+      'https://luknerlumina-firebase.firebaseapp.com'
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+    maxAge: 86400
+  }
 }, async (request, response) => {
   try {
-    // Set explicit CORS headers
-    const origin = request.headers.origin;
-    if (origin && (origin.includes('localhost') || origin.startsWith('file://') || origin.includes('luknerlumina-firebase'))) {
-      response.set('Access-Control-Allow-Origin', origin);
-    } else {
-      // Only allow specific origins, reject others
-      response.status(403).json({ error: 'Origin not allowed' });
-      return;
-    }
-    
-    response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    response.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    response.set('Access-Control-Max-Age', '86400');
-    
     // Handle preflight requests
     if (request.method === 'OPTIONS') {
       console.log('✅ Health check CORS preflight handled');

@@ -1,4 +1,4 @@
-import React, { createRef } from 'react';
+import React from 'react';
 import type { Patient } from '../types';
 // import { usePatientContext } from '../hooks/usePatientContext';
 
@@ -15,7 +15,7 @@ export class DebugTextWindow extends React.Component<DebugTextWindowProps> {
 
   constructor(props: DebugTextWindowProps) {
     super(props);
-    this.textAreaRef = createRef();
+    this.textAreaRef = React.createRef();
   }
 
   componentDidUpdate(prevProps: DebugTextWindowProps) {
@@ -71,9 +71,9 @@ export class DebugTextWindow extends React.Component<DebugTextWindowProps> {
       .sort((a, b) => {
         // Sort by status order similar to how they appear in sections
         const statusOrder = [
-          'scheduled', 'Confirmed', 'Rescheduled', 'arrived',
-          'appt-prep', 'ready-for-md', 'With Doctor',
-          'seen-by-md', 'completed', 'Cancelled', 'No Show'
+          'scheduled', 'Confirmed', 'arrived', 
+          'appt-prep', 'ready-for-md', 'With Doctor', 
+          'seen-by-md', 'completed', 'Rescheduled', 'Cancelled', 'No Show'
         ];
         const aIndex = statusOrder.indexOf(a.status);
         const bIndex = statusOrder.indexOf(b.status);

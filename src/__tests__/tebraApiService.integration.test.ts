@@ -13,6 +13,7 @@ import fs from 'fs';
 import path from 'path';
 
 const logFilePath = path.join(__dirname, '../../logs/tebraApiService.integration.log');
+fs.mkdirSync(path.dirname(logFilePath), { recursive: true });
 function logToFile(...args: any[]) {
   const msg = args.map(a => (typeof a === 'string' ? a : JSON.stringify(a, null, 2))).join(' ');
   fs.appendFileSync(logFilePath, `[${new Date().toISOString()}] ${msg}\n`);

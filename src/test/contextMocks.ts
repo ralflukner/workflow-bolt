@@ -12,6 +12,12 @@ export const createMockPatientContext = (overrides = {}) => {
       patientState.push(patient);
       return patient;
     }),
+    updatePatients: jest.fn((patients) => {
+      patientState = [...patients];
+    }),
+    deletePatient: jest.fn((id) => {
+      patientState = patientState.filter(p => p.id !== id);
+    }),
     updatePatientStatus: jest.fn(),
     assignRoom: jest.fn(),
     updateCheckInTime: jest.fn(),
@@ -100,6 +106,7 @@ export const createMockPatientContext = (overrides = {}) => {
     togglePersistence: jest.fn(),
     hasRealData: false,
     loadMockData: jest.fn(),
+    refreshFromFirebase: jest.fn().mockResolvedValue(undefined),
     ...overrides
   };
   

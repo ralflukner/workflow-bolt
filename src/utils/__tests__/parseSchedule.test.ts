@@ -3,8 +3,8 @@
  * These are pure data tests that run fast without React/RTL
  */
 
-import { parseSchedule, ImportedPatient } from '../parseSchedule';
-import { PatientApptStatus, AppointmentType } from '../../types';
+import { parseSchedule } from '../parseSchedule';
+import { PatientApptStatus } from '../../types';
 
 // Mock current time for consistent testing
 const MOCK_NOW = new Date('2023-01-01T10:00:00.000Z');
@@ -93,7 +93,7 @@ describe('parseSchedule', () => {
       ['10:15 AM', '10:15:00', 'morning with minutes']
     ];
 
-    it.each(timeTestCases)('converts %s to %s (%s)', (inputTime, expectedTime, description) => {
+    it.each(timeTestCases)('converts %s to %s (%s)', (inputTime, expectedTime, _description) => {
       const tsv = createRow({ time: inputTime });
       const result = parseSchedule(tsv, MOCK_NOW);
       

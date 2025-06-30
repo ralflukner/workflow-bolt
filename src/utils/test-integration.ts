@@ -85,13 +85,13 @@ export class IntegrationTestUtility {
       console.log('🏥 Searching for Test patients in Tebra...');
       // Note: getAllPatients is not available in the new tebraApi
       // Using searchPatients instead
-      const allPatients = await tebraApi.searchPatients({ lastName: '' });
+      const allPatients = await tebraApi.searchPatients({ patientName: 'test' });
       console.log(`✅ Retrieved ${allPatients.length} total patients from Tebra`);
 
       // Filter for Test Test patient
-      const testPatients = allPatients.filter(patient => 
-        patient.FirstName.toLowerCase().includes('test') && 
-        patient.LastName.toLowerCase().includes('test')
+      const testPatients = allPatients.filter((patient: any) => 
+        patient.FirstName?.toLowerCase().includes('test') && 
+        patient.LastName?.toLowerCase().includes('test')
       );
 
       if (testPatients.length > 0) {

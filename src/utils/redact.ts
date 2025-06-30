@@ -121,7 +121,7 @@ export function secureLog(message: string, data?: unknown): void {
 if (!isTestEnvironment && typeof require !== 'undefined') {
   // Prevent any dynamic requires of dangerous modules
   const originalRequire = require;
-  require = function(id: string) {
+  (global as any).require = function(id: string) {
     if (id.includes('fs') || id.includes('path') || id.includes('child_process')) {
       throw new Error('SECURITY: File system access blocked in redact.ts');
     }

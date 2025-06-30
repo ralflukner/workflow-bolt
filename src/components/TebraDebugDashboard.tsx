@@ -18,11 +18,11 @@
  * 6. Data Transformation (Node.js data processing)
  * 7. Dashboard State Update (React state management)
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
+const { useState, useEffect, useCallback } = React;
 import { Activity, AlertTriangle, CheckCircle, Wifi, WifiOff, RefreshCw, Users, Calendar } from 'lucide-react';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { tebraApiService } from '../services/tebraApiService';
 
 interface DataFlowStep {
   id: string;
@@ -54,7 +54,7 @@ interface RecentError {
   correlationId: string;
 }
 
-export const TebraDebugDashboard: React.FC = () => {
+const TebraDebugDashboard: React.FC = () => {
   const { patients } = usePatientContext();
   const [dataFlowSteps, setDataFlowSteps] = useState<DataFlowStep[]>([
     {
@@ -80,7 +80,7 @@ export const TebraDebugDashboard: React.FC = () => {
     },
     {
       id: 'cloud-run',
-      name: 'Cloud Run PHP Service Health',
+      name: 'Firebase → PHP Proxy Chain',
       status: 'unknown',
       lastCheck: new Date(),
       responseTime: 0
@@ -132,15 +132,15 @@ export const TebraDebugDashboard: React.FC = () => {
     if (patients && patients.length > 0) {
       // Find the date range from appointment times
       const appointmentTimes = patients
-        .map(p => p.appointmentTime)
-        .filter(time => {
+        .map((p: any) => p.appointmentTime)
+        .filter((time: any) => {
           // appointmentTime is always a string in our Patient type
           if (!time) return false;
           const parsed = new Date(time);
           return !isNaN(parsed.getTime());
         })
-        .map(time => new Date(time))
-        .sort((a, b) => a.getTime() - b.getTime());
+        .map((time: any) => new Date(time))
+        .sort((a: any, b: any) => a.getTime() - b.getTime());
       
       setMetrics(prev => ({
         ...prev,
@@ -238,7 +238,7 @@ export const TebraDebugDashboard: React.FC = () => {
             
             if (response.ok) {
               await response.json(); // Verify response is valid JSON
-              updateStepError(stepId, null); // Clear any previous errors
+              updateStepError(stepId, undefined); // Clear any previous errors
               return 'healthy';
             } else {
               const errorMsg = `HTTP ${response.status}: ${response.statusText}`;
@@ -264,10 +264,10 @@ export const TebraDebugDashboard: React.FC = () => {
             console.log('Tebra test connection result:', result);
             
             if (result?.data?.success) {
-              updateStepError(stepId, null);
+              updateStepError(stepId, undefined);
               return 'healthy';
             } else {
-              const errorMsg = result?.data?.message || result?.message || 'Tebra connection failed - no success flag';
+              const errorMsg = (result as any)?.data?.message || (result as any)?.message || 'Tebra connection failed - no success flag';
               updateStepError(stepId, errorMsg, correlationId);
               return 'error';
             }
@@ -293,37 +293,42 @@ export const TebraDebugDashboard: React.FC = () => {
           }
         
         case 'cloud-run':
-          // Test the PHP proxy main endpoint with a simple request
+          // Test Firebase Functions → PHP proxy chain using getProviders as health check
           try {
-            const testPayload = { action: 'getProviders' };
-            const response = await Promise.race([
-              fetch('https://tebra-php-api-623450773640.us-central1.run.app/', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-API-Key': process.env.VITE_TEBRA_PROXY_API_KEY || '',
-                  'Authorization': `Bearer ${await (await import('firebase/auth')).getAuth().currentUser?.getIdToken()}`
-                },
-                body: JSON.stringify(testPayload)
-              }),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
-            ]) as Response;
+            const functions = getFunctions();
+            const getProviders = httpsCallable(functions, 'tebraGetProviders');
+            const result = await Promise.race([
+              getProviders(),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout after 10s')), 10000))
+            ]) as { data?: { success?: boolean; message?: string; data?: any[] } };
             
-            if (response.ok) {
-              const data = await response.json();
-              if (data.success) {
-                updateStepError(stepId, null);
-                return 'healthy';
-              } else {
-                updateStepError(stepId, `PHP proxy responded but with error: ${data.message || 'Unknown error'}`, correlationId);
-                return 'error';
-              }
+            console.log('Firebase → PHP proxy test result:', result);
+            
+            if (result?.data?.success) {
+              updateStepError(stepId, undefined);
+              return 'healthy';
             } else {
-              updateStepError(stepId, `HTTP ${response.status}: ${response.statusText}`, correlationId);
+              const errorMsg = result?.data?.message || 'Firebase → PHP proxy connection failed';
+              updateStepError(stepId, errorMsg, correlationId);
               return 'error';
             }
           } catch (error) {
-            const errorMsg = error instanceof Error ? error.message : 'PHP proxy unreachable';
+            console.error('Firebase → PHP proxy error:', error);
+            let errorMsg = 'Firebase → PHP proxy chain failed';
+            
+            if (error instanceof Error) {
+              errorMsg = error.message;
+              
+              // Parse specific error contexts
+              if (error.message.includes('internal')) {
+                errorMsg = 'Firebase Functions internal error - check function logs';
+              } else if (error.message.includes('unauthenticated')) {
+                errorMsg = 'Authentication required for Firebase Functions';
+              } else if (error.message.includes('timeout')) {
+                errorMsg = 'Firebase Functions → PHP proxy timeout (>10s)';
+              }
+            }
+            
             updateStepError(stepId, errorMsg, correlationId);
             return 'error';
           }
@@ -341,10 +346,10 @@ export const TebraDebugDashboard: React.FC = () => {
             console.log('PHP → Tebra SOAP test result:', result);
             
             if (result?.data?.success) {
-              updateStepError(stepId, null);
+              updateStepError(stepId, undefined);
               return 'healthy';
             } else {
-              const errorMsg = result?.data?.message || result?.message || 'PHP → Tebra SOAP API connection failed';
+              const errorMsg = (result as any)?.data?.message || (result as any)?.message || 'PHP → Tebra SOAP API connection failed';
               updateStepError(stepId, errorMsg, correlationId);
               return 'error';
             }
@@ -379,7 +384,7 @@ export const TebraDebugDashboard: React.FC = () => {
             const mockData = [{ name: 'Test Patient', status: 'scheduled' }];
             const transformed = mockData.map(item => ({ ...item, processed: true }));
             if (transformed.length > 0) {
-              updateStepError(stepId, null);
+              updateStepError(stepId, undefined);
               return 'healthy';
             } else {
               updateStepError(stepId, 'Data transformation failed', correlationId);
@@ -396,7 +401,7 @@ export const TebraDebugDashboard: React.FC = () => {
           try {
             const currentPatients = patients.length;
             if (currentPatients >= 0) { // Always healthy if we can read patient count
-              updateStepError(stepId, null);
+              updateStepError(stepId, undefined);
               return 'healthy';
             } else {
               updateStepError(stepId, 'Unable to read patient data', correlationId);
@@ -419,7 +424,7 @@ export const TebraDebugDashboard: React.FC = () => {
     }
   };
 
-  const updateStepError = (stepId: string, errorMessage: string | null, correlationId?: string) => {
+  const updateStepError = (stepId: string, errorMessage: string | undefined, correlationId?: string) => {
     setDataFlowSteps(prev => prev.map(step => {
       if (step.id === stepId) {
         const updatedStep = {
@@ -456,29 +461,57 @@ export const TebraDebugDashboard: React.FC = () => {
   const runPhpProxyDiagnostics = async () => {
     setIsMonitoring(true);
     try {
-      console.log('Running PHP proxy diagnostics...');
-      const result = await tebraApiService.debugPhpProxy();
+      console.log('Running simplified diagnostics using real Tebra actions...');
       
-      if (result.success) {
-        setPhpDiagnostics(result.data);
-        console.log('PHP proxy diagnostics completed:', result.data);
-      } else {
-        console.error('PHP proxy diagnostics failed:', result.message);
-        // Set error state for diagnostics
-        setPhpDiagnostics({
-          nodeJsToPhp: { status: 'error', details: { error: result.message } },
-          phpHealth: { status: 'unknown', details: {} },
-          phpToTebra: { status: 'unknown', details: {} },
-          recommendations: ['PHP proxy diagnostics failed - check authentication and function logs']
-        });
-      }
+      // Test the complete chain using real Tebra actions
+      const functions = getFunctions();
+      const testConnection = httpsCallable(functions, 'tebraTestConnection');
+      const getProviders = httpsCallable(functions, 'tebraGetProviders');
+      
+      const [connectionResult, providersResult] = await Promise.allSettled([
+        testConnection(),
+        getProviders()
+      ]);
+      
+      const diagnostics = {
+        nodeJsToPhp: { 
+          status: connectionResult.status === 'fulfilled' && (connectionResult.value as any)?.data?.success ? 'healthy' : 'error',
+          details: { 
+            error: connectionResult.status === 'rejected' ? (connectionResult.reason as any)?.message : 
+                   !(connectionResult.value as any)?.data?.success ? (connectionResult.value as any)?.data?.message : null
+          }
+        },
+        phpHealth: { 
+          status: providersResult.status === 'fulfilled' && (providersResult.value as any)?.data?.success ? 'healthy' : 'error',
+          details: { 
+            error: providersResult.status === 'rejected' ? (providersResult.reason as any)?.message : 
+                   !(providersResult.value as any)?.data?.success ? (providersResult.value as any)?.data?.message : null
+          }
+        },
+        phpToTebra: { 
+          status: providersResult.status === 'fulfilled' && (providersResult.value as any)?.data?.success ? 'healthy' : 'error',
+          details: { 
+            providerCount: providersResult.status === 'fulfilled' ? (providersResult.value as any)?.data?.data?.length : 0
+          }
+        },
+        recommendations: [
+          'Using real Tebra actions (tebraTestConnection, tebraGetProviders) for health checks',
+          'All tests go through proper Firebase Functions layer (no direct PHP calls)',
+          connectionResult.status === 'rejected' ? 'Check Firebase Functions authentication and deployment' : null,
+          providersResult.status === 'rejected' ? 'Check PHP → Tebra SOAP credentials and network access' : null
+        ].filter(Boolean)
+      };
+      
+      setPhpDiagnostics(diagnostics);
+      console.log('Simplified diagnostics completed:', diagnostics);
+      
     } catch (error) {
-      console.error('Failed to run PHP proxy diagnostics:', error);
+      console.error('Failed to run diagnostics:', error);
       setPhpDiagnostics({
-        nodeJsToPhp: { status: 'error', details: { error: error.message } },
+        nodeJsToPhp: { status: 'error', details: { error: (error as Error).message } },
         phpHealth: { status: 'unknown', details: {} },
         phpToTebra: { status: 'unknown', details: {} },
-        recommendations: ['Failed to call diagnostics function - check user authentication']
+        recommendations: ['Failed to call Firebase Functions - check user authentication']
       });
     } finally {
       setIsMonitoring(false);
@@ -652,12 +685,13 @@ export const TebraDebugDashboard: React.FC = () => {
       <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded">
         <h5 className="font-medium text-blue-300 mb-2">Architecture Notes</h5>
         <div className="text-sm text-blue-200 space-y-1">
-          <p>• <strong>CRITICAL:</strong> Node.js NEVER talks directly to Tebra SOAP API - only PHP does</p>
-          <p>• Data flow: Frontend → Firebase Functions → Cloud Run PHP → Tebra SOAP</p>
-          <p>• Internal API key authenticates Node.js → PHP communication</p>
-          <p>• OAuth credentials authenticate PHP → Tebra SOAP communication</p>
-          <p>• Correlation IDs help trace requests across all components</p>
-          <p>• Any "Unauthorized" errors likely indicate PHP → Tebra OAuth issues</p>
+          <p>• <strong>CORRECT FLOW:</strong> Frontend → Firebase Functions → Cloud Run PHP → Tebra SOAP</p>
+          <p>• <strong>NEVER:</strong> Frontend → Cloud Run PHP directly (CORS issues)</p>
+          <p>• <strong>NEVER:</strong> Node.js → Tebra SOAP directly (incompatible)</p>
+          <p>• Firebase auth secures Frontend → Firebase Functions communication</p>
+          <p>• Internal API key secures Firebase Functions → PHP communication</p>
+          <p>• OAuth credentials secure PHP → Tebra SOAP communication</p>
+          <p>• Health checks use real Tebra actions (getProviders) not mock endpoints</p>
         </div>
       </div>
 
@@ -675,16 +709,16 @@ export const TebraDebugDashboard: React.FC = () => {
       {showAdvancedTools && (
         <div className="mt-6 space-y-6">
           <div className="bg-gray-700 p-4 rounded border">
-            <h5 className="text-white font-medium mb-4">PHP Proxy Deep Diagnostics</h5>
+            <h5 className="text-white font-medium mb-4">Complete Chain Diagnostics</h5>
             <button
               onClick={runPhpProxyDiagnostics}
               disabled={isMonitoring}
               className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-500 disabled:opacity-50 mr-4"
             >
-              Run PHP Proxy Diagnostics
+              Test Complete Chain
             </button>
             <p className="text-gray-300 text-sm mt-2">
-              Comprehensive testing of Node.js → PHP → Tebra SOAP chain with detailed error analysis and recommendations.
+              Tests Frontend → Firebase Functions → PHP Proxy → Tebra SOAP using real Tebra actions (tebraTestConnection, tebraGetProviders).
             </p>
             
             {phpDiagnostics && (
@@ -696,10 +730,10 @@ export const TebraDebugDashboard: React.FC = () => {
                   phpDiagnostics.nodeJsToPhp.status === 'healthy' ? 'bg-green-900 border-green-500' :
                   phpDiagnostics.nodeJsToPhp.status === 'error' ? 'bg-red-900 border-red-500' : 'bg-gray-900 border-gray-500'
                 }`}>
-                  <div className="font-medium text-white">Node.js → PHP Connection</div>
+                  <div className="font-medium text-white">Firebase Functions Connection Test</div>
                   <div className="text-sm text-gray-300">Status: {phpDiagnostics.nodeJsToPhp.status}</div>
-                  {phpDiagnostics.nodeJsToPhp.details.possibleCause && (
-                    <div className="text-sm text-red-300">{phpDiagnostics.nodeJsToPhp.details.possibleCause}</div>
+                  {phpDiagnostics.nodeJsToPhp.details.error && (
+                    <div className="text-sm text-red-300">{phpDiagnostics.nodeJsToPhp.details.error}</div>
                   )}
                 </div>
 
@@ -708,10 +742,10 @@ export const TebraDebugDashboard: React.FC = () => {
                   phpDiagnostics.phpHealth.status === 'healthy' ? 'bg-green-900 border-green-500' :
                   phpDiagnostics.phpHealth.status === 'error' ? 'bg-red-900 border-red-500' : 'bg-gray-900 border-gray-500'
                 }`}>
-                  <div className="font-medium text-white">PHP Proxy Health</div>
+                  <div className="font-medium text-white">Provider Data Retrieval</div>
                   <div className="text-sm text-gray-300">Status: {phpDiagnostics.phpHealth.status}</div>
-                  {phpDiagnostics.phpHealth.details.possibleCause && (
-                    <div className="text-sm text-red-300">{phpDiagnostics.phpHealth.details.possibleCause}</div>
+                  {phpDiagnostics.phpHealth.details.error && (
+                    <div className="text-sm text-red-300">{phpDiagnostics.phpHealth.details.error}</div>
                   )}
                 </div>
 
@@ -720,10 +754,10 @@ export const TebraDebugDashboard: React.FC = () => {
                   phpDiagnostics.phpToTebra.status === 'healthy' ? 'bg-green-900 border-green-500' :
                   phpDiagnostics.phpToTebra.status === 'error' ? 'bg-red-900 border-red-500' : 'bg-gray-900 border-gray-500'
                 }`}>
-                  <div className="font-medium text-white">PHP → Tebra SOAP</div>
+                  <div className="font-medium text-white">Complete Chain Health</div>
                   <div className="text-sm text-gray-300">Status: {phpDiagnostics.phpToTebra.status}</div>
-                  {phpDiagnostics.phpToTebra.details.possibleCause && (
-                    <div className="text-sm text-red-300">{phpDiagnostics.phpToTebra.details.possibleCause}</div>
+                  {phpDiagnostics.phpToTebra.details.providerCount !== undefined && (
+                    <div className="text-sm text-green-300">Providers found: {phpDiagnostics.phpToTebra.details.providerCount}</div>
                   )}
                 </div>
 
@@ -732,7 +766,7 @@ export const TebraDebugDashboard: React.FC = () => {
                   <div className="bg-blue-900/20 border border-blue-500/20 p-3 rounded">
                     <h6 className="text-blue-300 font-medium mb-2">Recommendations:</h6>
                     <ul className="text-sm text-blue-200 space-y-1">
-                      {phpDiagnostics.recommendations.map((rec, index) => (
+                      {phpDiagnostics.recommendations.map((rec: string, index: number) => (
                         <li key={index}>• {rec}</li>
                       ))}
                     </ul>

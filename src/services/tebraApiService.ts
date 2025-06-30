@@ -8,6 +8,15 @@
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getAuth } from 'firebase/auth';
 
+// Type definitions for API responses
+interface TebraApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+
 export interface TebraConnection {
   success: boolean;
   message: string;
@@ -89,10 +98,11 @@ export const tebraApiService = {
         endDate: endDate || startDate 
       });
       
-      if (result.data.success) {
-        return result.data.appointments || [];
+      const response = result.data as TebraApiResponse<{ appointments: TebraAppointment[] }>;
+      if (response.success) {
+        return response.data?.appointments || [];
       } else {
-        throw new Error(result.data.message || 'Failed to get appointments');
+        throw new Error(response.message || 'Failed to get appointments');
       }
     } catch (error) {
       console.error('[TebraAPI] Get appointments failed:', error);
@@ -110,10 +120,11 @@ export const tebraApiService = {
       
       const result = await searchPatients(criteria);
       
-      if (result.data.success) {
-        return result.data.patients || [];
+      const response = result.data as TebraApiResponse<{ patients: TebraPatient[] }>;
+      if (response.success) {
+        return response.data?.patients || [];
       } else {
-        throw new Error(result.data.message || 'Failed to search patients');
+        throw new Error(response.message || 'Failed to search patients');
       }
     } catch (error) {
       console.error('[TebraAPI] Search patients failed:', error);
@@ -131,10 +142,11 @@ export const tebraApiService = {
       
       const result = await getPatient({ patientId });
       
-      if (result.data.success) {
-        return result.data.patient || null;
+      const response = result.data as TebraApiResponse<{ patient: TebraPatient }>;
+      if (response.success) {
+        return response.data?.patient || null;
       } else {
-        throw new Error(result.data.message || 'Failed to get patient');
+        throw new Error(response.message || 'Failed to get patient');
       }
     } catch (error) {
       console.error('[TebraAPI] Get patient failed:', error);
@@ -145,13 +157,13 @@ export const tebraApiService = {
   /**
    * Sync schedule data from Tebra
    */
-  syncSchedule: async (date: string): Promise<{ success: boolean; message: string; count?: number }> => {
+  syncSchedule: async (date: string): Promise<{ success: boolean; message?: string; count?: number }> => {
     try {
       const functions = getFunctions();
       const syncSchedule = httpsCallable(functions, 'tebraSyncTodaysSchedule');
       
       const result = await syncSchedule({ date });
-      return result.data as { success: boolean; message: string; count?: number };
+      return result.data as TebraApiResponse<{ count?: number }>;
     } catch (error) {
       console.error('[TebraAPI] Sync schedule failed:', error);
       return {
@@ -171,10 +183,11 @@ export const tebraApiService = {
       
       const result = await createPatient(patientData);
       
-      if (result.data.success) {
-        return result.data.patient;
+      const response = result.data as TebraApiResponse<{ patient: TebraPatient }>;
+      if (response.success) {
+        return response.data!.patient;
       } else {
-        throw new Error(result.data.message || 'Failed to create patient');
+        throw new Error(response.message || 'Failed to create patient');
       }
     } catch (error) {
       console.error('[TebraAPI] Create patient failed:', error);
@@ -192,10 +205,11 @@ export const tebraApiService = {
       
       const result = await updatePatient({ patientId, updates });
       
-      if (result.data.success) {
-        return result.data.patient;
+      const response = result.data as TebraApiResponse<{ patient: TebraPatient }>;
+      if (response.success) {
+        return response.data!.patient;
       } else {
-        throw new Error(result.data.message || 'Failed to update patient');
+        throw new Error(response.message || 'Failed to update patient');
       }
     } catch (error) {
       console.error('[TebraAPI] Update patient failed:', error);
@@ -212,7 +226,12 @@ export const tebraApiService = {
       const getStatus = httpsCallable(functions, 'tebraGetStatus');
       
       const result = await getStatus();
-      return result.data as { connected: boolean; lastSync?: string; error?: string };
+      const response = result.data as TebraApiResponse<{ connected: boolean; lastSync?: string }>;
+      return {
+        connected: response.success && !!response.data?.connected,
+        lastSync: response.data?.lastSync,
+        error: response.message
+      };
     } catch (error) {
       console.error('[TebraAPI] Get status failed:', error);
       return {

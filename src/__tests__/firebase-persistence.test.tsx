@@ -74,6 +74,12 @@ const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       
       return newPatient;
     },
+    updatePatients: (newPatients: Patient[]) => {
+      setPatients(newPatients);
+    },
+    deletePatient: (id: string) => {
+      setPatients(prev => prev.filter(p => p.id !== id));
+    },
     saveCurrentSession: async () => {
       await mockDailySessionService.saveTodaysSession(patients);
     },
@@ -92,7 +98,8 @@ const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     tickCounter: 0,
     isLoading: false,
     hasRealData: true,
-    loadMockData: jest.fn()
+    loadMockData: jest.fn(),
+    refreshFromFirebase: jest.fn().mockResolvedValue(undefined)
   };
   
   return (

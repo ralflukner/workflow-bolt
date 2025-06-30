@@ -112,6 +112,8 @@ const handleExportSchedule = async (): Promise<void> => {
               <DebugTextWindow 
                 scrollPosition={scrollPosition}
                 onScroll={setScrollPosition}
+                patients={patients}
+                getWaitTime={getWaitTime}
               />
             </div>
           </div>

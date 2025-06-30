@@ -47,4 +47,4 @@ If the verification script prints nothing but `no`, the credential issue should 
 
 ---
 
-Last updated: $(date '+%Y-%m-%d') 
+Last updated: 2025-06-29

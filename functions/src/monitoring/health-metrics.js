@@ -90,6 +90,18 @@ function logError(functionName, operation, error, context = {}) {
  * @param {Object} [metadata] - Additional metadata (NO PHI)
  */
 function logUserActivity(functionName, userId, action, metadata = {}) {
+  // Validate userId appears to be hashed (basic check for length/format)
+  if (userId && userId.length < 20) {
+    console.warn('Warning: userId appears to be unhashed. Please hash user identifiers.');
+  }
+  
+  // Check for potential PHI patterns in metadata
+  const phiPatterns = /\b(ssn|dob|birth|patient|diagnosis|medical|health)\b/i;
+  const metadataStr = JSON.stringify(metadata);
+  if (phiPatterns.test(metadataStr)) {
+    console.warn('Warning: Potential PHI detected in metadata. Please review.');
+  }
+
   const logEntry = {
     timestamp: new Date().toISOString(),
     severity: 'INFO',

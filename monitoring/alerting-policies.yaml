@@ -33,7 +33,9 @@
     autoClose: "1800s"  # Auto-close after 30 minutes
   combiner: "OR"
   enabled: true
-  notificationChannels: []  # Add your notification channels here
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/CRITICAL_EMAIL_CHANNEL_ID"
+    - "projects/PROJECT_ID/notificationChannels/SLACK_CHANNEL_ID"
 
 # Container Startup Failures
 - displayName: "Firebase Functions - Container Startup Failures"
@@ -70,7 +72,9 @@
         evaluationMissingData: "EVALUATION_MISSING_DATA_INACTIVE"
   combiner: "OR"
   enabled: true
-  notificationChannels: []
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/CRITICAL_EMAIL_CHANNEL_ID"
+    - "projects/PROJECT_ID/notificationChannels/SLACK_CHANNEL_ID"
 
 # High Memory Usage
 - displayName: "Firebase Functions - High Memory Usage"
@@ -103,7 +107,8 @@
         evaluationMissingData: "EVALUATION_MISSING_DATA_INACTIVE"
   combiner: "OR"
   enabled: true
-  notificationChannels: []
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/DEV_EMAIL_CHANNEL_ID"
 
 # Slow Function Performance
 - displayName: "Firebase Functions - Slow Performance"
@@ -137,7 +142,8 @@
         evaluationMissingData: "EVALUATION_MISSING_DATA_INACTIVE"
   combiner: "OR"
   enabled: true
-  notificationChannels: []
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/DEV_EMAIL_CHANNEL_ID"
 
 # Security Events
 - displayName: "Firebase Functions - Security Events"
@@ -170,7 +176,9 @@
         evaluationMissingData: "EVALUATION_MISSING_DATA_INACTIVE"
   combiner: "OR"
   enabled: true
-  notificationChannels: []
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/CRITICAL_EMAIL_CHANNEL_ID"
+    - "projects/PROJECT_ID/notificationChannels/SLACK_CHANNEL_ID"
 
 # Function Deployment Failures
 - displayName: "Firebase Functions - Deployment Failures"
@@ -202,4 +210,5 @@
         evaluationMissingData: "EVALUATION_MISSING_DATA_INACTIVE"
   combiner: "OR"
   enabled: true
-  notificationChannels: []
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/DEV_EMAIL_CHANNEL_ID"

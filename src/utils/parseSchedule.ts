@@ -42,7 +42,7 @@ export interface ParseScheduleOptions {
  */
 export function parseSchedule(
   text: string, 
-  currentTime: Date = new Date(), 
+  _currentTime: Date = new Date(), 
   options: ParseScheduleOptions = {}
 ): ImportedPatient[] {
   const { defaultProvider = 'Dr. Lukner', logFunction = () => {} } = options;

@@ -148,7 +148,7 @@ console.log('🔌 Tebra API: Using Firebase Functions proxy to PHP service');
   async getAppointments(fromDate: string, toDate: string) {
     const result = await tebraGetAppointments({ fromDate, toDate });
     // Handle double-nested structure: result.data.data contains the actual SOAP response
-    const soapData = result.data?.data;
+    const soapData = (result.data as any)?.data;
     console.log('Raw appointment response (unredacted):', {
       success: result.success,
       dataPresent: !!result.data,
@@ -168,7 +168,7 @@ console.log('🔌 Tebra API: Using Firebase Functions proxy to PHP service');
   async testConnection() {
     const result = await tebraTestConnection();
     // Handle double-nested structure: result.data.data contains the actual SOAP response
-    const soapData = result.data?.data;
+    const soapData = (result.data as any)?.data;
     console.log('Raw connection test response (unredacted):', {
       success: result.success,
       dataPresent: !!result.data,
