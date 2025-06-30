@@ -168,6 +168,59 @@ app.post('/test', (req, res) => {
   });
 });
 
+// Tebra API Proxy Route - HIPAA Compliant
+app.post('/api/tebra', async (req, res) => {
+  try {
+    // HIPAA Compliance: Verify Firebase authentication
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
+
+    const token = authHeader.split('Bearer ')[1];
+    let decodedToken;
+    
+    try {
+      decodedToken = await admin.auth().verifyIdToken(token);
+    } catch (authError) {
+      console.error('Token verification failed:', authError.message);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid authentication token'
+      });
+    }
+
+    // Extract action and params from request body
+    const { action, params = {} } = req.body;
+    
+    if (!action) {
+      return res.status(400).json({
+        success: false,
+        error: 'Action parameter is required'
+      });
+    }
+
+    // HIPAA Audit Log (no PHI)
+    console.log(`Tebra API request: ${action} by user: ${decodedToken.uid}`);
+
+    // Forward request to TebraProxyClient
+    const tebraClient = getTebraProxyClient();
+    const result = await tebraClient.makeRequest(action, params);
+
+    res.json(result);
+    
+  } catch (error) {
+    console.error('Tebra API error:', error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Internal server error'
+    });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Express error:', err.stack);
