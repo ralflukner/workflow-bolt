@@ -665,8 +665,9 @@ exports.scheduledCredentialCheck = credentialFunctions.scheduledCredentialCheck;
 
 exports.credentialHealth = functions.https.onRequest(async (req, res) => {
   try {
-    const report = await credHealthCheck();
-    res.status(report.status === 'healthy' ? 200 : 503).json(report);
+    // Use the healthCheck function from credential-functions module
+    // by calling it directly as an HTTP request handler
+    return await credentialFunctions.healthCheck(req, res);
   } catch (err) {
     console.error('Cred health check error:', err);
     res.status(500).json({ error: 'internal', message: err.message });

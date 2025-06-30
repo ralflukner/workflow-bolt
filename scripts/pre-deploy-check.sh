@@ -60,8 +60,21 @@ echo "2. Checking firebase.json runtime configuration..."
 if [ ! -f "firebase.json" ]; then
     fail "firebase.json not found"
 else
+# Check required tools
+if ! command -v jq &> /dev/null; then
+    fail "jq is required but not installed. Please install it first."
+    echo "   💡 Install with: brew install jq (macOS) or apt-get install jq (Ubuntu)"
+    exit 1
+fi
+
+if [ ! -f "firebase.json" ]; then
+    fail "firebase.json not found"
+else
     RUNTIME=$(jq -r '.functions.runtime // "not-found"' firebase.json 2>/dev/null || echo "parse-error")
     if [ "$RUNTIME" = "nodejs20" ] || [ "$RUNTIME" = "nodejs18" ]; then
+        # …rest of your logic…
+    fi
+fi
         pass "Firebase runtime is correctly set to $RUNTIME"
     elif [ "$RUNTIME" = "not-found" ]; then
         warn "No runtime specified in firebase.json, will use default"
@@ -94,12 +107,64 @@ fi
 echo ""
 echo "4. Checking package.json engines..."
 PKG_NODE=$(jq -r '.engines.node // "not-found"' package.json 2>/dev/null || echo "parse-error")
-if [ "$PKG_NODE" = "20" ] || [ "$PKG_NODE" = "18" ]; then
-    pass "Package.json Node engine is correctly set to $PKG_NODE"
-elif [ "$PKG_NODE" = "not-found" ]; then
-    warn "No Node.js engine specified in package.json"
+
+# Function to check if a semver range includes Node.js 20
+check_node_version() {
+    local version_spec="$1"
+    
+    # Handle exact version matches
+    if [[ "$version_spec" == "20" ]]; then
+        return 0
+    fi
+    
+    # Handle >= ranges (e.g., ">=20", ">=20.0.0")
+    if [[ "$version_spec" =~ ^>=([0-9]+) ]]; then
+        local min_version="${BASH_REMATCH[1]}"
+        if [[ "$min_version" -le 20 ]]; then
+            return 0
+        fi
+    fi
+    
+    # Handle ^ ranges (e.g., "^20.0.0", "^20.1.0")
+    if [[ "$version_spec" =~ ^\^([0-9]+) ]]; then
+        local major_version="${BASH_REMATCH[1]}"
+        if [[ "$major_version" == "20" ]]; then
+            return 0
+        fi
+    fi
+    
+    # Handle ~ ranges (e.g., "~20.1.0")
+    if [[ "$version_spec" =~ ^~([0-9]+) ]]; then
+        local major_version="${BASH_REMATCH[1]}"
+        if [[ "$major_version" == "20" ]]; then
+            return 0
+        fi
+    fi
+    
+    # Handle ranges with spaces (e.g., ">= 20", "^20 || ^18")
+    if [[ "$version_spec" =~ (>=|>)[[:space:]]*([0-9]+) ]]; then
+        local min_version="${BASH_REMATCH[2]}"
+        if [[ "$min_version" -le 20 ]]; then
+            return 0
+        fi
+    fi
+    
+    # Handle version ranges that include 20 (e.g., "18 || 20", "^18.0.0 || ^20.0.0")
+    if [[ "$version_spec" =~ 20 ]]; then
+        return 0
+    fi
+    
+    return 1
+}
+
+if [[ "$PKG_NODE" == "not-found" ]]; then
+    warn "No Node.js engine specified in package.json - recommend adding '\"node\": \"20\"'"
+elif [[ "$PKG_NODE" == "parse-error" ]]; then
+    fail "Error parsing package.json"
+elif check_node_version "$PKG_NODE"; then
+    pass "Package.json Node engine '$PKG_NODE' is compatible with Node.js 20"
 else
-    warn "Package.json Node engine is '$PKG_NODE', consider using '20'"
+    warn "Package.json Node engine '$PKG_NODE' may not be compatible with Node.js 20 - recommend using '20' or '>=20'"
 fi
 
 # Check 5: Dependencies installation

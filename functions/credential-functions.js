@@ -4,8 +4,8 @@
  * Provides HTTP endpoints and callable functions to verify system credentials
  */
 
-const { onRequest, onCall, onSchedule } = require('firebase-functions/v2/https');
-const { onSchedule: onScheduleV2 } = require('firebase-functions/v2/scheduler');
+const { onRequest, onCall } = require('firebase-functions/v2/https');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { runCredentialVerification } = require('./utils/credential-verification');
 
 /**
@@ -90,11 +90,14 @@ const healthCheck = onRequest({
   try {
     // Set explicit CORS headers
     const origin = request.headers.origin;
-    if (origin && (origin.includes('localhost') || origin.startsWith('file://') || origin.includes('luknerlumina-firebase'))) {
-      response.set('Access-Control-Allow-Origin', origin);
-    } else {
-      response.set('Access-Control-Allow-Origin', '*');
-    }
+const origin = request.headers.origin;
+if (origin && (origin.includes('localhost') || origin.startsWith('file://') || origin.includes('luknerlumina-firebase'))) {
+  response.set('Access-Control-Allow-Origin', origin);
+} else {
+  // Only allow specific origins, reject others
+  response.status(403).json({ error: 'Origin not allowed' });
+  return;
+}
     
     response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     response.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
@@ -135,7 +138,7 @@ const healthCheck = onRequest({
  * Scheduled credential verification (runs every hour)
  * Automatically checks credentials and logs results
  */
-const scheduledCredentialCheck = onScheduleV2({
+const scheduledCredentialCheck = onSchedule({
   schedule: '0 * * * *', // Every hour
   timeZone: 'America/Chicago',
   maxInstances: 1

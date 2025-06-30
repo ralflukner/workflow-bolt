@@ -34,7 +34,7 @@
           "scorecard": {
             "timeSeriesQuery": {
               "timeSeriesFilter": {
-                "filter": "resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\" AND severity>=ERROR",
+                "filter": "(resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\") AND severity>=ERROR",
                 "aggregation": {
                   "alignmentPeriod": "60s",
                   "perSeriesAligner": "ALIGN_RATE",
@@ -102,7 +102,7 @@
               {
                 "timeSeriesQuery": {
                   "timeSeriesFilter": {
-                    "filter": "resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\" metric.type=\"cloudfunctions.googleapis.com/function/user_memory_bytes\"",
+                    "filter": "(resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\") AND metric.type=\"cloudfunctions.googleapis.com/function/user_memory_bytes\"",
                     "aggregation": {
                       "alignmentPeriod": "60s",
                       "perSeriesAligner": "ALIGN_MEAN",
