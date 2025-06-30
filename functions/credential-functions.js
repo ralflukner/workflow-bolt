@@ -90,14 +90,13 @@ const healthCheck = onRequest({
   try {
     // Set explicit CORS headers
     const origin = request.headers.origin;
-const origin = request.headers.origin;
-if (origin && (origin.includes('localhost') || origin.startsWith('file://') || origin.includes('luknerlumina-firebase'))) {
-  response.set('Access-Control-Allow-Origin', origin);
-} else {
-  // Only allow specific origins, reject others
-  response.status(403).json({ error: 'Origin not allowed' });
-  return;
-}
+    if (origin && (origin.includes('localhost') || origin.startsWith('file://') || origin.includes('luknerlumina-firebase'))) {
+      response.set('Access-Control-Allow-Origin', origin);
+    } else {
+      // Only allow specific origins, reject others
+      response.status(403).json({ error: 'Origin not allowed' });
+      return;
+    }
     
     response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     response.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
