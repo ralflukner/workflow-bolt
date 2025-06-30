@@ -13,7 +13,7 @@ import {
 } from '../constants/tebraDebug';
 import { HEALTH_CHECK_CONFIG } from '../constants/tebraConfig';
 import { useHealthChecks, StepId, StepResult } from './useHealthChecks';
-import { usePatientContext } from '../contexts/PatientContext';
+import { usePatientContext } from '../context/PatientContext';
 import { tebraDebugApi } from '../services/tebraDebugApi';
 
 const initialSteps: DataFlowStep[] = [
@@ -199,7 +199,7 @@ export const useTebraDebugDashboard = () => {
   useEffect(() => {
     if (!autoRefresh) return;
     
-    const interval = setInterval(runHealthChecks, TEBRA_CONFIG.HEALTH_CHECK_INTERVAL);
+    const interval = setInterval(runHealthChecks, HEALTH_CHECK_CONFIG.AUTO_REFRESH_INTERVAL);
     return () => clearInterval(interval);
   }, [autoRefresh, runHealthChecks]);
 
