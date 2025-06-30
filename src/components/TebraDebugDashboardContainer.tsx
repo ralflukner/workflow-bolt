@@ -3,7 +3,7 @@ import { Activity, RefreshCw } from 'lucide-react';
 import { PatientContext } from '../context/PatientContextDef';
 import { PatientContextType } from '../context/PatientContextType';
 import { tebraDebugApi } from '../services/tebraDebugApi';
-import { DataFlowStep, TebraMetrics, STEP_IDS } from '../constants/tebraDebug';
+import { DataFlowStep, TebraMetrics, STEP_IDS, StepStatus } from '../constants/tebraDebug';
 import { MetricsCard } from './TebraDebug/MetricsCard';
 import { DataFlowStepCard } from './TebraDebug/DataFlowStepCard';
 
@@ -16,8 +16,8 @@ interface State {
 }
 
 export default class TebraDebugDashboardContainer extends Component<{}, State> {
-  static contextType = PatientContext as React.Context<PatientContextType>;
-  declare context: React.ContextType<typeof PatientContext>;
+  static contextType = PatientContext as React.Context<PatientContextType | undefined>;
+  declare context: PatientContextType;
 
   private refreshInterval: NodeJS.Timeout | null = null;
 
@@ -94,7 +94,7 @@ export default class TebraDebugDashboardContainer extends Component<{}, State> {
     const updatedSteps = await Promise.all(
       this.state.dataFlowSteps.map(async (step) => {
         const start = Date.now();
-        let status: 'healthy' | 'warning' | 'error' | 'unknown' = 'unknown';
+        let status: StepStatus = 'unknown';
         let errorMessage: string | undefined;
         try {
           // Real health checks using tebraDebugApi service

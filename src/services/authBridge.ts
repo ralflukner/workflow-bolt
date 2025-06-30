@@ -97,7 +97,7 @@ interface HealthCheckDetails {
 export class AuthBridge {
   private static instance: AuthBridge;
   // Not used but kept for backward compatibility
-  private readonly exchangeTokenFunction: HttpsCallable<TokenExchangeRequest, TokenExchangeResponse> | null = null;
+  private readonly _exchangeTokenFunction: HttpsCallable<TokenExchangeRequest, TokenExchangeResponse> | null = null;
   private readonly exchangeTokenUrl: string;
   private tokenCache = new Map<string, TokenCacheEntry>();
   private debugLog: AuthDebugInfo[] = [];
@@ -115,7 +115,7 @@ export class AuthBridge {
 
     // Keep the old callable function for backward compatibility
     if (functions) {
-      this.exchangeTokenFunction = httpsCallable(functions, 'exchangeAuth0Token');
+      this._exchangeTokenFunction = httpsCallable(functions, 'exchangeAuth0Token');
     }
 
     // Set up Firebase auth state monitoring for debugging
@@ -599,7 +599,7 @@ export const useFirebaseAuth = (): {
       if (!auth0Token) {
         // This case handles scenarios where try/catch blocks might not throw but token is still not acquired.
         authBridge.logDebug('❌ Auth0 token could not be obtained after all attempts.');
-        return false; // Return false instead of throwing to avoid caught locally issue
+        return false; // Return false instead of throwing to avoid caught local issue
       }
 
       await authBridge.signInWithAuth0Token(auth0Token);
