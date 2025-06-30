@@ -61,6 +61,7 @@ export class DashboardErrorBoundary extends Component<Props, State> {
     });
 
     // In production, send error to monitoring service
+    // eslint-disable-next-line no-undef
     if (process.env.NODE_ENV === 'production') {
       // HIPAA-compliant error reporting - no PHI included
       try {
