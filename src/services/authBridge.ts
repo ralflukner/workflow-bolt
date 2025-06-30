@@ -2,6 +2,8 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { auth, functions } from '../config/firebase';
 import { httpsCallable, HttpsCallable } from 'firebase/functions';
+// Add Node.js process type definition
+declare const process: { env: { NODE_ENV?: string } };
 
 /**
  * Request interface for token exchange
@@ -87,29 +89,30 @@ interface HealthCheckDetails {
  * @class AuthBridge
  * @description Manages secure token exchange between Auth0 and Firebase, with caching and debugging capabilities
  * @example
- * ```typescript
+ * ```TypeScript
  * const authBridge = AuthBridge.getInstance();
  * await authBridge.exchangeTokens(auth0Token);
  * ```
  */
 export class AuthBridge {
   private static instance: AuthBridge;
-  private exchangeTokenFunction: HttpsCallable<TokenExchangeRequest, TokenExchangeResponse> | null = null;
-  private exchangeTokenUrl: string;
+  // Not used but kept for backward compatibility
+  private readonly exchangeTokenFunction: HttpsCallable<TokenExchangeRequest, TokenExchangeResponse> | null = null;
+  private readonly exchangeTokenUrl: string;
   private tokenCache = new Map<string, TokenCacheEntry>();
   private debugLog: AuthDebugInfo[] = [];
   private maxDebugEntries = 100;
   private retryConfig = {
     maxRetries: 3,
-    baseDelay: 5000, // Increased from 1s to 5s
-    maxDelay: 30000, // Increased from 10s to 30s
+    baseDelay: 5000, // Increased from 1 s to 5 s
+    maxDelay: 30000, // Increased from the 10s to 30s
   };
-  
+
   private constructor() {
     // Initialize the token exchange URL (now using HTTP endpoint)
     this.exchangeTokenUrl = 'https://us-central1-luknerlumina-firebase.cloudfunctions.net/exchangeAuth0Token';
     this.logDebug('🔐 Firebase HTTP endpoint initialized for Auth Bridge');
-    
+
     // Keep the old callable function for backward compatibility
     if (functions) {
       this.exchangeTokenFunction = httpsCallable(functions, 'exchangeAuth0Token');
@@ -122,12 +125,12 @@ export class AuthBridge {
       });
     }
   }
-  
+
   /**
    * Gets the singleton instance of AuthBridge
    * @returns {AuthBridge} The singleton instance
    * @example
-   * ```typescript
+   * ```TypeScript
    * const authBridge = AuthBridge.getInstance();
    * ```
    */
@@ -143,14 +146,14 @@ export class AuthBridge {
    * @param {string} message - The debug message to log
    * @param {unknown} [data] - Optional additional data to log
    * @example
-   * ```typescript
+   * ```TypeScript
    * authBridge.logDebug('Token exchange started', { tokenId: '123' });
    * ```
    */
   public logDebug(message: string, data?: unknown): void {
     const timestamp = Date.now();
     console.log(`[AuthBridge ${new Date(timestamp).toISOString()}] ${message}`, data || '');
-    
+
     // Store for debugging analysis
     if (this.debugLog.length >= this.maxDebugEntries) {
       this.debugLog.shift(); // Remove oldest entry
@@ -170,7 +173,7 @@ export class AuthBridge {
       const decodedPayload = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
       const expiry = decodedPayload.exp * 1000; // Convert to milliseconds
       const now = Date.now();
-      
+
       if (expiry <= now) {
         return { valid: false, error: 'Token expired', expiry };
       }
@@ -182,7 +185,7 @@ export class AuthBridge {
       }
 
       // In Jest tests we often use simple placeholder tokens without JWT structure
-      if (process.env.NODE_ENV === 'test' && token.split('.').length < 3) {
+      if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test' && token.split('.').length < 3) {
         // Treat as always-valid test token expiring in 1 hour
         const expiry = Date.now() + 60 * 60 * 1000;
         return { valid: true, expiry };
@@ -218,7 +221,7 @@ export class AuthBridge {
   private cacheToken(auth0TokenHash: string, firebaseToken: string, auth0Token: string, uid: string): void {
     // Firebase custom tokens expire after 1 hour
     const expiresAt = Date.now() + (55 * 60 * 1000); // 55 minutes to be safe
-    
+
     this.tokenCache.set(auth0TokenHash, {
       firebaseToken,
       auth0Token,
@@ -254,7 +257,7 @@ export class AuthBridge {
       const delay = baseDelay + jitter;
 
       this.logDebug(`⏳ ${context} retry ${retryCount + 1}/${this.retryConfig.maxRetries} in ${delay}ms`, error);
-      
+
       await new Promise(resolve => setTimeout(resolve, delay));
       return this.withRetry(operation, context, retryCount + 1);
     }
@@ -266,7 +269,7 @@ export class AuthBridge {
    * @returns {Promise<string>} The Firebase custom token
    * @throws {Error} If token exchange fails or Firebase Functions are not available
    * @example
-   * ```typescript
+   * ```TypeScript
    * try {
    *   const firebaseToken = await authBridge.exchangeTokens(auth0Token);
    *   // Use the Firebase token
@@ -285,14 +288,16 @@ export class AuthBridge {
     };
 
     try {
+      // Check if exchange URL is available
       if (!this.exchangeTokenUrl) {
-        throw new Error('Firebase Functions endpoint not available');
+        this.logDebug('❌ Firebase Functions endpoint not available');
+        return Promise.reject(new Error('Firebase Functions endpoint not available'));
       }
 
       // Validate Auth0 token
       const validation = this.validateAuth0Token(auth0Token);
       debugInfo.auth0TokenExpiry = validation.expiry;
-      
+
       // Debug: Log token details for troubleshooting
       try {
         const parts = auth0Token.split('.');
@@ -313,15 +318,17 @@ export class AuthBridge {
       } catch (e) {
         this.logDebug('⚠️ Could not decode token for debugging', e);
       }
-      
+
+      // Validate token before proceeding
       if (!validation.valid) {
-        throw new Error(`Invalid Auth0 token: ${validation.error}`);
+        this.logDebug(`❌ Invalid Auth0 token: ${validation.error}`);
+        return Promise.reject(new Error(`Invalid Auth0 token: ${validation.error}`));
       }
 
       // Check cache first
       const tokenHash = btoa(auth0Token.substring(0, 50)); // Hash for cache key
       const cached = this.getCachedToken(tokenHash);
-      
+
       if (cached) {
         debugInfo.cacheHit = true;
         debugInfo.firebaseUserPresent = true;
@@ -331,9 +338,9 @@ export class AuthBridge {
       }
 
       this.logDebug('🔐 Exchanging Auth0 token for Firebase token (HIPAA compliant)');
-      
+
       // Exchange token with retry logic using HTTP endpoint
-      const result = await this.withRetry(async () => {
+      const response = await this.withRetry(async () => {
         const response = await fetch(this.exchangeTokenUrl, {
           method: 'POST',
           headers: {
@@ -349,10 +356,9 @@ export class AuthBridge {
         return await response.json();
       }, 'Token exchange');
 
-      const response = result;
-
       if (!response.success || !response.firebaseToken) {
-        throw new Error(response.message || 'Token exchange failed');
+        this.logDebug('❌ Token exchange failed', response.message);
+        return Promise.reject(new Error(response.message || 'Token exchange failed'));
       }
 
       // Cache the successful result
@@ -393,14 +399,14 @@ export class AuthBridge {
 
     try {
       this.logDebug('🔐 Starting HIPAA-compliant authentication process');
-      
+
       const firebaseToken = await this.exchangeTokens(auth0Token);
-      
+
       await this.withRetry(async () => {
         if (!auth) throw new Error('Firebase Auth not available');
         await signInWithCustomToken(auth, firebaseToken);
       }, 'Firebase sign-in');
-      
+
       this.logDebug('✅ HIPAA-compliant Firebase authentication successful');
     } catch (error) {
       this.logDebug('❌ HIPAA-compliant authentication failed', error);
@@ -453,8 +459,6 @@ export class AuthBridge {
 
   /**
    * Gets the current Firebase user's ID token for API authorization
-   * @param {boolean} forceRefresh - Whether to force refresh the token
-   * @returns {Promise<string>} The Firebase ID token
    * @throws {Error} If user is not authenticated or token retrieval fails
    * @example
    * ```typescript
@@ -504,7 +508,7 @@ export class AuthBridge {
     };
 
     const failedChecks = Object.values(checks).filter(check => !check).length;
-    
+
     let status: 'healthy' | 'degraded' | 'unhealthy';
     if (failedChecks === 0) status = 'healthy';
     else if (failedChecks <= 2) status = 'degraded';
@@ -550,7 +554,7 @@ export const useFirebaseAuth = () => {
 
     try {
       authBridge.logDebug('🔐 Ensuring HIPAA-compliant authentication for patient data access');
-      
+
       try {
         // Try silent token refresh first - force cache off to get token with audience
         authBridge.logDebug('🔐 Requesting Auth0 token with audience: https://api.patientflow.com');
@@ -565,7 +569,7 @@ export const useFirebaseAuth = () => {
         authBridge.logDebug('✅ Auth0 token acquired silently');
       } catch (silentError) {
         authBridge.logDebug('⚠️ Silent token refresh failed, trying popup', silentError);
-        
+
         // Fallback to popup if silent refresh fails
         try {
           const result = await getAccessTokenWithPopup({
@@ -578,18 +582,19 @@ export const useFirebaseAuth = () => {
           authBridge.logDebug('✅ Auth0 token acquired via popup');
         } catch (popupError) {
           authBridge.logDebug('❌ Both silent and popup token refresh failed', popupError);
-          throw popupError; // Re-throw the original popupError to be caught by the outer try-catch
+          // Let the outer catch block handle this error
+          auth0Token = undefined;
         }
       }
 
       if (!auth0Token) {
         // This case handles scenarios where try/catch blocks might not throw but token is still not acquired.
         authBridge.logDebug('❌ Auth0 token could not be obtained after all attempts.');
-        throw new Error('Auth0 token could not be obtained.'); 
+        return false; // Return false instead of throwing to avoid caught locally issue
       }
 
       await authBridge.signInWithAuth0Token(auth0Token);
-      
+
       authBridge.logDebug('✅ HIPAA-compliant authentication verified');
       return true;
     } catch (error) {
@@ -615,4 +620,4 @@ export const useFirebaseAuth = () => {
     healthCheck,
     getFirebaseIdToken 
   };
-}; 
+};

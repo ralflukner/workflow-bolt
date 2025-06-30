@@ -16,6 +16,7 @@ import { DebugTextWindow } from './DebugTextWindow';
 import { useReportGeneration } from '../hooks/useReportGeneration';
 import { PATIENT_SECTIONS } from '../constants/patientSections';
 import TebraDebugDashboardContainer from './TebraDebugDashboardContainer';
+import DashboardErrorBoundary from './DashboardErrorBoundary';
 
 
 const Dashboard: React.FC = () => {
@@ -82,7 +83,9 @@ const handleExportSchedule = async (): Promise<void> => {
           <>
             <FirebaseDebugger />
             <div className="mb-6">
-              <TebraDebugDashboardContainer />
+              <DashboardErrorBoundary>
+                <TebraDebugDashboardContainer />
+              </DashboardErrorBoundary>
             </div>
             <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
               <DiagnosticPanel />

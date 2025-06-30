@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useClickOutside } from '../hooks/useClickOutside';
+import { ClickOutsideWrapper } from './withClickOutside';
 import { Patient, PatientApptStatus } from '../types';
 import { usePatientContext } from '../hooks/usePatientContext';
 import { useTimeContext } from '../hooks/useTimeContext';
@@ -17,11 +17,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
   const [checkInTimeInput, setCheckInTimeInput] = useState('');
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
-  // Use custom hook for click outside detection instead of useEffect
-  const statusDropdownRef = useClickOutside<HTMLDivElement>({
-    onClickOutside: () => setIsStatusDropdownOpen(false),
-    enabled: isStatusDropdownOpen
-  });
+  // Use class-based click outside detection instead of hooks
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -214,7 +210,11 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
           >
             {patient.status}
             {isStatusDropdownOpen && patient.status === 'scheduled' && (
-              <div ref={statusDropdownRef} className="absolute right-0 mt-2 w-40 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-10">
+              <ClickOutsideWrapper 
+                onClickOutside={() => setIsStatusDropdownOpen(false)}
+                enabled={isStatusDropdownOpen}
+                className="absolute right-0 mt-2 w-40 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-10"
+              >
                 <div className="py-1">
                   <button 
                     className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
@@ -235,7 +235,7 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
                     Cancelled
                   </button>
                 </div>
-              </div>
+              </ClickOutsideWrapper>
             )}
           </div>
         </div>
