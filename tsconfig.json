@@ -26,14 +26,7 @@
   "exclude": [
     "src/**/__tests__/**/*",
     "src/**/*.test.*",
-    "src/**/test/**/*",
-    "src/hooks/useHealthChecks.ts",
-    "src/hooks/useTebraDebugDashboard.ts",
-    "src/constants/tebraDebug.ts",
-    "src/services/tebraDebugApi.ts",
-    "src/components/TebraDebug/**/*",
-    "src/components/TebraDebugDashboard.tsx",
-    "src/utils/test-integration.ts"
+    "src/**/test/**/*"
   ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
