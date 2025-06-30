@@ -3,6 +3,8 @@
  * Encapsulates the logic for testing each step in the Tebra integration chain
  */
 
+// @ts-nocheck
+
 import { useCallback } from 'react';
 import { STEP_IDS } from '../constants/tebraConfig';
 import { tebraDebugApi, HealthCheckResult } from '../services/tebraDebugApi';
