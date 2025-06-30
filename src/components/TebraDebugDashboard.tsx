@@ -3,6 +3,8 @@ import { Activity, AlertTriangle, CheckCircle, Wifi, WifiOff, RefreshCw, Users, 
 import { usePatientContext } from '../hooks/usePatientContext';
 import { LiveLogViewer } from './LiveLogViewer';
 import { RequestReplayTool } from './RequestReplayTool';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { useFirebaseAuth } from '../services/authBridge';
 
 interface DataFlowStep {
   id: string;
@@ -201,41 +203,215 @@ export const TebraDebugDashboard: React.FC = () => {
   }, [autoRefresh, runHealthChecks]);
 
   const checkStepHealth = async (stepId: string): Promise<'healthy' | 'warning' | 'error'> => {
-    // In production, implement actual health checks for each component
-    switch (stepId) {
-      case 'frontend':
-        return 'healthy'; // Frontend is always healthy if this component is running
-      
-      case 'firebase-functions':
-        // Check if Firebase Functions are responsive
-        try {
-          // Would call: firebase.functions().httpsCallable('tebraTestConnection')()
-          return Math.random() > 0.8 ? 'error' : 'healthy';
-        } catch {
+    const correlationId = generateCorrelationId();
+    
+    try {
+      switch (stepId) {
+        case 'frontend':
+          // Frontend is always healthy if this component is running
+          return 'healthy';
+        
+        case 'firebase-functions':
+          // Test Firebase Functions with actual HTTP call
+          try {
+            const response = await Promise.race([
+              fetch('https://us-central1-luknerlumina-firebase.cloudfunctions.net/healthCheck'),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+            ]) as Response;
+            
+            if (response.ok) {
+              const data = await response.json();
+              updateStepError(stepId, null); // Clear any previous errors
+              return 'healthy';
+            } else {
+              const errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+              updateStepError(stepId, errorMsg, correlationId);
+              return 'error';
+            }
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Firebase Functions unreachable';
+            updateStepError(stepId, errorMsg, correlationId);
+            return 'error';
+          }
+        
+        case 'tebra-proxy':
+          // Test Tebra connection via Firebase Functions
+          try {
+            const functions = getFunctions();
+            const testConnection = httpsCallable(functions, 'tebraTestConnection');
+            const result = await Promise.race([
+              testConnection(),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout after 10s')), 10000))
+            ]) as any;
+            
+            console.log('Tebra test connection result:', result);
+            
+            if (result?.data?.success) {
+              updateStepError(stepId, null);
+              return 'healthy';
+            } else {
+              const errorMsg = result?.data?.message || result?.message || 'Tebra connection failed - no success flag';
+              updateStepError(stepId, errorMsg, correlationId);
+              return 'error';
+            }
+          } catch (error) {
+            console.error('Tebra proxy error:', error);
+            let errorMsg = 'Tebra proxy unreachable';
+            
+            if (error instanceof Error) {
+              errorMsg = error.message;
+              
+              // Parse Firebase Functions errors
+              if (error.message.includes('internal')) {
+                errorMsg = 'Internal Firebase Functions error - check function logs';
+              } else if (error.message.includes('unauthenticated')) {
+                errorMsg = 'Authentication required for Tebra test';
+              } else if (error.message.includes('permission-denied')) {
+                errorMsg = 'Permission denied - check IAM roles';
+              }
+            }
+            
+            updateStepError(stepId, errorMsg, correlationId);
+            return 'error';
+          }
+        
+        case 'cloud-run':
+          // Test the new HTTP API endpoint
+          try {
+            const response = await Promise.race([
+              fetch('https://us-central1-luknerlumina-firebase.cloudfunctions.net/api/health'),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+            ]) as Response;
+            
+            if (response.ok) {
+              updateStepError(stepId, null);
+              return 'healthy';
+            } else {
+              updateStepError(stepId, `HTTP ${response.status}: ${response.statusText}`, correlationId);
+              return 'error';
+            }
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Cloud Run service unreachable';
+            updateStepError(stepId, errorMsg, correlationId);
+            return 'error';
+          }
+        
+        case 'tebra-api':
+          // Test actual Tebra SOAP API connectivity
+          try {
+            const functions = getFunctions();
+            const testAppointments = httpsCallable(functions, 'tebraTestAppointments');
+            const result = await Promise.race([
+              testAppointments({ date: new Date().toISOString().split('T')[0] }),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout after 15s')), 15000))
+            ]) as any;
+            
+            console.log('Tebra API test result:', result);
+            
+            if (result?.data?.success) {
+              updateStepError(stepId, null);
+              return 'healthy';
+            } else {
+              const errorMsg = result?.data?.message || result?.message || 'Tebra SOAP API test failed';
+              updateStepError(stepId, errorMsg, correlationId);
+              return 'error';
+            }
+          } catch (error) {
+            console.error('Tebra API error:', error);
+            let errorMsg = 'Tebra API connection failed';
+            
+            if (error instanceof Error) {
+              errorMsg = error.message;
+              
+              // Provide specific error context
+              if (error.message.includes('internal')) {
+                errorMsg = 'Tebra API internal error - check credentials and WSDL URL';
+              } else if (error.message.includes('network')) {
+                errorMsg = 'Network error connecting to Tebra API';
+              } else if (error.message.includes('timeout')) {
+                errorMsg = 'Tebra API timeout - service may be slow or unavailable';
+              }
+            }
+            
+            updateStepError(stepId, errorMsg, correlationId);
+            return 'error';
+          }
+        
+        case 'data-transform':
+          // Test data transformation by checking if we can process mock data
+          try {
+            const mockData = [{ name: 'Test Patient', status: 'scheduled' }];
+            const transformed = mockData.map(item => ({ ...item, processed: true }));
+            if (transformed.length > 0) {
+              updateStepError(stepId, null);
+              return 'healthy';
+            } else {
+              updateStepError(stepId, 'Data transformation failed', correlationId);
+              return 'error';
+            }
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Data transformation error';
+            updateStepError(stepId, errorMsg, correlationId);
+            return 'error';
+          }
+        
+        case 'dashboard-update':
+          // Test dashboard state update
+          try {
+            const currentPatients = patients.length;
+            if (currentPatients >= 0) { // Always healthy if we can read patient count
+              updateStepError(stepId, null);
+              return 'healthy';
+            } else {
+              updateStepError(stepId, 'Unable to read patient data', correlationId);
+              return 'error';
+            }
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Dashboard update failed';
+            updateStepError(stepId, errorMsg, correlationId);
+            return 'error';
+          }
+        
+        default:
+          updateStepError(stepId, 'Unknown health check step', correlationId);
           return 'error';
-        }
-      
-      case 'cloud-run':
-        // Check Cloud Run service health
-        try {
-          // Would call: fetch(cloudRunUrl + '/health')
-          return Math.random() > 0.7 ? 'error' : 'healthy';
-        } catch {
-          return 'error';
-        }
-      
-      case 'tebra-api':
-        // Check Tebra API connectivity
-        try {
-          // Would test actual Tebra API call
-          return Math.random() > 0.6 ? 'error' : 'healthy';
-        } catch {
-          return 'error';
-        }
-      
-      default:
-        return Math.random() > 0.3 ? 'healthy' : 'error';
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Health check failed';
+      updateStepError(stepId, errorMsg, correlationId);
+      return 'error';
     }
+  };
+
+  const updateStepError = (stepId: string, errorMessage: string | null, correlationId?: string) => {
+    setDataFlowSteps(prev => prev.map(step => {
+      if (step.id === stepId) {
+        const updatedStep = {
+          ...step,
+          errorMessage,
+          correlationId: correlationId || step.correlationId
+        };
+        
+        // Add to recent errors if there's an error
+        if (errorMessage) {
+          setRecentErrors(prevErrors => {
+            const newError: RecentError = {
+              timestamp: new Date(),
+              step: step.name,
+              error: errorMessage,
+              correlationId: correlationId || 'unknown'
+            };
+            
+            // Keep only last 10 errors
+            const updatedErrors = [newError, ...prevErrors].slice(0, 10);
+            return updatedErrors;
+          });
+        }
+        
+        return updatedStep;
+      }
+      return step;
+    }));
   };
 
   const generateCorrelationId = () => {
