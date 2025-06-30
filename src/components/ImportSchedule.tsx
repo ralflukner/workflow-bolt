@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { withContexts, WithContextsProps } from './withContexts';
-import { Patient } from '../types';
+import { Patient } from '@/types';
 import { X, Check, AlertCircle } from 'lucide-react';
 import { debugLogger } from '../services/debugLogger';
 import { parseSchedule } from '../utils/parseSchedule';
@@ -17,7 +17,7 @@ interface State {
 }
 
 class ImportScheduleClass extends Component<ImportScheduleProps & WithContextsProps, State> {
-  private successTimeout: NodeJS.Timeout | null = null;
+  private successTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(props: ImportScheduleProps & WithContextsProps) {
     super(props);
