@@ -9,11 +9,11 @@ import {
   TebraMetrics, 
   RecentError, 
   PhpDiagnostics,
-  TEBRA_CONFIG,
   STEP_IDS
 } from '../constants/tebraDebug';
-import { useHealthChecks } from './useHealthChecks';
-import { usePatientContext } from './usePatientContext';
+import { HEALTH_CHECK_CONFIG } from '../constants/tebraConfig';
+import { useHealthChecks, StepId, StepResult } from './useHealthChecks';
+import { usePatientContext } from '../contexts/PatientContext';
 import { tebraDebugApi } from '../services/tebraDebugApi';
 
 const initialSteps: DataFlowStep[] = [
@@ -71,7 +71,7 @@ export const useTebraDebugDashboard = () => {
     setRecentErrors(prev => [
       { timestamp: new Date(), step, error, correlationId },
       ...prev
-    ].slice(0, TEBRA_CONFIG.MAX_RECENT_ERRORS));
+    ].slice(0, HEALTH_CHECK_CONFIG.MAX_RECENT_ERRORS));
   }, []);
 
   const runHealthChecks = useCallback(async () => {
@@ -80,34 +80,31 @@ export const useTebraDebugDashboard = () => {
     try {
       const updatedSteps = await Promise.all(
         dataFlowSteps.map(async (step) => {
-          const startTime = Date.now();
-          const correlationId = tebraDebugApi.generateCorrelationId();
-          
           try {
-            const status = await checkStepHealth(step.id);
-            const responseTime = Date.now() - startTime;
+            const result: StepResult = await checkStepHealth(step.id as StepId);
             
-            if (status === 'error' && step.errorMessage) {
-              addError(step.name, step.errorMessage, correlationId);
+            if (result.status === 'error' && result.message) {
+              addError(step.name, result.message, result.correlationId);
             }
             
             return { 
               ...step, 
-              status, 
+              status: result.status, 
               lastCheck: new Date(), 
-              responseTime, 
-              correlationId,
-              errorMessage: status === 'error' ? step.errorMessage : undefined
+              responseTime: result.duration, 
+              correlationId: result.correlationId,
+              errorMessage: result.status === 'error' ? result.message : undefined
             };
           } catch (error) {
-            const errorMsg = parseStepError(step.id, error as Error);
+            const correlationId = tebraDebugApi.generateCorrelationId();
+            const errorMsg = parseStepError(step.id as StepId, error as Error);
             addError(step.name, errorMsg, correlationId);
             
             return {
               ...step,
               status: 'error' as const,
               lastCheck: new Date(),
-              responseTime: Date.now() - startTime,
+              responseTime: 0,
               errorMessage: errorMsg,
               correlationId
             };
@@ -142,8 +139,8 @@ export const useTebraDebugDashboard = () => {
     setIsMonitoring(true);
     try {
       const [connectionResult, providersResult] = await Promise.allSettled([
-        tebraDebugApi.testTebraConnection(),
-        tebraDebugApi.getProviders()
+        tebraDebugApi.testTebraProxy(),
+        tebraDebugApi.testTebraApi()
       ]);
       
       const diagnostics: PhpDiagnostics = {
