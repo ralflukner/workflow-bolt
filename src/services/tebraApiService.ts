@@ -134,7 +134,7 @@ export const tebraApiService = {
   syncSchedule: async (date: string): Promise<{ success: boolean; message: string; count?: number }> => {
     try {
       const functions = getFunctions();
-      const syncSchedule = httpsCallable(functions, 'syncSchedule');
+      const syncSchedule = httpsCallable(functions, 'tebraSyncTodaysSchedule');
       
       const result = await syncSchedule({ date });
       return result.data as { success: boolean; message: string; count?: number };

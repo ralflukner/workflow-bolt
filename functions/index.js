@@ -266,8 +266,27 @@ exports.validateHIPAACompliance = validateHIPAACompliance;
 exports.testSecretRedaction = testSecretRedaction;
 
 // Tebra API Functions
-exports.tebraTestConnection = onCall({ cors: true }, async (_request) => {
+exports.tebraTestConnection = onCall(
+  {
+    cors: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:5002',
+      'https://luknerlumina-firebase.web.app',
+      'https://luknerlumina-firebase.firebaseapp.com'
+    ]
+  },
+  async (request) => {
+  // Check authentication
+  if (!request.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated', 
+      'User must be authenticated'
+    );
+  }
+  
   console.log('Testing Tebra connection...');
+  console.log('Authenticated user:', request.auth.uid);
   console.log('Environment - TEBRA_CLOUD_RUN_URL:', process.env.TEBRA_CLOUD_RUN_URL);
   console.log('Environment - GOOGLE_APPLICATION_CREDENTIALS:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
   
@@ -278,6 +297,7 @@ exports.tebraTestConnection = onCall({ cors: true }, async (_request) => {
     return { 
       success: connected, 
       message: connected ? 'Tebra API connection test successful' : 'Tebra API connection failed',
+      userId: request.auth.uid,
       timestamp: new Date().toISOString()
     };
   } catch (error) {
@@ -286,6 +306,7 @@ exports.tebraTestConnection = onCall({ cors: true }, async (_request) => {
     return { 
       success: false, 
       message: error.message || 'Connection test failed',
+      userId: request.auth.uid,
       timestamp: new Date().toISOString()
     };
   }
