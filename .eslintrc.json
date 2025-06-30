@@ -74,11 +74,19 @@
     "jsdoc": {
       "mode": "typescript"
     },
-    "import/resolver": {
-      "typescript": {
-        "alwaysTryTypes": true,
-        "project": "./tsconfig.json"
+    "import/resolver": [
+      {
+        "typescript": {
+          "alwaysTryTypes": true,
+          "project": ["./tsconfig.json"]
+        }
+      },
+      {
+        "alias": {
+          "map": [["@", "./src"]],
+          "extensions": [".ts", ".tsx", ".js", ".jsx"]
+        }
       }
-    }
+    ]
   }
 } 

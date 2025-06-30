@@ -1,50 +1,40 @@
 import js from '@eslint/js';
-import globals from 'globals';
-import reactHooks from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh';
-import tseslint from 'typescript-eslint';
+import typescript from '@typescript-eslint/eslint-plugin';
+import typescriptParser from '@typescript-eslint/parser';
 import importPlugin from 'eslint-plugin-import';
-import nodePlugin from 'eslint-plugin-node';
-import unusedImports from 'eslint-plugin-unused-imports';
+import globals from 'globals';
 
-export default tseslint.config(
-  { ignores: [
-    'dist', 
-    'src/tebra-soap/**', 
-    '!src/tebra-soap/tebraSoapClient.ts', 
-    '!src/tebra-soap/__tests__/**',
-    'coverage/**',
-    'node_modules/**',
-    'functions/node_modules/**',
-    'tebra-proxy/**',
-    '__mocks__/**',
-    'tebra-php-api/vendor/**',
-    'vendor/**',
-    'src/utils/testTebra*.ts'
-  ] },
+export default [
+  js.configs.recommended,
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
-      ecmaVersion: 2020,
+      parser: typescriptParser,
       globals: globals.browser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        project: './tsconfig.json',
+      },
     },
     plugins: {
-      'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
-      import: importPlugin,
-      node: nodePlugin,
-      'unused-imports': unusedImports,
+      '@typescript-eslint': typescript,
+      'import': importPlugin,
+    },
+    settings: {
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json',
+        },
+        node: {
+          extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        },
+      },
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      ...typescript.configs.recommended.rules,
       'import/no-unresolved': 'error',
-      'node/no-missing-require': 'error',
-      'unused-imports/no-unused-imports': 'warn',
     },
-  }
-);
+  },
+];
