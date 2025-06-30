@@ -31,7 +31,9 @@
     "src/hooks/useTebraDebugDashboard.ts",
     "src/constants/tebraDebug.ts",
     "src/services/tebraDebugApi.ts",
-    "src/components/TebraDebug/**/*"
+    "src/components/TebraDebug/**/*",
+    "src/components/TebraDebugDashboard.tsx",
+    "src/utils/test-integration.ts"
   ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

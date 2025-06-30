@@ -89,7 +89,7 @@ if (typeof window !== 'undefined') {
 
 // Console error detection to catch React errors during testing
 // Currently disabled while debugging test timeouts - will re-enable after resolving issues
-let consoleErrorSpy: jest.MockedFunction<typeof console.error>;
+let consoleErrorSpy: jest.MockedFunction<typeof console.error> | undefined;
 
 beforeEach(() => {
   // Disabled temporarily due to test timeouts

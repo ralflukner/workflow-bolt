@@ -1,14 +1,12 @@
 /**
- * Health Checks Hook
+ * Health Checks Hook - Production Safe Version
  * Encapsulates the logic for testing each step in the Tebra integration chain
+ * NO useEffect - Pure functions only for production safety
  */
-
-// @ts-nocheck
 
 import { useCallback } from 'react';
 import { STEP_IDS } from '../constants/tebraConfig';
 import { tebraDebugApi, HealthCheckResult } from '../services/tebraDebugApi';
-import { usePatientContext } from '../context/PatientContext';
 
 export type StepId = typeof STEP_IDS[keyof typeof STEP_IDS];
 export type StepStatus = 'healthy' | 'warning' | 'error' | 'unknown';
@@ -21,13 +19,18 @@ export interface StepResult {
   details?: Record<string, unknown>;
 }
 
+export interface PatientData {
+  appointmentTime?: string | Date;
+  status: string;
+  [key: string]: any;
+}
+
 export const useHealthChecks = () => {
-  const { patients } = usePatientContext();
 
   /**
    * Check the health of a specific integration step
    */
-  const checkStepHealth = useCallback(async (stepId: StepId): Promise<StepResult> => {
+  const checkStepHealth = useCallback(async (stepId: StepId, patients: PatientData[] = []): Promise<StepResult> => {
     try {
       let result: HealthCheckResult;
 
@@ -69,7 +72,7 @@ export const useHealthChecks = () => {
             statusDistribution: patients.reduce((acc, p) => {
               acc[p.status] = (acc[p.status] || 0) + 1;
               return acc;
-            }, {}),
+            }, {} as Record<string, number>),
             dateRange: patients.length > 0 ? {
               earliest: Math.min(...patients.map(p => new Date(p.appointmentTime || Date.now()).getTime())),
               latest: Math.max(...patients.map(p => new Date(p.appointmentTime || Date.now()).getTime())),
@@ -116,14 +119,14 @@ export const useHealthChecks = () => {
   /**
    * Run health checks for all steps
    */
-  const checkAllSteps = useCallback(async (): Promise<Record<StepId, StepResult>> => {
+  const checkAllSteps = useCallback(async (patients: PatientData[] = []): Promise<Record<StepId, StepResult>> => {
     const allSteps = Object.values(STEP_IDS) as StepId[];
     
     // Run all health checks in parallel for better performance
     const results = await Promise.allSettled(
       allSteps.map(async (stepId) => ({
         stepId,
-        result: await checkStepHealth(stepId)
+        result: await checkStepHealth(stepId, patients)
       }))
     );
 
@@ -178,7 +181,7 @@ export const useHealthChecks = () => {
   /**
    * Validate step dependencies - some steps depend on others
    */
-  const validateStepDependencies = useCallback(async (): Promise<Record<StepId, boolean>> => {
+  const validateStepDependencies = useCallback((): Record<StepId, boolean> => {
     const dependencies: Record<StepId, boolean> = {
       [STEP_IDS.FRONTEND]: true, // No dependencies
       [STEP_IDS.FIREBASE_FUNCTIONS]: true, // Independent
