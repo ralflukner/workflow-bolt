@@ -16,6 +16,7 @@ tags:
 _A living list of follow-up tasks that emerged from recent incidents and retrospectives.  Owners are provisional; update during sprint planning._
 
 ## 📑 Index
+
 1. [Immediate Action Items](#immediate-action-items)
 2. [In-Flight Enhancements](#in-flight-enhancements)
 3. [Parking Lot / Nice-to-Haves](#parking-lot--nice-to-haves)

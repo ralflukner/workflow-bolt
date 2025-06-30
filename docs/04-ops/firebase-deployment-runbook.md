@@ -256,7 +256,7 @@ firebase emulators:start --only functions
 ### Alert Channels
 
 - **Slack**: #engineering-alerts
-- **Email**: ops-team@company.com
+- **Email**: <ops-team@company.com>
 - **PagerDuty**: Critical issues only
 
 ### Dashboard Links

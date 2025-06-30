@@ -169,4 +169,4 @@ if (!getAuth().currentUser) {
 await testTebraConnection();
 ```
 
-After these steps, localhost requests will succeed and you can add your production domain to the CORS list when ready. 
+After these steps, localhost requests will succeed and you can add your production domain to the CORS list when ready.

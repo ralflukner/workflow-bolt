@@ -11,21 +11,25 @@ Fixed critical HIPAA violations in Cloud Run deployment scripts where services w
 ## Affected Files
 
 ### 1. `tebra-php-api/deploy.sh`
+
 - **Issue:** Line 27 had `--allow-unauthenticated` flag
 - **Fix:** Removed the flag, service now requires authentication
 - **Impact:** PHP API service is no longer publicly accessible
 
 ### 2. `tebra-php-api/deploy-fix.sh`
+
 - **Issue:** Line 49 had `--allow-unauthenticated` flag
 - **Fix:** Removed the flag, service now requires authentication
 - **Impact:** PHP API service is no longer publicly accessible
 
 ### 3. `tebra-proxy/deploy.sh`
+
 - **Issue:** Line 59 had `--allow-unauthenticated` flag
 - **Fix:** Removed the flag, service now requires authentication
 - **Impact:** Tebra proxy service is no longer publicly accessible
 
 ### 4. `tebra-proxy/deploy-with-secrets.sh`
+
 - **Issue:** Line 65 had `--allow-unauthenticated` flag
 - **Fix:** Removed the flag, service now requires authentication
 - **Impact:** Tebra proxy service with Secret Manager is no longer publicly accessible
@@ -33,6 +37,7 @@ Fixed critical HIPAA violations in Cloud Run deployment scripts where services w
 ## Security Implications
 
 ### Before Fix
+
 - ❌ All Cloud Run services were publicly accessible
 - ❌ No authentication required to access healthcare APIs
 - ❌ Direct exposure of PHI endpoints
@@ -40,6 +45,7 @@ Fixed critical HIPAA violations in Cloud Run deployment scripts where services w
 - ❌ Potential for unauthorized access to patient data
 
 ### After Fix
+
 - ✅ All Cloud Run services require authentication
 - ✅ Services are only accessible to authorized users/applications
 - ✅ HIPAA compliance maintained
@@ -49,12 +55,14 @@ Fixed critical HIPAA violations in Cloud Run deployment scripts where services w
 ## Technical Details
 
 ### Authentication Methods
+
 1. **Service-to-Service Authentication:** Using Google Cloud service accounts
 2. **API Key Authentication:** For the Tebra proxy services
 3. **Bearer Token Authentication:** For the PHP API services
 4. **IAM-based Access Control:** Through Google Cloud IAM policies
 
 ### Deployment Changes
+
 ```bash
 # BEFORE (INSECURE)
 gcloud run deploy $SERVICE_NAME \
@@ -70,12 +78,14 @@ gcloud run deploy $SERVICE_NAME \
 ## Compliance Verification
 
 ### HIPAA Requirements Met
+
 - ✅ **Access Control (164.312(a)(1)):** Authentication required for all services
 - ✅ **Audit Controls (164.312(b)):** All access attempts logged
 - ✅ **Integrity (164.312(c)(1)):** No unauthorized modifications possible
 - ✅ **Transmission Security (164.312(e)(1)):** HTTPS enforced by Cloud Run
 
 ### Security Controls Implemented
+
 - ✅ **Authentication Required:** All endpoints require valid credentials
 - ✅ **HTTPS Only:** Cloud Run enforces HTTPS by default
 - ✅ **Secret Management:** Credentials stored in Google Secret Manager
@@ -85,6 +95,7 @@ gcloud run deploy $SERVICE_NAME \
 ## Testing Requirements
 
 ### Authentication Testing
+
 ```bash
 # Test PHP API (should fail without auth)
 curl $SERVICE_URL/api/health
@@ -104,6 +115,7 @@ curl -H "X-API-Key: <api-key>" $SERVICE_URL/test
 ```
 
 ### Security Validation
+
 1. **Public Access Test:** Verify services are not accessible without authentication
 2. **Authentication Test:** Verify services work with proper credentials
 3. **Audit Log Review:** Check Cloud Audit Logs for access attempts
@@ -112,6 +124,7 @@ curl -H "X-API-Key: <api-key>" $SERVICE_URL/test
 ## Deployment Instructions
 
 ### For Production Deployment
+
 1. **Update Existing Services:**
    ```bash
    # Redeploy all services with authentication required
@@ -131,7 +144,9 @@ curl -H "X-API-Key: <api-key>" $SERVICE_URL/test
    - Verify API key authentication for proxy services
 
 ### Rollback Plan
+
 If authentication issues occur:
+
 1. **Temporary Fix:** Add `--allow-unauthenticated` back (NOT RECOMMENDED)
 2. **Proper Fix:** Debug authentication configuration
 3. **Emergency Access:** Use Google Cloud Console for direct service management
@@ -139,12 +154,14 @@ If authentication issues occur:
 ## Monitoring and Alerting
 
 ### Security Monitoring
+
 - **Failed Authentication Attempts:** Monitor for brute force attacks
 - **Unauthorized Access Attempts:** Alert on repeated 401 errors
 - **Service Account Usage:** Track service account authentication patterns
 - **Secret Access Logs:** Monitor Secret Manager access patterns
 
 ### Compliance Monitoring
+
 - **HIPAA Audit Logs:** Regular review of access logs
 - **Authentication Success Rates:** Monitor for authentication failures
 - **Service Availability:** Ensure services remain accessible to authorized users
@@ -152,11 +169,13 @@ If authentication issues occur:
 ## Documentation Updates
 
 ### Updated Scripts
+
 - All deployment scripts now include security notices
 - Clear documentation of authentication requirements
 - Updated testing instructions with authentication examples
 
 ### Security Checklist
+
 - ✅ Authentication required for all services
 - ✅ No public access endpoints
 - ✅ Secrets properly managed
@@ -167,10 +186,12 @@ If authentication issues occur:
 ## Risk Assessment
 
 ### Risk Level: CRITICAL → LOW
+
 - **Before:** High risk of PHI exposure and HIPAA violations
 - **After:** Low risk with proper authentication controls
 
 ### Residual Risks
+
 - **Authentication Bypass:** Mitigated by Google Cloud security controls
 - **Credential Compromise:** Mitigated by Secret Manager and rotation policies
 - **Service Account Abuse:** Mitigated by IAM policies and monitoring

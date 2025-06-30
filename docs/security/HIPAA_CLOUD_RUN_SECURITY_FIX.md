@@ -18,7 +18,9 @@ The following Cloud Run services had `allUsers` with `roles/run.invoker` permiss
 ## Actions Taken
 
 ### 1. Removed Public Access
+
 All public access (`allUsers`) has been removed from the services listed above using:
+
 ```bash
 gcloud run services remove-iam-policy-binding [SERVICE_NAME] \
   --member="allUsers" \
@@ -28,12 +30,16 @@ gcloud run services remove-iam-policy-binding [SERVICE_NAME] \
 ```
 
 ### 2. Verified Service Account Access
+
 Confirmed that legitimate service accounts retain access:
+
 - `luknerlumina-firebase@appspot.gserviceaccount.com` (App Engine/Firebase Functions)
 - `tebra-api-client@luknerlumina-firebase.iam.gserviceaccount.com` (Tebra API client)
 
 ### 3. Authentication Flow Preserved
+
 The existing authentication flow remains intact:
+
 - Firebase Functions use Google Auth library to obtain ID tokens
 - ID tokens are automatically injected into requests to Cloud Run
 - Cloud Run validates the tokens and allows access
@@ -43,31 +49,37 @@ The existing authentication flow remains intact:
 These fixes address several HIPAA requirements:
 
 ### Access Control (164.312(a)(1))
+
 - ✅ Authentication required for all services
 - ✅ No public access to PHI
 - ✅ Service-to-service authentication implemented
 
 ### Audit Controls (164.312(b))
+
 - ✅ All access attempts are logged
 - ✅ Failed authentication attempts are tracked
 
 ### Integrity (164.312(c)(1))
+
 - ✅ Unauthorized access prevented
 - ✅ Data cannot be modified without authentication
 
 ### Transmission Security (164.312(e)(1))
+
 - ✅ All connections use HTTPS
 - ✅ Authentication tokens encrypted in transit
 
 ## Impact on Functionality
 
 ### What Still Works
+
 - ✅ Firebase Functions can still call Cloud Run services
 - ✅ Tebra appointment sync functionality preserved
 - ✅ All authenticated service-to-service communication
 - ✅ Frontend → Firebase Functions → Cloud Run flow intact
 
 ### What No Longer Works
+
 - ❌ Direct browser access to Cloud Run URLs (intended)
 - ❌ Unauthenticated API calls (intended)
 - ❌ Public debugging endpoints (intended)
@@ -99,6 +111,7 @@ These fixes address several HIPAA requirements:
 Update all deployment scripts to ensure they never use `--allow-unauthenticated`:
 
 ### tebra-php-api/deploy.sh
+
 ```bash
 gcloud run deploy tebra-php-api \
   --source . \
@@ -107,7 +120,8 @@ gcloud run deploy tebra-php-api \
   # DO NOT add --allow-unauthenticated
 ```
 
-### Similar updates needed for:
+### Similar updates needed for
+
 - tebra-proxy/deploy.sh
 - Any other Cloud Run deployment scripts
 
@@ -122,6 +136,7 @@ gcloud run deploy tebra-php-api \
 ## Emergency Contacts
 
 If authentication issues arise:
+
 1. Check Firebase Function logs
 2. Verify service account permissions
 3. Review this document for authentication flow

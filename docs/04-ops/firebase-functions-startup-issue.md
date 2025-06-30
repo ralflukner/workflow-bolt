@@ -22,6 +22,7 @@ This document chronicles the complete resolution of Firebase Functions deploymen
 ## 🎉 MAJOR ACHIEVEMENTS
 
 ### ✅ Firebase Functions Deployment Crisis - RESOLVED
+
 - **Issue**: ALL 13 Firebase Functions failing with container startup timeouts
 - **Root Cause**: Node.js 22 incompatibility + Firebase Admin credential misconfiguration
 - **Resolution**: Node.js 20 runtime + proper credential handling
@@ -29,6 +30,7 @@ This document chronicles the complete resolution of Firebase Functions deploymen
 > **Success:** 100% deployment success rate restored with Node.js 20 runtime.
 
 ### ✅ Test Suite Quality Enhancement - COMPLETED  
+
 - **Issue**: Slow, complex tests mixing UI and business logic concerns
 - **Solution**: Extracted parsing logic to pure utilities with comprehensive unit tests
 
@@ -38,14 +40,15 @@ This document chronicles the complete resolution of Firebase Functions deploymen
 
 A fully-featured `functions/src/utils/credential-verification.js` replaced the preliminary checker.  Highlights:
 
-* **Seven discrete service checks** (Firebase Admin, Firestore, Env Vars, Project ID, Auth0, Tebra, Secret Manager) with granular success/warning/error states.
-* **Execution summary & timing** returned in one object – easy to emit as a Cloud Monitoring metric.
-* **Middleware helper** – can be plugged into Express routes (`blockOnFailure` flag) so production traffic is automatically gated if credentials break.
-* **Five-minute in-memory cache** avoids hammering Firestore/Secret Manager.
-* **CLI mode** – running `node functions/src/utils/credential-verification.js` exits non-zero on failure → perfect for CI.
-* **Placeholder detection & secret aliasing** integrated via the updated `pull-secrets.js` pipeline (see previous section).
+- **Seven discrete service checks** (Firebase Admin, Firestore, Env Vars, Project ID, Auth0, Tebra, Secret Manager) with granular success/warning/error states.
+- **Execution summary & timing** returned in one object – easy to emit as a Cloud Monitoring metric.
+- **Middleware helper** – can be plugged into Express routes (`blockOnFailure` flag) so production traffic is automatically gated if credentials break.
+- **Five-minute in-memory cache** avoids hammering Firestore/Secret Manager.
+- **CLI mode** – running `node functions/src/utils/credential-verification.js` exits non-zero on failure → perfect for CI.
+- **Placeholder detection & secret aliasing** integrated via the updated `pull-secrets.js` pipeline (see previous section).
 
 Risk notes:
+
 1. **Duplicate implementations** – remove the older lightweight checker to avoid drift.
 2. **ENV names** – still references plain `AUTH0_*` / `TEBRA_*` vars; ensure `pull-secrets.js` keeps mirroring from the `VITE_` counterparts.
 3. **Firestore read‐only test** – uses collection `_health_check`; maintain its IAM permissions (read-only required).
@@ -105,6 +108,7 @@ The user-provided container failed to start and listen on the port defined provi
 **Fix 11-14: Configuration Issues**
 
 #### Fix&nbsp;11 – Runtime Configuration <a id="fix-11"></a>
+
 <details><summary>🔧 Critical Runtime Fix</summary>
 
 ```json
@@ -181,6 +185,7 @@ TypeError: Load failed (firebase-init.ts:55)
 </details>
 
 ### ✅ Resolution: Function Deployment + CORS
+
 1. **Fixed underlying deployment issues** - Functions now respond properly
 2. **Expected 403 responses** - Functions are correctly protected and require authentication
 3. **Fallback mechanism working** - App gracefully handles authentication requirements
@@ -194,6 +199,7 @@ TypeError: Load failed (firebase-init.ts:55)
 ### The Challenge: Slow, Complex Test Suite
 
 **Previous State**:
+
 - Tests mixing UI interactions with business logic
 - Slow React Testing Library renders for pure data operations
 - Complex test setup with heavy mocking
@@ -202,7 +208,9 @@ TypeError: Load failed (firebase-init.ts:55)
 ### ✅ Solution: Logic/UI Separation Pattern
 
 #### 1. **Pure Utility Extraction**
+
 Created `src/utils/parseSchedule.ts`:
+
 ```typescript
 export function parseSchedule(
   text: string, 
@@ -212,11 +220,13 @@ export function parseSchedule(
 ```
 
 **Benefits**:
+
 - Pure function with no React dependencies
 - Easy to test with predictable inputs/outputs
 - No DOM manipulation or complex mocking required
 
 #### 2. **Comprehensive Unit Test Suite**
+
 Created `src/utils/__tests__/parseSchedule.test.ts` with **60+ test cases**:
 
 <details><summary>🧪 Test Suite Structure</summary>
@@ -250,7 +260,9 @@ describe('parseSchedule', () => {
 </details>
 
 #### 3. **UI Test Simplification**
+
 Refactored ImportSchedule component tests to focus on user interactions:
+
 ```typescript
 const handleImport = () => {
   const patients = parseSchedule(textareaValue, getCurrentTime(), { logFunction: addLog });
@@ -264,7 +276,8 @@ const handleImport = () => {
 <details><summary>📊 Before/After Performance Metrics</summary>
 
 **Before**: Complex React tests taking seconds to render and validate business logic
-**After**: 
+**After**:
+
 - **Pure data tests**: Run in milliseconds (`1.215s` for 60 tests)
 - **UI tests**: Focus only on user interactions
 - **Performance test**: 1000 records parsed in <100ms
@@ -310,6 +323,7 @@ if (input.includes('/') && (input.includes('.ts') || input.includes('.js') || in
 ```
 
 **Protection Against**:
+
 - Accidental file system access in browser environment
 - Processing of file paths in redaction functions
 - Dangerous Node.js API access outside test environment
@@ -351,9 +365,9 @@ Key controls:
 
 Outcome:
 
-* Local **credential-verification** suite passes end-to-end (`isValid: true`).
-* Browser CORS tests succeed for both `health` and `getFirebaseConfig`.
-* Deployment log shows `functions[getFirebaseConfig]` updated without errors.
+- Local **credential-verification** suite passes end-to-end (`isValid: true`).
+- Browser CORS tests succeed for both `health` and `getFirebaseConfig`.
+- Deployment log shows `functions[getFirebaseConfig]` updated without errors.
 
 > See [src/get-firebase-config.js](../../functions/src/get-firebase-config.js) for the final reference implementation.
 
@@ -364,6 +378,7 @@ Outcome:
 ### Test Execution Optimization
 
 #### Enhanced npm Scripts (Planned)
+
 ```json
 {
   "scripts": {
@@ -375,11 +390,13 @@ Outcome:
 ```
 
 **Benefits**:
+
 - `--runInBand` eliminates random port collisions
 - Separate CI configuration with proper reporting
 - Cross-platform compatibility
 
 #### Console Error Detection (Planned)
+
 ```typescript
 beforeEach(() => {
   jest.spyOn(console, 'error').mockImplementation((...args) => {
@@ -392,7 +409,9 @@ beforeEach(() => {
 ### Code Organization Improvements
 
 #### Function Testing Infrastructure
+
 Created `test-functions-properly.cjs` for deployment verification:
+
 ```javascript
 // Comprehensive function testing without authentication requirements
 // Tests for 403 responses (expected for protected functions)
@@ -400,6 +419,7 @@ Created `test-functions-properly.cjs` for deployment verification:
 ```
 
 **Verified Functions**:
+
 - ✅ `exchangeAuth0Token` - Returns expected 403 (properly protected)
 - ✅ `getFirebaseConfig` - Returns expected 403 (properly protected)  
 - ✅ `tebraTestConnection` - Returns expected 403 (properly protected)
@@ -411,6 +431,7 @@ Created `test-functions-properly.cjs` for deployment verification:
 ### CLAUDE.md Enhancements
 
 Updated project guidance with:
+
 - Test quality improvements documentation
 - parseSchedule utility usage examples
 - Enhanced development workflow guidance
@@ -419,6 +440,7 @@ Updated project guidance with:
 ### Firebase Deployment Knowledge
 
 **Critical Learnings Documented**:
+
 1. **`firebase.json` overrides `package.json`** - Runtime must be correct in firebase.json
 2. **Node.js 22 unsupported** - Use Node.js 20 for Firebase Functions v2
 3. **Default credentials preferred** - Cloud environment provides service account automatically
@@ -427,6 +449,7 @@ Updated project guidance with:
 ### Automated Testing Verification
 
 Created systematic verification process:
+
 ```bash
 # 1. Test pure parsing logic (fast)
 npm test -- src/utils/__tests__/parseSchedule.test.ts
@@ -443,24 +466,28 @@ node test-functions-properly.cjs
 ## Current Status: All Systems Operational ✅
 
 ### Firebase Functions Status
-- ✅ **3/3 functions deployed successfully** 
+
+- ✅ **3/3 functions deployed successfully**
 - ✅ **Authentication flow operational**
 - ✅ **Container startup timeouts resolved**
 - ✅ **Production deployment process established**
 
 ### Test Suite Status  
+
 - ✅ **60+ comprehensive unit tests passing**
 - ✅ **Pure logic separated from UI concerns**
 - ✅ **Fast execution (~1.2s for full parsing suite)**
 - ✅ **Edge case coverage for all business logic**
 
 ### Security Status
+
 - ✅ **File system access protections implemented**
 - ✅ **HIPAA-compliant logging enhanced**
 - ✅ **Runtime security checks active**
 - ✅ **Environment separation enforced**
 
 ### Development Workflow Status
+
 - ✅ **Clean component refactoring completed**
 - ✅ **Deployment verification process established**
 - ✅ **Documentation updated and comprehensive**
@@ -532,6 +559,7 @@ This resolution demonstrates the value of persistent debugging combined with sys
 **⚠️ This issue has occurred at least 3 times and keeps coming back!**
 
 **Symptoms**:
+
 - CORS 403 errors when calling `exchangeAuth0Token`
 - "Preflight response is not successful. Status code: 403"
 - "Missing or insufficient permissions" Firestore errors
@@ -541,18 +569,21 @@ This resolution demonstrates the value of persistent debugging combined with sys
 ### Root Causes (Always one or more of these)
 
 #### 1. Firebase Config Incomplete ✅ FIXED (Current Session)
+
 - Backend `getFirebaseConfig` function missing required fields (`storageBucket`, `messagingSenderId`, `appId`)
 - **Solution**: Updated `functions/.env` with all Firebase config variables using `VITE_` prefix
 - **Verification**: `curl -H "User-Agent: test" "https://getfirebaseconfig-xccvzgogwa-uc.a.run.app"` returns complete config
 
 #### 2. Function Type Mismatch (Callable vs HTTPS)
+
 - `exchangeAuth0Token` deployed as **callable** function but frontend calls it as **HTTPS** endpoint
 - **Detection**: `firebase functions:list` shows `callable` but frontend makes HTTP requests
-- **Solutions**: 
+- **Solutions**:
   - Convert to HTTPS function (recommended)
   - Update frontend to use Firebase Functions SDK callable
 
 #### 3. Test Infrastructure Missing QueryClient
+
 - React Query components fail without `QueryClientProvider`
 - **Solution**: Updated `src/test/testHelpers.tsx` to include QueryClient
 
@@ -602,6 +633,7 @@ When this happens again (it will), follow these steps:
 5. **Reference this section** when the issue recurs
 
 ### Related Files
+
 - `functions/src/get-firebase-config.js` - Backend config endpoint
 - `functions/index.js` - exchangeAuth0Token function  
 - `functions/.env` - Function environment variables

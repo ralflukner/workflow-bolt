@@ -1082,6 +1082,7 @@ export RUN_REAL_API_TESTS=true
 **CRITICAL FIX APPLIED**: ✅ **AuthBridge Method Name Corrected**
 
 **BUG FIXES APPLIED**:
+
 1. ✅ Fixed `getFirebaseToken()` → `getFirebaseIdToken()` method name mismatch
    - Updated tebraFirebaseApi.ts and all test files
    - Unit tests still passing (16/16) after fix
@@ -1104,7 +1105,7 @@ The Google-Auth proxy (`functions/src/tebra-proxy-client.js`) already signs Clou
 | # | Issue | File / line | Required fix |
 |---|-------|-------------|--------------|
 | 1 | Unused property `this.secretClient` | line ~19 | Delete the line – it's never referenced |
-| 2 | Typo in method name `getPatientByld` (lower-case *L*) | line ~330 | Rename to `getPatientById` to match calls/tests |
+| 2 | Typo in method name `getPatientByld` (lower-case _L_) | line ~330 | Rename to `getPatientById` to match calls/tests |
 | 3 | Undeclared exports for `getPatients` / `getPatientById` | bottom of file | Add to `module.exports` **or** mark with `// TODO` if not needed yet |
 | 4 | PHPCS lint errors shown on a **JavaScript** file | n/a | Disable PHPCS for `.js` or scope it to PHP only; use ESLint for JS |
 | 5 | Hard-coded secrets left in place for debug | `_fetchSecretsOnce()` | Replace with Secret-Manager look-ups before commit |

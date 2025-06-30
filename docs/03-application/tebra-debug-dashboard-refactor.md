@@ -82,4 +82,4 @@ flowchart TD
 
 –––
 
-Maintainer: _DevOps/Frontend Guild_ 
+Maintainer: _DevOps/Frontend Guild_

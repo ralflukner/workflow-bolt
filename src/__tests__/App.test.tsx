@@ -5,6 +5,7 @@
  * They focus on fundamental component initialization without complex dependencies.
  */
 
+import React from 'react';
 import { render } from '@testing-library/react';
 import { TimeProvider } from '../context/TimeProvider';
 
@@ -53,8 +54,7 @@ describe('App Startup', () => {
     // Simple smoke test to ensure basic React rendering works
     expect(() => {
       const { container, unmount } = render(<div>Basic App Test</div>);
--      expect(container).toBeInTheDocument();
-+      expect(container.textContent).toBe('Basic App Test');
+      expect(container.textContent).toBe('Basic App Test');
       unmount();
     }).not.toThrow();
   });
