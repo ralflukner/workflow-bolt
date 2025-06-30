@@ -8,9 +8,7 @@
 import React, { useState } from 'react';
 import { Activity, RefreshCw, Users, Calendar, Settings, TrendingUp } from 'lucide-react';
 import { useTebraDebugDashboard } from '../hooks/useTebraDebugDashboard';
-import { MetricsCard } from './TebraDebug/MetricsCard';
-import { DataFlowStepCard } from './TebraDebug/DataFlowStepCard';
-import { RecentErrorsPanel } from './TebraDebug/RecentErrorsPanel';
+import { MetricsCard, DataFlowStepCard, RecentErrorsPanel } from './TebraDebug';
 
 export const TebraDebugDashboard: React.FC = () => {
   const {
