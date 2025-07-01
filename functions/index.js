@@ -11,6 +11,7 @@ const rateLimit = require('express-rate-limit');
 const admin = require('firebase-admin');
 const jwt = require('jsonwebtoken');
 const jwksRsa = require('jwks-rsa');
+const axios = require('axios');
 
 // Lazy loading for heavy dependencies to prevent startup timeouts
 let tebraProxyClient = null;
@@ -755,6 +756,216 @@ exports.getSecurityReport = onCall({
     };
   }
 });
+
+// ============================================================================
+// UNIFIED TEBRA PROXY FUNCTION - Single endpoint for all Tebra operations
+// ============================================================================
+
+// Configuration for unified proxy
+const PHP_PROXY_URL = 'https://tebra-php-api-623450773640.us-central1.run.app';
+const PHP_API_KEY = '+fKP+62OymF4ebpP1co97axEG3j4jTb57+fwI9c6js0=';
+
+// Valid actions that can be proxied to PHP
+const VALID_ACTIONS = [
+  'getProviders',
+  'getPatients', 
+  'getPatient',
+  'searchPatients',
+  'getAppointments',
+  'createAppointment',
+  'updateAppointment',
+  'syncSchedule',
+  'healthCheck'
+];
+
+/**
+ * UNIFIED Tebra proxy function that handles ALL actions
+ * Replaces individual tebraGetProviders, tebraGetPatients, etc.
+ * 
+ * @param {Object} request - Firebase Functions request with data and auth
+ * @returns {Object} Response from PHP proxy or internal response
+ */
+exports.tebraProxy = onCall({ cors: true }, async (request) => {
+  const startTime = Date.now();
+  
+  // Log the incoming request (sanitized)
+  console.log('🔥 Tebra proxy called', {
+    action: request.data.action,
+    hasAuth: !!request.auth,
+    uid: request.auth?.uid,
+    timestamp: new Date().toISOString()
+  });
+
+  // Check authentication
+  if (!request.auth) {
+    console.error('❌ Unauthenticated request to tebraProxy');
+    throw new functions.https.HttpsError(
+      'unauthenticated', 
+      'User must be authenticated to access Tebra API'
+    );
+  }
+
+  // Validate action parameter
+  if (!request.data.action) {
+    console.error('❌ Missing action parameter');
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Action parameter is required'
+    );
+  }
+
+  if (!VALID_ACTIONS.includes(request.data.action)) {
+    console.error('❌ Invalid action:', request.data.action);
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      `Invalid action: ${request.data.action}. Valid actions: ${VALID_ACTIONS.join(', ')}`
+    );
+  }
+
+  // Handle special internal actions that don't need PHP proxy
+  if (request.data.action === 'healthCheck') {
+    console.log('✅ Internal health check request');
+    return {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      region: 'us-central1',
+      authenticated: true,
+      phpProxyUrl: PHP_PROXY_URL,
+      function: 'tebraProxy',
+      version: '2.0',
+      duration: Date.now() - startTime
+    };
+  }
+
+  // All other actions go to PHP proxy
+  try {
+    console.log(`📤 Forwarding ${request.data.action} to PHP proxy:`, PHP_PROXY_URL);
+    
+    const response = await axios.post(PHP_PROXY_URL, request.data, {
+      headers: {
+        'X-API-Key': PHP_API_KEY,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Firebase-Functions-TebraProxy/2.0',
+        'X-Request-ID': `${request.auth.uid}-${Date.now()}` // For tracing
+      },
+      timeout: 30000, // 30 second timeout
+      validateStatus: (status) => status < 500 // Don't throw on 4xx errors
+    });
+
+    const duration = Date.now() - startTime;
+    
+    console.log(`📥 PHP proxy response for ${request.data.action}:`, {
+      status: response.status,
+      duration: `${duration}ms`,
+      hasData: !!response.data,
+      success: response.data?.success
+    });
+
+    // Handle different response status codes
+    if (response.status === 401) {
+      console.error('❌ PHP proxy authentication failed');
+      throw new functions.https.HttpsError(
+        'unauthenticated',
+        'Authentication failed with PHP proxy - API key configuration issue'
+      );
+    }
+
+    if (response.status === 403) {
+      console.error('❌ PHP proxy access forbidden');
+      throw new functions.https.HttpsError(
+        'permission-denied',
+        'Access forbidden by PHP proxy'
+      );
+    }
+
+    if (response.status >= 400) {
+      console.error('❌ PHP proxy error response:', {
+        status: response.status,
+        data: response.data
+      });
+      throw new functions.https.HttpsError(
+        'internal',
+        response.data?.error || `PHP proxy error: ${response.status}`
+      );
+    }
+
+    // Log successful response (sanitized)
+    if (response.data?.success) {
+      console.log(`✅ ${request.data.action} completed successfully in ${duration}ms`);
+    } else {
+      console.warn(`⚠️ ${request.data.action} completed with issues:`, {
+        success: response.data?.success,
+        error: response.data?.error,
+        duration: `${duration}ms`
+      });
+    }
+
+    return response.data;
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    
+    // Enhanced error logging
+    console.error(`❌ Tebra proxy error for ${request.data.action}:`, {
+      message: error.message,
+      code: error.code,
+      response: error.response?.data,
+      status: error.response?.status,
+      duration: `${duration}ms`,
+      timeout: error.code === 'ECONNABORTED',
+      network: error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED'
+    });
+
+    // Handle specific error types
+    if (error.code === 'ECONNABORTED') {
+      throw new functions.https.HttpsError(
+        'deadline-exceeded',
+        'Request timeout - Tebra API or PHP proxy is slow'
+      );
+    }
+
+    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      throw new functions.https.HttpsError(
+        'unavailable',
+        'PHP proxy service is unavailable'
+      );
+    }
+
+    if (error.response?.status === 401) {
+      throw new functions.https.HttpsError(
+        'unauthenticated',
+        'Authentication failed with PHP proxy - check API key configuration'
+      );
+    }
+
+    if (error.response?.status === 429) {
+      throw new functions.https.HttpsError(
+        'resource-exhausted',
+        'Rate limit exceeded on PHP proxy'
+      );
+    }
+
+    // Generic error fallback
+    throw new functions.https.HttpsError(
+      'internal',
+      error.response?.data?.error || 
+      error.message || 
+      `Failed to execute ${request.data.action}`
+    );
+  }
+});
+
+// ============================================================================
+// LEGACY INDIVIDUAL TEBRA FUNCTIONS - DEPRECATED
+// These are kept for backward compatibility but should use tebraProxy instead
+// ============================================================================
+
+// TODO: Remove these individual functions after migration to tebraProxy
+// exports.tebraTestConnection = ... (kept for now)
+// exports.tebraGetPatient = ... (kept for now)
+// etc.
+
+// ============================================================================
 
 // Import and export credential verification functions
 const credentialFunctions = require('./credential-functions');

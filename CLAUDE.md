@@ -566,3 +566,210 @@ A recurring problem in this project is calling Firebase callable functions (depl
 ---
 
 **Reference this section and the troubleshooting doc whenever this issue recurs.**
+
+# Tebra API Integration Documentation
+
+## Overview
+
+The application integrates with Tebra EHR (Electronic Health Record) system using a three-tier proxy architecture for secure, reliable SOAP API communication.
+
+## Architecture
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  React Frontend │────▶│ Firebase Function │────▶│  Cloud Run PHP  │
+│                 │     │  (tebraProxy)     │     │      API        │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+                                                           │
+                                                           ▼
+                                                  ┌─────────────────┐
+                                                  │   Tebra SOAP    │
+                                                  │      API        │
+                                                  └─────────────────┘
+```
+
+**Why This Architecture?**
+- Tebra's SOAP API only works reliably with PHP (Node.js implementations fail consistently)
+- Firebase Functions provide authentication, authorization, and business logic
+- PHP Cloud Run service handles the actual SOAP communication
+- Clear separation of concerns for security and maintainability
+
+## Frontend Integration (tebraFirebaseApi.ts)
+
+**Location**: `src/services/tebraFirebaseApi.ts`
+
+### Unified Proxy Pattern (✅ Current Implementation)
+
+The service uses a **single Firebase Function** (`tebraProxy`) that routes different actions to the PHP service, rather than individual Firebase Functions for each Tebra operation.
+
+```typescript
+// Single proxy function handles all Tebra operations
+const tebraProxyFunction = httpsCallable(functions, 'tebraProxy');
+
+// Generic call handler
+async function callTebraProxy(action: string, params: any = {}): Promise<ApiResponse> {
+  const payload = { action, ...params };
+  const result = await tebraProxyFunction(payload);
+  return result.data as ApiResponse;
+}
+```
+
+### Available API Functions
+
+```typescript
+// Connection & Health
+tebraTestConnection(): Promise<ApiResponse>
+tebraHealthCheck(): Promise<ApiResponse>
+
+// Patient Management  
+tebraGetPatient(patientId: string): Promise<ApiResponse>
+tebraSearchPatients(lastName: string): Promise<ApiResponse>
+tebraGetPatients(filters?: any): Promise<ApiResponse>
+
+// Provider Management
+tebraGetProviders(): Promise<ApiResponse>
+
+// Appointment Management
+tebraGetAppointments(params: {fromDate: string, toDate: string}): Promise<ApiResponse>
+tebraCreateAppointment(appointmentData: Record<string, unknown>): Promise<ApiResponse>
+tebraUpdateAppointment(appointmentData: Record<string, unknown>): Promise<ApiResponse>
+tebraTestAppointments(): Promise<ApiResponse>
+
+// Schedule Management
+tebraSyncSchedule(params: {date: string}): Promise<ApiResponse>
+```
+
+### Error Handling
+
+All functions return a consistent `ApiResponse` interface:
+
+```typescript
+interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+  timestamp?: string;
+}
+```
+
+### Debug Tools
+
+Browser console helpers available for debugging:
+
+```javascript
+// Available in browser console
+tebraDebug.config()                    // Get configuration info
+tebraDebug.testChain()                 // Test entire integration chain
+tebraDebug.testConnection()            // Test Tebra connection
+tebraDebug.getAppointments(from, to)   // Get appointments with logging
+tebraDebug.getProviders()              // Get providers with logging
+tebraDebug.getPatients()               // Get patients with logging
+```
+
+## Firebase Functions Requirements
+
+The Firebase Function should implement a single `tebraProxy` callable function:
+
+```javascript
+exports.tebraProxy = functions.https.onCall(async (data, context) => {
+  // Authenticate user
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  // Forward to PHP Cloud Run service
+  const PHP_PROXY_URL = 'https://tebra-php-api-{project-id}.us-central1.run.app';
+  
+  try {
+    const response = await axios.post(PHP_PROXY_URL, data, {
+      headers: {
+        'X-API-Key': API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw new functions.https.HttpsError('internal', error.message);
+  }
+});
+```
+
+## Configuration
+
+**URLs Used:**
+- Firebase Functions: `https://us-central1-luknerlumina-firebase.cloudfunctions.net`  
+- PHP Cloud Run: `https://tebra-php-api-623450773640.us-central1.run.app`
+
+**Authentication Flow:**
+1. Frontend authenticates with Auth0
+2. Firebase Functions validate Auth0 JWT 
+3. Firebase Functions proxy authenticated requests to PHP service
+4. PHP service communicates with Tebra SOAP API
+
+## Migration from Individual Functions
+
+### Previous Pattern (❌ Deprecated)
+```typescript
+// Individual Firebase Functions for each action - NO LONGER USED
+const testConnection = httpsCallable(functions, 'tebraTestConnection');
+const getPatient = httpsCallable(functions, 'tebraGetPatient');
+const getProviders = httpsCallable(functions, 'tebraGetProviders');
+// ... separate function for each action
+```
+
+### New Pattern (✅ Current)
+```typescript
+// Single proxy function routes all actions
+const tebraProxyFunction = httpsCallable(functions, 'tebraProxy');
+callTebraProxy('getProviders')      // Action-based routing
+callTebraProxy('getPatient', {patientId})
+callTebraProxy('getAppointments', {fromDate, toDate})
+```
+
+### Benefits of New Pattern
+- **Reduced Firebase Function count** - Single proxy vs ~10 individual functions
+- **Easier maintenance** - One function to deploy/monitor instead of many
+- **Consistent error handling** - Unified error processing pipeline
+- **Better logging** - Centralized request/response logging
+- **Simplified authentication** - Single auth checkpoint
+
+## Troubleshooting
+
+### Common Issues
+
+1. **CORS 403 Errors**: Usually means trying to call Firebase callable functions as HTTP endpoints
+   - ✅ Use `httpsCallable()` from Firebase SDK  
+   - ❌ Don't use `fetch()` or direct HTTP calls
+
+2. **Authentication Failures**: Check Auth0 token and Firebase Auth state
+   - Verify user is logged in with Auth0
+   - Check Firebase Auth token is valid
+
+3. **Connection Timeouts**: PHP service or Tebra API may be slow
+   - Check Cloud Run service status
+   - Verify Tebra API credentials in Secret Manager
+
+4. **Data Format Issues**: Ensure request parameters match expected format
+   - Use debug helpers to inspect request/response structure
+   - Check PHP service logs for detailed error messages
+
+### Debug Commands
+```bash
+# Check Firebase Functions deployment
+firebase functions:list
+
+# Check Cloud Run service status  
+gcloud run services list --platform managed
+
+# Test API directly in browser console
+tebraDebug.testChain()
+```
+
+## Security Considerations
+
+- **Authentication Required**: All functions require Auth0 JWT validation
+- **HIPAA Compliance**: All patient data handled according to HIPAA standards
+- **API Key Management**: PHP service credentials stored in Google Secret Manager
+- **Rate Limiting**: Built into both Firebase Functions and PHP service
+- **Audit Logging**: All requests logged for compliance and debugging

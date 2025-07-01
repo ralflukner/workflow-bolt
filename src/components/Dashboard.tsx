@@ -17,6 +17,7 @@ import { useReportGeneration } from '../hooks/useReportGeneration';
 import { PATIENT_SECTIONS } from '../constants/patientSections';
 import TebraDebugDashboardContainer from './TebraDebugDashboardContainer';
 import DashboardErrorBoundary from './DashboardErrorBoundary';
+import SecurityNotice from './SecurityNotice';
 
 
 const Dashboard: React.FC = () => {
@@ -31,6 +32,7 @@ const Dashboard: React.FC = () => {
   const [showDebugPanels, setShowDebugPanels] = useState<boolean>(false);
   const [showDebugTextWindow, setShowDebugTextWindow] = useState<boolean>(false);
   const [scrollPosition, setScrollPosition] = useState<number>(0);
+  const [showSecurityNotice, setShowSecurityNotice] = useState<boolean>(true);
 
   // Guard against rapid export clicks
   const isExporting = useRef(false);
@@ -79,6 +81,11 @@ const handleExportSchedule = async (): Promise<void> => {
       />
 
       <main>
+        <SecurityNotice 
+          isVisible={showSecurityNotice}
+          onClose={() => setShowSecurityNotice(false)}
+        />
+        
         {showDebugPanels && (
           <>
             <FirebaseDebugger />

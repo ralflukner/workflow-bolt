@@ -3,6 +3,7 @@ import { Activity, RefreshCw } from 'lucide-react';
 import { PatientContext } from '@/context/PatientContextDef';
 import { PatientContextType } from '@/context/PatientContextType';
 import { tebraDebugApi } from '@/services/tebraDebugApi';
+import { tebraApiService } from '@/services/tebraApiService';
 import { DataFlowStep, TebraMetrics, STEP_IDS, StepStatus } from '@/constants/tebraDebug';
 import { MetricsCard } from './TebraDebug/MetricsCard';
 import { DataFlowStepCard } from './TebraDebug/DataFlowStepCard';
@@ -13,15 +14,16 @@ interface State {
   recentErrors: { timestamp: Date; step: string; error: string; correlationId: string }[];
   autoRefresh: boolean;
   isMonitoring: boolean;
+  showAdvancedDiagnostics: boolean;
 }
 
-export default class TebraDebugDashboardContainer extends Component<{}, State> {
+export default class TebraDebugDashboardContainer extends Component<Record<string, never>, State> {
   static contextType = PatientContext as React.Context<PatientContextType | undefined>;
   declare context: PatientContextType;
 
   private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
-  constructor(props: {}) {
+  constructor(props: Record<string, never>) {
     super(props);
 
     this.state = {
@@ -45,7 +47,8 @@ export default class TebraDebugDashboardContainer extends Component<{}, State> {
       },
       recentErrors: [],
       autoRefresh: true,
-      isMonitoring: false
+      isMonitoring: false,
+      showAdvancedDiagnostics: false
     };
   }
 
@@ -99,28 +102,48 @@ export default class TebraDebugDashboardContainer extends Component<{}, State> {
         try {
           // Real health checks using tebraDebugApi service
           switch (step.id) {
-            case STEP_IDS.FRONTEND:
+            case STEP_IDS.FRONTEND: {
               const frontendResult = await tebraDebugApi.testFrontendHealth();
               status = frontendResult.status;
+              if (frontendResult.status !== 'healthy') {
+                errorMessage = frontendResult.message;
+              }
               break;
-            case STEP_IDS.FIREBASE_FUNCTIONS:
+            }
+            case STEP_IDS.FIREBASE_FUNCTIONS: {
               const functionsResult = await tebraDebugApi.testFirebaseFunctions();
               status = functionsResult.status;
+              if (functionsResult.status !== 'healthy') {
+                errorMessage = functionsResult.message;
+              }
               break;
-            case STEP_IDS.TEBRA_PROXY:
+            }
+            case STEP_IDS.TEBRA_PROXY: {
               const proxyResult = await tebraDebugApi.testTebraProxy();
               status = proxyResult.status;
+              if (proxyResult.status !== 'healthy') {
+                errorMessage = proxyResult.message;
+              }
               break;
+            }
             case STEP_IDS.CLOUD_RUN:
-            case STEP_IDS.TEBRA_API:
+            case STEP_IDS.TEBRA_API: {
               const apiResult = await tebraDebugApi.testTebraApi();
               status = apiResult.status;
+              if (apiResult.status !== 'healthy') {
+                errorMessage = apiResult.message;
+              }
               break;
-            case STEP_IDS.DATA_TRANSFORM:
+            }
+            case STEP_IDS.DATA_TRANSFORM: {
               const transformResult = await tebraDebugApi.testDataTransform();
               status = transformResult.status;
+              if (transformResult.status !== 'healthy') {
+                errorMessage = transformResult.message;
+              }
               break;
-            case STEP_IDS.DASHBOARD_UPDATE:
+            }
+            case STEP_IDS.DASHBOARD_UPDATE: {
               const dashboardResult = await tebraDebugApi.testDashboardUpdate();
               status = dashboardResult.status;
               // Add patient context validation
@@ -132,9 +155,11 @@ export default class TebraDebugDashboardContainer extends Component<{}, State> {
                 errorMessage = 'No patients loaded - verify data sync is working';
               }
               break;
-            default:
+            }
+            default: {
               status = 'error';
               errorMessage = `Unknown step ID: ${step.id}`;
+            }
           }
         } catch (e) {
           status = 'error';
@@ -163,8 +188,24 @@ export default class TebraDebugDashboardContainer extends Component<{}, State> {
     }));
   }
 
+  runPhpProxyDiagnostics = async () => {
+    if (this.state.isMonitoring) return;
+    this.setState({ isMonitoring: true });
+
+    try {
+      const result = await tebraApiService.debugPhpProxy();
+      console.log('PHP proxy diagnostics completed:', result);
+      // You could update state with diagnostics results here
+    } catch (error) {
+      console.error('PHP proxy diagnostics failed:', error);
+      this.addError('PHP Diagnostics', error instanceof Error ? error.message : 'Unknown error', this.generateCorrelationId());
+    } finally {
+      this.setState({ isMonitoring: false });
+    }
+  };
+
   render() {
-    const { dataFlowSteps, metrics, recentErrors, autoRefresh, isMonitoring } = this.state;
+    const { dataFlowSteps, metrics, recentErrors, autoRefresh, isMonitoring, showAdvancedDiagnostics } = this.state;
     return (
       <div className="bg-gray-800 rounded-lg border border-gray-600 p-6">
         <div className="flex items-center justify-between mb-6">
@@ -216,6 +257,37 @@ export default class TebraDebugDashboardContainer extends Component<{}, State> {
             ))}
           </div>
         )}
+
+        {/* Advanced Diagnostics Section */}
+        <div className="border-t border-gray-600 pt-6">
+          <div className="flex justify-center">
+            <button
+              onClick={() => this.setState({ showAdvancedDiagnostics: !showAdvancedDiagnostics })}
+              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors"
+            >
+              {showAdvancedDiagnostics ? 'Hide' : 'Show'} Advanced Diagnostics
+            </button>
+          </div>
+
+          {showAdvancedDiagnostics && (
+            <div className="mt-6 bg-gray-700/50 p-6 rounded-lg border border-gray-600">
+              <div className="flex items-center justify-between mb-4">
+                <h5 className="text-white font-medium">Deep System Analysis</h5>
+                <button
+                  onClick={this.runPhpProxyDiagnostics}
+                  disabled={isMonitoring}
+                  className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isMonitoring ? 'Analyzing...' : 'Run Deep Scan'}
+                </button>
+              </div>
+              <div className="text-sm text-gray-300">
+                Performs comprehensive PHP proxy diagnostics including Node.js to PHP communication, 
+                PHP health checks, and PHP to Tebra API connectivity tests.
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   }

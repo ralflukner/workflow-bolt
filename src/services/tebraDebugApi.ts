@@ -264,7 +264,7 @@ export class TebraDebugApiService {
       } else {
         return {
           status: 'error',
-          message: result.error || 'Tebra proxy test failed',
+          message: result.error || result.message || 'Tebra proxy test failed',
           duration,
           correlationId,
           details: { authenticated: true, response: result }

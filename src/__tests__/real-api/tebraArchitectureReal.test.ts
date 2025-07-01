@@ -77,7 +77,7 @@ describeIf(runRealApiTests)('Tebra Real API Integration Tests', () => {
         expect(requestUrls.length).toBeGreaterThan(0);
         const mainRequest = requestUrls.find(url => url.includes('/api/tebra'));
         expect(mainRequest).toBeTruthy();
-        expect(mainRequest).toContain('api-xccvzgogwa-uc.a.run.app/api/tebra');
+        expect(mainRequest).toContain('us-central1-luknerlumina-firebase.cloudfunctions.net/api/tebra');
         
         // Verify NO direct PHP calls
         const phpRequests = requestUrls.filter(url => url.includes('tebra-php-api-'));

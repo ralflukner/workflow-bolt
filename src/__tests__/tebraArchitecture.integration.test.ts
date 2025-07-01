@@ -65,7 +65,7 @@ describeIf(runIntegrationTests)('Tebra Architecture Integration Tests', () => {
 
       try {
         await tebraTestConnection();
-        expect(capturedUrl).toContain('api-xccvzgogwa-uc.a.run.app/api/tebra');
+        expect(capturedUrl).toContain('us-central1-luknerlumina-firebase.cloudfunctions.net/api/tebra');
         expect(capturedUrl).not.toContain('tebra-php-api-');
       } finally {
         global.fetch = originalFetch;

@@ -1,3 +1,25 @@
+# 2025-06-23  Documentation Re-org & Encryption Road-map Kick-off
+
+**Highlights**
+1. **Documentation Re-organisation Phase 1 completed**
+   • Created canonical folder structure (`00-overview … 05-governance`).
+   • Re-wrote `00-overview/overview.md` with full application tour.
+   • Relocated `recommendation.md` and Firebase startup issue doc into proper sub-directories, deleting old copies.
+   • Added progress tracker and timestamp table to `docs/DOCUMENTATION_REORG_PLAN.md`.
+
+2. **Encryption redesign road-map drafted**
+   • Decision to adopt envelope encryption with KEK in Google Secret Manager and per-record DEKs.
+   • Plan to drop redundant IV field, embed IV in ciphertext, introduce `ENC1:` payload version tag.
+   • Key-rotation strategy (90-day KEK rotation via Cloud Scheduler) documented.
+
+3. **Versioning**
+   • Proposed semantic bump to `0.1.1-docs+crypto` after SecureStorage v2 lands.
+
+**Files Added / Modified**
+- `docs/00-overview/overview.md` (major rewrite)
+- `docs/debugging/FIREBASE_FUNCTIONS_STARTUP_ISSUE.md` (relocated)
+- `docs/05-governance/recommendation.md` (relocated)
+- `docs/DOCUMENTATION_REORG_PLAN.md` (progress table & log)
 
 # Changes Summary: Patient Data Persistence Fix
 

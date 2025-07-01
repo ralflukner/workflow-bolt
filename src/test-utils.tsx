@@ -1,11 +1,16 @@
 import React from 'react';
-import { render as rtlRender, RenderOptions } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as rtl from '@testing-library/react';
+import { TestProviders } from './test/testHelpers';
 
-const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+/**
+ * Custom render that wraps UI in the same providers used across tests.
+ * Falls back to rtl.render for everything else, but ensures
+ * consistent React-Query / Patient / Time contexts.
+ */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+const render = (ui: React.ReactElement, options?: Parameters<typeof rtl.render>[1]) =>
+  rtl.render(<TestProviders>{ui}</TestProviders>, options);
 
-export function render(ui: React.ReactElement, options?: RenderOptions) {
-  return rtlRender(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>, options);
-}
-
-export * from '@testing-library/react'; 
+// Re-export everything so tests can still use RTL helpers directly.
+export * from '@testing-library/react';
+export { render }; 

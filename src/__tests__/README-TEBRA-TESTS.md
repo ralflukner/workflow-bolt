@@ -185,7 +185,7 @@ export VITE_FIREBASE_PROJECT_ID=luknerlumina-firebase
 
 - **Cause**: Firebase Functions not deployed or misconfigured
 - **Solution**: Verify Functions deployment and URL in `TEBRA_PHP_API_URL` secret
-- **Debug**: Test Functions directly: `curl https://api-xccvzgogwa-uc.a.run.app/health`
+- **Debug**: Test Functions directly: `curl https://us-central1-luknerlumina-firebase.cloudfunctions.net/health`
 
 #### "Tebra SOAP authentication failed"
 
