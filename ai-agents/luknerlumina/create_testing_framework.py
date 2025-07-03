@@ -303,8 +303,12 @@ class TestSystemIntegration(unittest.TestCase):
         print("🖥️ Testing CLI integration...")
         
         # Test Python CLI
+        cli_path = "lukner_cli.py"
+        if not os.path.exists(cli_path):
+            self.skipTest(f"CLI file {cli_path} not found")
+        
         result = subprocess.run([
-            "python", "lukner_cli.py", 
+            "python", cli_path,
             "--user", "dr.ralf.lukner",
             "patient", "list"
         ], capture_output=True, text=True)
@@ -406,8 +410,27 @@ class TestPerformance(unittest.TestCase):
         
         print("✅ Concurrent users test passed")
     
+# At the top of ai-agents/luknerlumina/create_testing_framework.py
+try:
+    import psutil
+    HAS_PSUTIL = True
+except ImportError:
+    HAS_PSUTIL = False
+
+class TestPerformance(unittest.TestCase):
+    ...
     def test_memory_usage(self):
         """Test memory usage under load"""
+        print("🧠 Testing memory usage...")
+        
+        import gc
+
+        if not HAS_PSUTIL:
+            self.skipTest("psutil not installed")
+        
+        # Get initial memory usage
+        process = psutil.Process()
+        ...
         print("🧠 Testing memory usage...")
         
         import psutil
@@ -716,8 +739,7 @@ class LuknerTestRunner:
         all_results = []
         
         for suite_name, suite_path in test_suites:
-            print(f"\
-🔍 Running {suite_name}...")
+            print(f"\n🔍 Running {suite_name}...")
             print("-" * 30)
             
             # Discover and run tests
