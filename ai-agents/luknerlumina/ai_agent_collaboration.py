@@ -3,6 +3,105 @@ from secure_redis_client import LuknerSecureRedisClient
 from rbac_system import RoleBasedAccessControl
 from datetime import datetime, timezone
 import json
+import os
+import logging
+
+# Optional Redis import – guarded for environments without Redis
+try:
+    import redis  # type: ignore
+except ImportError:  # pragma: no cover
+    redis = None  # type: ignore
+
+# ---------------------------------------------------------------------------
+# RedisClient helper
+# ---------------------------------------------------------------------------
+
+class RedisClient:
+    """Minimal Redis Stream publisher with markdown fallback.
+
+    The class attempts to publish updates to the stream defined by
+    `STREAM_NAME` (default *agent_updates*).  If `redis` is not installed or
+    the connection fails, messages are appended to *logs/agent_collaboration.md*
+    so that we never lose critical activity logs.
+    """
+
+    def __init__(self, stream_name: str | None = None):
+        self.redis_url = os.getenv("REDIS_URL")
+        self.stream_name = stream_name or os.getenv("STREAM_NAME", "agent_updates")
+        self.agent_id = os.getenv("AGENT_ID", "luknerlumina")
+        self._client = None
+
+        # local logger
+        self._log = logging.getLogger(__name__)
+
+        # Lazy connect flag so we only try once
+        self._connect_attempted = False
+
+    # -------------------------------------------------- internal helpers
+
+    def _connect(self):
+        if self._connect_attempted:
+            return
+        self._connect_attempted = True
+
+        if not (redis and self.redis_url):
+            self._log.debug("Redis not available – falling back to markdown logging")
+            return
+
+        try:
+            self._client = redis.from_url(
+                self.redis_url,
+                decode_responses=True,
+                socket_timeout=5,
+                socket_connect_timeout=5,
+            )
+            self._client.ping()
+            self._log.info("Connected to Redis stream '%s'", self.stream_name)
+        except Exception as exc:  # pragma: no cover – connection failure path
+            self._log.warning("Redis connection failed: %s", exc)
+            self._client = None
+
+    # -------------------------------------------------- public api
+
+    def publish(self, msg: str, msg_type: str = "info", correlation_id: str | None = None, **extra):
+        """Publish a message to Redis or fallback to markdown."""
+        self._connect()
+
+        payload = {
+            "agent": self.agent_id,
+            "msg": msg,
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "type": msg_type,
+        }
+        if correlation_id:
+            payload["correlationId"] = correlation_id
+        if extra:
+            payload.update(extra)
+
+        # Attempt Redis first
+        if self._client is not None:
+            try:
+                self._client.xadd(self.stream_name, payload)
+                return
+            except Exception as exc:  # pragma: no cover – runtime failure
+                self._log.error("Redis publish failed – falling back (%s)", exc)
+
+        self._markdown_fallback(payload)
+
+    # -------------------------------------------------- fallback logging
+
+    def _markdown_fallback(self, payload: dict):
+        log_dir = "logs"
+        os.makedirs(log_dir, exist_ok=True)
+        md_path = os.path.join(log_dir, "agent_collaboration.md")
+
+        with open(md_path, "a", encoding="utf-8") as fh:
+            fh.write(f"\n## {payload['ts']} - {payload['agent']} ({payload['type']})\n")
+            fh.write(f"{payload['msg']}\n")
+            if payload.get("correlationId"):
+                fh.write(f"*Correlation: {payload['correlationId']}*\n")
+            fh.write("---\n")
+        self._log.info("Logged to markdown fallback: %s", md_path)
 
 class AIAgentCollaboration:
     def __init__(self):
@@ -11,9 +110,12 @@ class AIAgentCollaboration:
         self.rbac = RoleBasedAccessControl()
         self.active_agents = {}
         self.project_costs = {"total_estimated": 0, "current_spend": 0}
+        # Redis stream client for agent_updates
+        self.stream_client = RedisClient()
         
     def activate_all_agents(self):
         """Activate all AI agents and establish collaboration"""
+        self.stream_client.publish("🤖 Activating AI Agent Collaboration System", "system_start")
         print("🤖 Activating AI Agent Collaboration System")
         print("=" * 60)
         

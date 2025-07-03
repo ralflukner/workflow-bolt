@@ -8,8 +8,7 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-# type: ignore
-import redis.asyncio as redis_async
+import redis.asyncio as redis_async  # type: ignore
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
