@@ -2,6 +2,7 @@ from google.cloud import secretmanager
 import redis
 import json
 import os
+import logging
 from datetime import datetime, timezone
 
 class LuknerSecureRedisClient:
@@ -10,12 +11,24 @@ class LuknerSecureRedisClient:
         self.secret_id = "lukner-redis-connection"
         self.client = None
         
+        # Configure logging for Redis operations
+        self.logger = logging.getLogger(__name__)
+        if not self.logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+            self.logger.setLevel(logging.INFO)
+        
     def get_connection_string(self):
         """Get Redis connection string from Google Secret Manager"""
-        client = secretmanager.SecretManagerServiceClient()
-        name = f"projects/{self.project_id}/secrets/{self.secret_id}/versions/latest"
-        response = client.access_secret_version(request={"name": name})
-        return response.payload.data.decode("UTF-8")
+        try:
+            client = secretmanager.SecretManagerServiceClient()
+            name = f"projects/{self.project_id}/secrets/{self.secret_id}/versions/latest"
+            response = client.access_secret_version(request={"name": name})
+            return response.payload.data.decode("UTF-8")
+        except Exception as e:
+            raise ConnectionError(f"Failed to retrieve Redis connection from Secret Manager: {e}")
     
     def connect(self):
         """Create secure Redis connection"""
@@ -38,13 +51,41 @@ class LuknerSecureRedisClient:
         secure_data = {
             **data,
             "stored_at": datetime.now(timezone.utc).isoformat(),
-            "hipaa_compliant": True,
+            "encrypted": False,  # TODO: Implement encryption at rest
+            "access_logged": False,  # TODO: Implement audit logging
             "clinic": "LuknerClinic",
             "stored_by": "lukner-workflow-agent"
         }
         
         key = f"lukner:patient:{patient_id}"
-        return self.client.json().set(key, "$", secure_data)
+        try:
+            # Attempt Redis JSON operation
+            result = self.client.json().set(key, "$", secure_data)
+            self.logger.info(f"Successfully stored patient data for ID: {patient_id}")
+            return result
+        except redis.exceptions.ResponseError as e:
+            # Handle RedisJSON module not loaded or command errors
+            error_msg = f"Redis JSON operation failed for patient {patient_id}: {str(e)}"
+            self.logger.error(error_msg)
+            if "unknown command" in str(e).lower() or "json.set" in str(e).lower():
+                raise RuntimeError("RedisJSON module is not available on this Redis instance. Please install RedisJSON module.") from e
+            else:
+                raise RuntimeError(f"Redis JSON command error: {str(e)}") from e
+        except (TypeError, ValueError) as e:
+            # Handle JSON serialization errors
+            error_msg = f"Data serialization failed for patient {patient_id}: {str(e)}"
+            self.logger.error(error_msg)
+            raise ValueError(f"Invalid data format for patient storage: {str(e)}") from e
+        except redis.exceptions.ConnectionError as e:
+            # Handle connection issues
+            error_msg = f"Redis connection error while storing patient {patient_id}: {str(e)}"
+            self.logger.error(error_msg)
+            raise ConnectionError(f"Failed to connect to Redis: {str(e)}") from e
+        except Exception as e:
+            # Handle any other unexpected errors
+            error_msg = f"Unexpected error storing patient {patient_id}: {str(e)}"
+            self.logger.error(error_msg)
+            raise RuntimeError(f"Unexpected Redis operation error: {str(e)}") from e
     
     def get_patient_data(self, patient_id):
         """Retrieve patient data securely"""
@@ -52,7 +93,32 @@ class LuknerSecureRedisClient:
             self.connect()
         
         key = f"lukner:patient:{patient_id}"
-        return self.client.json().get(key)
+        try:
+            # Attempt Redis JSON operation
+            result = self.client.json().get(key)
+            if result is None:
+                self.logger.warning(f"No patient data found for ID: {patient_id}")
+            else:
+                self.logger.info(f"Successfully retrieved patient data for ID: {patient_id}")
+            return result
+        except redis.exceptions.ResponseError as e:
+            # Handle RedisJSON module not loaded or command errors
+            error_msg = f"Redis JSON retrieval failed for patient {patient_id}: {str(e)}"
+            self.logger.error(error_msg)
+            if "unknown command" in str(e).lower() or "json.get" in str(e).lower():
+                raise RuntimeError("RedisJSON module is not available on this Redis instance. Please install RedisJSON module.") from e
+            else:
+                raise RuntimeError(f"Redis JSON command error: {str(e)}") from e
+        except redis.exceptions.ConnectionError as e:
+            # Handle connection issues
+            error_msg = f"Redis connection error while retrieving patient {patient_id}: {str(e)}"
+            self.logger.error(error_msg)
+            raise ConnectionError(f"Failed to connect to Redis: {str(e)}") from e
+        except Exception as e:
+            # Handle any other unexpected errors
+            error_msg = f"Unexpected error retrieving patient {patient_id}: {str(e)}"
+            self.logger.error(error_msg)
+            raise RuntimeError(f"Unexpected Redis operation error: {str(e)}") from e
     
     def store_workflow_state(self, workflow_id, state_data):
         """Store workflow state"""
@@ -66,7 +132,34 @@ class LuknerSecureRedisClient:
         }
         
         key = f"lukner:workflow:{workflow_id}"
-        return self.client.json().set(key, "$", workflow_state)
+        try:
+            # Attempt Redis JSON operation
+            result = self.client.json().set(key, "$", workflow_state)
+            self.logger.info(f"Successfully stored workflow state for ID: {workflow_id}")
+            return result
+        except redis.exceptions.ResponseError as e:
+            # Handle RedisJSON module not loaded or command errors
+            error_msg = f"Redis JSON operation failed for workflow {workflow_id}: {str(e)}"
+            self.logger.error(error_msg)
+            if "unknown command" in str(e).lower() or "json.set" in str(e).lower():
+                raise RuntimeError("RedisJSON module is not available on this Redis instance. Please install RedisJSON module.") from e
+            else:
+                raise RuntimeError(f"Redis JSON command error: {str(e)}") from e
+        except (TypeError, ValueError) as e:
+            # Handle JSON serialization errors
+            error_msg = f"Data serialization failed for workflow {workflow_id}: {str(e)}"
+            self.logger.error(error_msg)
+            raise ValueError(f"Invalid data format for workflow storage: {str(e)}") from e
+        except redis.exceptions.ConnectionError as e:
+            # Handle connection issues
+            error_msg = f"Redis connection error while storing workflow {workflow_id}: {str(e)}"
+            self.logger.error(error_msg)
+            raise ConnectionError(f"Failed to connect to Redis: {str(e)}") from e
+        except Exception as e:
+            # Handle any other unexpected errors
+            error_msg = f"Unexpected error storing workflow {workflow_id}: {str(e)}"
+            self.logger.error(error_msg)
+            raise RuntimeError(f"Unexpected Redis operation error: {str(e)}") from e
     
     def get_workflow_state(self, workflow_id):
         """Get workflow state"""
@@ -74,65 +167,39 @@ class LuknerSecureRedisClient:
             self.connect()
         
         key = f"lukner:workflow:{workflow_id}"
-        return self.client.json().get(key)
-    
-    def test_secure_operations(self):
-        """Test all secure operations"""
         try:
-            print("🔍 Testing LuknerLumina Secure Redis Operations...")
-            print("=" * 50)
-            
-            # Test connection
-            self.ping()
-            print("✅ Secure connection successful!")
-            
-            # Test patient data storage
-            patient_data = {
-                "name": "Test Patient",
-                "appointment_time": "2025-07-03T14:30:00Z",
-                "provider": "Dr. Lukner",
-                "status": "scheduled",
-                "phone": "555-0123"
-            }
-            
-            print("📝 Storing patient data...")
-            self.store_patient_data("test123", patient_data)
-            
-            print("📖 Retrieving patient data...")
-            retrieved = self.get_patient_data("test123")
-            print("✅ Patient data retrieved successfully!")
-            print(f"   Patient: {retrieved.get('name', 'N/A')}")
-            print(f"   Provider: {retrieved.get('provider', 'N/A')}")
-            print(f"   HIPAA Compliant: {retrieved.get('hipaa_compliant', False)}")
-            print(f"   Stored by: {retrieved.get('stored_by', 'N/A')}")
-            
-            # Test workflow state
-            print("")
-            print("🔄 Testing workflow state management...")
-            workflow_state = {
-                "step": "patient_check_in",
-                "status": "active",
-                "next_action": "verify_insurance",
-                "patient_id": "test123"
-            }
-            
-            self.store_workflow_state("workflow_test123", workflow_state)
-            workflow_retrieved = self.get_workflow_state("workflow_test123")
-            print("✅ Workflow state managed successfully!")
-            print(f"   Current step: {workflow_retrieved.get('step', 'N/A')}")
-            print(f"   Status: {workflow_retrieved.get('status', 'N/A')}")
-            
-            print("")
-            print("🎉 All secure operations working perfectly!")
-            print("🏥 LuknerLumina HIPAA-compliant system ready!")
-            return True
-            
+            # Attempt Redis JSON operation
+            result = self.client.json().get(key)
+            if result is None:
+                self.logger.warning(f"No workflow state found for ID: {workflow_id}")
+            else:
+                self.logger.info(f"Successfully retrieved workflow state for ID: {workflow_id}")
+            return result
+        except redis.exceptions.ResponseError as e:
+            # Handle RedisJSON module not loaded or command errors
+            error_msg = f"Redis JSON retrieval failed for workflow {workflow_id}: {str(e)}"
+            self.logger.error(error_msg)
+            if "unknown command" in str(e).lower() or "json.get" in str(e).lower():
+                raise RuntimeError("RedisJSON module is not available on this Redis instance. Please install RedisJSON module.") from e
+            else:
+                raise RuntimeError(f"Redis JSON command error: {str(e)}") from e
+        except redis.exceptions.ConnectionError as e:
+            # Handle connection issues
+            error_msg = f"Redis connection error while retrieving workflow {workflow_id}: {str(e)}"
+            self.logger.error(error_msg)
+            raise ConnectionError(f"Failed to connect to Redis: {str(e)}") from e
         except Exception as e:
-            print(f"❌ Error in secure operations: {e}")
-            print(f"   Error type: {type(e).__name__}")
-            return False
-
-# Usage example
+            # Handle any other unexpected errors
+            error_msg = f"Unexpected error retrieving workflow {workflow_id}: {str(e)}"
+            self.logger.error(error_msg)
+            raise RuntimeError(f"Unexpected Redis operation error: {str(e)}") from e
+    
+# Usage example for manual testing
 if __name__ == "__main__":
     redis_client = LuknerSecureRedisClient()
-    redis_client.test_secure_operations()
+    try:
+        print("🔍 Testing basic Redis connection...")
+        redis_client.ping()
+        print("✅ Connection successful!")
+    except Exception as e:
+        print(f"❌ Connection failed: {e}")

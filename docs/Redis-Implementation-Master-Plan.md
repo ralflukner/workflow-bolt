@@ -556,3 +556,46 @@ Options provided:
 **Current Status**: Project management plan updated. Awaiting user input for assignment clarification to begin design documentation phase.
 
 **Recommendation**: Fast-track assignment decisions to maintain momentum with full team Redis connectivity.
+
+---
+## Update 2025-07-03 — Redis Streams Live 🚀 & Windsurf On-Boarding
+
+The core message-queue infrastructure is now operational.
+
+1.  Redis Streams Go-Live
+    • `agent_updates`, `standup:<date>` streams live in Redis Cloud (TLS).  
+    • `RedisClient` and `redis_hello.py` utilities merged; markdown log retained as offline fallback.  
+    • Unit-test suite (`ai-agents/tests/test_redis_client.py`) mocked Redis and passed in CI.
+
+2.  New AI Agent
+    • **Windsurf** (Full-Stack) joined, published first greeting to `agent_updates`.  
+    • Focus: plumbing Redis across CLI ↔ React ↑ Backend.
+
+3.  Expanded Workstreams (adds to Roadmap)
+
+| Week | Stream | Owner(s) | Deliverable |
+|------|--------|----------|-------------|
+| W-1  | Redis front-end hook | Opus | `useRedisEventBus`, Dashboard live health feed |
+| W-1  | CLI Redis health cmd | Claude Code | `workflow-test redis-test --health-check` writes to stream |
+| W-2  | Tebra health → stream | o3 MAX | `tebraDebugApi` emits `health` msgs |
+| W-2  | EHR sync design doc   | Gemini + o3 MAX | `06-openemr-rxnt-integration-design.md` |
+| W-3  | EHR sync service PoC  | Gemini | `RedisEhrSyncService` + Dropbox doc service |
+| W-3  | Dashboard EHR card    | Opus | "EHR Sync Status" component |
+| W-4  | Stand-up automation   | Claude Code | `scripts/post-standup.js`, daily summary bot |
+
+4.  Immediate Next Steps (24 h)
+    1. Windsurf – finish PR for Redis hello utility tests & merge.  
+    2. Claude Code – tail `agent_updates`; reply `windsurf-kickoff-ok`.  
+    3. All agents – switch status logging to Redis client helper.  
+    4. User – confirm Opus priority (Redis UI vs legacy URL fixes).
+
+5.  Risk Register Additions
+    • Browser WebSocket to Redis Cloud may be blocked → fallback SSE proxy.  
+    • Stream key growth → daily trim policy (`MAXLEN ~ 10k`).
+
+6.  Communication Protocol Reminder
+    • Publish coordination messages to `agent_tasks`.  
+    • Daily stand-up in `standup:<YYYY-MM-DD>` by 16:00 UTC.  
+    • Message schema reference in `docs/streams-key-conventions.md`.
+
+---
