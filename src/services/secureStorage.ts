@@ -18,7 +18,7 @@
  * - Meets HIPAA minimum necessary standard
  */
 
-import { secureLog } from '../utils/redact.js';
+import { secureLog } from '../utils/redact';
 
 interface SecureStorageOptions {
   encryptionKey?: string;

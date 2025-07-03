@@ -29,7 +29,8 @@
     "deploy:functions": "cd functions && npm ci && firebase deploy --only functions",
     "deploy:verify": "node test-functions-deployment.cjs",
     "deploy:safe": "npm run deploy:check && npm run deploy:functions && npm run deploy:verify",
-    "workflow-test": "node dist/cli/bin/workflow-test"
+    "workflow-test": "node dist/cli/bin/workflow-test",
+    "dev:build": "SKIP_GSM=1 npm run build"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",

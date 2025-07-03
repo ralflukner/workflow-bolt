@@ -297,6 +297,26 @@ async function pullSecrets() {
   console.log('3. Clear browser cache if needed: localStorage.clear(); location.reload();');
 }
 
+// ---------------------------------------------------------------------------
+// Dev shortcut: if SKIP_GSM=1 then merge .env.local (if present) and exit OK.
+// This lets local builds proceed without GSM access.
+// ---------------------------------------------------------------------------
+if (process.env.SKIP_GSM === '1' || process.env.NODE_ENV === 'development') {
+  const fs = await import('fs');
+  const path = await import('path');
+  const localEnvPath = path.join(process.cwd(), 'local.env');
+  const destPath = path.join(process.cwd(), '.env');
+
+  if (fs.existsSync(localEnvPath)) {
+    fs.copyFileSync(localEnvPath, destPath);
+    console.log('🔧 SKIP_GSM set – copied .env.local to .env and skipped GSM pull');
+  } else {
+    console.warn('⚠️  SKIP_GSM set but .env.local not found; creating stub .env');
+    fs.writeFileSync(destPath, '# Stub env generated because SKIP_GSM=1\n');
+  }
+  process.exit(0);
+}
+
 // Run if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   pullSecrets().catch(error => {

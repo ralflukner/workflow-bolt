@@ -10,8 +10,8 @@
  */
 
 import { PatientApptStatus, AppointmentType } from '../types';
-import { secureLog } from './redact.js';
-import { secureStorage } from '../services/secureStorage.js';
+import { secureLog } from './redact';
+import { secureStorage } from '../services/secureStorage';
 
 export interface ImportedPatient {
   name: string;

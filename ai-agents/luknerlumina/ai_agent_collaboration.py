@@ -14,8 +14,8 @@ class AIAgentCollaboration:
         
     def activate_all_agents(self):
         """Activate all AI agents and establish collaboration"""
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")🤖 Activating AI Agent Collaboration System")
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")=" * 60)
+        print("🤖 Activating AI Agent Collaboration System")
+        print("=" * 60)
         
         # Activate each agent
         agents = self.activate_agents()
@@ -36,7 +36,7 @@ class AIAgentCollaboration:
     
     def activate_agents(self):
         """Activate all AI agents"""
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")🔗 Activating AI Agents...")
+        print("🔗 Activating AI Agents...")
         
         # Master Agent (Claude - me)
         master_agent = {
@@ -343,18 +343,35 @@ class AgentTaskCoordinator:
         self.redis_client = LuknerSecureRedisClient()
     
     def assign_task(self, task_id, agent_id, human_requester=None):
-        """Assign task to specific agent"""
+        """Assign a task to a specific agent with basic validation & robust Redis error handling."""
+
+        # -------------------- Input validation --------------------
+        if not isinstance(task_id, str) or not task_id.strip():
+            raise ValueError("task_id must be a non-empty string")
+        if not isinstance(agent_id, str) or not agent_id.strip():
+            raise ValueError("agent_id must be a non-empty string")
+
         task_data = {
-            "task_id": task_id,
-            "assigned_to": agent_id,
+            "task_id": task_id.strip(),
+            "assigned_to": agent_id.strip(),
             "requested_by": human_requester,
             "assigned_at": datetime.now(timezone.utc).isoformat(),
             "status": "assigned",
             "priority": "normal"
         }
-        
-        self.redis_client.store_data(f"task_assignment:{task_id}", task_data)
-        print(f"📋 Task {task_id} assigned to {agent_id}")
+
+        # -------------------- Redis write with error handling --------------------
+        try:
+            self.redis_client.store_data(f"task_assignment:{task_id}", task_data)
+            print(f"📋 Task {task_id} assigned to {agent_id}")
+        except Exception as err:  # Broad catch to avoid crashing – refine if custom RedisError exists
+            error_msg = (
+                f"❌ Failed to store task assignment in Redis – task_id={task_id} agent_id={agent_id} | {err}"
+            )
+            # Simple stderr logging; could integrate with centralized logger
+            print(error_msg)
+            # Re-raise so callers can decide to retry / escalate
+            raise
     
     def collaborate_on_task(self, task_id, primary_agent, collaborating_agents):
         """Setup collaborative task"""

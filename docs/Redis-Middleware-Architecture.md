@@ -261,6 +261,17 @@ export const RedisCoverageTargets = {
 - Error resolution time: <5 minutes
 - Integration deployment time: <1 hour
 
+## 🤝 **CLI Interaction with Redis Middleware**
+
+The `oclif` CLI will play a crucial role in managing and interacting with the Redis middleware. New and enhanced CLI commands will provide developers and operations teams with tools for:
+
+- **Health Monitoring:** Commands to check the status of Redis connections, queues, streams, and the overall health of services integrated with Redis.
+- **Data Management:** Utilities for inspecting, modifying, and clearing data within Redis (e.g., patient states, session data, event streams).
+- **Workflow Orchestration:** Commands to trigger, monitor, and debug patient workflows that leverage Redis Streams and queues.
+- **Testing and Diagnostics:** Specialized commands for running Redis-specific unit, integration, and performance tests, as well as diagnosing connectivity or data consistency issues.
+
+This integration will ensure that the CLI remains the primary interface for managing the `workflow-bolt` application, with full visibility and control over the new Redis-centric architecture.
+
 ## 🚀 **Next Steps**
 
 1. **Immediate**: Deploy Redis PatientStateManager POC alongside existing system

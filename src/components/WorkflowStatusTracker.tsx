@@ -86,7 +86,7 @@ export const WorkflowStatusTracker: React.FC<WorkflowStatusProps> = ({
 
   const patient = useMemo(() => {
     if (patientId) {
-      return patients.find((p: Patient) => p.id === patientId);
+      return patients.find((p) => p.id === patientId);
     }
     return null;
   }, [patients, patientId]);

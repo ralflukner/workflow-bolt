@@ -4,7 +4,7 @@
  */
 
 import { PatientApptStatus, AppointmentType } from '../types';
-import { secureLog } from './redact.js';
+import { secureLog } from './redact';
 import { ImportedPatient } from './parseScheduleAdvanced';
 
 export interface MegaParseOptions {

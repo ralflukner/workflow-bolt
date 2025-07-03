@@ -71,8 +71,7 @@ class AdvancedGeminiChat {
       case '/quit':
       case '/exit':
         await this.exportConversation();
-        console.log("
-👋 Chat session ended. Conversation exported!");
+        console.log("\n👋 Chat session ended. Conversation exported!");
         this.rl.close();
         process.exit(0);
         break;
@@ -81,8 +80,7 @@ class AdvancedGeminiChat {
         await this.startChat();
         this.conversationHistory = [];
         this.messageCount = 0;
-        console.log("
-🔄 Conversation cleared!");
+        console.log("\n🔄 Conversation cleared!");
         break;
         
       case '/help':
@@ -96,8 +94,7 @@ class AdvancedGeminiChat {
       case '/export':
         await this.exportConversation();
         console.log("
-💾 Conversation exported to file!");
-        break;
+        console.log("\n💾 Conversation exported to file!");
         
       default:
         console.log(`
@@ -109,8 +106,7 @@ class AdvancedGeminiChat {
   displayHelp() {
     console.log("
 📚 ADVANCED COMMANDS:");
-    console.log("─".repeat(40));
-    console.log("🔹 /quit, /exit     - End session and export");
+    console.log("\n� ADVANCED COMMANDS:");
     console.log("🔹 /clear           - Clear conversation history");
     console.log("🔹 /help            - Show this help");
     console.log("🔹 /stats           - Session statistics");
@@ -126,8 +122,7 @@ class AdvancedGeminiChat {
     console.log("
 📊 SESSION STATISTICS:");
     console.log("─".repeat(40));
-    console.log(`🕐 Session Duration: ${minutes}m ${seconds}s`);
-    console.log(`💬 Messages Sent: ${this.messageCount}`);
+    console.log("\n� SESSION STATISTICS:");
     console.log(`📝 History Length: ${this.conversationHistory.length} entries`);
     console.log(`🤖 Model: gemini-2.5-pro`);
     console.log("─".repeat(40));
@@ -144,12 +139,10 @@ class AdvancedGeminiChat {
 `;
     content += `**Session Started:** ${this.sessionStartTime.toISOString()}
 `;
-    content += `**Messages:** ${this.messageCount}
-
-`;
-    content += `---
-
-`;
+    let content = `# Gemini 2.5 Pro Conversation\n\n`;
+    content += `**Session Started:** ${this.sessionStartTime.toISOString()}\n`;
+    content += `**Messages:** ${this.messageCount}\n\n`;
+    content += `---\n\n`;
     
     this.conversationHistory.forEach((entry, index) => {
       content += `## Message ${index + 1}
@@ -168,11 +161,6 @@ class AdvancedGeminiChat {
 
 `;
     });
-    
-    fs.writeFileSync(filename, content);
-    console.log(`💾 Conversation saved to: ${filename}`);
-  }
-
   async sendMessage(message) {
     if (!message.trim()) return;
     
@@ -226,8 +214,7 @@ class AdvancedGeminiChat {
     this.rl.on('close', () => {
       console.log('
 👋 Goodbye!');
-      process.exit(0);
-    });
+      console.log('\n👋 Goodbye!');
     
     this.rl.prompt();
   }

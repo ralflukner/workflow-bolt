@@ -58,6 +58,28 @@ class DashboardClass extends Component<WithContextsProps, State> {
 
   isExpanded = (section: string) => this.state.expandedSection === section;
 
+  private generateReportContent = (format: 'csv' | 'text'): string => {
+    const { patients, getWaitTime } = this.props.patientContext;
+    const { getCurrentTime, timeMode } = this.props.timeContext;
+
+    if (format === 'csv') {
+      let csvContent = 'Patient Name,Status,Wait Time\n';
+      patients.forEach((p: Patient) => {
+        const waitTime = getWaitTime(p.id);
+        csvContent += `${p.name},${p.status},${waitTime || 'N/A'}\n`;
+      });
+      return csvContent;
+    } else if (format === 'text') {
+      let textContent = '--- Patient Report ---\n\n';
+      patients.forEach((p: Patient) => {
+        const waitTime = getWaitTime(p.id);
+        textContent += `Name: ${p.name}\nStatus: ${p.status}\nWait Time: ${waitTime || 'N/A'}\n\n`;
+      });
+      return textContent;
+    }
+    return '';
+  };
+
   handleExportSchedule = async (): Promise<void> => {
     if (this.isExporting.current) return;
     this.isExporting.current = true;

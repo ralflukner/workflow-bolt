@@ -94,14 +94,7 @@ describe('TebraDebugApiService', () => {
   describe('testFrontendHealth', () => {
     it('should return healthy status in browser environment', async () => {
       // Mock browser environment
-      Object.defineProperty(global, 'window', {
-        value: {},
-        writable: true,
-      });
-      Object.defineProperty(global, 'document', {
-        value: {},
-        writable: true,
-      });
+      
 
       const result = await service.testFrontendHealth();
 
