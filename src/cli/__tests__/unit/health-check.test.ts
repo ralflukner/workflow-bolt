@@ -5,11 +5,7 @@ import { join } from 'path';
 
 describe('HealthCheckCommand Unit Tests', () => {
   let command: HealthCheckCommand;
-  let mockParse: jest.Mock;
-  let mockLog: jest.Mock;
-  let mockError: jest.Mock;
-  let mockWarn: jest.Mock;
-  let mockRun: jest.Mock;
+  
 
   beforeEach(() => {
     jest.clearAllMocks(); // Clear all mocks before each test
