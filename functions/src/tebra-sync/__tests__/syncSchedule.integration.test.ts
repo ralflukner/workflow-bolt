@@ -248,6 +248,58 @@ describe('syncSchedule Integration Tests', () => {
         'test-user'
       );
     });
+
+    it('should sync yesterday\'s appointments successfully', async () => {
+      const yesterday = '2025-06-16';
+
+      const mockAppointments = [
+        {
+          ID: 'appt-y1',
+          PatientId: 'patient-y1',
+          ProviderId: 'provider-y1',
+          AppointmentType: 'type-y1',
+          StartTime: `${yesterday}T09:15:00`,
+          EndTime: `${yesterday}T09:45:00`,
+          Status: 'CheckedIn',
+        },
+      ];
+
+      const mockPatient = {
+        ID: 'patient-y1',
+        PatientId: 'patient-y1',
+        FirstName: 'Yesterday',
+        LastName: 'Person',
+      };
+
+      const mockProvider = {
+        ID: 'provider-y1',
+        ProviderId: 'provider-y1',
+        FirstName: 'Doc',
+        LastName: 'Yest',
+        Title: 'Dr.',
+      };
+
+      mockTebra.getAppointments.mockResolvedValue(mockAppointments);
+      mockTebra.getPatientById.mockResolvedValue(mockPatient);
+      mockTebra.getProviders.mockResolvedValue([mockProvider]);
+
+      const result = await syncSchedule(deps, yesterday, 'test-user');
+
+      expect(result).toBe(1);
+      expect(mockTebra.getAppointments).toHaveBeenCalledWith(yesterday, yesterday);
+      expect(mockRepo.save).toHaveBeenCalledWith(
+        yesterday,
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: 'patient-y1',
+            name: 'Yesterday Person',
+            provider: 'Dr. Doc Yest',
+            status: 'arrived',
+          }),
+        ]),
+        'test-user'
+      );
+    });
   });
 
   describe('Error handling scenarios', () => {
