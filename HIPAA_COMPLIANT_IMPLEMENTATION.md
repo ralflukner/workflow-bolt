@@ -85,11 +85,17 @@ const sensitiveFields = [
 ];
 ```
 
-### Memory Obfuscation
+### Memory Obfuscation (Non-Cryptographic)
 
-**Base Layer**: XOR cipher with rotating key  
-**Encoding**: Double Base64 encoding  
-**Purpose**: Prevent casual memory inspection
+> ⚠️ **Important**: The technique below is **not** strong encryption. It is
+> merely an *obfuscation* layer that can deter casual, in-process inspection
+> but offers **negligible security** against a motivated attacker. All PHI
+> protection relies on the AES-GCM field-level encryption described above.
+
+**Obfuscation Layer**: XOR byte-mask with rotating key  
+**Encoding**: Double Base64  
+**Use-case**: Reduce readability of raw memory dumps during development; **do
+not** depend on it for HIPAA compliance.
 
 ### Export Encryption
 

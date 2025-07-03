@@ -7,6 +7,7 @@ import logging
 import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+import time
 
 import redis.asyncio as redis_async  # type: ignore
 
@@ -23,18 +24,34 @@ class RedisStreamClient:
         self.agent_id: str = os.getenv("AGENT_ID", "windsurf")
         self._client: Optional[redis_async.Redis] = None
 
+        # Configurable retry strategy
+        self._max_retries: int = int(os.getenv("REDIS_MAX_RETRIES", "3"))
+        self._retry_delay: float = float(os.getenv("REDIS_RETRY_DELAY_MS", "500")) / 1000.0
+
     async def _connect(self) -> redis_async.Redis:
-        if self._client is None:
-            self._client = redis_async.from_url(
-                self.redis_url,
-                decode_responses=True,
-                socket_timeout=10,
-                socket_connect_timeout=10,
-            )
-            # mypy/static checker sees Optional; but we just created it, so safe
-            await self._client.ping()  # type: ignore[arg-type]
-            logger.info("Connected to Redis @ %s", self.redis_url)
-        return self._client
+        if self._client is not None:
+            return self._client
+
+        attempt = 0
+        while attempt <= self._max_retries:
+            try:
+                self._client = redis_async.from_url(
+                    self.redis_url,
+                    decode_responses=True,
+                    socket_timeout=10,
+                    socket_connect_timeout=10,
+                )
+                await self._client.ping()  # type: ignore[arg-type]
+                logger.info("Connected to Redis @ %s", self.redis_url)
+                return self._client
+            except Exception as exc:
+                attempt += 1
+                logger.warning(
+                    "Redis connection attempt %s/%s failed: %s", attempt, self._max_retries, exc
+                )
+                if attempt > self._max_retries:
+                    raise
+                time.sleep(self._retry_delay)
 
     async def _disconnect(self) -> None:
         if self._client is not None:

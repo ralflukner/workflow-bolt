@@ -8,6 +8,15 @@ import { DataFlowStep, TebraMetrics, STEP_IDS, StepStatus } from '@/constants/te
 import { MetricsCard } from './TebraDebug/MetricsCard';
 import { DataFlowStepCard } from './TebraDebug/DataFlowStepCard';
 
+export interface TebraRealtimeUpdate {
+  stepId: string;
+  status: 'healthy' | 'warning' | 'error' | 'unknown';
+  responseTime: number;
+  message?: string;
+  timestamp: Date;
+  correlationId: string;
+}
+
 interface State {
   dataFlowSteps: DataFlowStep[];
   metrics: TebraMetrics;
@@ -15,6 +24,8 @@ interface State {
   autoRefresh: boolean;
   isMonitoring: boolean;
   showAdvancedDiagnostics: boolean;
+  realtimeUpdatesCount: number;
+  lastRealtimeUpdate: Date | null;
 }
 
 export default class TebraDebugDashboardContainer extends Component<Record<string, never>, State> {
@@ -48,11 +59,16 @@ export default class TebraDebugDashboardContainer extends Component<Record<strin
       recentErrors: [],
       autoRefresh: true,
       isMonitoring: false,
-      showAdvancedDiagnostics: false
+      showAdvancedDiagnostics: false,
+      realtimeUpdatesCount: 0,
+      lastRealtimeUpdate: null
     };
   }
 
   componentDidMount() {
+    // Register this instance globally for Redis Event Bus integration
+    (window as any).globalTebraDebugDashboard = this;
+    
     if (this.state.autoRefresh) {
       this.startInterval();
     }
@@ -60,6 +76,10 @@ export default class TebraDebugDashboardContainer extends Component<Record<strin
 
   componentWillUnmount() {
     this.clearInterval();
+    // Clean up global reference
+    if ((window as any).globalTebraDebugDashboard === this) {
+      (window as any).globalTebraDebugDashboard = null;
+    }
   }
 
   componentDidUpdate(_: {}, prevState: State) {
@@ -70,7 +90,15 @@ export default class TebraDebugDashboardContainer extends Component<Record<strin
   }
 
   startInterval() {
-    this.refreshInterval = setInterval(() => this.runHealthChecks(), 30000); // 30-sec
+    // Dynamic polling interval based on Redis Event Bus activity
+    const hasRecentRealtimeUpdates = this.state.lastRealtimeUpdate && 
+      (Date.now() - this.state.lastRealtimeUpdate.getTime()) < 120000; // 2 minutes
+    
+    // Reduce polling frequency if Redis events are active
+    const pollInterval = hasRecentRealtimeUpdates ? 120000 : 30000; // 2 min vs 30 sec
+    
+    console.log(`🔄 Setting poll interval to ${pollInterval/1000}s (Redis active: ${hasRecentRealtimeUpdates})`);
+    this.refreshInterval = setInterval(() => this.runHealthChecks(), pollInterval);
   }
 
   clearInterval() {
@@ -87,6 +115,63 @@ export default class TebraDebugDashboardContainer extends Component<Record<strin
       recentErrors: [{ timestamp: new Date(), step, error, correlationId }, ...recentErrors].slice(0, 10)
     }));
   }
+
+  /**
+   * Handle real-time updates from Redis Event Bus
+   * This method is called by the wrapper component when Redis events are received
+   */
+  handleRealtimeUpdate = (update: TebraRealtimeUpdate) => {
+    console.log('🚀 Processing Redis Event Bus update:', update);
+
+    this.setState(prevState => {
+      const updatedSteps = prevState.dataFlowSteps.map(step => {
+        // Find matching step by ID mapping
+        const stepIdMap: Record<string, string> = {
+          'firebase_functions': STEP_IDS.FIREBASE_FUNCTIONS,
+          'tebra_proxy': STEP_IDS.TEBRA_PROXY,
+          'cloud_run': STEP_IDS.CLOUD_RUN,
+          'tebra_api': STEP_IDS.TEBRA_API,
+          'data_transform': STEP_IDS.DATA_TRANSFORM,
+          'dashboard_update': STEP_IDS.DASHBOARD_UPDATE,
+          'frontend': STEP_IDS.FRONTEND
+        };
+
+        const mappedStepId = stepIdMap[update.stepId] || update.stepId;
+        
+        if (step.id === mappedStepId) {
+          return {
+            ...step,
+            status: update.status,
+            responseTime: update.responseTime,
+            lastCheck: update.timestamp,
+            errorMessage: update.status !== 'healthy' ? update.message : undefined
+          };
+        }
+        return step;
+      });
+
+      // Update metrics based on real-time data
+      const healthy = updatedSteps.filter(s => s.status === 'healthy').length;
+      const successRate = (healthy / updatedSteps.length) * 100;
+
+      return {
+        dataFlowSteps: updatedSteps,
+        realtimeUpdatesCount: prevState.realtimeUpdatesCount + 1,
+        lastRealtimeUpdate: update.timestamp,
+        metrics: {
+          ...prevState.metrics,
+          successRate,
+          averageResponseTime: Math.round(updatedSteps.reduce((a, b) => a + b.responseTime, 0) / updatedSteps.length),
+          errorCount: updatedSteps.filter(s => s.status === 'error').length,
+          lastSuccessfulSync: successRate === 100 ? update.timestamp : prevState.metrics.lastSuccessfulSync
+        }
+      };
+    });
+
+    // If Redis events are flowing, restart the interval with longer polling period
+    this.clearInterval();
+    this.startInterval();
+  };
 
   async runHealthChecks() {
     if (this.state.isMonitoring) return;
@@ -235,11 +320,16 @@ export default class TebraDebugDashboardContainer extends Component<Record<strin
         </div>
 
         {/* Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <MetricsCard value={`${metrics.successRate.toFixed(1)}%`} label="Success Rate" />
           <MetricsCard value={`${metrics.averageResponseTime}ms`} label="Avg Response" />
           <MetricsCard value={metrics.errorCount} label="Active Errors" variant="error" />
           <MetricsCard value={metrics.lastSuccessfulSync?.toLocaleTimeString() || 'Never'} label="Last Success" />
+          <MetricsCard 
+            value={this.state.realtimeUpdatesCount} 
+            label="Redis Events" 
+            variant={this.state.realtimeUpdatesCount > 0 ? "success" : "default"}
+          />
         </div>
 
         {/* Data-flow Steps */}

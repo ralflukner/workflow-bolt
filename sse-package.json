@@ -1,0 +1,21 @@
+{
+  "name": "redis-sse-proxy",
+  "version": "1.0.0",
+  "description": "Redis Stream to Server-Sent Events proxy for LuknerLumina multi-agent system",
+  "main": "sse-proxy-server.js",
+  "scripts": {
+    "start": "node sse-proxy-server.js",
+    "dev": "node sse-proxy-server.js",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "redis": "^4.6.8",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "author": "LuknerLumina Team",
+  "license": "MIT"
+}

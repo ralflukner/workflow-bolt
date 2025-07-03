@@ -26,8 +26,11 @@ def list_files(username, folder=None):
         if os.path.isdir(item_path):
             print("📁 " + item + "/")
         else:
-            size = os.path.getsize(item_path)
-            print("📄 " + item + " (" + str(size) + " bytes)")
+            try:
+                size = os.path.getsize(item_path)
+                print("📄 " + item + " (" + str(size) + " bytes)")
+            except OSError:
+                print("📄 " + item + " (size unavailable)")
 
 def show_usage(username):
     base_path = "user_workspaces/" + username
@@ -41,9 +44,13 @@ def show_usage(username):
     
     for root, dirs, files in os.walk(base_path):
         for file in files:
-            file_path = os.path.join(root, file)
-            total_size += os.path.getsize(file_path)
-            file_count += 1
+            try:
+                file_path = os.path.join(root, file)
+                total_size += os.path.getsize(file_path)
+                file_count += 1
+            except OSError:
+                # Skip files that can't be accessed
+                continue
     
     # Convert to readable format
     if total_size < 1024:
@@ -57,11 +64,23 @@ def show_usage(username):
     print("   Files: " + str(file_count))
     print("   Total size: " + size_str)
 
+def validate_username(username):
+    """Validate username to prevent injection attacks"""
+    import re
+    # only allow alphanumeric, dot, underscore or hyphen
+    if not re.match(r'^[a-zA-Z0-9._-]+$', username):
+        return False
+    # enforce a reasonable maximum length
+    if len(username) > 50:
+        return False
+    return True
+
 def main():
     if len(sys.argv) < 2:
-        print("Usage:")
-        print("  python simple_file_manager.py list <username> [folder]")
-        print("  python simple_file_manager.py usage <username>")
+        print("Usage: python simple_file_manager.py <command> [args]")
+        print("Commands:")
+        print("  list <username> [folder]  - List files in user workspace")
+        print("  usage <username>          - Show storage usage for user")
         return
     
     command = sys.argv[1]
@@ -71,6 +90,9 @@ def main():
             print("Error: Username required")
             return
         username = sys.argv[2]
+        if not validate_username(username):
+            print("Error: Invalid username format")
+            return
         folder = sys.argv[3] if len(sys.argv) > 3 else None
         list_files(username, folder)
     
@@ -79,10 +101,14 @@ def main():
             print("Error: Username required")
             return
         username = sys.argv[2]
+        if not validate_username(username):
+            print("Error: Invalid username format")
+            return
         show_usage(username)
     
     else:
         print("Unknown command: " + command)
+        print("Available commands: list, usage")
 
 if __name__ == "__main__":
     main()

@@ -192,6 +192,62 @@ describe('syncSchedule Integration Tests', () => {
         'system'
       );
     });
+
+    it('should sync tomorrow\'s appointments successfully', async () => {
+      const mockAppointments = [
+        {
+          ID: 'appt-10',
+          PatientId: 'patient-10',
+          ProviderId: 'provider-10',
+          AppointmentTypeId: 'type-10',
+          AppointmentType: 'type-10',
+          StartTime: '2025-06-18T09:00:00',
+          EndTime: '2025-06-18T09:30:00',
+          Status: 'Confirmed',
+        },
+      ];
+
+      const mockPatient = {
+        ID: 'patient-10',
+        PatientId: 'patient-10',
+        PatientNumber: 'P010',
+        FirstName: 'Alice',
+        LastName: 'Wonderland',
+        DateOfBirth: '1990-01-01',
+      };
+
+      const mockProvider = {
+        ID: 'provider-10',
+        ProviderId: 'provider-10',
+        FirstName: 'Greg',
+        LastName: 'House',
+        Title: 'Dr.',
+        Degree: 'MD',
+      };
+
+      mockTebra.getAppointments.mockResolvedValue(mockAppointments);
+      mockTebra.getPatientById.mockResolvedValue(mockPatient);
+      mockTebra.getProviders.mockResolvedValue([mockProvider]);
+
+      const tomorrow = '2025-06-18';
+      const result = await syncSchedule(deps, tomorrow, 'test-user');
+
+      expect(result).toBe(1);
+      expect(mockTebra.getAppointments).toHaveBeenCalledWith(tomorrow, tomorrow);
+      expect(mockRepo.save).toHaveBeenCalledWith(
+        tomorrow,
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: 'patient-10',
+            name: 'Alice Wonderland',
+            provider: 'Dr. Greg House',
+            appointmentType: 'type-10',
+            status: 'scheduled',
+          }),
+        ]),
+        'test-user'
+      );
+    });
   });
 
   describe('Error handling scenarios', () => {

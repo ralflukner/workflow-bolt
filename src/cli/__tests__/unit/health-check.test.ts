@@ -3,75 +3,67 @@ import { execSync, spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
-// Mock oclif's Command class and its methods
-const mockParse = jest.fn().mockResolvedValue({ flags: {}, args: {} });
-const mockLog = jest.fn();
-const mockError = jest.fn();
-
-jest.mock('@oclif/core', () => ({
-  Command: class {
-    parse = mockParse;
-    log = mockLog;
-    error = mockError;
-    warn = jest.fn();
-    static flags = {};
-    static summary = '';
-    static description = '';
-    static examples = [];
-  },
-  Flags: {
-    boolean: jest.fn((opts) => opts),
-    integer: jest.fn((opts) => opts),
-  },
-}));
-
-// Mock child_process functions
-jest.mock('child_process', () => ({
-  execSync: jest.fn(),
-  spawn: jest.fn(() => ({
-    stdout: { on: jest.fn() },
-    stderr: { on: jest.fn() },
-    on: jest.fn(),
-  })),
-}));
-
-// Mock fs.existsSync
-jest.mock('fs', () => ({
-  existsSync: jest.fn(),
-}));
-
-// Mock path.join
-jest.mock('path', () => ({
-  join: jest.fn(),
-}));
-
-// Mock chalk
-jest.mock('chalk', () => ({
-  __esModule: true,
-  default: {
-    cyan: {
-      bold: jest.fn((text) => text),
-    },
-    yellow: jest.fn((text) => text),
-    white: jest.fn((text) => text),
-    red: jest.fn((text) => text),
-    green: jest.fn((text) => text),
-    gray: jest.fn((text) => text),
-  },
-}));
-
 describe('HealthCheckCommand Unit Tests', () => {
   let command: HealthCheckCommand;
+  let mockParse: jest.Mock;
+  let mockLog: jest.Mock;
+  let mockError: jest.Mock;
+  let mockWarn: jest.Mock;
+  let mockRun: jest.Mock;
 
   beforeEach(() => {
+    jest.clearAllMocks(); // Clear all mocks before each test
+
+    mockParse = jest.fn().mockResolvedValue({ flags: {}, args: {} });
+    mockLog = jest.fn();
+    mockError = jest.fn();
+    mockWarn = jest.fn();
+    mockRun = jest.fn();
+
+    // Manually mock the oclif Command methods on the prototype
+    jest.spyOn(HealthCheckCommand.prototype, 'parse').mockImplementation(mockParse);
+    jest.spyOn(HealthCheckCommand.prototype, 'log').mockImplementation(mockLog);
+    jest.spyOn(HealthCheckCommand.prototype, 'error').mockImplementation(mockError);
+    jest.spyOn(HealthCheckCommand.prototype, 'warn').mockImplementation(mockWarn);
+    jest.spyOn(HealthCheckCommand.prototype, 'run').mockImplementation(mockRun);
+
+    jest.spyOn(require('child_process'), 'execSync').mockImplementation(jest.fn());
+    jest.spyOn(require('child_process'), 'spawn').mockImplementation(jest.fn(() => ({
+      stdout: { on: jest.fn() },
+      stderr: { on: jest.fn() },
+      on: jest.fn(),
+    })));
+
+    jest.spyOn(require('fs'), 'existsSync').mockImplementation(jest.fn());
+    jest.spyOn(require('path'), 'join').mockImplementation(jest.fn());
+
+    // Mock chalk
+    const mockChalk: any = {};
+    const colorMethods = ['cyan', 'yellow', 'white', 'red', 'green', 'gray'];
+    colorMethods.forEach(color => {
+      mockChalk[color] = jest.fn((text) => {
+        const chainable = jest.fn(() => text);
+        chainable.bold = jest.fn(() => text);
+        return chainable;
+      });
+    });
+    mockChalk.bold = jest.fn((text) => text);
+    jest.mock('chalk', () => ({
+      __esModule: true,
+      default: mockChalk,
+    }));
+
     command = new HealthCheckCommand([], null);
-    jest.clearAllMocks();
-    process.exitCode = undefined; // Reset exit code before each test
+    process.exitCode = undefined;
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('should run standard checks by default', async () => {
     mockParse.mockResolvedValueOnce({ flags: {}, args: {} });
-    (existsSync as jest.Mock).mockReturnValue(true); // Mock all existsSync to return true for passing checks
+    (existsSync as jest.Mock).mockReturnValue(true); // Mock all existsync to return true for passing checks
     (execSync as jest.Mock).mockReturnValue('output'); // Mock execSync to pass
     (spawn as jest.Mock).mockImplementation(() => ({
       stdout: { on: (event: string, cb: Function) => { if (event === 'data') cb('Tests: 1 passed'); } },
@@ -152,7 +144,7 @@ describe('HealthCheckCommand Unit Tests', () => {
     (spawn as jest.Mock).mockImplementation(() => ({
       stdout: { on: jest.fn() },
       stderr: { on: jest.fn() },
-      on: (event: string, cb: Function) => { if (event === 'close') cb(1); }, // Simulate test failure
+      on: (event: string, cb: Function) => { if (event === 'close') cb(1); },
     }));
 
     await command.run();

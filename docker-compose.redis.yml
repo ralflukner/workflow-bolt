@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis/redis-stack:latest
+    container_name: luknerlumina-redis
+    ports:
+      - "6379:6379"     # Redis server
+      - "8001:8001"     # RedisInsight web UI
+    environment:
+      - REDIS_ARGS=--save 60 1000 --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - luknerlumina-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+
+  sse-proxy:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM node:18-alpine
+        WORKDIR /app
+        COPY sse-package.json package.json
+        RUN npm install
+        COPY sse-proxy-server.js .
+        EXPOSE 3001
+        CMD ["node", "sse-proxy-server.js"]
+    container_name: luknerlumina-sse-proxy
+    ports:
+      - "3001:3001"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - REDIS_STREAM=agent_updates
+      - SSE_PORT=3001
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - luknerlumina-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  luknerlumina-network:
+    driver: bridge

@@ -86,6 +86,8 @@ const syncSchedule = async (
 
   // Add detailed debugging for the Tebra API call
   logger.info('📞 Calling tebra.getAppointments with dates:', { fromDate, toDate });
+  
+  let appointmentsArray;
   try {
     const appointments = await tebra.getAppointments(fromDate, toDate);
     
@@ -96,7 +98,7 @@ const syncSchedule = async (
     logger.info('📊 Length/count:', appointments?.length || 'no length property');
 
     // Handle different response structures
-    let appointmentsArray = appointments;
+    appointmentsArray = appointments;
     if (!Array.isArray(appointments)) {
       logger.error('❌ Expected array but got:', typeof appointments);
       logger.error('❌ Response content:', appointments);

@@ -274,8 +274,9 @@ export async function tebraHealthCheck(): Promise<ApiResponse> {
 export const getApiInfo = () => ({
   usingFirebaseProxy: true,
   apiType: 'Firebase Functions -> PHP Cloud Run -> Tebra SOAP',
-  firebaseFunctionsUrl: 'https://us-central1-luknerlumina-firebase.cloudfunctions.net',
-  phpProxyUrl: 'https://tebra-php-api-623450773640.us-central1.run.app',
+  firebaseFunctionsUrl: import.meta.env.VITE_FIREBASE_FUNCTIONS_URL || 'https://us-central1-luknerlumina-firebase.cloudfunctions.net',
+  phpProxyUrl: import.meta.env.VITE_TEBRA_CLOUD_RUN_URL || 'https://tebra-php-api-623450773640.us-central1.run.app',
+  redisEventBusUrl: import.meta.env.VITE_REDIS_SSE_URL || null,
   projectId: 'luknerlumina-firebase',
   unifiedProxy: true,
   message: 'Using single Firebase Function (tebraProxy) as unified proxy to PHP Tebra API',
