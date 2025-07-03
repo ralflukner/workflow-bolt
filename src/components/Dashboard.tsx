@@ -31,7 +31,7 @@ interface State {
 }
 
 class DashboardClass extends Component<WithContextsProps, State> {
-  private isExporting: RefObject<boolean>;
+  private isExporting: { current: boolean };
 
   constructor(props: WithContextsProps) {
     super(props);
@@ -47,8 +47,7 @@ class DashboardClass extends Component<WithContextsProps, State> {
       scrollPosition: 0,
       showSecurityNotice: true,
     };
-    this.isExporting = React.createRef();
-    this.isExporting.current = false;
+    this.isExporting = { current: false };
   }
 
   toggleSection = (section: string) => {
