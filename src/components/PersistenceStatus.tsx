@@ -229,7 +229,7 @@ class PersistenceStatusClass extends Component<WithContextsProps, State> {
               <p className="text-sm font-medium">{toastMessage}</p>
             </div>
             <button
-              onClick={() => setShowToast(false)}
+              onClick={() => this.setState({ showToast: false })}
               className="ml-2 flex-shrink-0 text-gray-400 hover:text-gray-600"
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -308,7 +308,7 @@ class PersistenceStatusClass extends Component<WithContextsProps, State> {
         {persistenceEnabled && (
           <>
             <button
-              onClick={handleManualSave}
+              onClick={this.handleManualSave}
               disabled={isSaving || !hasRealData}
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                 !hasRealData 
@@ -321,7 +321,7 @@ class PersistenceStatusClass extends Component<WithContextsProps, State> {
             </button>
 
             <button
-              onClick={handlePurgeData}
+              onClick={this.handlePurgeData}
               disabled={isPurging}
               className="px-3 py-1.5 bg-orange-100 text-orange-700 hover:bg-orange-200 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
