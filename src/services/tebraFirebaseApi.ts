@@ -311,7 +311,7 @@ interface ProviderData {
 }
 
 // Browser console helper for debugging (production safe)
-(window as Window & { tebraDebug: TebraDebugTools }).tebraDebug = {
+(window as unknown as Window & { tebraDebug: TebraDebugTools }).tebraDebug = {
   // Get configuration info
   config: getApiInfo,
   

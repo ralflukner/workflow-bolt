@@ -1,5 +1,7 @@
 # Firebase Functions Startup Issue: Callable vs HTTP Endpoint
 
+<!-- NOTE: moved from /docs/FIREBASE_FUNCTIONS_STARTUP_ISSUE.md on 2025-06-23 -->
+
 ## Problem Summary
 
 A recurring issue in this project is attempting to call Firebase callable functions (deployed with `onCall`) as if they were standard HTTP endpoints. This results in CORS 403 errors, failed preflight requests, and authentication issues.

@@ -1,0 +1,57 @@
+Appointments for Tuesday, July 01, 2025
+Test Medical Center
+1234 Test Avenue Suite 100, Test City, TX 12345-6789
+Resource Time Status Patient Contact Primary Ins. Eligibility Reason Location Notes Balance
+DR TEST PROVIDER 9:45 AM Cancelled JANE DOE
+01/15/1980
+(555) 123-4567
+((M))
+- - Office Visit Test
+Medical
+Center
+Reason: Office
+Visit Comment:
+New patient
+orientation
+Member ID:
+TEST-123-
+ABC456
+$0.00
+DR TEST PROVIDER
+ROOM 1
+10:30
+AM
+Checked
+Out
+JOHN SMITH
+03/22/1965
+(555) 234-5678
+((M))
+TEST INSURANCE 2025 - Office Visit Test
+Medical
+Center
+lab follow up $0.00
+DR TEST PROVIDER
+ROOM 2
+11:00
+AM
+Checked
+Out
+ALICE JOHNSON
+07/10/1990
+(555) 345-6789
+((M))
+TEST INSURANCE 2025 - Office Visit Test
+Medical
+Center
+- $50.00
+DR TEST PROVIDER 4:30
+PM
+Scheduled ROBERT BROWN
+11/05/1975
+(555) 456-7890
+((M))
+TEST INSURANCE 2025 - Office Visit Test
+Medical
+Center
+- $81.29

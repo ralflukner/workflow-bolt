@@ -1,6 +1,7 @@
 # 2025-06-23  Documentation Re-org & Encryption Road-map Kick-off
 
 **Highlights**
+
 1. **Documentation Re-organisation Phase 1 completed**
    • Created canonical folder structure (`00-overview … 05-governance`).
    • Re-wrote `00-overview/overview.md` with full application tour.
@@ -16,6 +17,7 @@
    • Proposed semantic bump to `0.1.1-docs+crypto` after SecureStorage v2 lands.
 
 **Files Added / Modified**
+
 - `docs/00-overview/overview.md` (major rewrite)
 - `docs/debugging/FIREBASE_FUNCTIONS_STARTUP_ISSUE.md` (relocated)
 - `docs/05-governance/recommendation.md` (relocated)

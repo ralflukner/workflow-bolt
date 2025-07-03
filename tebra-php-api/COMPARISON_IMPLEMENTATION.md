@@ -7,16 +7,19 @@ The PHP proxy now includes intelligent data comparison functionality with rate l
 ## Features Implemented
 
 ### 1. **Rate Limiting** ⏱️
+
 - Real Tebra API calls limited to **once every 5 minutes** (300 seconds)
 - Uses `/tmp/tebra_last_call.txt` cache file to track last call timestamp
 - Prevents unnecessary API hammering while still collecting comparison data
 
 ### 2. **Hardcoded Schedule Data** 📅
+
 - Contains complete schedule for Monday, June 23, 2025
 - 13 appointments with full patient details
 - Structured in proper Tebra SOAP response format
 
 ### 3. **Data Comparison Engine** 🔍
+
 - Automatically compares real API data with hardcoded data when available
 - **Comparison Metrics:**
   - Appointment count matching
@@ -24,6 +27,7 @@ The PHP proxy now includes intelligent data comparison functionality with rate l
   - Overall match status: `full_match`, `count_match_only`, `no_match`, `comparison_error`
 
 ### 4. **Comprehensive Logging** 📝
+
 - **Rate Limit Logs:** When API calls are made or skipped
 - **Comparison Logs:** Detailed JSON comparison results
 - **Error Logs:** Any failures in real API calls or comparisons
@@ -72,6 +76,7 @@ The PHP proxy now includes intelligent data comparison functionality with rate l
 ## Usage
 
 ### 1. Request Appointments
+
 ```bash
 curl -X POST https://tebra-php-api-xccvzgogwa-uc.a.run.app/getAppointments \
   -H "Content-Type: application/json" \
@@ -79,11 +84,14 @@ curl -X POST https://tebra-php-api-xccvzgogwa-uc.a.run.app/getAppointments \
 ```
 
 ### 2. Monitor Logs
+
 Check Cloud Run logs for:
+
 - `TEBRA_API_CALL:` - Rate limiting status
 - `TEBRA_DATA_COMPARISON:` - Comparison results
 
 ### 3. Analyze Response
+
 - Hardcoded data is always returned (ensures frontend functionality)
 - Real data comparison happens in background when rate limit allows
 - Metadata shows comparison status and timing

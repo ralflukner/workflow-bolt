@@ -3,10 +3,13 @@
 ## What Was Fixed (June 25, 2025)
 
 ### 🚨 Critical Issue
+
 6 Cloud Run services were publicly accessible without authentication - a severe HIPAA violation.
 
 ### 🔒 Security Actions Taken
+
 Removed public access (`allUsers`) from:
+
 - `api`
 - `exchangeauth0token`
 - `getfirebaseconfig`
@@ -15,6 +18,7 @@ Removed public access (`allUsers`) from:
 - `tebra-php-api`
 
 ### ✅ Current Status
+
 - All services now require authentication
 - Firebase Functions can still access services (using service accounts)
 - Appointment sync continues to work
@@ -38,6 +42,7 @@ Frontend → Firebase Functions → Cloud Run
 ## If Issues Arise
 
 The Firebase Functions already have the correct code to authenticate:
+
 ```javascript
 // This is already in tebra-proxy-client.js
 this.auth = new GoogleAuth();
@@ -47,6 +52,7 @@ this.authClient = await this.auth.getIdTokenClient(this.cloudRunUrl);
 ## Verification
 
 To verify services are secure:
+
 ```bash
 gcloud run services list --project=luknerlumina-firebase --region=us-central1
 ```

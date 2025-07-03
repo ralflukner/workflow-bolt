@@ -63,7 +63,7 @@ A. Move remaining root-level docs into their homes (list maintained in Tracking 
 B. Run `npm run docs:fix-links` to rewrite relative links.  
 C. Commit hashes logged.
 
-**Phase 3 – Content refresh** … *(see previous assistant message for bullets)*
+**Phase 3 – Content refresh** … _(see previous assistant message for bullets)_
 
 **Phase 4 – Automation** …
 
@@ -78,10 +78,12 @@ _Standard format: `YYYY-MM-DD HH:MM TZ – message – author`_
 | 2025-06-23 14:45 EDT | @ralf | Added Encryption redesign roadmap; CHANGES_SUMMARY entry; progress tracker clarified. |
 | 2025-06-23 14:32 EDT | @ralf | Phase 1 finished; Phase 2 started (moved recommendation.md & startup-issue doc). |
 | 2025-06-22 17:10 EDT | @ralf | Completed Phase 0 inventory script. |
+| 2025-07-01 10:05 EDT | @ralf | Updated target dates to Q3, added CLI scaffolding status; ROADMAP.md created. |
 
-*(please append newest rows at top)*
+_(please append newest rows at top)_
 
 ## 6. How to update this tracker
+
 1. Edit **this file** in your PR.  
 2. Update "Last updated" stamp at top.  
 3. Add a one-line entry to **Progress Log**.  
@@ -89,6 +91,7 @@ _Standard format: `YYYY-MM-DD HH:MM TZ – message – author`_
 5. CI will fail if timestamp format is invalid (regex check in `.github/workflows/docs-lint.yml`).
 
 ## 7. SemVer & Release tagging
+
 When Phase 5 completes we will bump **package.json** from `0.1.0` → `0.1.1-docs` (or `0.2.0` if any breaking config change) and tag the commit `v0.1.1-docs`.
 
 ## 8. Immediate Next Steps
@@ -137,24 +140,29 @@ _Commit the script, then run it once; manual review required for any collisions.
 > These notes were added as part of the ongoing project-management log so future contributors can quickly locate vetted third-party resources that align with the app's HIPAA and reliability goals.
 
 ### 🔐 Enhancing Security & Secret Management
+
 1. **Google Cloud Secret Manager** – preferred over Firebase env API; provides fine-grained IAM, audit logs, versioning.
 2. **Virgil Security E3Kit** – client-side end-to-end encryption demonstration (see Virgil's Firebase chat demo) – useful reference for HIPAA-grade crypto.
 
 ### 🧪 Improving Testing & Dev Workflow
+
 1. **oclif** – adopt for a headless CLI so tests interact with business logic not DOM.  Use `oclif/plugin-test` for Jest helpers.
 2. **Firebase Emulator Suite** – run Firestore, Functions & Auth locally; essential for CI and for testing security rules.
 
 ### 🏥 Reference HIPAA Implementations
+
 1. **Parse-HIPAA** – Parse Server fork with auditing & encrypted storage (HIPAA/GDPR).  Good pattern for backend hardening.
 2. **Curelia Health** – open-source healthcare platform on GCP (Cloud Run, Cloud SQL, KMS) – demonstrates infra best-practices.
 
 ### 📌 Summary
+
 • Secrets → migrate to GSM.  
 • Encryption → E3Kit-style end-to-end.  
 • Testing → oclif CLI + Firebase emulators.  
 • Study Parse-HIPAA & Curelia for architecture inspiration.
 
 ### 🛠 Open-source Parsing Tools (cost-free)
+
 • **MegaParse** – Apache 2.0; high-speed multi-format parser (text, PDF, Office).  
 • **Parsr** – MIT; converts PDF/images to structured JSON/Markdown/CSV, includes OCR.  
 • **oclif** – MIT; Node/TS CLI framework (used by Salesforce, Heroku).

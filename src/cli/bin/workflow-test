@@ -1,0 +1,34 @@
+#!/usr/bin/env node
+
+/**
+ * workflow-test CLI Entry Point
+ * Complete integration testing for schedule import workflow
+ */
+
+import { run } from '@oclif/core';
+
+// Set up environment for CLI execution
+process.env.NODE_ENV = process.env.NODE_ENV || 'test';
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+// Run the CLI
+run()
+  .then(() => {
+    // Successful execution
+  })
+  .catch((error) => {
+    // Handle CLI errors
+    console.error('CLI Error:', error);
+    process.exit(1);
+  });

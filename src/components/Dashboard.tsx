@@ -1,10 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { Component, RefObject } from 'react';
 import NewPatientForm from './NewPatientForm';
 import ImportSchedule from './ImportSchedule';
 import ImportJSON from './ImportJSON';
-import { usePatientContext } from '../hooks/usePatientContext';
-import { useTimeContext } from '../hooks/useTimeContext';
-
+import { withContexts, WithContextsProps } from './withContexts';
 import { DiagnosticPanel } from './DiagnosticPanel';
 import { WaitTimeDiagnostic } from './WaitTimeDiagnostic';
 import { PersistenceDiagnostic } from './PersistenceDiagnostic';
@@ -19,147 +17,179 @@ import TebraDebugDashboardContainer from './TebraDebugDashboardContainer';
 import DashboardErrorBoundary from './DashboardErrorBoundary';
 import SecurityNotice from './SecurityNotice';
 
+interface State {
+  showNewPatientForm: boolean;
+  showImportSchedule: boolean;
+  showImportJSON: boolean;
+  showReportModal: boolean;
+  reportContent: string;
+  expandedSection: string | null;
+  showDebugPanels: boolean;
+  showDebugTextWindow: boolean;
+  scrollPosition: number;
+  showSecurityNotice: boolean;
+}
 
-const Dashboard: React.FC = () => {
-  const { patients, getWaitTime, exportPatientsToJSON } = usePatientContext();
-  const { timeMode, getCurrentTime } = useTimeContext();
-  const [showNewPatientForm, setShowNewPatientForm] = useState(false);
-  const [showImportSchedule, setShowImportSchedule] = useState(false);
-  const [showImportJSON, setShowImportJSON] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [reportContent, setReportContent] = useState('');
-  const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const [showDebugPanels, setShowDebugPanels] = useState<boolean>(false);
-  const [showDebugTextWindow, setShowDebugTextWindow] = useState<boolean>(false);
-  const [scrollPosition, setScrollPosition] = useState<number>(0);
-  const [showSecurityNotice, setShowSecurityNotice] = useState<boolean>(true);
+class DashboardClass extends Component<WithContextsProps, State> {
+  private isExporting: RefObject<boolean>;
 
-  // Guard against rapid export clicks
-  const isExporting = useRef(false);
+  constructor(props: WithContextsProps) {
+    super(props);
+    this.state = {
+      showNewPatientForm: false,
+      showImportSchedule: false,
+      showImportJSON: false,
+      showReportModal: false,
+      reportContent: '',
+      expandedSection: null,
+      showDebugPanels: false,
+      showDebugTextWindow: false,
+      scrollPosition: 0,
+      showSecurityNotice: true,
+    };
+    this.isExporting = React.createRef();
+    this.isExporting.current = false;
+  }
 
-  const { generateReport } = useReportGeneration(patients, getCurrentTime, timeMode, getWaitTime);
-
-
-
-  const toggleSection = (section: string) => {
-    setExpandedSection(expandedSection === section ? null : section);
+  toggleSection = (section: string) => {
+    this.setState(prevState => ({
+      expandedSection: prevState.expandedSection === section ? null : section,
+    }));
   };
 
-  const isExpanded = (section: string) => expandedSection === section;
+  isExpanded = (section: string) => this.state.expandedSection === section;
 
-const handleExportSchedule = async (): Promise<void> => {
-  if (isExporting.current) return;     // guard against rapid clicks
-  isExporting.current = true;
-  try {
-    // generateReport('csv') returns void and triggers download directly
-    generateReport('csv');
-    // For modal display, generate text report
-    const report = generateReport('text');
-    setReportContent(report);
-    setShowReportModal(true);
-  } catch (err) {
-    console.error('Failed to export schedule', err);
-    alert('Unable to export schedule. Please try again.');
-  } finally {
-    isExporting.current = false;
-  }
-};
+  handleExportSchedule = async (): Promise<void> => {
+    if (this.isExporting.current) return;
+    this.isExporting.current = true;
+    try {
+      const { patients } = this.props.patientContext;
+      const { getCurrentTime, timeMode } = this.props.timeContext;
+      const { getWaitTime } = this.props.patientContext;
+      const { generateReport } = useReportGeneration(patients, getCurrentTime, timeMode, getWaitTime);
+      
+      generateReport('csv');
+      const report = generateReport('text');
+      this.setState({ reportContent: report, showReportModal: true });
+    } catch (err) {
+      console.error('Failed to export schedule', err);
+      alert('Unable to export schedule. Please try again.');
+    } finally {
+      this.isExporting.current = false;
+    }
+  };
 
+  render() {
+    const {
+      showNewPatientForm,
+      showImportSchedule,
+      showImportJSON,
+      showReportModal,
+      reportContent,
+      expandedSection,
+      showDebugPanels,
+      showDebugTextWindow,
+      scrollPosition,
+      showSecurityNotice,
+    } = this.state;
 
-  return (
-    <div className="min-h-screen bg-gray-900 p-4 md:p-8">
-      <DashboardHeader
-        showDebugPanels={showDebugPanels}
-        onToggleDebug={() => setShowDebugPanels(prev => !prev)}
-        showDebugTextWindow={showDebugTextWindow}
-        onToggleDebugTextWindow={() => setShowDebugTextWindow(prev => !prev)}
-        onShowNewPatient={() => setShowNewPatientForm(true)}
-        onShowImportSchedule={() => setShowImportSchedule(true)}
-        onShowImportJSON={() => setShowImportJSON(true)}
-        onExportJSON={() => exportPatientsToJSON()}
-        onExportSchedule={handleExportSchedule}
-      />
+    const { patients, getWaitTime, exportPatientsToJSON } = this.props.patientContext;
 
-      <main>
-        <SecurityNotice 
-          isVisible={showSecurityNotice}
-          onClose={() => setShowSecurityNotice(false)}
+    return (
+      <div className="min-h-screen bg-gray-900 p-4 md:p-8">
+        <DashboardHeader
+          showDebugPanels={showDebugPanels}
+          onToggleDebug={() => this.setState(prevState => ({ showDebugPanels: !prevState.showDebugPanels }))}
+          showDebugTextWindow={showDebugTextWindow}
+          onToggleDebugTextWindow={() => this.setState(prevState => ({ showDebugTextWindow: !prevState.showDebugTextWindow }))}
+          onShowNewPatient={() => this.setState({ showNewPatientForm: true })}
+          onShowImportSchedule={() => this.setState({ showImportSchedule: true })}
+          onShowImportJSON={() => this.setState({ showImportJSON: true })}
+          onExportJSON={exportPatientsToJSON}
+          onExportSchedule={this.handleExportSchedule}
         />
-        
-        {showDebugPanels && (
-          <>
-            <FirebaseDebugger />
-            <div className="mb-6">
-              <DashboardErrorBoundary>
-                <TebraDebugDashboardContainer />
-              </DashboardErrorBoundary>
+
+        <main>
+          <SecurityNotice
+            isVisible={showSecurityNotice}
+            onClose={() => this.setState({ showSecurityNotice: false })}
+          />
+
+          {showDebugPanels && (
+            <>
+              <FirebaseDebugger />
+              <div className="mb-6">
+                <DashboardErrorBoundary>
+                  <TebraDebugDashboardContainer />
+                </DashboardErrorBoundary>
+              </div>
+              <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <DiagnosticPanel />
+                <WaitTimeDiagnostic />
+                <PersistenceDiagnostic />
+              </div>
+            </>
+          )}
+
+          {showDebugTextWindow ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
+                {PATIENT_SECTIONS.map(section => (
+                  <PatientSection
+                    key={section.id}
+                    id={section.id}
+                    title={section.title}
+                    status={section.status}
+                    isExpanded={this.isExpanded(section.id)}
+                    onToggle={() => this.toggleSection(section.id)}
+                    scrollPosition={scrollPosition}
+                    onScroll={(pos) => this.setState({ scrollPosition: pos })}
+                  />
+                ))}
+              </div>
+              <div className="lg:sticky lg:top-4" style={{ height: 'fit-content' }}>
+                <DebugTextWindow
+                  scrollPosition={scrollPosition}
+                  onScroll={(pos) => this.setState({ scrollPosition: pos })}
+                  patients={patients}
+                  getWaitTime={getWaitTime}
+                />
+              </div>
             </div>
-            <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <DiagnosticPanel />
-              <WaitTimeDiagnostic />
-              <PersistenceDiagnostic />
-            </div>
-          </>
-        )}
-        
-        {showDebugTextWindow ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="grid grid-cols-1 gap-6">
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {PATIENT_SECTIONS.map(section => (
                 <PatientSection
                   key={section.id}
                   id={section.id}
                   title={section.title}
                   status={section.status}
-                  isExpanded={isExpanded(section.id)}
-                  onToggle={toggleSection}
-                  scrollPosition={scrollPosition}
-                  onScroll={setScrollPosition}
+                  isExpanded={this.isExpanded(section.id)}
+                  onToggle={() => this.toggleSection(section.id)}
                 />
               ))}
             </div>
-            <div className="lg:sticky lg:top-4" style={{ height: 'fit-content' }}>
-              <DebugTextWindow 
-                scrollPosition={scrollPosition}
-                onScroll={setScrollPosition}
-                patients={patients}
-                getWaitTime={getWaitTime}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {PATIENT_SECTIONS.map(section => (
-              <PatientSection
-                key={section.id}
-                id={section.id}
-                title={section.title}
-                status={section.status}
-                isExpanded={isExpanded(section.id)}
-                onToggle={toggleSection}
-              />
-            ))}
-          </div>
+          )}
+        </main>
+
+        {showNewPatientForm && (
+          <NewPatientForm onClose={() => this.setState({ showNewPatientForm: false })} />
         )}
-      </main>
+        {showImportSchedule && (
+          <ImportSchedule onClose={() => this.setState({ showImportSchedule: false })} />
+        )}
+        {showImportJSON && (
+          <ImportJSON onClose={() => this.setState({ showImportJSON: false })} />
+        )}
+        {showReportModal && (
+          <ReportModal
+            onClose={() => this.setState({ showReportModal: false })}
+            reportContent={reportContent}
+          />
+        )}
+      </div>
+    );
+  }
+}
 
-      {showNewPatientForm && (
-        <NewPatientForm onClose={() => setShowNewPatientForm(false)} />
-      )}
-      {showImportSchedule && (
-        <ImportSchedule onClose={() => setShowImportSchedule(false)} />
-      )}
-      {showImportJSON && (
-        <ImportJSON onClose={() => setShowImportJSON(false)} />
-      )}
-      {showReportModal && (
-        <ReportModal 
-          onClose={() => setShowReportModal(false)} 
-          reportContent={reportContent} 
-        />
-      )}
-    </div>
-  );
-};
-
-export default Dashboard;
+export default withContexts(DashboardClass);

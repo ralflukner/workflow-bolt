@@ -16,9 +16,10 @@ This document outlines the complete implementation plan for refactoring the Tebr
 **Objective**: Establish foundation and fix immediate blockers
 
 **Completed Work**:
+
 - ✅ Fixed immediate TypeScript errors (reduced from 20 to 16 errors)
   - Fixed `captureException` handling in encryption service
-  - Updated `jest.SpyInstance` → `jest.MockedFunction` 
+  - Updated `jest.SpyInstance` → `jest.MockedFunction`
   - Fixed type casting issues in `reencryptionService.ts`
   - Removed unused imports from diagnostic components
 - ✅ Created constants extraction (`/src/constants/tebraConfig.ts`)
@@ -27,6 +28,7 @@ This document outlines the complete implementation plan for refactoring the Tebr
 - ✅ Enhanced refactoring documentation with accessibility guidance
 
 **Quality Gates Passed**:
+
 - TypeScript compilation errors reduced by 20%
 - All dashboard-related compilation issues resolved
 - Documentation includes comprehensive environment setup
@@ -44,6 +46,7 @@ This document outlines the complete implementation plan for refactoring the Tebr
 #### 1.1 Service Layer Implementation
 
 **Tasks**:
+
 ```bash
 # Create API service layer
 touch src/services/tebraDebugApi.ts
@@ -56,6 +59,7 @@ touch src/services/tebraDebugApi.ts
 ```
 
 **Acceptance Criteria**:
+
 - [ ] All API calls go through `tebraDebugApi` service
 - [ ] Timeout handling implemented (10s request, 15s SOAP)
 - [ ] Error parsing covers all Firebase error types
@@ -63,6 +67,7 @@ touch src/services/tebraDebugApi.ts
 - [ ] Zero behavioral changes in existing dashboard
 
 **Testing Requirements**:
+
 - Unit tests for each API method
 - Timeout handling verification
 - Error parsing test coverage
@@ -70,6 +75,7 @@ touch src/services/tebraDebugApi.ts
 #### 1.2 Business Logic Extraction
 
 **Tasks**:
+
 ```bash
 # Create health checks hook
 touch src/hooks/useHealthChecks.ts
@@ -83,6 +89,7 @@ touch src/hooks/useHealthChecks.ts
 ```
 
 **Acceptance Criteria**:
+
 - [ ] `useHealthChecks` hook encapsulates all step logic
 - [ ] Each step returns `StepStatus` type safely
 - [ ] Error messages categorized by step type
@@ -90,6 +97,7 @@ touch src/hooks/useHealthChecks.ts
 - [ ] Jest + RTL tests for all health checks
 
 **Testing Requirements**:
+
 - Mock patient context scenarios
 - Network failure simulation
 - Authentication failure handling
@@ -98,6 +106,7 @@ touch src/hooks/useHealthChecks.ts
 #### 1.3 Dashboard State Management
 
 **Tasks**:
+
 ```bash
 # Create dashboard state hook
 touch src/hooks/useTebraDebugDashboard.ts
@@ -110,6 +119,7 @@ touch src/hooks/useTebraDebugDashboard.ts
 ```
 
 **Acceptance Criteria**:
+
 - [ ] All dashboard state centralized in hook
 - [ ] Auto-refresh uses production intervals (30s)
 - [ ] Error list capped at 50 items with FIFO behavior
@@ -117,6 +127,7 @@ touch src/hooks/useTebraDebugDashboard.ts
 - [ ] useEffect cleanup prevents memory leaks
 
 **Quality Gates**:
+
 - Memory usage stable over 24-hour auto-refresh
 - State updates don't cause unnecessary re-renders
 - Error aggregation handles burst scenarios
@@ -133,6 +144,7 @@ touch src/hooks/useTebraDebugDashboard.ts
 #### 2.1 Component Library Creation
 
 **Directory Structure**:
+
 ```
 src/components/TebraDebug/
 ├── index.ts                 # Barrel exports
@@ -167,6 +179,7 @@ interface MetricsCardProps {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] All components include ARIA labels and roles
 - [ ] Keyboard navigation support (`tabIndex`, focus management)
 - [ ] Responsive design (mobile, tablet, desktop)
@@ -176,6 +189,7 @@ interface MetricsCardProps {
 #### 2.2 Visual Testing Setup
 
 **Tasks**:
+
 ```bash
 # Storybook integration (already available)
 npm run storybook
@@ -187,6 +201,7 @@ touch src/components/TebraDebug/DataFlowStepCard.stories.tsx
 ```
 
 **Story Requirements**:
+
 - All component variants documented
 - Interactive controls for props testing
 - Accessibility testing integration
@@ -204,6 +219,7 @@ touch src/components/TebraDebug/DataFlowStepCard.stories.tsx
 #### 3.1 Main Component Refactoring
 
 **Tasks**:
+
 ```bash
 # Replace monolithic dashboard
 mv src/components/TebraDebugDashboard.tsx src/components/TebraDebugDashboard.tsx.legacy
@@ -211,6 +227,7 @@ mv src/components/TebraDebugDashboard.tsx src/components/TebraDebugDashboard.tsx
 ```
 
 **New Component Structure**:
+
 ```typescript
 export const TebraDebugDashboard: React.FC = () => {
   const {
@@ -236,6 +253,7 @@ export const TebraDebugDashboard: React.FC = () => {
 #### 3.2 Production Features
 
 **Error Boundary Implementation**:
+
 ```typescript
 // src/components/TebraDebug/DashboardErrorBoundary.tsx
 import { ErrorBoundary } from 'react-error-boundary';
@@ -257,6 +275,7 @@ function DashboardErrorFallback({error, resetErrorBoundary}) {
 ```
 
 **Performance Optimizations**:
+
 - Lazy-load Lucide icons: `const CheckCircle = React.lazy(() => import('lucide-react').then(m => ({ default: m.CheckCircle })))`
 - Memoize expensive calculations with `useMemo`
 - Debounce health checks to prevent rapid-fire requests
@@ -265,6 +284,7 @@ function DashboardErrorFallback({error, resetErrorBoundary}) {
 #### 3.3 Observability Enhancements
 
 **Correlation ID Header Forwarding**:
+
 ```typescript
 // Forward correlation IDs to PHP services
 const headers = {
@@ -275,6 +295,7 @@ const headers = {
 ```
 
 **Debug Logging (Development Only)**:
+
 ```typescript
 if (import.meta.env.DEV) {
   console.debug(`[${CORRELATION_ID.PREFIX}${correlationId}] Health check started`);
@@ -293,6 +314,7 @@ if (import.meta.env.DEV) {
 #### 4.1 TypeScript Strictness
 
 **Configuration Updates**:
+
 ```json
 // tsconfig.json additions
 {
@@ -305,6 +327,7 @@ if (import.meta.env.DEV) {
 ```
 
 **Path Aliases**:
+
 ```json
 {
   "paths": {
@@ -318,6 +341,7 @@ if (import.meta.env.DEV) {
 #### 4.2 CI/CD Integration
 
 **Build Requirements**:
+
 ```bash
 # Zero-tolerance policy for TypeScript errors
 npx tsc --noEmit --strict || exit 1
@@ -330,6 +354,7 @@ npm test -- --coverage --coverageThreshold='{"global":{"branches":85,"functions"
 ```
 
 **Pre-commit Hooks**:
+
 ```bash
 #!/bin/sh
 # .git/hooks/pre-commit
@@ -341,12 +366,14 @@ npm run test:coverage
 #### 4.3 Performance Validation
 
 **Metrics to Track**:
+
 - Bundle size impact: `<30KB increase` for new components
 - Runtime performance: `<100ms` for health check cycle
 - Memory usage: `<10MB` total dashboard footprint
 - Network requests: `<5 concurrent` during health checks
 
 **Load Testing**:
+
 ```bash
 # Simulate 24-hour auto-refresh cycle
 npm run test:load -- --duration=24h --interval=30s
@@ -359,7 +386,7 @@ npm run test:load -- --duration=24h --interval=30s
 ### Functional Requirements ✅
 
 - [ ] **Zero Behavioral Changes**: Existing functionality preserved exactly
-- [ ] **Performance Improvement**: 30s intervals (vs 10s) reduce server load 
+- [ ] **Performance Improvement**: 30s intervals (vs 10s) reduce server load
 - [ ] **Error Reduction**: TypeScript errors <10 total across codebase
 - [ ] **Accessibility**: WCAG 2.1 AA compliance for all dashboard components
 - [ ] **Mobile Support**: Responsive design works on 320px+ width devices
@@ -435,12 +462,14 @@ npm run test:load -- --duration=24h --interval=30s
 ### Stakeholder Updates
 
 **Weekly Status Reports** (Fridays):
+
 - Phase completion status
 - Risk assessment updates  
 - Performance metrics
 - Next week's priorities
 
 **Phase Completion Reviews**:
+
 - Demo of new functionality
 - Technical architecture walkthrough
 - Performance impact analysis
@@ -449,12 +478,14 @@ npm run test:load -- --duration=24h --interval=30s
 ### Developer Handoffs
 
 **Documentation Requirements**:
+
 - API documentation for all new services
 - Component usage guide in Storybook
 - Troubleshooting guide for common issues
 - Migration guide from old to new architecture
 
 **Knowledge Transfer Sessions**:
+
 - Architecture overview (30 min)
 - Component library usage (30 min)
 - Debugging and maintenance (30 min)

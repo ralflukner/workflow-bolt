@@ -1,0 +1,40 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "types": ["node", "jest"],
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "noEmit": false,
+    "allowImportingTsExtensions": false
+  },
+  "include": [
+    "src/cli/**/*",
+    "src/types/cli.ts",
+    "src/types/index.ts",
+    "src/utils/megaParseSchedule.ts",
+    "src/utils/parseScheduleAdvanced.ts",
+    "src/utils/parseSchedule.ts",
+    "src/utils/redact.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/components",
+    "src/contexts",
+    "src/hooks"
+  ]
+}

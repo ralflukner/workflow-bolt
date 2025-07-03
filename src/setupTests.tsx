@@ -3,6 +3,7 @@ import { cleanup } from '@testing-library/react';
 import { afterEach, afterAll, jest, beforeEach } from '@jest/globals';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as rtl from '@testing-library/react';
+import React from 'react';
 
 // Determine if we are running real API tests (Firebase should not be mocked)
 const isRealApiRun = process.env.RUN_REAL_API_TESTS === 'true';
@@ -30,6 +31,43 @@ afterAll(() => {
 // Mock URL APIs
 globalThis.URL.createObjectURL = jest.fn(() => 'mock-url');
 globalThis.URL.revokeObjectURL = jest.fn();
+
+// Mock Blob API for Node.js test environment
+global.Blob = class Blob {
+  constructor(parts?: any[], options?: any) {
+    this.parts = parts || [];
+    this.type = options?.type || '';
+    this.size = this.parts.join('').length;
+  }
+  parts: any[];
+  type: string;
+  size: number;
+  
+  text(): Promise<string> {
+    return Promise.resolve(this.parts.join(''));
+  }
+  
+  arrayBuffer(): Promise<ArrayBuffer> {
+    const text = this.parts.join('');
+    const buffer = new ArrayBuffer(text.length);
+    const view = new Uint8Array(buffer);
+    for (let i = 0; i < text.length; i++) {
+      view[i] = text.charCodeAt(i);
+    }
+    return Promise.resolve(buffer);
+  }
+} as any;
+
+// Mock File API
+global.File = class File extends (global.Blob as any) {
+  constructor(parts: any[], name: string, options?: any) {
+    super(parts, options);
+    this.name = name;
+    this.lastModified = Date.now();
+  }
+  name: string;
+  lastModified: number;
+} as any;
 
 // Mock Firebase config
 if (!isRealApiRun) {
@@ -193,7 +231,7 @@ if (!isRealApiRun) {
 
 // -------------------------------------------------------------
 // Provide React Query context globally so components under test
-// that call useQuery() don\'t error: "No QueryClient set"
+// that call useQuery() don't error: "No QueryClient set"
 // -------------------------------------------------------------
 
 const testQueryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

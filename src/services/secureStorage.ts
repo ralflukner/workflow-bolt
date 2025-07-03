@@ -18,7 +18,7 @@
  * - Meets HIPAA minimum necessary standard
  */
 
-import { secureLog } from '../utils/redact';
+import { secureLog } from '../utils/redact.js';
 
 interface SecureStorageOptions {
   encryptionKey?: string;
@@ -55,6 +55,14 @@ interface ExportData {
   data: Record<string, any>;
   checksum: string;
   encryptedFields: string[];
+}
+
+interface StorageStats {
+  itemCount: number;
+  totalSize: number;
+  oldestItem: number;
+  newestItem: number;
+  auditLogSize: number;
 }
 
 class SecureStorage {
@@ -272,7 +280,7 @@ class SecureStorage {
       }
       
       return atob(result); // Base64 decode again
-    } catch (error) {
+    } catch (error: any) {
       secureLog('❌ Failed to deobfuscate data:', error);
       throw new Error('Data corruption detected');
     }
@@ -299,7 +307,7 @@ class SecureStorage {
       this.auditLogAction('STORE', key, serializedData.length, true, userId);
       
       return true;
-    } catch (error) {
+    } catch (error: any) {
       this.auditLogAction('STORE', key, 0, false, userId);
       secureLog('❌ Failed to store data:', error);
       return false;
@@ -334,7 +342,7 @@ class SecureStorage {
       
       this.auditLogAction('RETRIEVE', key, deobfuscatedData.length, true, userId);
       return parsedData;
-    } catch (error) {
+    } catch (error: any) {
       this.auditLogAction('RETRIEVE', key, 0, false, userId);
       secureLog('❌ Failed to retrieve data:', error);
       return null;
@@ -350,7 +358,7 @@ class SecureStorage {
       this.storage.delete(key);
       this.auditLogAction('DELETE', key, 0, existed, userId);
       return existed;
-    } catch (error) {
+    } catch (error: any) {
       this.auditLogAction('DELETE', key, 0, false, userId);
       return false;
     }
@@ -365,7 +373,7 @@ class SecureStorage {
       this.storage.clear();
       this.auditLogAction('CLEAR', 'all-data', count, true, userId);
       secureLog(`🧹 Cleared all secure storage (${count} items)`);
-    } catch (error) {
+    } catch (error: any) {
       this.auditLogAction('CLEAR', 'all-data', 0, false, userId);
       secureLog('❌ Failed to clear storage:', error);
     }
@@ -394,13 +402,7 @@ class SecureStorage {
   /**
    * Get storage statistics (for monitoring)
    */
-  getStats(): {
-    itemCount: number;
-    totalSize: number;
-    oldestItem: number;
-    newestItem: number;
-    auditLogSize: number;
-  } {
+  getStats(): StorageStats {
     let totalSize = 0;
     let oldestTimestamp = Date.now();
     let newestTimestamp = 0;
@@ -433,7 +435,7 @@ class SecureStorage {
   healthCheck(): {
     status: 'healthy' | 'warning' | 'critical';
     message: string;
-    stats: ReturnType<typeof this.getStats>;
+    stats: StorageStats;
   } {
     const stats = this.getStats();
     
@@ -512,7 +514,7 @@ class SecureStorage {
       secureLog(`📤 Exported ${Object.keys(exportData).length} items to encrypted JSON`);
       
       return blob;
-    } catch (error) {
+    } catch (error: any) {
       this.auditLogAction('EXPORT', 'json-export', 0, false, userId);
       secureLog('❌ Failed to export to JSON:', error);
       throw new Error('Export failed: ' + error.message);

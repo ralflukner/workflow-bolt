@@ -1,5 +1,6 @@
-
 # Version Update Recommendation
+
+<!-- NOTE: moved from /docs/recommendation.md on 2025-06-23 -->
 
 ## Current Status
 
@@ -38,7 +39,7 @@ The update to version 0.1.0 is appropriate because:
 1. The application has moved beyond the initial development phase (0.0.0)
 2. Core features have been implemented and are functional
 3. Recent improvements to time handling and component updates demonstrate
-   ongoing developmen
+   ongoing development
 4. The application is not yet considered production-ready (1.0.0)
 
 ## Next Steps

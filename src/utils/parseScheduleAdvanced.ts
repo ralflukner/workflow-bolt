@@ -10,8 +10,8 @@
  */
 
 import { PatientApptStatus, AppointmentType } from '../types';
-import { secureLog } from './redact';
-import { secureStorage } from '../services/secureStorage';
+import { secureLog } from './redact.js';
+import { secureStorage } from '../services/secureStorage.js';
 
 export interface ImportedPatient {
   name: string;
@@ -128,6 +128,51 @@ function validatePhone(phone: string): string {
 }
 
 /**
+ * Preprocesses multi-line schedule entries into single-line format
+ * The Lukner Medical Clinic format has appointments spanning multiple lines
+ */
+function preprocessMultilineEntries(lines: string[]): string[] {
+  const processedLines: string[] = [];
+  let currentEntry = '';
+  let inAppointment = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Skip empty lines and headers
+    if (!line || 
+        line.includes('Appointments for') || 
+        line.includes('Lukner Medical Clinic') || 
+        line.includes('Resource Time Status') ||
+        line.includes('2545 Perryton')) {
+      continue;
+    }
+    
+    // Check if this line starts a new appointment entry
+    if (line.startsWith('RALF LUKNER')) {
+      // If we were building an entry, save it
+      if (currentEntry && inAppointment) {
+        processedLines.push(currentEntry.trim());
+      }
+      
+      // Start new entry
+      currentEntry = line;
+      inAppointment = true;
+    } else if (inAppointment) {
+      // Continue building current entry
+      currentEntry += ' ' + line;
+    }
+  }
+  
+  // Don't forget the last entry
+  if (currentEntry && inAppointment) {
+    processedLines.push(currentEntry.trim());
+  }
+  
+  return processedLines;
+}
+
+/**
  * Maps external status to internal PatientApptStatus
  */
 function mapStatusToInternal(status: string): PatientApptStatus {
@@ -195,8 +240,12 @@ export function parseScheduleAdvanced(
     }
   }
   
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+  // Pre-process lines to handle multi-line entries
+  const processedLines = preprocessMultilineEntries(lines);
+  logFunction(`📋 Preprocessed ${lines.length} lines into ${processedLines.length} appointment entries`);
+  
+  for (let i = 0; i < processedLines.length; i++) {
+    const line = processedLines[i].trim();
     
     // Skip header lines and empty lines
     if (!line || 
@@ -208,16 +257,15 @@ export function parseScheduleAdvanced(
     }
     
     try {
-      // Parse the complex line format
-      // Format: PROVIDER [ROOM] TIME STATUS PATIENT_NAME DOB PHONE INSURANCE REASON LOCATION NOTES BALANCE
+      // Parse the complex line format from Lukner Medical Clinic
+      // Expected format after preprocessing: RALF LUKNER [ROOM X] TIME STATUS PATIENT_NAME DOB PHONE ... BALANCE
       
-      // Use regex to parse the structured data
-      const linePattern = /^(RALF LUKNER)(?:\s+(ROOM\s+\d+))?\s+(\d{1,2}:\d{2}\s+[AP]M)\s+([\w\s]+?)\s+([A-Z\s]+?)\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+\((\d{3})\)\s+(\d{3}-\d{4})\s+(.+)$/;
-      
-      // Try a more flexible approach for complex format
+      // Try to extract key information using regex patterns
       const parts = line.split(/\s+/);
-      if (parts.length < 8) {
-        logFunction(`⚠️ Skipping line ${i + 1}: Not enough data parts`);
+      logFunction(`🔍 Parsing line ${i + 1} with ${parts.length} parts: ${line.substring(0, 100)}...`);
+      
+      if (parts.length < 10) {
+        logFunction(`⚠️ Skipping line ${i + 1}: Not enough data parts (${parts.length})`);
         continue;
       }
       
@@ -233,95 +281,97 @@ export function parseScheduleAdvanced(
       let balance = '';
       let memberId = '';
       
-      // Parse provider (always starts with RALF LUKNER)
-      if (parts[0] === 'RALF' && parts[1] === 'LUKNER') {
-        provider = 'RALF LUKNER';
-        let currentIndex = 2;
-        
-        // Check for room
-        if (parts[currentIndex] === 'ROOM' && parts[currentIndex + 1]) {
-          room = `${parts[currentIndex]} ${parts[currentIndex + 1]}`;
-          currentIndex += 2;
-        }
-        
-        // Parse time (should be next)
-        const timeMatch = parts[currentIndex]?.match(/^\d{1,2}:\d{2}$/) && parts[currentIndex + 1]?.match(/^[AP]M$/);
-        if (timeMatch) {
-          time = `${parts[currentIndex]} ${parts[currentIndex + 1]}`;
-          currentIndex += 2;
-        } else {
-          logFunction(`⚠️ Skipping line ${i + 1}: Invalid time format`);
-          continue;
-        }
-        
-        // Parse status
-        if (parts[currentIndex]) {
-          status = parts[currentIndex];
-          currentIndex += 1;
-          
-          // Handle multi-word statuses
-          if (status === 'Checked' && parts[currentIndex] === 'Out') {
-            status = 'Checked Out';
-            currentIndex += 1;
-          }
-        }
-        
-        // Parse patient name (may be multiple words)
-        const nameWords = [];
-        while (currentIndex < parts.length && !parts[currentIndex].match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
-          nameWords.push(parts[currentIndex]);
-          currentIndex += 1;
-        }
-        patientName = nameWords.join(' ');
-        
-        // Parse DOB
-        if (parts[currentIndex]?.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
-          dob = parts[currentIndex];
-          currentIndex += 1;
-        }
-        
-        // Parse phone number (look for pattern)
-        const phonePattern = /\((\d{3})\)\s+(\d{3}-\d{4})/;
-        const remainingText = parts.slice(currentIndex).join(' ');
-        const phoneMatch = remainingText.match(phonePattern);
-        if (phoneMatch) {
-          phone = `(${phoneMatch[1]}) ${phoneMatch[2]}`;
-        }
-        
-        // Extract insurance, reason, and balance from remaining text
-        if (remainingText.includes('INSURANCE 2025')) {
-          insurance = 'INSURANCE 2025';
-        } else if (remainingText.includes('SELF PAY')) {
-          insurance = 'SELF PAY';
-        }
-        
-        // Extract reason/chief complaint
-        if (remainingText.includes('Office Visit')) {
-          reason = 'Office Visit';
-        } else if (remainingText.includes('NEW PATIENT')) {
-          reason = 'NEW PATIENT';
-        } else if (remainingText.includes('LAB FOLLOW UP')) {
-          reason = 'LAB FOLLOW UP';
-        } else if (remainingText.includes('F/U on Insomnia')) {
-          reason = 'F/U on Insomnia and seeing lighting and other images';
-        } else if (remainingText.includes('lab follow up')) {
-          reason = 'lab follow up';
-        }
-        
-        // Extract balance
-        const balanceMatch = remainingText.match(/\$(\d+\.\d{2})/);
-        if (balanceMatch) {
-          balance = balanceMatch[0];
-        }
-        
-        // Extract Member ID
-        const memberIdMatch = remainingText.match(/Member ID:\s*([A-Z0-9-]+)/);
-        if (memberIdMatch) {
-          memberId = memberIdMatch[1];
-        }
+      // Use regex patterns to extract information from the full line
+      provider = 'RALF LUKNER'; // Always RALF LUKNER based on your data
+      
+      // Extract room information
+      const roomMatch = line.match(/ROOM\s+(\d+)/);
+      if (roomMatch) {
+        room = `ROOM ${roomMatch[1]}`;
+      }
+      
+      // Extract time (more flexible pattern)
+      const timeMatch = line.match(/(\d{1,2}:\d{2})\s*(AM|PM)/i);
+      if (timeMatch) {
+        time = `${timeMatch[1]} ${timeMatch[2].toUpperCase()}`;
       } else {
-        logFunction(`⚠️ Skipping line ${i + 1}: Doesn't start with RALF LUKNER`);
+        logFunction(`⚠️ Skipping line ${i + 1}: No valid time found`);
         continue;
+      }
+      
+      // Extract status (look for known statuses)
+      const statusPatterns = [
+        'Checked Out', 'Cancelled', 'Scheduled', 'Confirmed', 'Arrived'
+      ];
+      for (const statusPattern of statusPatterns) {
+        if (line.includes(statusPattern)) {
+          status = statusPattern;
+          break;
+        }
+      }
+      if (!status) {
+        logFunction(`⚠️ Skipping line ${i + 1}: No valid status found`);
+        continue;
+      }
+      
+      // Extract patient name (between status and DOB)
+      const statusIndex = line.indexOf(status);
+      const afterStatus = line.substring(statusIndex + status.length).trim();
+      
+      // Find DOB pattern
+      const dobMatch = afterStatus.match(/(\d{1,2}\/\d{1,2}\/\d{4})/);
+      if (dobMatch) {
+        dob = dobMatch[1];
+        const dobIndex = afterStatus.indexOf(dob);
+        patientName = afterStatus.substring(0, dobIndex).trim();
+        
+        // Clean up patient name (remove extra spaces and artifacts)
+        patientName = patientName.replace(/\s+/g, ' ').trim();
+      } else {
+        logFunction(`⚠️ Skipping line ${i + 1}: No valid DOB found`);
+        continue;
+      }
+      
+      // Extract phone number
+      const phoneMatch = line.match(/\((\d{3})\)\s+(\d{3}-\d{4})/);
+      if (phoneMatch) {
+        phone = `(${phoneMatch[1]}) ${phoneMatch[2]}`;
+      }
+      
+      // Extract insurance information
+      if (line.includes('INSURANCE 2025')) {
+        insurance = 'INSURANCE 2025';
+      } else if (line.includes('INSURACE 2025')) { // Handle typo in your data
+        insurance = 'INSURANCE 2025';
+      } else if (line.includes('SELF PAY')) {
+        insurance = 'SELF PAY';
+      }
+      
+      // Extract reason/chief complaint
+      if (line.includes('Office Visit')) {
+        reason = 'Office Visit';
+      } else if (line.includes('NEW PATIENT')) {
+        reason = 'NEW PATIENT';
+      } else if (line.includes('LAB FOLLOW UP')) {
+        reason = 'LAB FOLLOW UP';
+      } else if (line.includes('F/U on Insomnia')) {
+        reason = 'F/U on Insomnia and seeing lighting and other images';
+      } else if (line.includes('lab follow up')) {
+        reason = 'lab follow up';
+      } else {
+        reason = 'Office Visit'; // Default
+      }
+      
+      // Extract balance (look for $ amount at the end)
+      const balanceMatch = line.match(/\$(\d+\.\d{2})(?:\s|$)/);
+      if (balanceMatch) {
+        balance = balanceMatch[0];
+      }
+      
+      // Extract Member ID
+      const memberIdMatch = line.match(/Member ID:\s*([A-Z0-9-]+)/);
+      if (memberIdMatch) {
+        memberId = memberIdMatch[1];
       }
       
       // Validate required fields
@@ -336,13 +386,13 @@ export function parseScheduleAdvanced(
       const validatedPhone = validatePhone(phone);
       
       // Parse appointment time
-      const timeMatch = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-      if (!timeMatch) {
+      const appointmentTimeMatch = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      if (!appointmentTimeMatch) {
         logFunction(`⚠️ Skipping line ${i + 1}: Invalid time format "${time}"`);
         continue;
       }
       
-      const [, hours, minutes, period] = timeMatch;
+      const [, hours, minutes, period] = appointmentTimeMatch;
       let hour = parseInt(hours);
       const minuteInt = parseInt(minutes);
       const isPM = period.toUpperCase() === 'PM';

@@ -547,18 +547,20 @@ echo "✅ Configuration sync complete"
 - This document should be versioned alongside code changes
 - Consider creating executable runbooks for common procedures
 
-# Firebase Callable Function vs HTTP Endpoint Issue
+## Firebase Callable Function vs HTTP Endpoint Issue
 
 ## Problem
 
 A recurring problem in this project is calling Firebase callable functions (deployed with `onCall`) as if they were HTTP endpoints. This causes CORS 403 errors and failed preflight requests.
 
 ## Symptoms
+
 - 403 errors on preflight or function call
 - CORS errors in browser
 - Function works in Firebase console but not from frontend
 
 ## Solution
+
 - Always use the Firebase SDK's `httpsCallable` to call callable functions from the frontend.
 - Do not use `fetch` or direct HTTP requests for callable functions.
 - See `docs/FIREBASE_FUNCTIONS_STARTUP_ISSUE.md` for full troubleshooting steps and examples.
@@ -567,7 +569,7 @@ A recurring problem in this project is calling Firebase callable functions (depl
 
 **Reference this section and the troubleshooting doc whenever this issue recurs.**
 
-# Tebra API Integration Documentation
+## Tebra API Integration Documentation
 
 ## Overview
 
@@ -589,6 +591,7 @@ The application integrates with Tebra EHR (Electronic Health Record) system usin
 ```
 
 **Why This Architecture?**
+
 - Tebra's SOAP API only works reliably with PHP (Node.js implementations fail consistently)
 - Firebase Functions provide authentication, authorization, and business logic
 - PHP Cloud Run service handles the actual SOAP communication
@@ -698,18 +701,21 @@ exports.tebraProxy = functions.https.onCall(async (data, context) => {
 ## Configuration
 
 **URLs Used:**
+
 - Firebase Functions: `https://us-central1-luknerlumina-firebase.cloudfunctions.net`  
 - PHP Cloud Run: `https://tebra-php-api-623450773640.us-central1.run.app`
 
 **Authentication Flow:**
+
 1. Frontend authenticates with Auth0
-2. Firebase Functions validate Auth0 JWT 
+2. Firebase Functions validate Auth0 JWT
 3. Firebase Functions proxy authenticated requests to PHP service
 4. PHP service communicates with Tebra SOAP API
 
 ## Migration from Individual Functions
 
 ### Previous Pattern (❌ Deprecated)
+
 ```typescript
 // Individual Firebase Functions for each action - NO LONGER USED
 const testConnection = httpsCallable(functions, 'tebraTestConnection');
@@ -719,6 +725,7 @@ const getProviders = httpsCallable(functions, 'tebraGetProviders');
 ```
 
 ### New Pattern (✅ Current)
+
 ```typescript
 // Single proxy function routes all actions
 const tebraProxyFunction = httpsCallable(functions, 'tebraProxy');
@@ -728,6 +735,7 @@ callTebraProxy('getAppointments', {fromDate, toDate})
 ```
 
 ### Benefits of New Pattern
+
 - **Reduced Firebase Function count** - Single proxy vs ~10 individual functions
 - **Easier maintenance** - One function to deploy/monitor instead of many
 - **Consistent error handling** - Unified error processing pipeline
@@ -755,6 +763,7 @@ callTebraProxy('getAppointments', {fromDate, toDate})
    - Check PHP service logs for detailed error messages
 
 ### Debug Commands
+
 ```bash
 # Check Firebase Functions deployment
 firebase functions:list

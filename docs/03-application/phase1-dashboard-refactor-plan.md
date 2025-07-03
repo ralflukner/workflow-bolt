@@ -12,6 +12,7 @@ Refactor the oversized `TebraDebugDashboard.tsx` into a modular, maintainable st
 # create long-lived integration branch for Phase 1 work
 $ git checkout -b phase1-refactor-testing
 ```
+
 All stacked PRs will merge into this branch until Phase 1 acceptance criteria are met.
 
 ## Work Breakdown
@@ -66,4 +67,4 @@ jobs:
 * Frontend lead: _you@
 * Dev-ops contact: _ops@
 
-––– 
+–––

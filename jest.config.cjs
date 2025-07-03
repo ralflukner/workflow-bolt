@@ -14,7 +14,7 @@ module.exports = {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '^@/(.*)$': '<rootDir>/src/$1'
   },
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.tsx'],
   testMatch: [
     '**/__tests__/**/*.(ts|tsx|js)',
     '**/*.(test|spec).(ts|tsx|js)'
@@ -50,7 +50,7 @@ module.exports = {
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
         '^@/(.*)$': '<rootDir>/src/$1'
       },
-      setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+      setupFilesAfterEnv: ['<rootDir>/src/setupTests.tsx'],
       testMatch: [
         '<rootDir>/src/**/__tests__/**/*.test.(ts|tsx)',
         '<rootDir>/src/**/*.test.(ts|tsx)'
@@ -88,7 +88,7 @@ module.exports = {
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
         '^@/(.*)$': '<rootDir>/src/$1'
       },
-      setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+      setupFilesAfterEnv: ['<rootDir>/src/setupTests.tsx'],
       testMatch: [
         '<rootDir>/src/**/*.integration.test.(ts|tsx)',
         '<rootDir>/src/**/__tests__/**/integration/**/*.test.(ts|tsx)'
@@ -118,7 +118,7 @@ module.exports = {
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
         '^@/(.*)$': '<rootDir>/src/$1'
       },
-      setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+      setupFilesAfterEnv: ['<rootDir>/src/setupTests.tsx'],
       testMatch: [
         '<rootDir>/src/**/__tests__/**/real-api/**/*.test.(ts|tsx)'
       ],

@@ -5,15 +5,17 @@ _Updated: 2025-06-23_
 ## Motivation
 
 Our new class-only code path broke several Jest suites because:
+
 1. Components use **TanStack React-Query**, which needs a `QueryClientProvider` during tests.
 2. Several tests relied on legacy `@testing-library/react` `render` without providers.
 3. We added exclusions to `tsconfig.json` that accidentally hid JSX types, now fixed.
 
-To stabilise CI we are *rebuilding* the test harness in three steps.
+To stabilise CI we are _rebuilding_ the test harness in three steps.
 
 ## Step 1 – Central test helper (DONE)
 
 File: `src/test-utils.tsx`
+
 * Wraps RTL's `render` with a singleton `QueryClientProvider`.
 * Re-exports everything from RTL so callers can `import { render, screen } from '@/test-utils'`.
 * Zero global overrides in `setupTests.ts`, avoiding TypeScript parser issues.
@@ -39,4 +41,4 @@ The migration is safe because pure DOM/unit tests can keep default RTL imports�
 * Integration tests will import `render` from `@/test-utils` as well; we'll add helpers to mount Firebase emulator when needed.
 * Nightly Cypress run will stay separate.
 
-––– 
+–––

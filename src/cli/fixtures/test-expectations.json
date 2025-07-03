@@ -1,0 +1,77 @@
+{
+  "luknerSample": {
+    "expectedPatients": 4,
+    "expectedProvider": "DR TEST PROVIDER",
+    "expectedDate": "2025-07-01",
+    "patients": [
+      {
+        "name": "JANE DOE",
+        "status": "Cancelled",
+        "dob": "1980-01-15",
+        "provider": "DR TEST PROVIDER",
+        "mustExist": true,
+        "exactMatch": true
+      },
+      {
+        "name": "JOHN SMITH",
+        "status": "completed",
+        "dob": "1965-03-22",
+        "provider": "DR TEST PROVIDER",
+        "mustExist": true,
+        "exactMatch": true
+      },
+      {
+        "name": "ALICE JOHNSON",
+        "status": "completed",
+        "dob": "1990-07-10",
+        "provider": "DR TEST PROVIDER",
+        "mustExist": true,
+        "exactMatch": true
+      },
+      {
+        "name": "ROBERT BROWN",
+        "status": "scheduled",
+        "dob": "1975-11-05",
+        "provider": "DR TEST PROVIDER",
+        "mustExist": true,
+        "exactMatch": true
+      }
+    ],
+    "notes": "Fictional test data based on complex medical schedule format for MegaParse testing"
+  },
+  "tsvSample": {
+    "expectedPatients": 3,
+    "expectedProvider": "Default Provider",
+    "expectedDate": "2025-06-28",
+    "patients": [
+      {
+        "name": "EMMA WILSON",
+        "status": "scheduled",
+        "dob": "1985-04-03",
+        "mustExist": true,
+        "exactMatch": false
+      },
+      {
+        "name": "DAVID MILLER",
+        "status": "arrived",
+        "dob": "1978-08-15",
+        "mustExist": true,
+        "exactMatch": false
+      },
+      {
+        "name": "LISA DAVIS",
+        "status": "scheduled",
+        "dob": "1965-12-22",
+        "mustExist": true,
+        "exactMatch": false
+      }
+    ],
+    "notes": "Standard TSV format for compatibility testing with fictional data"
+  },
+  "metadata": {
+    "version": "1.0",
+    "created": "2025-07-01",
+    "description": "Test expectations for built-in fixture data sets",
+    "usage": "Used by CLI integration tests to validate import results"
+  }
+}
