@@ -861,12 +861,15 @@ echo "========================="
 
 echo "1. Testing Redis connection..."
 python -c "
-from secure_redis_client import LuknerSecureRedisClient
-client = LuknerSecureRedisClient()
-if client.test_connection():
-    print('✅ Redis connection: OK')
-else:
-    print('❌ Redis connection: FAILED')
+try:
+    from secure_redis_client import LuknerSecureRedisClient
+    client = LuknerSecureRedisClient()
+    if client.test_connection():
+        print('✅ Redis connection: OK')
+    else:
+        print('❌ Redis connection: FAILED')
+except Exception as e:
+    print(f'❌ Redis connection: ERROR - {e}')
 "
 
 echo "2. Testing CLI functionality..."

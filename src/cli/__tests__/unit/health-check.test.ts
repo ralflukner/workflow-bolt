@@ -5,7 +5,11 @@ import { join } from 'path';
 
 describe('HealthCheckCommand Unit Tests', () => {
   let command: HealthCheckCommand;
-  
+  let mockParse: jest.Mock;
+  let mockLog: jest.Mock;
+  let mockError: jest.Mock;
+  let mockWarn: jest.Mock;
+  let mockRun: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks(); // Clear all mocks before each test
@@ -103,7 +107,8 @@ describe('HealthCheckCommand Unit Tests', () => {
 
     await command.run();
 
-    expect(mockLog).toHaveBeenCalledWith(expect.stringContaining('{\n  "timestamp":'));
+    expect(mockLog).toHaveBeenCalledWith(expect.stringContaining('{
+  "timestamp":'));
     expect(process.exitCode).toBe(0);
   });
 
@@ -138,7 +143,7 @@ describe('HealthCheckCommand Unit Tests', () => {
     (existsSync as jest.Mock).mockReturnValue(false); // Simulate critical failure
     (execSync as jest.Mock).mockImplementation(() => { throw new Error('Build failed'); });
     (spawn as jest.Mock).mockImplementation(() => ({
-      stdout: { on: jest.fn() },
+      stdout: { on: (event: string, cb: Function) => { if (event === 'data') cb('Tests: 1 passed'); } },
       stderr: { on: jest.fn() },
       on: (event: string, cb: Function) => { if (event === 'close') cb(1); },
     }));
