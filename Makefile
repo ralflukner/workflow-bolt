@@ -27,7 +27,8 @@ PIP := $(VENV_BIN)/pip
 # === REUSABLE FLAGS ===
 GCLOUD_BASE = gcloud functions deploy $(NAME) \
   --gen2 --runtime $(PYTHON_VERSION) --trigger-http \
-  --region $(REGION) --quiet --project $(PROJECT_ID)
+  --region $(REGION) --quiet --project $(PROJECT_ID) \
+  $(if $(VPC_CONNECTOR),--vpc-connector=$(VPC_CONNECTOR),)
 
 # === MAIN TARGETS ===
 .PHONY: help new deploy test logs status rollback clean destroy

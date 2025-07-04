@@ -1,0 +1,36 @@
+VPC Verification: Fri Jul  4 22:06:02 UTC 2025
+
+Functions tested: tebra_debug patient_sync
+
+VPC Connector Verification Results:
+===================================
+✅ tebra_debug: projects/luknerlumina-firebase/locations/us-central1/connectors/redis-connector
+✅ patient_sync: projects/luknerlumina-firebase/locations/us-central1/connectors/redis-connector
+
+Makefile Updates:
+================
+✅ Added VPC_CONNECTOR variable support to GCLOUD_BASE
+✅ Conditional VPC connector deployment: $(if $(VPC_CONNECTOR),--vpc-connector=$(VPC_CONNECTOR),)
+✅ Deployment commands tested successfully
+
+VPC Connector Details:
+=====================
+Name: redis-connector
+Region: us-central1
+Target: Memorystore Redis at 10.161.35.147:6379
+Egress Settings: PRIVATE_RANGES_ONLY
+
+Deployment Commands Used:
+========================
+make deploy NAME=tebra_debug VPC_CONNECTOR=redis-connector
+make deploy NAME=patient_sync VPC_CONNECTOR=redis-connector
+
+Result: All functions connected to redis-connector ✅
+
+Next Steps:
+==========
+- Runtime Redis connectivity test via health endpoint
+- Document Redis environment variables
+- Test Redis operations from Cloud Functions
+
+Status: VPC VERIFICATION COMPLETE ✅
