@@ -9,6 +9,21 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+
+// Unset conflicting Google environment variables to ensure clean auth
+const googleEnvVars = [
+  "GOOGLE_APPLICATION_CREDENTIALS",
+  "GOOGLE_CLOUD_KEYFILE",
+  "GCLOUD_KEYFILE",
+  "GOOGLE_CLOUD_PROJECT",
+  "GCLOUD_PROJECT",
+  "GCP_PROJECT"
+];
+
+console.log("🧹 Clearing potentially conflicting environment variables...");
+googleEnvVars.forEach(varName => {
+  delete process.env[varName];
+});
 // Configuration
 const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || 'luknerlumina-firebase';
 
