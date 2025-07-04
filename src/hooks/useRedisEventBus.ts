@@ -7,6 +7,11 @@ export interface AgentUpdate {
   ts: string;
   type: string;
   correlationId?: string;
+  sender?: string;
+  action?: string;
+  message_type?: 'broadcast' | 'request' | 'response' | 'direct';
+  reply_to?: string;
+  payload?: string;
 }
 
 /**

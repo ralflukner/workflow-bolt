@@ -14,6 +14,7 @@ const app = express();
 const PORT = process.env.SSE_PORT || 3001;
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const REDIS_STREAM = process.env.REDIS_STREAM || 'agent_updates';
+const AGENT_ID = process.env.AGENT_ID || null; // Optional agent ID for direct messaging
 
 // Enable CORS for all origins in development
 app.use(cors({
@@ -81,38 +82,60 @@ app.get('/events', async (req, res) => {
     // Connect to Redis
     await redisClient.connect();
 
-    // Start listening to Redis Stream
+    // Start listening to Redis Stream(s)
     let lastId = '$'; // Start from latest messages
+    let lastInboxId = '$'; // For agent inbox
     
     const pollRedisStream = async () => {
       if (!isConnected) return;
       
       try {
-        const results = await redisClient.xRead({
-          key: REDIS_STREAM,
-          id: lastId
-        }, {
-          COUNT: 10,
-          BLOCK: 5000 // 5 second timeout
-        });
+        // Build streams to monitor
+        const streams = [
+          { key: REDIS_STREAM, id: lastId }
+        ];
+        
+        // Add agent inbox if AGENT_ID is set
+        if (AGENT_ID) {
+          streams.push({ 
+            key: `agent_inbox:${AGENT_ID}`, 
+            id: lastInboxId 
+          });
+        }
+        
+        const results = await redisClient.xRead(
+          streams.map(stream => ({ key: stream.key, id: stream.id })), 
+          {
+            COUNT: 10,
+            BLOCK: 5000 // 5 second timeout
+          }
+        );
 
         if (results && results.length > 0) {
-          const stream = results[0];
-          const messages = stream.messages;
-          
-          for (const message of messages) {
-            lastId = message.id;
+          for (const stream of results) {
+            const streamName = stream.name;
+            const messages = stream.messages;
             
-            // Forward Redis message as SSE event
-            const eventData = {
-              type: 'agent_update',
-              id: message.id,
-              timestamp: new Date().toISOString(),
-              data: message.message
-            };
-            
-            res.write(`data: ${JSON.stringify(eventData)}\\n\\n`);
-            console.log('📨 Forwarded Redis message:', message.id);
+            for (const message of messages) {
+              // Update appropriate lastId
+              if (streamName === REDIS_STREAM) {
+                lastId = message.id;
+              } else if (streamName === `agent_inbox:${AGENT_ID}`) {
+                lastInboxId = message.id;
+              }
+              
+              // Forward Redis message as SSE event
+              const eventData = {
+                type: streamName.startsWith('agent_inbox:') ? 'direct_message' : 'agent_update',
+                id: message.id,
+                timestamp: new Date().toISOString(),
+                stream: streamName,
+                data: message.message
+              };
+              
+              res.write(`data: ${JSON.stringify(eventData)}\\n\\n`);
+              console.log(`📨 Forwarded Redis message from ${streamName}:`, message.id);
+            }
           }
         }
         
