@@ -12,6 +12,48 @@ const admin = require('firebase-admin');
 const jwt = require('jsonwebtoken');
 const jwksRsa = require('jwks-rsa');
 const axios = require('axios');
+const NodeCache = require('node-cache');
+
+// Health check cache and rate limiting
+const healthCache = new NodeCache({ stdTTL: 30 }); // 30 second cache
+const rateLimitMap = new Map();
+
+// Rate limiting helper function with memory cleanup
+function checkRateLimit(userId, action, maxRequests = 10, windowMs = 60000) {
+  const key = `${userId}-${action}`;
+  const now = Date.now();
+  const requests = rateLimitMap.get(key) || [];
+  
+  // Clean old requests
+  const recentRequests = requests.filter(time => now - time < windowMs);
+  
+  if (recentRequests.length >= maxRequests) {
+    console.warn(`⚠️ Rate limit exceeded for user (${userId.substring(0, 8)}...) on ${action}`);
+    return false;
+  }
+  
+  recentRequests.push(now);
+  rateLimitMap.set(key, recentRequests);
+  return true;
+}
+
+// Memory cleanup for rate limiting (prevent memory leaks)
+setInterval(() => {
+  const now = Date.now();
+  let cleanedCount = 0;
+  for (const [key, requests] of rateLimitMap.entries()) {
+    const valid = requests.filter(time => now - time < 60000);
+    if (valid.length === 0) {
+      rateLimitMap.delete(key);
+      cleanedCount++;
+    } else {
+      rateLimitMap.set(key, valid);
+    }
+  }
+  if (cleanedCount > 0) {
+    console.log(`🧹 Cleaned ${cleanedCount} expired rate limit entries`);
+  }
+}, 300000); // Clean every 5 minutes
 
 // Lazy loading for heavy dependencies to prevent startup timeouts
 let tebraProxyClient = null;
@@ -775,7 +817,8 @@ const VALID_ACTIONS = [
   'createAppointment',
   'updateAppointment',
   'syncSchedule',
-  'healthCheck'
+  'healthCheck',
+  'cloudRunHealth'
 ];
 
 /**
@@ -835,6 +878,120 @@ exports.tebraProxy = onCall({ cors: true }, async (request) => {
       version: '2.0',
       duration: Date.now() - startTime
     };
+  }
+
+  // Handle Cloud Run health check proxy
+  if (request.data.action === 'cloudRunHealth') {
+    const userId = request.auth?.uid || 'anonymous';
+    const userIdTruncated = userId !== 'anonymous' ? userId.substring(0, 8) + '...' : 'anonymous';
+    const forceRefresh = request.data.forceRefresh === true;
+    
+    console.log('🏥 Cloud Run health check request', {
+      user: userIdTruncated,
+      forceRefresh: forceRefresh,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Check rate limit (max 10 requests per minute per user)
+    if (!checkRateLimit(userId, 'cloudRunHealth', 10, 60000)) {
+      throw new functions.https.HttpsError(
+        'resource-exhausted', 
+        'Too many health check requests. Please wait before trying again.'
+      );
+    }
+    
+    // Check cache first (unless force refresh requested)
+    if (!forceRefresh) {
+      const cachedResult = healthCache.get('cloudRunHealth');
+      if (cachedResult) {
+        console.log('📦 Returning cached health check result', {
+          user: userIdTruncated,
+          cacheHit: true
+        });
+        const duration = Date.now() - startTime;
+        return {
+          success: true,
+          data: cachedResult,
+          cached: true,
+          duration: duration,
+          cacheAge: Math.floor((healthCache.getTtl('cloudRunHealth') - Date.now()) / 1000)
+        };
+      }
+    } else {
+      console.log('🔄 Force refresh requested, bypassing cache', {
+        user: userIdTruncated
+      });
+    }
+    
+    try {
+      // Use basic endpoint for faster response (no patient data access)
+      const healthResponse = await axios.get(`${PHP_PROXY_URL}/health`, {
+        headers: {
+          'X-API-Key': PHP_API_KEY,
+          'User-Agent': 'Firebase-Functions-TebraProxy/2.0',
+          'X-Request-ID': `health-${userId}-${Date.now()}`
+        },
+        timeout: 5000, // 5 second timeout for health checks
+        validateStatus: (status) => status < 500 // Don't throw on 4xx errors
+      });
+
+      const duration = Date.now() - startTime;
+      
+      const result = {
+        status: healthResponse.status === 200 ? 'healthy' : 'unhealthy',
+        httpStatus: healthResponse.status,
+        data: healthResponse.data,
+        timestamp: new Date().toISOString(),
+        duration: duration,
+        // Don't expose full URL for security
+        serviceEndpoint: PHP_PROXY_URL.replace(/https?:\/\//, '').split('/')[0]
+      };
+      
+      // Cache successful results only
+      if (healthResponse.status === 200) {
+        healthCache.set('cloudRunHealth', result);
+        console.log('💾 Cached health check result for 30 seconds', {
+          user: userIdTruncated,
+          status: result.status
+        });
+      }
+      
+      console.log(`✅ Health check completed: ${result.status}`, {
+        user: userIdTruncated,
+        duration: `${duration}ms`,
+        httpStatus: result.httpStatus,
+        cached: false
+      });
+      
+      return {
+        success: true,
+        data: result,
+        cached: false,
+        duration: duration
+      };
+
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error('❌ Cloud Run health check failed', {
+        user: userIdTruncated,
+        error: error.message,
+        duration: `${duration}ms`,
+        errorCode: error.code
+      });
+      
+      // Don't cache errors, but return structured response
+      return {
+        success: false,
+        data: {
+          status: 'error',
+          error: error.code === 'ECONNABORTED' ? 'Timeout' : 'Connection failed',
+          timestamp: new Date().toISOString(),
+          duration: duration
+        },
+        cached: false,
+        duration: duration
+      };
+    }
   }
 
   // All other actions go to PHP proxy

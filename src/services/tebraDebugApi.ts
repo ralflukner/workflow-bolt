@@ -7,6 +7,7 @@
 
 import { HEALTH_CHECK_CONFIG, CORRELATION_ID } from '../constants/tebraConfig';
 import { tebraTestConnection, tebraGetAppointments, tebraGetProviders } from './tebraApi';
+import { callTebraProxy } from './tebraFirebaseApi';
 import { app, isFirebaseConfigured } from '../config/firebase';
 import { getFunctions } from 'firebase/functions';
 import { checkFirebaseEnvVars } from '../utils/envUtils';
@@ -223,7 +224,7 @@ export class TebraDebugApiService {
   }
 
   /**
-   * Test Tebra Proxy connectivity (Firebase Functions -> PHP)
+   * Test Tebra Proxy connectivity (Firebase Functions -> Cloud Run Health)
    */
   async testTebraProxy(): Promise<HealthCheckResult> {
     const correlationId = generateCorrelationId();
@@ -244,27 +245,44 @@ export class TebraDebugApiService {
         };
       }
 
-      // Test connection with timeout
+      // Test Cloud Run health via Firebase proxy with timeout
       const result = await withTimeout(
-        tebraTestConnection(),
+        callTebraProxy('cloudRunHealth'),
         HEALTH_CHECK_CONFIG.REQUEST_TIMEOUT,
-        'Tebra Proxy Test'
+        'Cloud Run Health Check'
       );
 
       const duration = Date.now() - startTime;
 
-      if (result.success) {
+      if (result.success && result.data?.status === 'healthy') {
         return {
           status: 'healthy',
-          message: 'Tebra proxy connection successful',
+          message: 'Cloud Run service healthy via Firebase proxy',
           duration,
           correlationId,
-          details: { authenticated: true, response: result }
+          details: { 
+            authenticated: true, 
+            cloudRunStatus: result.data.status,
+            httpStatus: result.data.httpStatus,
+            cloudRunUrl: result.data.cloudRunUrl
+          }
+        };
+      } else if (result.success && result.data?.status === 'unhealthy') {
+        return {
+          status: 'error',
+          message: `Cloud Run service unhealthy: ${result.data.error || 'Unknown error'}`,
+          duration,
+          correlationId,
+          details: { 
+            authenticated: true, 
+            cloudRunStatus: result.data.status,
+            error: result.data.error
+          }
         };
       } else {
         return {
           status: 'error',
-          message: result.error || result.message || 'Tebra proxy test failed',
+          message: result.error || result.message || 'Cloud Run health check failed',
           duration,
           correlationId,
           details: { authenticated: true, response: result }
