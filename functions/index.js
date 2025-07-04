@@ -285,6 +285,43 @@ app.post('/test', (req, res) => {
   });
 });
 
+// Redis connectivity test
+app.get('/test-redis', async (req, res) => {
+  try {
+    const redis = require('redis');
+    const client = redis.createClient({
+      socket: { 
+        host: '10.161.35.147', 
+        port: 6379 
+      }
+    });
+    
+    await client.connect();
+    const pingResult = await client.ping();
+    
+    // Test basic operations
+    await client.set('test_key', 'Hello from API function', { EX: 30 });
+    const testValue = await client.get('test_key');
+    await client.del('test_key');
+    
+    await client.quit();
+    
+    res.json({ 
+      status: 'success', 
+      message: 'Redis connected successfully',
+      ping: pingResult,
+      testValue: testValue
+    });
+    
+  } catch (error) {
+    console.error('Redis connection error:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: `Redis connection failed: ${error.message}` 
+    });
+  }
+});
+
 // Tebra API Proxy Route - HIPAA Compliant
 app.post('/api/tebra', async (req, res) => {
   try {
