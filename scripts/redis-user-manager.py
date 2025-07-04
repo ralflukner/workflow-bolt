@@ -33,17 +33,29 @@ class RedisUserManager:
         if self.redis_client:
             return self.redis_client
             
-        # Get Redis password from Secret Manager
-        redis_pass = self._get_secret("redis-event-bus-pass")
-        
-        self.redis_client = redis.Redis(
-            host="redis-16451.c280.us-central1-2.gce.redns.redis-cloud.com",
-            port=16451,
-            username="default",
-            password=redis_pass,
-            ssl=True,
-            ssl_cert_reqs=None
-        )
+        # Allow overriding connection details via environment variables so the
+        # same script can talk to local Redis, Redis Cloud, or Google Cloud
+        # Memorystore without code changes.
+
+        host = os.getenv("REDIS_HOST", "10.161.35.147")
+        port = int(os.getenv("REDIS_PORT", "6379"))
+        password = os.getenv("REDIS_PASSWORD")  # Optional
+        use_ssl = os.getenv("REDIS_SSL", "false").lower() in ("1", "true", "yes")
+
+        redis_kwargs = {
+            "host": host,
+            "port": port,
+            "decode_responses": True,
+        }
+
+        if password:
+            redis_kwargs["password"] = password
+
+        if use_ssl:
+            # Some providers (e.g., Redis Cloud) require TLS
+            redis_kwargs.update({"ssl": True, "ssl_cert_reqs": None})
+
+        self.redis_client = redis.Redis(**redis_kwargs)
         return self.redis_client
         
     def _get_secret(self, secret_id: str) -> str:
