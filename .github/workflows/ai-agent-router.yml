@@ -1,0 +1,149 @@
+name: AI Agent Router
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created]
+
+jobs:
+  route-to-agents:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Route task to appropriate AI agents
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { context, github } = require('@actions/github');
+            
+            // Get issue content (title + body + comment if applicable)
+            let content = '';
+            if (context.eventName === 'issues') {
+              content = `${context.payload.issue.title} ${context.payload.issue.body || ''}`;
+            } else if (context.eventName === 'issue_comment') {
+              content = context.payload.comment.body;
+            }
+            
+            const contentLower = content.toLowerCase();
+            const labels = [];
+            
+            // AI Capabilities Matrix Routing
+            
+            // o3 MAX - Deep reasoning, complex analysis, security
+            if (contentLower.match(/(complex|algorithm|security analysis|threat model|mathematical|deep reasoning|strategic)/)) {
+              labels.push('ai/o3-max');
+              console.log('🧠 Assigned to o3 MAX: Complex analysis needed');
+            }
+            
+            // Gemini - Code review, real-time, multimodal, UI/UX
+            if (contentLower.match(/(code review|optimization|real-time|multimodal|ui\/ux|performance|image|document)/)) {
+              labels.push('ai/gemini');
+              console.log('🔍 Assigned to Gemini: Code review/optimization needed');
+            }
+            
+            // Firebase AI - Rapid prototyping, cloud functions, mobile
+            if (contentLower.match(/(prototype|firebase|cloud function|mobile app|rapid|scaffolding)/)) {
+              labels.push('ai/firebase');
+              console.log('🔥 Assigned to Firebase AI: Rapid development needed');
+            }
+            
+            // Supabase AI - Database design, SQL, RLS policies
+            if (contentLower.match(/(database|sql|supabase|schema|rls|row level security|postgresql)/)) {
+              labels.push('ai/supabase');
+              console.log('🐘 Assigned to Supabase AI: Database expertise needed');
+            }
+            
+            // Claude - Integration, testing, coordination, documentation
+            if (contentLower.match(/(integration|testing|deploy|coordinate|documentation|manage)/)) {
+              labels.push('ai/claude');
+              console.log('🔧 Assigned to Claude: Integration/coordination needed');
+            }
+            
+            // Multi-AI collaboration indicators
+            if (labels.length > 2 || contentLower.match(/(multi-ai|collaboration|complex project)/)) {
+              labels.push('ai/multi-ai');
+              console.log('🤝 Multi-AI collaboration required');
+            }
+            
+            // Priority detection
+            if (contentLower.match(/(urgent|critical|asap|high priority|emergency)/)) {
+              labels.push('priority/high');
+            } else if (contentLower.match(/(important|medium|soon)/)) {
+              labels.push('priority/medium');
+            } else if (contentLower.match(/(low|nice to have|someday|future)/)) {
+              labels.push('priority/low');
+            }
+            
+            // Task type detection
+            if (contentLower.match(/(bug|error|issue|problem|broken|failing)/)) {
+              labels.push('type/bug');
+            } else if (contentLower.match(/(feature|new|add|implement|create)/)) {
+              labels.push('type/feature');
+            } else if (contentLower.match(/(enhance|improve|optimize|better)/)) {
+              labels.push('type/enhancement');
+            }
+            
+            // Area/domain detection
+            if (contentLower.match(/(redis|authentication|2fa|totp)/)) {
+              labels.push('area/redis');
+            }
+            if (contentLower.match(/(security|encryption|auth|vulnerability)/)) {
+              labels.push('area/security');
+            }
+            if (contentLower.match(/(infrastructure|deploy|cloud|devops)/)) {
+              labels.push('area/infrastructure');
+            }
+            
+            // Apply labels if any were detected
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue?.number || context.payload.issue_comment?.issue?.number,
+                labels: labels
+              });
+              
+              console.log(`🏷️ Applied labels: ${labels.join(', ')}`);
+              
+              // Add guidance comment for complex tasks
+              if (labels.includes('ai/multi-ai')) {
+                const guidanceComment = `## 🤖 Multi-AI Collaboration Detected
+                
+**Assigned Agents:** ${labels.filter(l => l.startsWith('ai/')).map(l => l.replace('ai/', '@')).join(', ')}
+
+### Recommended Workflow:
+1. **Analysis Phase**: Let assigned AIs provide their specialized input
+2. **Synthesis Phase**: @claude will coordinate and integrate solutions  
+3. **Implementation Phase**: Collaborative development and testing
+
+### Next Steps:
+- Review the [AI Capabilities Matrix](./scripts/ai-capabilities-matrix.md) for detailed agent specializations
+- Each assigned AI should comment with their analysis/recommendations
+- @claude will synthesize and coordinate the implementation
+
+**Priority**: ${labels.find(l => l.startsWith('priority/'))?.replace('priority/', '') || 'medium'}`;
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.issue?.number || context.payload.issue_comment?.issue?.number,
+                  body: guidanceComment
+                });
+              }
+            } else {
+              console.log('ℹ️ No specific AI agents assigned - general task');
+            }
+            
+            // Log routing decision
+            const routingLog = {
+              content_analyzed: content.substring(0, 200) + '...',
+              labels_applied: labels,
+              timestamp: new Date().toISOString(),
+              event_type: context.eventName
+            };
+            
+            console.log('📊 Routing Decision:', JSON.stringify(routingLog, null, 2));

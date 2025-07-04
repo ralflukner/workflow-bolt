@@ -350,30 +350,39 @@ body:
 
 ## 🤖 AI Collaboration Workflows
 
-### **Rapid Prototyping with AI**
+> **📋 See `ai-capabilities-matrix.md` for detailed agent specializations and coordination protocols**
 
-#### **o3 MAX + Bolt.new Workflow:**
-```
-1. o3 MAX designs complex algorithms
-2. Convert to React components in Bolt.new
-3. Test and iterate rapidly
-4. Document findings in GitHub Issue
-```
+### **Intelligent Agent Assignment**
 
-#### **Gemini + Lovable.dev Workflow:**
-```
-1. Gemini analyzes existing codebase
-2. Suggests improvements and new features
-3. Prototype in Lovable.dev with real APIs
-4. Performance testing and optimization
+#### **Capabilities-Based Routing:**
+```yaml
+Complex Problems → o3 MAX (deep reasoning, security analysis)
+Code Review → Gemini (optimization, real-time features)
+Integration → Claude (testing, deployment, coordination)
+Rapid Prototyping → Firebase AI (app generation, cloud functions)
+Database Design → Supabase AI (SQL optimization, RLS policies)
 ```
 
-#### **Claude + Integration Workflow:**
+### **Multi-AI Collaboration Patterns**
+
+#### **Sequential Handoff:**
 ```
-1. Claude coordinates between platforms
-2. Extracts patterns from prototypes
-3. Implements in local development
-4. Manages deployment and testing
+o3 MAX (Algorithm) → Gemini (Implementation) → Claude (Integration) → Production
+```
+
+#### **Parallel Collaboration:**
+```
+┌── o3 MAX: Security model
+├── Gemini: UI/UX design  
+├── Firebase AI: Backend prototype
+├── Supabase AI: Database schema
+└── Claude: Integration & testing
+```
+
+#### **Specialist Consultation:**
+```
+Claude (Primary) ↔ o3 MAX (Complex Analysis) → Enhanced Solution
+Claude (Primary) ↔ Gemini (Performance Review) → Optimized Solution
 ```
 
 ### **Multi-AI Collaboration Example:**
