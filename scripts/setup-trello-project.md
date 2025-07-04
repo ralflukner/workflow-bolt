@@ -20,9 +20,11 @@
 - 🟢 **Low Priority** - Nice to have
 - 🔵 **Bug** - Issues to fix
 - 🟣 **Enhancement** - Improvements
-- ⚫ **o3 MAX** - Tasks for o3 MAX
-- 🟤 **Claude** - Tasks for Claude
+- ⚫ **o3 MAX** - Tasks assigned to o3 MAX
+- 🟤 **Claude** - Tasks assigned to Claude  
+- 🔵 **Gemini** - Tasks assigned to Gemini
 - 🟠 **Infrastructure** - DevOps/deployment
+- 🟪 **Multi-AI** - Requires multiple AI collaboration
 
 ### 3. Pre-built Cards for Current Project
 
@@ -89,7 +91,9 @@
 - [ ] Deployment
 ```
 
-#### **🟣 o3 MAX Collaboration Card Template**
+#### **🟣 AI Collaboration Card Templates**
+
+##### **o3 MAX Task Template**
 ```
 **Title:** [o3 MAX] Task description
 **Description:**
@@ -104,6 +108,43 @@
 - [ ] o3 MAX delivers solution
 - [ ] Claude integrates result
 - [ ] Testing & validation
+```
+
+##### **Gemini Task Template**
+```
+**Title:** [Gemini] Task description
+**Description:**
+- **Context:** Background information
+- **Request:** What needs to be done
+- **Expected output:** Deliverable format
+- **Gemini strengths:** Code analysis, multimodal, reasoning
+
+**Checklist:**
+- [ ] Claude provides context
+- [ ] Gemini analyzes
+- [ ] Gemini delivers solution
+- [ ] Claude integrates result
+- [ ] Testing & validation
+```
+
+##### **Multi-AI Collaboration Template**
+```
+**Title:** [Multi-AI] Complex task requiring multiple AI perspectives
+**Description:**
+- **Context:** Background information
+- **Complexity:** Why multiple AIs needed
+- **AI assignments:**
+  - **o3 MAX:** Deep reasoning, complex analysis
+  - **Gemini:** Code review, multimodal analysis
+  - **Claude:** Integration, testing, coordination
+
+**Workflow:**
+- [ ] Claude breaks down task
+- [ ] o3 MAX provides deep analysis
+- [ ] Gemini provides technical review
+- [ ] Claude synthesizes solutions
+- [ ] Collaborative refinement
+- [ ] Final integration & testing
 ```
 
 ### 5. Power-Ups to Enable (Free)
@@ -122,6 +163,8 @@ When a card is completed, move it to "Done"
 # Auto-assign labels based on title
 When a card title contains "bug", add the "Bug" label
 When a card title contains "o3", add the "o3 MAX" label
+When a card title contains "gemini", add the "Gemini" label
+When a card title contains "multi-ai", add the "Multi-AI" label
 
 # Due date reminders
 Every day, add comment "Due soon!" to cards due in 2 days
@@ -174,13 +217,47 @@ Card: "Deploy Redis 2FA System"
 2. **Friday:** Review completed work
 3. **Archive:** Move old "Done" items
 
-#### **o3 MAX Collaboration:**
-1. Create card with [o3 MAX] prefix
+#### **Multi-AI Collaboration Workflows:**
+
+##### **Single AI Assignment:**
+1. Create card with [AI Name] prefix (e.g., [o3 MAX], [Gemini])
 2. Add detailed context in description
-3. Move to "In Progress" 
-4. o3 MAX adds comments/solutions
-5. Claude integrates and tests
-6. Move to "Done" when complete
+3. Move to "🤖 AI Analysis"
+4. AI adds comments/solutions
+5. Move to "🏗️ In Progress" for Claude integration
+6. Claude implements and tests
+7. Move to "Done" when complete
+
+##### **Multi-AI Complex Tasks:**
+1. Create card with [Multi-AI] prefix
+2. Break down AI assignments in description
+3. Move to "🤖 AI Analysis"
+4. Each AI contributes their expertise:
+   - **o3 MAX:** Deep reasoning, complex problem solving
+   - **Gemini:** Code analysis, multimodal tasks, technical review
+   - **Claude:** Coordination, integration, testing
+5. Collaborative refinement through comments
+6. Claude synthesizes final solution
+7. Move through pipeline to completion
+
+##### **AI Strengths Guide:**
+- **o3 MAX:** 
+  - Complex mathematical problems
+  - Deep logical reasoning
+  - Strategic planning
+  - Novel algorithm design
+  
+- **Gemini:**
+  - Code review and analysis
+  - Multimodal content (images, documents)
+  - Real-time information
+  - Technical documentation
+  
+- **Claude:**
+  - Integration and coordination
+  - File editing and system management
+  - Testing and validation
+  - Project management
 
 ### 9. Quick Start Commands
 
