@@ -87,7 +87,7 @@ const syncSchedule = async (
   // Add detailed debugging for the Tebra API call
   logger.info('📞 Calling tebra.getAppointments with dates:', { fromDate, toDate });
   
-  let appointmentsArray;
+  let appointmentsArray = [];
   try {
     const appointments = await tebra.getAppointments(fromDate, toDate);
     
