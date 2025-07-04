@@ -18,8 +18,56 @@ const NodeCache = require('node-cache');
 const healthCache = new NodeCache({ stdTTL: 30 }); // 30 second cache
 const rateLimitMap = new Map();
 
-// Rate limiting helper function with memory cleanup
-function checkRateLimit(userId, action, maxRequests = 10, windowMs = 60000) {
+// Firestore-based distributed rate limiting
+async function checkRateLimitFirestore(userId, action, maxRequests = 10, windowMs = 60000) {
+  const db = admin.firestore();
+  const docId = `${userId.substring(0, 32)}-${action}`; // Limit doc ID length
+  const rateLimitRef = db.collection('rateLimits').doc(docId);
+  
+  try {
+    const result = await db.runTransaction(async (transaction) => {
+      const doc = await transaction.get(rateLimitRef);
+      const now = Date.now();
+      const data = doc.exists ? doc.data() : { requests: [] };
+      
+      // Clean old requests (only keep recent ones)
+      const recentRequests = (data.requests || [])
+        .filter(time => now - time < windowMs);
+      
+      if (recentRequests.length >= maxRequests) {
+        console.warn(`⚠️ Rate limit exceeded for user (${userId.substring(0, 8)}...) on ${action}`, {
+          requestCount: recentRequests.length,
+          maxRequests: maxRequests
+        });
+        return false;
+      }
+      
+      // Add current request and set TTL
+      recentRequests.push(now);
+      transaction.set(rateLimitRef, {
+        requests: recentRequests,
+        lastUpdated: now,
+        ttl: new Date(now + windowMs + 30000) // TTL + 30s buffer
+      });
+      
+      return true;
+    });
+    
+    return result;
+    
+  } catch (error) {
+    console.error('❌ Firestore rate limit check failed, falling back to memory', {
+      error: error.message,
+      userId: userId.substring(0, 8) + '...'
+    });
+    
+    // Fallback to in-memory rate limiting for reliability
+    return checkRateLimitMemory(userId, action, maxRequests, windowMs);
+  }
+}
+
+// Fallback in-memory rate limiting for cold starts/Firestore issues
+function checkRateLimitMemory(userId, action, maxRequests = 10, windowMs = 60000) {
   const key = `${userId}-${action}`;
   const now = Date.now();
   const requests = rateLimitMap.get(key) || [];
@@ -28,7 +76,7 @@ function checkRateLimit(userId, action, maxRequests = 10, windowMs = 60000) {
   const recentRequests = requests.filter(time => now - time < windowMs);
   
   if (recentRequests.length >= maxRequests) {
-    console.warn(`⚠️ Rate limit exceeded for user (${userId.substring(0, 8)}...) on ${action}`);
+    console.warn(`⚠️ Rate limit exceeded (memory fallback) for user (${userId.substring(0, 8)}...) on ${action}`);
     return false;
   }
   
@@ -892,8 +940,8 @@ exports.tebraProxy = onCall({ cors: true }, async (request) => {
       timestamp: new Date().toISOString()
     });
     
-    // Check rate limit (max 10 requests per minute per user)
-    if (!checkRateLimit(userId, 'cloudRunHealth', 10, 60000)) {
+    // Check rate limit (max 10 requests per minute per user) using Firestore
+    if (!(await checkRateLimitFirestore(userId, 'cloudRunHealth', 10, 60000))) {
       throw new functions.https.HttpsError(
         'resource-exhausted', 
         'Too many health check requests. Please wait before trying again.'

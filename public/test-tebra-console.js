@@ -43,6 +43,21 @@ window.testTebraProxyWithAuth = async function() {
       console.error('❌ Providers Test FAILED:', e.message);
     }
     
+    // Test 4: Cloud Run health check with rate limiting
+    console.log('\n📋 Test 4: Cloud Run Health Check (with Firestore rate limiting)');
+    try {
+      const healthResult = await tebraProxy({ action: 'cloudRunHealth' });
+      console.log('✅ Cloud Run Health SUCCESS:', {
+        status: healthResult.data?.status,
+        httpStatus: healthResult.data?.httpStatus,
+        duration: healthResult.duration || 'unknown',
+        cached: healthResult.cached || false,
+        serviceEndpoint: healthResult.data?.serviceEndpoint
+      });
+    } catch (e) {
+      console.error('❌ Cloud Run Health FAILED:', e.message);
+    }
+    
     console.log('\n🎉 tebraProxy testing complete!');
     
   } catch (error) {

@@ -518,6 +518,9 @@ export async function testRedisConnection(): Promise<boolean> {
   return (window as unknown as Window & { tebraDebug: TebraDebugTools }).tebraDebug.testRedisConnection();
 }
 
+// Export the unified proxy function for advanced usage
+export { callTebraProxy };
+
 // Export the main API object
 export const tebraApi = {
   testConnection: tebraTestConnection,
