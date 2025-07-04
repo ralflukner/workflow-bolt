@@ -319,7 +319,7 @@ export async function tebraHealthCheck(): Promise<ApiResponse> {
     sendToRedisEventBus({
       success: proxyHealth.success,
       components: {
-        firebase: healthResult.data || { status: 'healthy' },
+        firebase: (healthResult.data as { status: string }) || { status: 'healthy' },
         phpProxy: proxyHealth.success ? 'Connected' : 'Failed',
         tebra: proxyHealth.success ? 'Connected' : 'Unknown',
       },
