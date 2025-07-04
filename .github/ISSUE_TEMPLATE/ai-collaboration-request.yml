@@ -1,0 +1,115 @@
+name: AI Collaboration Request
+description: Request collaboration with specific AI agents
+title: '[AI-Collab] '
+labels: ['ai/multi-ai', 'type/collaboration']
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🤖 AI Collaboration Request
+        Use this template to request collaboration with specific AI agents based on their strengths and past contributions.
+
+  - type: dropdown
+    id: primary-ai
+    attributes:
+      label: Primary AI Agent
+      description: Which AI should lead this collaboration?
+      options:
+        - o3 MAX (complex reasoning, architecture design)
+        - Gemini (code review, real-time analysis, multimodal)
+        - Claude (integration, testing, project management)
+        - ChatGPT (creative solutions, rapid prototyping)
+        - Specialized AI (specify in description)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: supporting-ais
+    attributes:
+      label: Supporting AI Agents
+      description: Which other AIs should contribute?
+      options:
+        - label: o3 MAX - Deep reasoning, complex algorithms, security analysis
+        - label: Gemini - Code review, performance optimization, technical documentation
+        - label: Claude - System integration, testing, deployment coordination
+        - label: ChatGPT - Creative problem solving, rapid ideation
+        - label: Cost Management AI - Budget optimization, resource allocation
+        - label: Security Specialist AI - Vulnerability analysis, compliance
+        - label: Documentation AI - Technical writing, knowledge organization
+
+  - type: textarea
+    id: project-context
+    attributes:
+      label: Project Context
+      description: What has been done so far? Reference specific past contributions.
+      placeholder: |
+        Example: "o3 MAX previously designed the Redis communication architecture and helped Gemini connect to the messaging system. We need to build on that foundation..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: collaboration-request
+    attributes:
+      label: Collaboration Request
+      description: What specific task needs multi-AI collaboration?
+      placeholder: |
+        Example: "Design a cost-effective multi-agent system that can spawn specialized sub-agents for domain-specific tasks while maintaining budget constraints..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: ai-strengths-needed
+    attributes:
+      label: AI Strengths Needed
+      description: What specific capabilities are required?
+      placeholder: |
+        - o3 MAX: Complex system architecture, security modeling
+        - Gemini: Real-time performance monitoring, code optimization
+        - Claude: Integration testing, deployment automation
+        - Cost Management AI: Budget tracking, resource optimization
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-deliverables
+    attributes:
+      label: Expected Deliverables
+      description: What should each AI contribute?
+      placeholder: |
+        - o3 MAX: Architecture design document, security analysis
+        - Gemini: Performance benchmarks, code review report
+        - Claude: Integration plan, test suite, deployment guide
+        - Cost Management AI: Budget analysis, cost optimization recommendations
+
+  - type: input
+    id: timeline
+    attributes:
+      label: Timeline
+      description: When is this collaboration needed?
+      placeholder: "1 week for analysis, 2 weeks for implementation"
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Task Complexity
+      description: How complex is this collaboration?
+      options:
+        - Low (2-3 AIs, straightforward integration)
+        - Medium (3-4 AIs, moderate coordination needed)
+        - High (4+ AIs, complex interdependencies)
+        - Expert (Specialized AIs needed, domain expertise required)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: collaboration-pattern
+    attributes:
+      label: Collaboration Pattern
+      description: How should the AIs work together?
+      options:
+        - label: Sequential - AIs work one after another in order
+        - label: Parallel - AIs work simultaneously on different aspects
+        - label: Consultation - Primary AI consults specialists as needed
+        - label: Iterative - Multiple rounds of collaboration and refinement
+        - label: Swarm - Dynamic coordination with sub-agent spawning
