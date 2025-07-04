@@ -37,7 +37,8 @@ def connect_to_redis():
         url = f"rediss://{REDIS_USERNAME}:{encoded_pw}@{REDIS_HOST}:{REDIS_PORT}"
         
         # Create Redis client with SSL enabled
-        r = redis.Redis.from_url(url, ssl_cert_reqs=ssl.CERT_NONE)
+        # Note: rediss:// scheme automatically enables SSL
+        r = redis.Redis.from_url(url, ssl_cert_reqs=ssl.CERT_NONE, decode_responses=True)
         
         # Test connection
         if r.ping():  # type: ignore[call-arg]
