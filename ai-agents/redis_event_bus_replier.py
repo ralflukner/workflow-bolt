@@ -29,7 +29,7 @@ from __future__ import annotations
 import json
 import os
 import time
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple, cast
 
 import redis  # type: ignore
 
@@ -87,7 +87,7 @@ def main() -> None:
 
     while True:
         try:
-            response = client.xreadgroup(
+            response_raw = client.xreadgroup(
                 CONSUMER_GROUP,
                 CONSUMER_NAME,
                 {STREAM_NAME: ">"},
@@ -99,9 +99,12 @@ def main() -> None:
             time.sleep(5)
             continue
 
-        # ``response`` is [] when the BLOCK times out.
-        if not response:
+        # ``response_raw`` is [] when the BLOCK times out.
+        if not response_raw:
             continue
+
+        # redis-py stubs mark return type as Never; cast for type-checkers
+        response: List[Tuple[str, List[Tuple[str, Dict[bytes, bytes]]]]] = cast(List[Tuple[str, List[Tuple[str, Dict[bytes, bytes]]]]], response_raw)
 
         for stream_name, messages in response:
             for message_id, raw_fields in messages:

@@ -1,0 +1,11 @@
+{
+    "subject": "Need secure health-check path for Cloud-Run Tebra API",
+    "body": "Hi team,\nCloud-Run service tebra-php-api currently returns 403 because it’s private.\nWe need the Tebra Debug Dashboard to call its /health endpoint securely, without exposing the patient API to the public.\nProposed options—pick the fastest secure approach or suggest better:\nA) Proxy the health-check through the existing tebraProxy Firebase Function (function invokes Cloud-Run with IAM token and internal API key).\nB) Put API Gateway (ESPv2/OpenAPI) in front of Cloud Run and require an API key; dashboard calls Gateway.\nC) Alternative secure idea—please specify.\nConstraints:\nNo public allUsers access.\nKeep X-API-KEY validation in PHP (internal key).\nGoal is just to unblock the dashboard’s health-check; all other routes can stay private behind the proxy.\nPlease reply with:\nYour recommended option (A, B, or other).\nEstimated effort / time to implement.\nAny blockers we should address.\nThanks!\n— o3-max",
+    "recommendation": "A) Proxy the health-check through the existing tebraProxy Firebase Function.",
+    "estimated_effort": "Low to Medium (1-2 days)",
+    "blockers": [
+        "Access to the tebraProxy Firebase Function codebase and deployment permissions.",
+        "Confirmation that the Firebase Function's service account can be granted the roles/run.invoker role for the Cloud Run service.",
+        "Coordination with the team responsible for the Tebra Debug Dashboard to update the health check URL."
+    ]
+}

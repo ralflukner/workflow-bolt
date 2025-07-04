@@ -168,7 +168,7 @@ def read_messages(client, count=5, last_id="0-0"):
         print(f"❌ Failed to read messages: {e}")
         return []
 
-def send_hello_world():
+def send_hello_world(sender_override=None):
     """Send a hello_world message to the Redis stream."""
     # Connect to Redis
     client = connect_to_redis()
@@ -176,7 +176,7 @@ def send_hello_world():
         return
     
     # Send hello_world message
-    sender_name = os.environ.get("USER", "new_dev")
+    sender_name = sender_override if sender_override else os.environ.get("USER", "new_dev")
     send_message(
         client,
         sender=sender_name,
@@ -184,7 +184,7 @@ def send_hello_world():
         payload={"message": f"Hello from {sender_name}! Just joined the Redis Event-Bus."}
     )
 
-def send_lock_shell(lock_name, ttl_ms=900000):
+def send_lock_shell(lock_name, ttl_ms=900000, sender_override=None):
     """
     Send a lock_shell message to the Redis stream.
     
@@ -198,7 +198,7 @@ def send_lock_shell(lock_name, ttl_ms=900000):
         return
     
     # Send lock_shell message
-    sender_name = os.environ.get("USER", "new_dev")
+    sender_name = sender_override if sender_override else os.environ.get("USER", "new_dev")
     send_message(
         client,
         sender=sender_name,
@@ -206,7 +206,7 @@ def send_lock_shell(lock_name, ttl_ms=900000):
         payload={"lock": lock_name, "ttl_ms": ttl_ms}
     )
 
-def send_unlock_shell(lock_name):
+def send_unlock_shell(lock_name, sender_override=None):
     """
     Send an unlock_shell message to the Redis stream.
     
@@ -219,7 +219,7 @@ def send_unlock_shell(lock_name):
         return
     
     # Send unlock_shell message
-    sender_name = os.environ.get("USER", "new_dev")
+    sender_name = sender_override if sender_override else os.environ.get("USER", "new_dev")
     send_message(
         client,
         sender=sender_name,
@@ -380,7 +380,7 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="Redis Event-Bus Client with Reply Support")
-    parser.add_argument("command", choices=["hello", "read", "lock", "unlock", "request", "response", "inbox", "demo"], 
+    parser.add_argument("command", choices=["hello", "read", "lock", "unlock", "request", "response", "inbox", "demo", "send"], 
                         help="Command to execute")
     parser.add_argument("--count", type=int, default=5, 
                         help="Number of messages to read")
@@ -398,8 +398,12 @@ def main():
                         help="Agent ID for inbox reading")
     parser.add_argument("--payload", type=str, default=None, 
                         help="JSON payload for messages")
+    parser.add_argument("--payload-file", type=str, default=None, 
+                        help="Path to a JSON file containing the payload for messages")
     parser.add_argument("--timeout", type=int, default=30, 
                         help="Timeout in seconds for waiting responses")
+    parser.add_argument("--sender", type=str, default=None, 
+                        help="Name of the sender for the message")
     
     args = parser.parse_args()
     
@@ -411,22 +415,33 @@ def main():
         except json.JSONDecodeError:
             print("❌ Invalid JSON payload")
             return
+    elif args.payload_file:
+        try:
+            with open(args.payload_file, 'r') as f:
+                payload = json.load(f)
+        except FileNotFoundError:
+            print(f"❌ Payload file not found: {args.payload_file}")
+            return
+        except json.JSONDecodeError:
+            print(f"❌ Invalid JSON in payload file: {args.payload_file}")
+            return
     
     # Execute the requested command
+    sender_name = args.sender if args.sender else os.environ.get("USER", "new_dev")
+
     if args.command == "hello":
-        send_hello_world()
+        send_hello_world(sender_name)
     elif args.command == "read":
         client = connect_to_redis()
         if client:
             read_messages(client, count=args.count)
     elif args.command == "lock":
-        send_lock_shell(args.resource, args.ttl)
+        send_lock_shell(args.resource, args.ttl, sender_name)
     elif args.command == "unlock":
-        send_unlock_shell(args.resource)
+        send_unlock_shell(args.resource, sender_name)
     elif args.command == "request":
         client = connect_to_redis()
         if client:
-            sender_name = os.environ.get("USER", "new_dev")
             correlation_id = send_request(client, sender_name, args.action, payload, args.target)
             print(f"✅ Request sent with correlation ID: {correlation_id}")
             
@@ -443,7 +458,6 @@ def main():
             return
         client = connect_to_redis()
         if client:
-            sender_name = os.environ.get("USER", "new_dev")
             send_response(client, sender_name, args.action, payload, args.correlation_id, args.target)
             print(f"✅ Response sent for correlation ID: {args.correlation_id}")
     elif args.command == "inbox":
@@ -453,8 +467,13 @@ def main():
         client = connect_to_redis()
         if client:
             read_agent_inbox(client, args.agent_id, count=args.count)
+    elif args.command == "send":
+        client = connect_to_redis()
+        if client:
+            send_message(client, sender_name, args.action, payload)
+            print(f"✅ Message with action '{args.action}' sent.")
     elif args.command == "demo":
-        demo_request_response()
+        demo_request_response(sender_name)
 
 def demo_request_response():
     """Demonstrate request/response functionality."""

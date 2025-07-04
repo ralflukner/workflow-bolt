@@ -1,0 +1,271 @@
+ralfb.luknermdphd@Ralfs-MacBook-Air scripts % chmod +x setup-tebra-service-account.sh   
+ralfb.luknermdphd@Ralfs-MacBook-Air scripts % ./check-secret-newlines.sh
+🔍 Scanning secrets in project: luknerlumina-firebase
+Secret ID                            Ends with newline?
+AUTH0_AUDIENCE                       no
+AUTH0_CLIENT_ID                      no
+AUTH0_DOMAIN                         no
+AUTH0_REDIRECT_URI                   no
+AUTH0_SCOPE                          no
+FIREBASE_API_KEY                     no
+FIREBASE_APP_ID                      no
+FIREBASE_AUTH_DOMAIN                 no
+FIREBASE_CONFIG                      no
+FIREBASE_MEASUREMENT_ID              no
+FIREBASE_MESSAGING_SENDER_ID         no
+FIREBASE_PROJECT_ID                  no
+FIREBASE_STORAGE_BUCKET              no
+GMAIL_CLIENT_ID                      no
+GMAIL_CLIENT_SECRET                  no
+GMAIL_OAUTH_CLIENT_ID                no
+^C
+ralfb.luknermdphd@Ralfs-MacBook-Air scripts % ./setup-tebra-service-account.sh
+🔧 Setting up dedicated service account for tebraProxy...
+📦 Creating service account...
+ERROR: (gcloud.iam.service-accounts.create) Resource in projects [luknerlumina-firebase] is the subject of a conflict: Service account tebra-proxy-invoker already exists within project projects/luknerlumina-firebase.
+- '@type': type.googleapis.com/google.rpc.ResourceInfo
+  resourceName: projects/luknerlumina-firebase/serviceAccounts/tebra-proxy-invoker@luknerlumina-firebase.iam.gserviceaccount.com
+SA already exists
+🔐 Granting IAM roles...
+Updated IAM policy for project [luknerlumina-firebase].
+bindings:
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-artifactregistry.iam.gserviceaccount.com
+  role: roles/artifactregistry.serviceAgent
+- members:
+  - serviceAccount:623450773640@cloudbuild.gserviceaccount.com
+  role: roles/cloudbuild.builds.builder
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-cloudbuild.iam.gserviceaccount.com
+  role: roles/cloudbuild.serviceAgent
+- members:
+  - serviceAccount:service-623450773640@gcf-admin-robot.iam.gserviceaccount.com
+  role: roles/cloudfunctions.serviceAgent
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-cloudscheduler.iam.gserviceaccount.com
+  role: roles/cloudscheduler.serviceAgent
+- members:
+  - serviceAccount:service-623450773640@containerregistry.iam.gserviceaccount.com
+  role: roles/containerregistry.ServiceAgent
+- members:
+  - serviceAccount:623450773640-compute@developer.gserviceaccount.com
+  - serviceAccount:623450773640@cloudservices.gserviceaccount.com
+  - serviceAccount:luknerlumina-firebase@appspot.gserviceaccount.com
+  role: roles/editor
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-firebase.iam.gserviceaccount.com
+  role: roles/firebase.managementServiceAgent
+- members:
+  - serviceAccount:623450773640-compute@developer.gserviceaccount.com
+  - serviceAccount:firebase-adminsdk-fbsvc@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/firebase.sdkAdminServiceAgent
+- members:
+  - serviceAccount:firebase-adminsdk-fbsvc@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/firebaseauth.admin
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-firebasemods.iam.gserviceaccount.com
+  role: roles/firebasemods.serviceAgent
+- members:
+  - serviceAccount:service-623450773640@firebase-rules.iam.gserviceaccount.com
+  role: roles/firebaserules.system
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-firestore.iam.gserviceaccount.com
+  role: roles/firestore.serviceAgent
+- members:
+  - serviceAccount:623450773640-compute@developer.gserviceaccount.com
+  - serviceAccount:firebase-adminsdk-fbsvc@luknerlumina-firebase.iam.gserviceaccount.com
+  - serviceAccount:luknerlumina-firebase@appspot.gserviceaccount.com
+  role: roles/iam.serviceAccountTokenCreator
+- members:
+  - user:lukner@luknerclinic.com
+  role: roles/iam.serviceAccountUser
+- members:
+  - serviceAccount:tebra-api-service@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/logging.logWriter
+- members:
+  - user:lukner@luknerclinic.com
+  role: roles/owner
+- members:
+  - serviceAccount:firebase-adminsdk-fbsvc@luknerlumina-firebase.iam.gserviceaccount.com
+  - serviceAccount:tebra-proxy-invoker@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/run.invoker
+- members:
+  - serviceAccount:service-623450773640@serverless-robot-prod.iam.gserviceaccount.com
+  role: roles/run.serviceAgent
+- members:
+  - serviceAccount:623450773640-compute@developer.gserviceaccount.com
+  - serviceAccount:github-ci-sa@luknerlumina-firebase.iam.gserviceaccount.com
+  - serviceAccount:luknerlumina-firebase@appspot.gserviceaccount.com
+  - serviceAccount:service-623450773640@gcf-admin-robot.iam.gserviceaccount.com
+  - serviceAccount:tebra-cloud-run-sa@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/secretmanager.secretAccessor
+etag: BwY5FLWn7mk=
+version: 1
+Updated IAM policy for project [luknerlumina-firebase].
+bindings:
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-artifactregistry.iam.gserviceaccount.com
+  role: roles/artifactregistry.serviceAgent
+- members:
+  - serviceAccount:623450773640@cloudbuild.gserviceaccount.com
+  role: roles/cloudbuild.builds.builder
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-cloudbuild.iam.gserviceaccount.com
+  role: roles/cloudbuild.serviceAgent
+- members:
+  - serviceAccount:service-623450773640@gcf-admin-robot.iam.gserviceaccount.com
+  role: roles/cloudfunctions.serviceAgent
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-cloudscheduler.iam.gserviceaccount.com
+  role: roles/cloudscheduler.serviceAgent
+- members:
+  - serviceAccount:service-623450773640@containerregistry.iam.gserviceaccount.com
+  role: roles/containerregistry.ServiceAgent
+- members:
+  - serviceAccount:623450773640-compute@developer.gserviceaccount.com
+  - serviceAccount:623450773640@cloudservices.gserviceaccount.com
+  - serviceAccount:luknerlumina-firebase@appspot.gserviceaccount.com
+  role: roles/editor
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-firebase.iam.gserviceaccount.com
+  role: roles/firebase.managementServiceAgent
+- members:
+  - serviceAccount:623450773640-compute@developer.gserviceaccount.com
+  - serviceAccount:firebase-adminsdk-fbsvc@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/firebase.sdkAdminServiceAgent
+- members:
+  - serviceAccount:firebase-adminsdk-fbsvc@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/firebaseauth.admin
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-firebasemods.iam.gserviceaccount.com
+  role: roles/firebasemods.serviceAgent
+- members:
+  - serviceAccount:service-623450773640@firebase-rules.iam.gserviceaccount.com
+  role: roles/firebaserules.system
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-firestore.iam.gserviceaccount.com
+  role: roles/firestore.serviceAgent
+- members:
+  - serviceAccount:623450773640-compute@developer.gserviceaccount.com
+  - serviceAccount:firebase-adminsdk-fbsvc@luknerlumina-firebase.iam.gserviceaccount.com
+  - serviceAccount:luknerlumina-firebase@appspot.gserviceaccount.com
+  role: roles/iam.serviceAccountTokenCreator
+- members:
+  - user:lukner@luknerclinic.com
+  role: roles/iam.serviceAccountUser
+- members:
+  - serviceAccount:tebra-api-service@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/logging.logWriter
+- members:
+  - user:lukner@luknerclinic.com
+  role: roles/owner
+- members:
+  - serviceAccount:firebase-adminsdk-fbsvc@luknerlumina-firebase.iam.gserviceaccount.com
+  - serviceAccount:tebra-proxy-invoker@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/run.invoker
+- members:
+  - serviceAccount:service-623450773640@serverless-robot-prod.iam.gserviceaccount.com
+  role: roles/run.serviceAgent
+- members:
+  - serviceAccount:623450773640-compute@developer.gserviceaccount.com
+  - serviceAccount:github-ci-sa@luknerlumina-firebase.iam.gserviceaccount.com
+  - serviceAccount:luknerlumina-firebase@appspot.gserviceaccount.com
+  - serviceAccount:service-623450773640@gcf-admin-robot.iam.gserviceaccount.com
+  - serviceAccount:tebra-cloud-run-sa@luknerlumina-firebase.iam.gserviceaccount.com
+  - serviceAccount:tebra-proxy-invoker@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/secretmanager.secretAccessor
+etag: BwY5FLW6uV4=
+version: 1
+Updated IAM policy for project [luknerlumina-firebase].
+bindings:
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-artifactregistry.iam.gserviceaccount.com
+  role: roles/artifactregistry.serviceAgent
+- members:
+  - serviceAccount:623450773640@cloudbuild.gserviceaccount.com
+  role: roles/cloudbuild.builds.builder
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-cloudbuild.iam.gserviceaccount.com
+  role: roles/cloudbuild.serviceAgent
+- members:
+  - serviceAccount:service-623450773640@gcf-admin-robot.iam.gserviceaccount.com
+  role: roles/cloudfunctions.serviceAgent
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-cloudscheduler.iam.gserviceaccount.com
+  role: roles/cloudscheduler.serviceAgent
+- members:
+  - serviceAccount:service-623450773640@containerregistry.iam.gserviceaccount.com
+  role: roles/containerregistry.ServiceAgent
+- members:
+  - serviceAccount:tebra-proxy-invoker@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/datastore.user
+- members:
+  - serviceAccount:623450773640-compute@developer.gserviceaccount.com
+  - serviceAccount:623450773640@cloudservices.gserviceaccount.com
+  - serviceAccount:luknerlumina-firebase@appspot.gserviceaccount.com
+  role: roles/editor
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-firebase.iam.gserviceaccount.com
+  role: roles/firebase.managementServiceAgent
+- members:
+  - serviceAccount:623450773640-compute@developer.gserviceaccount.com
+  - serviceAccount:firebase-adminsdk-fbsvc@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/firebase.sdkAdminServiceAgent
+- members:
+  - serviceAccount:firebase-adminsdk-fbsvc@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/firebaseauth.admin
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-firebasemods.iam.gserviceaccount.com
+  role: roles/firebasemods.serviceAgent
+- members:
+  - serviceAccount:service-623450773640@firebase-rules.iam.gserviceaccount.com
+  role: roles/firebaserules.system
+- members:
+  - serviceAccount:service-623450773640@gcp-sa-firestore.iam.gserviceaccount.com
+  role: roles/firestore.serviceAgent
+- members:
+  - serviceAccount:623450773640-compute@developer.gserviceaccount.com
+  - serviceAccount:firebase-adminsdk-fbsvc@luknerlumina-firebase.iam.gserviceaccount.com
+  - serviceAccount:luknerlumina-firebase@appspot.gserviceaccount.com
+  role: roles/iam.serviceAccountTokenCreator
+- members:
+  - user:lukner@luknerclinic.com
+  role: roles/iam.serviceAccountUser
+- members:
+  - serviceAccount:tebra-api-service@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/logging.logWriter
+- members:
+  - user:lukner@luknerclinic.com
+  role: roles/owner
+- members:
+  - serviceAccount:firebase-adminsdk-fbsvc@luknerlumina-firebase.iam.gserviceaccount.com
+  - serviceAccount:tebra-proxy-invoker@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/run.invoker
+- members:
+  - serviceAccount:service-623450773640@serverless-robot-prod.iam.gserviceaccount.com
+  role: roles/run.serviceAgent
+- members:
+  - serviceAccount:623450773640-compute@developer.gserviceaccount.com
+  - serviceAccount:github-ci-sa@luknerlumina-firebase.iam.gserviceaccount.com
+  - serviceAccount:luknerlumina-firebase@appspot.gserviceaccount.com
+  - serviceAccount:service-623450773640@gcf-admin-robot.iam.gserviceaccount.com
+  - serviceAccount:tebra-cloud-run-sa@luknerlumina-firebase.iam.gserviceaccount.com
+  - serviceAccount:tebra-proxy-invoker@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/secretmanager.secretAccessor
+etag: BwY5FLXRSIg=
+version: 1
+🚀 Granting Cloud Run service access...
+Updated IAM policy for service [tebra-php-api].
+bindings:
+- members:
+  - serviceAccount:firebase-adminsdk-fbsvc@luknerlumina-firebase.iam.gserviceaccount.com
+  - serviceAccount:luknerlumina-firebase@appspot.gserviceaccount.com
+  - serviceAccount:service-623450773640@gcf-admin-robot.iam.gserviceaccount.com
+  - serviceAccount:tebra-api-client@luknerlumina-firebase.iam.gserviceaccount.com
+  - serviceAccount:tebra-proxy-invoker@luknerlumina-firebase.iam.gserviceaccount.com
+  role: roles/run.invoker
+etag: BwY5FLXoBWE=
+version: 1
+⚙️ Updating function configuration...
+./setup-tebra-service-account.sh: line 52: functions/.env.local: No such file or directory
+ralfb.luknermdphd@Ralfs-MacBook-Air scripts % 
