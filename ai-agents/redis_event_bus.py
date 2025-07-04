@@ -3,6 +3,8 @@ import ssl
 import redis
 import json
 from datetime import datetime, timezone
+from redis.exceptions import ConnectionError  # type: ignore
+from urllib.parse import quote_plus
 
 # Redis connection information for staging environment
 REDIS_HOST = "redis-16451.c280.us-central1-2.gce.redns.redis-cloud.com"
@@ -25,8 +27,14 @@ def connect_to_redis():
         return None
     
     try:
-        # Construct the Redis URL for a secure connection
-        url = f"redis://{REDIS_USERNAME}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
+        # Construct the Redis URL for a secure connection.
+        # The password may contain characters that must be URL-encoded; otherwise
+        # redis-py's URL parser mistakes part of the password for the port.
+
+        encoded_pw = quote_plus(REDIS_PASSWORD)
+
+        # Use the TLS scheme (rediss://) so redis-py automatically enables SSL.
+        url = f"rediss://{REDIS_USERNAME}:{encoded_pw}@{REDIS_HOST}:{REDIS_PORT}"
         
         # Create Redis client with SSL enabled
         r = redis.Redis.from_url(url, ssl=True, ssl_cert_reqs=ssl.CERT_NONE)
@@ -39,7 +47,7 @@ def connect_to_redis():
             print("❌ Ping failed. Could not connect to Redis.")
             return None
             
-    except redis.exceptions.ConnectionError as e:
+    except ConnectionError as e:
         print(f"❌ CONNECTION ERROR: Could not connect to Redis. Details: {e}")
         return None
     except Exception as e:
