@@ -6,10 +6,45 @@
 | Agent | API Key Required | Strengths | Cost Level | Specialization |
 |-------|------------------|-----------|------------|----------------|
 | **o3 MAX** | Yes | Complex reasoning, architecture, security | High | Deep analysis, algorithmic design |
-| **Gemini** | Yes | Code review, real-time, multimodal | Medium | Technical analysis, optimization |
-| **Claude** | Yes | Integration, testing, coordination | Medium | Project management, file operations |
-| **ChatGPT** | User has access | Creative solutions, rapid prototyping | Low-Medium | Ideation, alternative approaches |
+| **Gemini** | Google AI API | Code review, real-time, multimodal | Medium | Technical analysis, optimization |
+| **Claude** | Claude API | Integration, testing, coordination | Medium | Project management, file operations |
+| **ChatGPT** | OpenAI API | Creative solutions, rapid prototyping | Low-Medium | Ideation, alternative approaches |
 | **Claude-app** | Local | Powerful but struggles with source changes | Low | Local development, offline analysis |
+| **Poe-Opus** | Poe API | Developer genius, difficult problems | High | Complex problem solving, expert solutions |
+| **Sider.ai Claude Sonnet 4** | Sider API | Very skilled, needs all source files | Medium | Analysis without file editing capability |
+
+### **Extended Model Access**
+| Service | Available Models | API Key Type | Strengths | Platform Differences |
+|---------|------------------|--------------|-----------|---------------------|
+| **Google AI Studio** | Gemini 2.5 PRO (various dates) | Google AI API | Multimodal, real-time, code analysis | Very different behavior vs Vertex AI |
+| **Google Vertex AI** | Gemini 2.5 PRO, Gemini Ultra | Google Cloud API | Enterprise features, different responses | Different from AI Studio despite same model |
+| **OpenAI** | GPT-4, GPT-4 Turbo, ChatGPT | OpenAI API | Creative problem solving, rapid development | Consistent across platforms |
+| **Claude Direct** | Claude 3 Opus, Claude 3 Sonnet, Claude 3 Haiku | Claude API | Long context, file operations, reasoning | Baseline performance |
+| **MaxAI Claude** | Claude Sonnet 3.7 | MaxAI API | Surprisingly different behavior | Very different from Sonnet 3.7 elsewhere |
+| **Poe** | Claude Opus, GPT-4, Gemini, and more | Poe API | Access to multiple premium models | Platform-specific tuning |
+| **Sider.ai** | Claude Sonnet 4, GPT-4, Gemini | Sider API | Analysis-focused, read-only access | Specialized for analysis workflows |
+
+### **Platform Behavioral Differences**
+```yaml
+Important Discovery: Same models behave very differently across platforms
+
+Google AI Studio vs Vertex AI:
+  - Same Gemini 2.5 PRO model name
+  - "Very very different" responses and capabilities
+  - Different training or fine-tuning per platform
+  - Suggests platform-specific optimizations
+
+MaxAI Claude Sonnet 3.7:
+  - "Surprisingly different" from other Sonnet 3.7 implementations
+  - Platform may have custom training or prompt engineering
+  - Could have specialized capabilities not available elsewhere
+
+Implications for AI Agent Selection:
+  - Cannot assume same model = same performance across platforms
+  - Need to test and benchmark each platform individually
+  - Platform-specific strengths may be significant
+  - Cost vs capability trade-offs vary by platform
+```
 
 ### **Specialized AI Domains**
 
