@@ -1,12 +1,12 @@
 # Auth0 Firebase Integration Debugging Guide
 
-**Version**: 1.0  
-**Last Updated**: 2025-06-22  
+**Version**: 1.1  
+**Last Updated**: 2025-07-04  
 **Authors**: Claude Code Assistant  
 
 ## Summary
 
-This document contains debugging information for Auth0 token exchange with Firebase Functions, specifically resolving JWT verification failures.
+This document contains debugging information for Auth0 token exchange with Firebase Functions and Tebra sync functionality, specifically resolving JWT verification failures and runtime errors.
 
 ## Pre-flight Checklist
 
@@ -782,3 +782,99 @@ tebraDebug.testChain()
 - **API Key Management**: PHP service credentials stored in Google Secret Manager
 - **Rate Limiting**: Built into both Firebase Functions and PHP service
 - **Audit Logging**: All requests logged for compliance and debugging
+
+---
+
+# Tebra Sync Debugging Guide
+
+## Recent Fix: Sync Runtime Error (2025-07-04)
+
+### Problem
+Tebra sync was failing with "Unknown error" due to a JavaScript runtime error:
+```
+ReferenceError: appointmentsArray is not defined
+```
+
+### Root Cause
+In `/functions/src/tebra-sync/syncSchedule.js`, the variable `appointmentsArray` was declared but not initialized:
+```javascript
+let appointmentsArray; // undefined if try block fails
+```
+
+Later in the code (line 154), this variable was used in a `.map()` operation:
+```javascript
+const patientPromises = appointmentsArray.map(appt => /* ... */);
+```
+
+If the initial API call failed, `appointmentsArray` would be `undefined`, causing the runtime error.
+
+### Solution Applied
+**File**: `/functions/src/tebra-sync/syncSchedule.js:90`
+
+**Before**:
+```javascript
+let appointmentsArray;
+```
+
+**After**:
+```javascript
+let appointmentsArray = [];
+```
+
+### Impact
+- ✅ Sync no longer crashes with runtime errors
+- ✅ Empty array allows graceful handling of API failures
+- ✅ Better error logging and debugging capability
+- ✅ Proper fallback behavior when no appointments are found
+
+### Deployment
+```bash
+firebase deploy --only functions:tebraSyncTodaysSchedule
+```
+
+### Testing
+After the fix:
+1. Click "Sync Today" button in the dashboard
+2. Should no longer show "Unknown error"
+3. May show specific API errors or success messages
+
+### Related Files
+- **Core sync logic**: `/functions/src/tebra-sync/syncSchedule.js`
+- **Firebase Function**: `/functions/src/tebra-sync/index.js` 
+- **Frontend API**: `/src/services/tebraFirebaseApi.ts`
+- **UI Component**: `/src/components/TebraIntegrationNew.tsx`
+
+### Prevention
+This type of error can be prevented by:
+1. Always initializing variables with appropriate default values
+2. Adding proper null/undefined checks before array operations
+3. Using optional chaining (`?.`) for safer property access
+4. Comprehensive error handling in async operations
+
+### Debug Commands for Sync Issues
+
+```bash
+# Check sync function logs
+firebase functions:log tebraSyncTodaysSchedule
+
+# Deploy specific sync function
+firebase deploy --only functions:tebraSyncTodaysSchedule
+
+# Test sync in browser console (requires authentication)
+tebraDebug.testChain()
+```
+
+### Common Sync Error Patterns
+
+1. **Runtime Errors**: Variable not defined, array operations on undefined
+2. **API Timeout**: Tebra API rate limiting or network issues  
+3. **Authentication**: Auth0 token expired or invalid
+4. **Data Format**: Unexpected API response structure
+5. **Concurrency**: Too many simultaneous API calls
+
+### Monitoring Sync Health
+
+- Check dashboard for sync status indicators
+- Monitor Firebase Function logs for errors
+- Verify Tebra API connectivity with "Test Connection"
+- Review patient data synchronization accuracy
