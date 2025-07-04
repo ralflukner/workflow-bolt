@@ -37,11 +37,11 @@ export async function startWorkerMock(options: {
       const res = await client.xReadGroup(group, consumer, {
         key: stream,
         id: '>',
-      }, { COUNT: 1, BLOCK: 1000 });
+      }, { COUNT: 1, BLOCK: 1000 }) as any[] | null;
 
       if (res) {
-        for (const { messages } of res) {
-          for (const msg of messages) {
+        for (const streamData of res) {
+          for (const msg of streamData.messages) {
             const taskId = msg.message.task_id || msg.id;
             await client.xAdd(resultStream, '*', {
               task_id: taskId,

@@ -93,8 +93,7 @@ describe('HealthCheckCommand Unit Tests', () => {
 
     await command.run();
 
-    expect(HealthCheckCommand.prototype.log).toHaveBeenCalledWith(expect.stringContaining('{
-  "timestamp":'));
+    expect(HealthCheckCommand.prototype.log).toHaveBeenCalledWith(expect.stringContaining('{"timestamp":'));
     expect(process.exitCode).toBe(0);
   });
 
@@ -106,7 +105,7 @@ describe('HealthCheckCommand Unit Tests', () => {
     });
     (execSync as jest.Mock).mockImplementation((cmd: string) => {
       if (cmd.includes('npm install')) {
-        (existsSync as jest.Mock).mockImplementation((path: string) => true); // Simulate node_modules created
+        (existsSync as jest.Mock).mockImplementation((_path: string) => true); // Simulate node_modules created
         return 'install success';
       }
       return 'output';

@@ -34,6 +34,16 @@ keyfile.json
 **/config/*firebase*.json
 **/config/*adminsdk*.json
 
+# Redis Credentials
+redis-ca.pem
+**/redis-credentials*.json
+**/redis-config*.json
+**/redis-secret*.json
+**/redis-password*.txt
+**/redis-env*.sh
+redis-env/
+redis-test-env/
+
 # API Keys and Secrets
 **/secrets.json
 api-keys.txt

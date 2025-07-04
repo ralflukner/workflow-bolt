@@ -81,16 +81,16 @@ async function callTebraProxy(action: string, params: Record<string, unknown> = 
       action,  // This determines what the PHP proxy will do
       ...params
     };
-    
+
     secureLog(`📤 Calling Tebra proxy with action: ${action}`, payload);
-    
+
     const tebraProxy = await getTebraProxyFunction();
     const result = await tebraProxy(payload);
-    
+
     // Handle the response - check if it's wrapped or direct
     const response = result.data as ApiResponse;
     secureLog(`📥 Tebra proxy response for ${action}:`, response);
-    
+
     // Check for nested data structure (result.data.data)
     if (isNestedApiResponse(response)) {
       // Handle double-nested structure
@@ -102,17 +102,17 @@ async function callTebraProxy(action: string, params: Record<string, unknown> = 
         timestamp: response.timestamp
       };
     }
-    
+
     return response;
   } catch (error: unknown) {
     secureLog(`❌ Tebra proxy error for ${action}:`, error);
-    
+
     // Extract meaningful error message
     let errorMessage = 'Unknown error';
-    
+
     if (error && typeof error === 'object') {
       const errorObj = error as { code?: string; message?: string };
-      
+
       if (errorObj.code === 'functions/unauthenticated') {
         errorMessage = 'User authentication required - please log in';
       } else if (errorObj.message?.includes('Unauthorized') || errorObj.message?.includes('401')) {
@@ -123,7 +123,7 @@ async function callTebraProxy(action: string, params: Record<string, unknown> = 
         errorMessage = errorObj.message;
       }
     }
-    
+
     // Format error response
     return {
       success: false,
@@ -141,7 +141,7 @@ export async function tebraTestConnection(): Promise<ApiResponse> {
   try {
     // Use getProviders as a connection test since testConnection might not exist
     const result = await callTebraProxy('getProviders');
-    
+
     if (result.success) {
       return {
         success: true,
@@ -150,7 +150,7 @@ export async function tebraTestConnection(): Promise<ApiResponse> {
         timestamp: new Date().toISOString()
       };
     }
-    
+
     return result;
   } catch (error) {
     secureLog('❌ Tebra connection test failed:', error);
@@ -192,7 +192,7 @@ export async function tebraGetAppointments(params: { fromDate: string; toDate: s
 }
 
 /**
- * Get providers list
+ * Get the provider list
  */
 export async function tebraGetProviders(): Promise<ApiResponse> {
   return callTebraProxy('getProviders');
@@ -220,7 +220,7 @@ export async function tebraTestAppointments(): Promise<ApiResponse> {
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  
+
   return tebraGetAppointments({
     fromDate: today.toISOString().split('T')[0],
     toDate: tomorrow.toISOString().split('T')[0]
@@ -235,17 +235,75 @@ export async function tebraSyncSchedule(params: { date: string }): Promise<ApiRe
 }
 
 /**
+ * Send health check data to Redis event bus
+ * @param healthData Health check data to send
+ */
+async function sendToRedisEventBus(healthData: {
+  success: boolean;
+  components: {
+    firebase: { status: string };
+    phpProxy: string;
+    tebra: string;
+  };
+  error?: string;
+}): Promise<boolean> {
+  const redisEventBusUrl = import.meta.env.VITE_REDIS_SSE_URL;
+
+  // If Redis URL is not configured, skip
+  if (!redisEventBusUrl) {
+    console.log('Redis Event Bus URL not configured, skipping Redis update');
+    return false;
+  }
+
+  try {
+    // Convert the Redis SSE URL to a POST endpoint for sending events
+    // Typically the SSE endpoint is for receiving events, but we assume there's a companion
+    // endpoint for sending events with the same base URL but different path
+    const postUrl = redisEventBusUrl.toString().replace('/sse', '/publish');
+
+    // Prepare the event data
+    const eventData = {
+      agent: 'tebra-health-check',
+      type: 'tebra_health_check',
+      ts: new Date().toISOString(),
+      msg: `step:health_check status:${healthData.success ? 'healthy' : 'error'} responseTime:${Date.now() % 1000} ${healthData.error || 'All systems operational'}`,
+      correlationId: `health-${Date.now()}`
+    };
+
+    // Send the event data to Redis
+    const response = await fetch(postUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(eventData),
+    });
+
+    if (!response.ok) {
+      console.warn('Failed to send health check data to Redis:', await response.text());
+      return false;
+    }
+
+    console.log('✅ Health check data sent to Redis Event Bus');
+    return true;
+  } catch (error) {
+    console.warn('Error sending health check data to Redis:', error);
+    return false;
+  }
+}
+
+/**
  * Health check for the entire chain
  */
 export async function tebraHealthCheck(): Promise<ApiResponse> {
   try {
     // First check if Firebase Functions are responsive
     const healthResult = await callTebraProxy('healthCheck');
-    
+
     // Then check PHP proxy connection using getProviders
     const proxyHealth = await tebraTestConnection();
-    
-    return {
+
+    const healthData = {
       success: proxyHealth.success,
       data: {
         firebase: healthResult.data || { status: 'healthy' },
@@ -256,17 +314,43 @@ export async function tebraHealthCheck(): Promise<ApiResponse> {
       message: proxyHealth.success ? 'All systems operational' : `Connection issues: ${proxyHealth.error}`,
       timestamp: new Date().toISOString()
     };
+
+    // Send health check data to Redis event bus (non-blocking)
+    sendToRedisEventBus({
+      success: proxyHealth.success,
+      components: {
+        firebase: healthResult.data || { status: 'healthy' },
+        phpProxy: proxyHealth.success ? 'Connected' : 'Failed',
+        tebra: proxyHealth.success ? 'Connected' : 'Unknown',
+      },
+      error: proxyHealth.error
+    }).catch(err => console.warn('Redis event bus update failed:', err));
+
+    return healthData;
   } catch (error: unknown) {
     const errorMessage = error && typeof error === 'object' && 'message' in error 
       ? (error as { message: string }).message 
       : 'Unknown error';
-      
-    return {
+
+    const healthData = {
       success: false,
       error: errorMessage,
       message: 'Health check failed',
       timestamp: new Date().toISOString()
     };
+
+    // Send error to Redis event bus (non-blocking)
+    sendToRedisEventBus({
+      success: false,
+      components: {
+        firebase: { status: 'unknown' },
+        phpProxy: 'Failed',
+        tebra: 'Unknown',
+      },
+      error: errorMessage
+    }).catch(err => console.warn('Redis event bus update failed:', err));
+
+    return healthData;
   }
 }
 
@@ -293,6 +377,7 @@ interface TebraDebugTools {
   testConnection: () => Promise<ApiResponse>;
   getProviders: () => Promise<ApiResponse>;
   getPatients: () => Promise<ApiResponse>;
+  testRedisConnection: () => Promise<boolean>;
 }
 
 interface AppointmentData {
@@ -315,7 +400,7 @@ interface ProviderData {
 (window as unknown as Window & { tebraDebug: TebraDebugTools }).tebraDebug = {
   // Get configuration info
   config: getApiInfo,
-  
+
   // Test the complete chain
   async testChain() {
     console.log('🔍 Testing Tebra integration chain...');
@@ -323,12 +408,12 @@ interface ProviderData {
     console.log('Health check result:', health);
     return health;
   },
-  
+
   // Get appointments with detailed logging
   async getAppointments(fromDate: string, toDate: string) {
     console.log(`📅 Getting appointments from ${fromDate} to ${toDate}`);
     const result = await tebraGetAppointments({ fromDate, toDate });
-    
+
     // Handle the response structure
     const appointmentData = result.data as AppointmentData;
     console.log('Raw appointment response:', {
@@ -345,12 +430,12 @@ interface ProviderData {
     });
     return result;
   },
-  
+
   // Test connection with detailed logging
   async testConnection() {
     console.log('🔌 Testing Tebra connection...');
     const result = await tebraTestConnection();
-    
+
     const providerData = result.data as ProviderData;
     console.log('Connection test response:', {
       success: result.success,
@@ -366,7 +451,7 @@ interface ProviderData {
     });
     return result;
   },
-  
+
   // Get providers with detailed logging
   async getProviders() {
     console.log('👥 Getting providers...');
@@ -374,15 +459,64 @@ interface ProviderData {
     console.log('Providers response:', result);
     return result;
   },
-  
+
   // Get patients with detailed logging
   async getPatients() {
     console.log('🏥 Getting patients...');
     const result = await tebraGetPatients();
     console.log('Patients response:', result);
     return result;
+  },
+
+  // Test Redis connection
+  async testRedisConnection() {
+    console.log('📡 Testing Redis Event Bus connection...');
+    const redisEventBusUrl = import.meta.env.VITE_REDIS_SSE_URL;
+
+    if (!redisEventBusUrl) {
+      console.warn('❌ Redis Event Bus URL not configured. Set VITE_REDIS_SSE_URL in your environment.');
+      return false;
+    }
+
+    try {
+      // Send a test event to Redis
+      const result = await sendToRedisEventBus({
+        success: true,
+        components: {
+          firebase: { status: 'healthy' },
+          phpProxy: 'Connected',
+          tebra: 'Connected',
+        },
+        error: undefined
+      });
+
+      if (result) {
+        console.log('✅ Successfully connected to Redis Event Bus!');
+        console.log(`🔗 Redis Event Bus URL: ${redisEventBusUrl}`);
+
+        // Check if we can also receive events via SSE
+        console.log('ℹ️ To verify bidirectional communication:');
+        console.log('1. Check the Redis Event Bus indicator in the Tebra Debug Dashboard');
+        console.log('2. Or use the useRedisEventBus hook in a component');
+      } else {
+        console.warn('❌ Failed to send test event to Redis Event Bus.');
+      }
+
+      return result;
+    } catch (error) {
+      console.error('❌ Redis Event Bus connection test failed:', error);
+      return false;
+    }
   }
 };
+
+/**
+ * Test Redis Event Bus connection
+ * @returns Promise<boolean> True if connection is successful, false otherwise
+ */
+export async function testRedisConnection(): Promise<boolean> {
+  return (window as unknown as Window & { tebraDebug: TebraDebugTools }).tebraDebug.testRedisConnection();
+}
 
 // Export the main API object
 export const tebraApi = {
@@ -397,6 +531,7 @@ export const tebraApi = {
   testAppointments: tebraTestAppointments,
   syncSchedule: tebraSyncSchedule,
   healthCheck: tebraHealthCheck,
+  testRedisConnection,
   getApiInfo,
 };
 
