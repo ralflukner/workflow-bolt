@@ -1,11 +1,11 @@
-# Trello Setup for Redis 2FA Project & o3 MAX Collaboration
+# Trello Setup for Redis 2FA Project & Multi-AI Collaboration
 
 ## 🚀 Quick Setup Guide
 
 ### 1. Create Trello Board
 1. Go to [trello.com](https://trello.com)
 2. Sign up/Login
-3. Create new board: **"Redis 2FA Authentication System"**
+3. Create new board: **"Redis 2FA Authentication System - Multi-AI Team"**
 
 ### 2. Recommended Board Structure
 
