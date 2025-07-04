@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test tebraProxy with Authentication</title>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJAj8WXD6qteQmMimwuQMj8FprOhYPppM",
+            authDomain: "luknerlumina-firebase.firebaseapp.com",
+            projectId: "luknerlumina-firebase",
+            storageBucket: "luknerlumina-firebase.firebasestorage.app",
+            messagingSenderId: "623450773640",
+            appId: "1:623450773640:web:9afd63d3ccbb1fcb6fe73d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const functions = getFunctions(app);
+
+        async function testWithAuth() {
+            console.log('🔐 Signing in anonymously...');
+            
+            try {
+                await signInAnonymously(auth);
+                console.log('✅ Authenticated successfully');
+                
+                console.log('🧪 Testing tebraProxy with authentication...');
+                const tebraProxy = httpsCallable(functions, 'tebraProxy');
+                
+                // Test health check
+                const result = await tebraProxy({ action: 'health_check' });
+                console.log('✅ tebraProxy SUCCESS with authentication!');
+                console.log('Response:', JSON.stringify(result.data, null, 2));
+                
+                // Test connection
+                const connResult = await tebraProxy({ action: 'testConnection' });
+                console.log('✅ tebraProxy connection test SUCCESS!');
+                console.log('Connection Response:', JSON.stringify(connResult.data, null, 2));
+                
+            } catch (error) {
+                console.error('❌ tebraProxy FAILED:', error);
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
+            }
+        }
+
+        // Run test when page loads
+        window.addEventListener('load', testWithAuth);
+        
+        // Make function available globally for manual testing
+        window.testTebraProxy = testWithAuth;
+    </script>
+</head>
+<body>
+    <h1>Testing tebraProxy with Authentication</h1>
+    <p>Open browser console to see test results.</p>
+    <button onclick="testTebraProxy()">Run Test Again</button>
+</body>
+</html>
