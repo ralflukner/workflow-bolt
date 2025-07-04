@@ -2075,10 +2075,13 @@ print(r.ping())
 ```
 
 3. **System prerequisites**
-   • macOS 14/15 default LibreSSL 3.3.6<br>• No extra env vars—`REDIS_URI` embeds host/port/password.<br>• To enable strict validation download Redis-Labs CA (`redis-ca.pem`) and pass `ssl_ca_certs`.
+   • macOS 14/15 default LibreSSL 3.3.6
+   • No extra env vars—`REDIS_URI` embeds host/port/password.
+   • To enable strict validation download Redis-Labs CA (`redis-ca.pem`) and pass `ssl_ca_certs`.
 
 4. **Next unblock step**
-   • Set `ssl_cert_reqs=ssl.CERT_NONE` temporarily; confirm `ping()==True`.<br>• Then flip to CA validation once infra distributes the CA bundle.
+   • Set `ssl_cert_reqs=ssl.CERT_NONE` temporarily; confirm `ping()==True`.
+   • Then flip to CA validation once infra distributes the CA bundle.
 
 ---
 
