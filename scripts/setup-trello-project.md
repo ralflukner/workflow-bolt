@@ -11,7 +11,7 @@
 
 #### **Lists (Columns):**
 ```
-📋 Backlog → 🎯 Sprint Planning → 🏗️ In Progress → 🔍 Review → ✅ Done → 📚 Documentation
+📋 Backlog → 🎯 Sprint Planning → 🤖 AI Analysis → 🏗️ In Progress → 🔍 Review → ✅ Done → 📚 Documentation
 ```
 
 #### **Labels (Color-coded):**
