@@ -24,10 +24,10 @@ def connect_to_redis():
     try:
         # URL encode the password to handle special characters
         encoded_password = quote_plus(redis_password)
-        url = f"redis://{REDIS_USERNAME}:{encoded_password}@{REDIS_HOST}:{REDIS_PORT}"
+        url = f"rediss://{REDIS_USERNAME}:{encoded_password}@{REDIS_HOST}:{REDIS_PORT}"
         
-        # Create Redis client with SSL
-        client = redis.Redis.from_url(url, ssl_cert_reqs=ssl.CERT_NONE, ssl_check_hostname=False)
+        # Create Redis client with SSL - rediss:// scheme enables SSL automatically
+        client = redis.Redis.from_url(url, ssl_cert_reqs=ssl.CERT_NONE, decode_responses=True)
         
         # Test connection
         if client.ping():
