@@ -15,34 +15,63 @@
 
 ## 🎯 Unified Workflow Strategy
 
-### **Phase 1: Ideation & Rapid Prototyping**
+### **Phase 1: GitHub-Centric Workflow**
 ```
-💡 Idea → 🤖 AI Analysis → ⚡ Bolt.new/Lovable → 📋 GitHub Issue → 🏗️ Local Implementation
+💡 Idea → 📋 GitHub Issue → 🤖 AI Analysis → ⚡ GitHub → Bolt.new/Lovable → 🔥 Firebase/Supabase AI → 🏗️ Production
 ```
 
-### **Phase 2: Development Pipeline**
+### **Phase 2: AI-Powered Development Pipeline**
 ```
-GitHub Issues ←→ Bolt.new Prototypes ←→ Lovable.dev Apps ←→ Local Implementation ←→ Production
+GitHub Repository ←→ Bolt.new (from GitHub) ←→ Lovable.dev (from GitHub) ←→ Firebase AI ←→ Supabase AI ←→ Production
 ```
 
 ## 🔧 Platform-Specific Setups
 
-### 1. **Bolt.new Integration**
+### 1. **GitHub Repository Setup (Required for All Platforms)**
+
+#### **Prerequisites:**
+- GitHub repository with proper structure
+- Issues enabled for project management
+- Actions enabled for automation
+- Repository must be public or have proper access tokens
+
+#### **Repository Structure:**
+```
+workflow-bolt/
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   └── workflows/
+├── prototypes/
+│   ├── bolt-new/
+│   ├── lovable/
+│   ├── firebase/
+│   └── supabase/
+├── scripts/
+└── docs/
+```
+
+### 2. **Bolt.new Integration (GitHub Required)**
 
 #### **Purpose:**
-- ⚡ **Instant React prototyping** with AI assistance
-- 🎨 **UI/UX experimentation** 
-- 🧪 **Proof of concept development**
-- 📱 **Component library testing**
+- ⚡ **Instant React prototyping** directly from GitHub repos
+- 🎨 **UI/UX experimentation** with immediate deployment
+- 🧪 **Proof of concept development** with GitHub sync
+- 📱 **Component library testing** with version control
 
 #### **Workflow:**
 ```
-1. Create idea in GitHub Issue
-2. Use AI (o3 MAX/Gemini/Claude) to refine concept
-3. Prototype in Bolt.new for rapid iteration
-4. Share Bolt.new link in GitHub Issue
-5. Extract successful patterns for local implementation
+1. Create GitHub Issue with prototype request
+2. Push basic structure to GitHub repo
+3. Open Bolt.new with GitHub repo URL: https://bolt.new/github.com/user/repo
+4. Bolt.new clones and allows instant editing
+5. Changes sync back to GitHub automatically
+6. Share live preview URL in GitHub Issue
 ```
+
+#### **GitHub Integration Requirements:**
+- Repository must be accessible to Bolt.new
+- Proper package.json with dependencies
+- Basic React/Node.js structure
 
 #### **Best Practices:**
 - **Document experiments** - Save Bolt.new URLs in GitHub Issues
@@ -71,21 +100,129 @@ GitHub Issues ←→ Bolt.new Prototypes ←→ Lovable.dev Apps ←→ Local Im
    - Security alerts
 ```
 
-### 2. **Lovable.dev Integration**
+### 3. **Lovable.dev Integration (GitHub Required)**
 
 #### **Purpose:**
-- 🏗️ **Full-stack application prototyping**
-- 🔗 **API integration testing**
-- 🎨 **Complete user journey validation**
-- 📊 **Data visualization prototypes**
+- 🏗️ **Full-stack application prototyping** from GitHub repos
+- 🔗 **API integration testing** with GitHub sync
+- 🎨 **Complete user journey validation** with version control
+- 📊 **Data visualization prototypes** with deployment
 
 #### **Workflow:**
 ```
-1. Refine prototype from Bolt.new
-2. Build full-stack version in Lovable.dev
-3. Test with real APIs (Redis, Google Cloud)
-4. Validate complete user workflows
-5. Extract production-ready patterns
+1. Create branch in GitHub repo for Lovable experiment
+2. Open Lovable.dev with GitHub repo URL
+3. Lovable.dev provides full-stack editing environment
+4. Test with real APIs (Redis, Google Cloud, Firebase, Supabase)
+5. Changes sync back to GitHub branch
+6. Merge successful patterns into main branch
+```
+
+#### **GitHub Integration Requirements:**
+- Repository with full-stack structure (frontend + backend)
+- Proper environment configuration
+- API keys and configuration files
+- Database schemas and migrations
+
+### 4. **Firebase AI Development**
+
+#### **Purpose:**
+- 🤖 **AI-powered app generation** with Firebase services
+- 🔥 **Instant backend deployment** with Firebase Functions
+- 📱 **Mobile and web app development** with Firebase SDK
+- 🧠 **AI assistance for Firebase configuration**
+
+#### **Firebase AI Features:**
+```
+Firebase Extensions + AI:
+- AI-powered content generation
+- Intelligent data processing
+- Automated cloud function creation
+- Smart security rules generation
+```
+
+#### **Workflow:**
+```
+1. Create Firebase project linked to GitHub repo
+2. Use Firebase AI tools for app generation
+3. AI generates Firebase Functions, Firestore rules, hosting config
+4. Deploy directly from GitHub with Firebase CLI
+5. Integrate with existing Redis 2FA system
+```
+
+#### **Example Firebase AI Integration:**
+```javascript
+// AI-generated Firebase Function for Redis user management
+exports.createRedisUser = functions.https.onCall(async (data, context) => {
+  // AI-generated authentication and validation
+  const { username, userType } = data;
+  
+  // AI-generated Redis integration
+  const redisClient = await connectToRedis();
+  const userManager = new RedisUserManager();
+  
+  // AI-generated TOTP and security logic
+  const result = await userManager.create(username, userType);
+  
+  return result;
+});
+```
+
+### 5. **Supabase AI Development**
+
+#### **Purpose:**
+- 🐘 **Open-source backend with AI assistance**
+- 🤖 **AI-powered SQL query generation**
+- 🔗 **Real-time features with AI optimization**
+- 🛡️ **AI-assisted Row Level Security (RLS) policies**
+
+#### **Supabase AI Features:**
+```
+Supabase AI Capabilities:
+- SQL query generation from natural language
+- Database schema design assistance
+- Real-time subscription optimization
+- Security policy generation
+- API endpoint creation
+```
+
+#### **Workflow:**
+```
+1. Create Supabase project with GitHub integration
+2. Use Supabase AI to design database schema
+3. AI generates SQL tables, functions, and policies
+4. Connect to GitHub for automatic deployments
+5. Integrate with Redis 2FA for hybrid architecture
+```
+
+#### **Example Supabase AI Integration:**
+```sql
+-- AI-generated table for Redis user tracking
+CREATE TABLE redis_users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  user_type TEXT CHECK (user_type IN ('agent', 'human')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  last_login TIMESTAMP WITH TIME ZONE,
+  totp_secret_rotated_at TIMESTAMP WITH TIME ZONE,
+  is_active BOOLEAN DEFAULT true
+);
+
+-- AI-generated RLS policy
+CREATE POLICY "Users can view their own data" ON redis_users
+  FOR SELECT USING (auth.uid()::text = user_metadata->>'redis_username');
+
+-- AI-generated function for user management
+CREATE OR REPLACE FUNCTION manage_redis_user(
+  p_username TEXT,
+  p_action TEXT
+) RETURNS JSON AS $$
+-- AI-generated Redis integration logic
+BEGIN
+  -- Call Redis user management functions
+  -- Return structured response
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
 #### **Best Practices:**
