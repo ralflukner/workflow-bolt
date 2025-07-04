@@ -7,6 +7,7 @@
 ## 🔴 Redis Message Reading and Reply System Enhancement
 
 ### Completed Core Features
+
 1. **Enhanced Message Structure** – Added `correlation_id`, `reply_to`, and `message_type` fields for robust request/response pairing.
 2. **Direct Agent Messaging** – Implemented agent-specific inbox streams (`agent_inbox:{agent_id}`) enabling targeted communication.
 3. **Request/Response Helpers** – Added `send_request()`, `send_response()`, `wait_for_response()`, and `read_agent_inbox()` for simplified patterns.
@@ -14,12 +15,14 @@
 5. **CLI Commands** – Introduced `request`, `response`, `inbox`, and `demo` commands for quick end-to-end testing.
 
 ### New Message Types
+
 * `broadcast` – General message to all agents  
 * `request` – Message expecting responses  
 * `response` – Reply referencing a `correlation_id`  
 * `direct` – Targeted message to a specific agent
 
 ### Testing Infrastructure
+
 * Added **`test_redis_messaging.py`** ensuring coverage of broadcast, request/response, and direct flows.
 * CLI demo scenarios showcase typical agent interactions.
 
@@ -54,11 +57,13 @@
 ## 🎯 Key Outcomes
 
 ### Enhanced Capabilities
+
 * Multi-agent systems can now send targeted requests and receive correlated responses.
 * Real-time bidirectional communication between React frontend and Redis agents.
 * Production-ready message correlation for complex workflows.
 
 ### Security Improvements
+
 * Redis password securely stored & automatically accessible.
 * All GSM secrets clean – reduces authentication edge-cases.
 * Improvements documented in `CLAUDE.md`.
@@ -66,8 +71,9 @@
 ---
 
 ## Next Steps
+
 * Roll out enhanced messaging library to all micro-services.
 * Monitor agent coordination latency & error metrics.
 * Formalise SLA dashboards using Cloud Monitoring.
 
-> *This file is auto-generated from the latest implementation summary provided by the engineering team.* 
+> *This file is auto-generated from the latest implementation summary provided by the engineering team.*

@@ -21,6 +21,7 @@ Key components:
 The Redis Event Bus URL is configured via the `VITE_REDIS_SSE_URL` environment variable. This should be set to the URL of the Redis SSE endpoint.
 
 Example:
+
 ```
 VITE_REDIS_SSE_URL=https://your-redis-sse-endpoint.com/sse
 ```

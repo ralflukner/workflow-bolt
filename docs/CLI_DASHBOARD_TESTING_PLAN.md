@@ -13,6 +13,7 @@ This document outlines CLI-based testing strategies to validate every interactiv
 ### 1. **Tebra Integration Dashboard**
 
 #### 1.1 Connection Testing
+
 ```bash
 # Test Tebra connection via CLI
 npx workflow-test tebra:connection --validate-all
@@ -24,6 +25,7 @@ npx workflow-test dashboard:button --target="test-connection" --verify-response
 ```
 
 #### 1.2 Sync Today Functionality
+
 ```bash
 # Critical: Test the failing "Sync Today" feature
 npx workflow-test tebra:sync-today --debug --verbose
@@ -35,6 +37,7 @@ npx workflow-test dashboard:button --target="sync-today" --compare-cli-results
 ```
 
 #### 1.3 Debug Options Testing
+
 ```bash
 # Test all Tebra debug dashboard options
 npx workflow-test tebra:debug --all-options
@@ -46,6 +49,7 @@ npx workflow-test tebra:data-transform --validate
 ### 2. **Main Patient Dashboard**
 
 #### 2.1 Patient Import Testing
+
 ```bash
 # Test MegaParse import (confirmed working)
 npx workflow-test import --file="test-schedule.csv" --mode="megaparse" --verify-dashboard
@@ -58,6 +62,7 @@ npx workflow-test import --file="test-schedule.csv" --mode="legacy" --verify-das
 ```
 
 #### 2.2 Patient Status Buttons
+
 ```bash
 # Test all patient status transition buttons
 npx workflow-test dashboard:patient-status --from="scheduled" --to="arrived" --validate
@@ -69,6 +74,7 @@ npx workflow-test dashboard:patient-status --from="seen-by-md" --to="completed" 
 ```
 
 #### 2.3 Room Assignment Testing
+
 ```bash
 # Test room assignment functionality
 npx workflow-test dashboard:room-assignment --patient-id="test-patient-1" --room="1" --validate
@@ -77,6 +83,7 @@ npx workflow-test dashboard:rooms --availability-check
 ```
 
 #### 2.4 Time Controls Testing
+
 ```bash
 # Test time simulation controls
 npx workflow-test dashboard:time --mode="simulation" --enable
@@ -87,6 +94,7 @@ npx workflow-test dashboard:time --mode="real" --reset
 ### 3. **Modal and Form Testing**
 
 #### 3.1 New Patient Form
+
 ```bash
 # Test new patient creation modal
 npx workflow-test dashboard:modal --target="new-patient" --fill-form --submit
@@ -94,6 +102,7 @@ npx workflow-test dashboard:patient --create --name="CLI Test Patient" --validat
 ```
 
 #### 3.2 Import Schedule Modal
+
 ```bash
 # Test import schedule modal
 npx workflow-test dashboard:modal --target="import-schedule" --file-upload --validate
@@ -101,6 +110,7 @@ npx workflow-test dashboard:import --modal-workflow --verify-completion
 ```
 
 #### 3.3 Report Generation
+
 ```bash
 # Test report generation buttons
 npx workflow-test dashboard:export --format="json" --validate-data
@@ -111,6 +121,7 @@ npx workflow-test dashboard:report --generate --verify-content
 ### 4. **Metrics and Display Testing**
 
 #### 4.1 Metrics Panel Validation
+
 ```bash
 # Test metrics calculations
 npx workflow-test dashboard:metrics --validate-calculations
@@ -119,6 +130,7 @@ npx workflow-test dashboard:patient-counts --cross-validate
 ```
 
 #### 4.2 Real-time Updates
+
 ```bash
 # Test real-time dashboard updates
 npx workflow-test dashboard:realtime --monitor-updates --duration=60s
@@ -129,6 +141,7 @@ npx workflow-test dashboard:persistence --verify-after-refresh
 ## Comprehensive Test Scenarios
 
 ### Scenario 1: "Sync Today" Failure Investigation
+
 ```bash
 #!/bin/bash
 # Complete diagnostic of Sync Today failure
@@ -157,6 +170,7 @@ echo "📊 Sync Today diagnostic complete. Check sync-today-debug.log for detail
 ```
 
 ### Scenario 2: End-to-End Dashboard Validation
+
 ```bash
 #!/bin/bash
 # Complete dashboard functionality test
@@ -189,6 +203,7 @@ echo "✅ Dashboard testing complete"
 ```
 
 ### Scenario 3: Performance and Persistence Testing
+
 ```bash
 #!/bin/bash
 # Test dashboard performance and data persistence
@@ -215,6 +230,7 @@ echo "📈 Performance testing complete"
 ### New CLI Commands for Dashboard Testing
 
 #### 1. Dashboard Button Testing
+
 ```typescript
 // src/cli/commands/dashboard-test.ts
 export class DashboardTestCommand extends Command {
@@ -230,6 +246,7 @@ export class DashboardTestCommand extends Command {
 ```
 
 #### 2. Tebra Integration Testing
+
 ```typescript
 // src/cli/commands/tebra-debug.ts
 export class TebraDebugCommand extends Command {
@@ -245,6 +262,7 @@ export class TebraDebugCommand extends Command {
 ```
 
 #### 3. Dashboard State Validation
+
 ```typescript
 // src/cli/commands/dashboard-validate.ts
 export class DashboardValidateCommand extends Command {
@@ -262,6 +280,7 @@ export class DashboardValidateCommand extends Command {
 ## Test Automation Integration
 
 ### CI/CD Pipeline Integration
+
 ```yaml
 # .github/workflows/dashboard-testing.yml
 name: Dashboard Comprehensive Testing
@@ -312,6 +331,7 @@ jobs:
 ```
 
 ### Monitoring Dashboard
+
 ```typescript
 // src/cli/lib/DashboardMonitor.ts
 export class DashboardMonitor {
@@ -364,12 +384,14 @@ export class DashboardMonitor {
 ## Expected Outcomes
 
 ### Immediate Actions
+
 1. **Identify Sync Today Failure Root Cause** - CLI tests will pinpoint exactly where the sync process breaks
 2. **Validate All Dashboard Buttons** - Ensure every interactive element works correctly
 3. **Cross-validate CLI vs Dashboard** - Ensure CLI operations match dashboard behavior
 4. **Performance Baseline** - Establish performance metrics for dashboard operations
 
 ### Long-term Benefits
+
 1. **Automated Dashboard Testing** - Continuous validation of all dashboard functionality
 2. **Regression Prevention** - Catch dashboard issues before they reach production
 3. **Performance Monitoring** - Track dashboard performance over time

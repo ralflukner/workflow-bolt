@@ -28,6 +28,7 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 **Design Document**: `docs/redis-implementation/01-backend-architecture-design.md`
 
 **Required Documentation**:
+
 ```markdown
 # Backend Architecture Design
 
@@ -81,6 +82,7 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 ```
 
 **Deliverables**:
+
 - Complete architectural design document
 - API specification with OpenAPI/Swagger
 - Data flow diagrams
@@ -94,6 +96,7 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 **Design Document**: `docs/redis-implementation/02-production-infrastructure-design.md`
 
 **Required Documentation**:
+
 ```markdown
 # Production Infrastructure Design
 
@@ -147,6 +150,7 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 ```
 
 **Deliverables**:
+
 - Infrastructure architecture document
 - HIPAA compliance design
 - Cost-benefit analysis
@@ -160,6 +164,7 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 **Design Document**: `docs/redis-implementation/03-testing-framework-design.md`
 
 **Required Documentation**:
+
 ```markdown
 # Testing Framework Design
 
@@ -213,6 +218,7 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 ```
 
 **Deliverables**:
+
 - Comprehensive testing strategy document
 - Test automation framework design
 - Performance benchmarking methodology
@@ -226,6 +232,7 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 **Design Document**: `docs/redis-implementation/04-frontend-integration-design.md`
 
 **Required Documentation**:
+
 ```markdown
 # Frontend Integration Design
 
@@ -279,6 +286,7 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 ```
 
 **Deliverables**:
+
 - Frontend architecture design document
 - React hooks library specification
 - Component migration plan
@@ -292,6 +300,7 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 **Design Document**: `docs/redis-implementation/05-cli-framework-design.md`
 
 **Required Documentation**:
+
 ```markdown
 # CLI Framework Design
 
@@ -345,6 +354,7 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 ```
 
 **Deliverables**:
+
 - CLI framework design document
 - Multi-agent coordination specification
 - Sub-agent orchestration architecture
@@ -377,6 +387,7 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 ### Integration Points Documentation
 
 **Required Cross-Agent Documentation**:
+
 - API interface contracts between components
 - Data flow specifications
 - Event messaging protocols
@@ -386,6 +397,7 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 ### Quality Gates
 
 **Design Phase Completion Criteria**:
+
 - [ ] All design documents completed and reviewed
 - [ ] Interface compatibility verified
 - [ ] Integration points documented
@@ -397,12 +409,14 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 ## Success Metrics
 
 ### Technical Metrics
+
 - **Design Quality**: All interfaces specified and compatible
 - **Documentation Coverage**: 100% of components documented
 - **Review Completion**: All designs peer-reviewed and approved
 - **Integration Planning**: All cross-agent dependencies mapped
 
 ### Implementation Readiness
+
 - **Architecture Clarity**: Clear implementation path for each agent
 - **Resource Planning**: Development timeline and resource allocation
 - **Risk Mitigation**: Identified risks and mitigation strategies
@@ -420,6 +434,7 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 ### Agent Assignment Status
 
 **Assigned**:
+
 - ✅ **o3 MAX**: `01-backend-architecture-design.md`
 - ✅ **Sider.AI**: `02-production-infrastructure-design.md`  
 - ✅ **Claude App**: `03-testing-framework-design.md`
@@ -427,18 +442,21 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 - ✅ **Claude Code**: `05-cli-framework-design.md`
 
 **Pending Assignment**:
+
 - 🤔 **Gemini**: Awaiting design document preference selection
 
 ### Immediate Blockers & Decisions Needed
 
 **1. User Priority Decision Required**:
 Opus requesting priority direction between:
+
 - **Option A**: Fix Tebra Integration Dashboard API URLs (quick win)
 - **Option B**: Begin Redis architecture migration  
 - **Option C**: Continue Python backend FastAPI/container work
 
 **2. Gemini Design Assignment**:
 Options provided:
+
 - Take ownership of existing design document (with agent swap)
 - Create `06-gemini-specialized-design.md`
 - Lead cross-agent design coordination
@@ -447,22 +465,26 @@ Options provided:
 ## Updated Timeline
 
 **Phase 1 - Design Documentation**: 1 week (Current Phase)
+
 - **Completion Criteria**: All 5-6 design documents created and internally validated
 - **Current Status**: 0/6 documents started (pending final assignments)
 - **Estimated Start**: Upon assignment clarification
 - **Estimated Completion**: 7 days after assignments finalized
 
 **Phase 2 - Design Review**: 3 days  
+
 - Cross-agent peer review of all design documents
 - Interface compatibility validation
 - Integration point verification and conflict resolution
 
 **Phase 3 - Architecture Approval**: 2 days
+
 - Unified architecture document creation
 - Implementation plan finalization  
 - Resource allocation and timeline coordination
 
 **Phase 4 - Implementation Planning**: 2 days
+
 - Detailed implementation task breakdown
 - Dependency mapping and critical path analysis
 - Quality gates and testing strategy finalization
@@ -474,12 +496,14 @@ Options provided:
 ### Priority 1: Assignment Clarification (User Input Needed)
 
 **Immediate Decision Required**:
+
 1. **Opus Priority**: Which focus area should Opus prioritize?
 2. **Gemini Assignment**: Which design document should Gemini own?
 
 ### Priority 2: Design Document Creation (Once Assignments Clear)
 
 **Expected Timeline**:
+
 - **Day 1-2**: All agents begin design document creation
 - **Day 3-5**: First drafts completed and internally reviewed
 - **Day 6-7**: Design documents finalized and ready for cross-agent review
@@ -487,6 +511,7 @@ Options provided:
 ### Priority 3: Cross-Agent Coordination Setup
 
 **Framework Requirements**:
+
 - Interface specification templates
 - Design review criteria and checklists  
 - Integration point documentation standards
@@ -495,6 +520,7 @@ Options provided:
 ## Success Metrics for Next Phase
 
 ### Design Phase Completion Criteria
+
 - [ ] All 6 design documents completed (100% coverage)
 - [ ] Cross-agent interface compatibility verified (0 conflicts)
 - [ ] Integration points documented and validated (100% mapped)
@@ -503,6 +529,7 @@ Options provided:
 - [ ] Implementation timeline coordinated (critical path defined)
 
 ### Quality Gates
+
 - [ ] **Design Completeness**: All components architecturally specified
 - [ ] **Interface Contracts**: All APIs and data flows documented  
 - [ ] **Security Validation**: HIPAA compliance verified in design
@@ -512,11 +539,13 @@ Options provided:
 ## Risk Assessment & Mitigation
 
 ### Current Risks
+
 1. **Assignment Delays**: Pending user decisions blocking design start
 2. **Coordination Complexity**: 6 agents requiring interface alignment
 3. **Scope Creep**: Balancing comprehensive design vs. timely delivery
 
 ### Mitigation Strategies
+
 1. **Fast Decision Framework**: Time-boxed user input (24-48 hours)
 2. **Structured Design Templates**: Standardized documentation format
 3. **Incremental Review Process**: Daily design sync via Redis messaging
@@ -524,11 +553,13 @@ Options provided:
 ## Resource Allocation
 
 ### Agent Capacity Planning
+
 - **Design Phase**: 100% agent focus on documentation
 - **Review Phase**: 50% creation, 50% peer review
 - **Implementation Phase**: TBD based on design complexity
 
 ### Infrastructure Requirements
+
 - ✅ **Redis Streams**: Operational for real-time coordination
 - ✅ **Documentation Framework**: Master plan and templates ready
 - ✅ **Quality Assurance**: Review processes defined
@@ -536,18 +567,21 @@ Options provided:
 ## Next Actions (Priority Order)
 
 ### Immediate (Next 24 hours)
+
 1. **User**: Provide priority direction for Opus
 2. **User**: Confirm Gemini design assignment preference  
 3. **All Agents**: Begin design document creation once assignments clear
 4. **Claude Code**: Complete CLI framework design document
 
 ### Short-term (Next 3-7 days)
+
 1. **All Agents**: Complete individual design documents
 2. **Daily Sync**: Progress updates via Redis streams
 3. **Interface Planning**: Begin cross-agent integration specifications
 4. **Quality Review**: Internal design validation
 
 ### Medium-term (Next 1-2 weeks)
+
 1. **Cross-Agent Review**: Comprehensive design document review
 2. **Architecture Approval**: Unified implementation plan
 3. **Implementation Kickoff**: Coordinated development start
@@ -558,20 +592,21 @@ Options provided:
 **Recommendation**: Fast-track assignment decisions to maintain momentum with full team Redis connectivity.
 
 ---
+
 ## Update 2025-07-03 — Redis Streams Live 🚀 & Windsurf On-Boarding
 
 The core message-queue infrastructure is now operational.
 
-1.  Redis Streams Go-Live
+1. Redis Streams Go-Live
     • `agent_updates`, `standup:<date>` streams live in Redis Cloud (TLS).  
     • `RedisClient` and `redis_hello.py` utilities merged; markdown log retained as offline fallback.  
     • Unit-test suite (`ai-agents/tests/test_redis_client.py`) mocked Redis and passed in CI.
 
-2.  New AI Agent
+2. New AI Agent
     • **Windsurf** (Full-Stack) joined, published first greeting to `agent_updates`.  
     • Focus: plumbing Redis across CLI ↔ React ↑ Backend.
 
-3.  Expanded Workstreams (adds to Roadmap)
+3. Expanded Workstreams (adds to Roadmap)
 
 | Week | Stream | Owner(s) | Deliverable |
 |------|--------|----------|-------------|
@@ -583,17 +618,17 @@ The core message-queue infrastructure is now operational.
 | W-3  | Dashboard EHR card    | Opus | "EHR Sync Status" component |
 | W-4  | Stand-up automation   | Claude Code | `scripts/post-standup.js`, daily summary bot |
 
-4.  Immediate Next Steps (24 h)
+4. Immediate Next Steps (24 h)
     1. Windsurf – finish PR for Redis hello utility tests & merge.  
     2. Claude Code – tail `agent_updates`; reply `windsurf-kickoff-ok`.  
     3. All agents – switch status logging to Redis client helper.  
     4. User – confirm Opus priority (Redis UI vs legacy URL fixes).
 
-5.  Risk Register Additions
+5. Risk Register Additions
     • Browser WebSocket to Redis Cloud may be blocked → fallback SSE proxy.  
     • Stream key growth → daily trim policy (`MAXLEN ~ 10k`).
 
-6.  Communication Protocol Reminder
+6. Communication Protocol Reminder
     • Publish coordination messages to `agent_tasks`.  
     • Daily stand-up in `standup:<YYYY-MM-DD>` by 16:00 UTC.  
     • Message schema reference in `docs/streams-key-conventions.md`.

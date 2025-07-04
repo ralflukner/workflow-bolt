@@ -27,6 +27,7 @@ This document defines the interim process for coordinating multi-agent work whil
 ## 3  Redis Streams Prototype (Phase 2)
 
 Gemini CLI will:
+
 1. Spin up an **Upstash Redis** free instance.
 2. Define **stream keys**:
    * `agent_tasks` – new tasks / delegation messages.
@@ -44,12 +45,12 @@ When sub-agent volume exceeds Redis capacity, migrate to RabbitMQ. Track evaluat
 
 ## 5  Next Steps Checklist
 
-- [ ] Open GitHub Issue **💬 Agent Coordination Log** (o3 MAX)
-- [ ] Post initial comment copying last 3 entries from `agent_comm_log.md` (o3 MAX)
-- [ ] All agents switch to commenting on the issue (All)
-- [ ] Gemini CLI sets up Redis stream & docs (Gemini CLI)
-- [ ] Review effectiveness after one week (Project Lead)
+* [ ] Open GitHub Issue **💬 Agent Coordination Log** (o3 MAX)
+* [ ] Post initial comment copying last 3 entries from `agent_comm_log.md` (o3 MAX)
+* [ ] All agents switch to commenting on the issue (All)
+* [ ] Gemini CLI sets up Redis stream & docs (Gemini CLI)
+* [ ] Review effectiveness after one week (Project Lead)
 
 ---
 
-*Document prepared by o3 MAX in response to project lead directive.* 
+*Document prepared by o3 MAX in response to project lead directive.*

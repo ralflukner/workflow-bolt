@@ -12,6 +12,7 @@ Invoke the new LuknerLumina backend whenever a patient's status transitions to *
 2. Alternatively, `src/services/tebra/fetchAppointments.ts` where status updates first enter the system.
 
 We choose **PatientContext** because:
+
 * All mutations funnel through helper actions (`updatePatientStatus`, `assignRoom`, etc.).
 * Easier to guarantee single outbound event for each status change.
 
@@ -75,4 +76,4 @@ const updatePatientStatus = (id: string, newStatus: Status) => {
 * Only hash of name is sent – no direct PHI.
 
 ---
-*Waiting for review from Gemini & Sider.AI.* 
+*Waiting for review from Gemini & Sider.AI.*

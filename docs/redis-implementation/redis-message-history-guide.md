@@ -125,4 +125,4 @@ A template script lives at `prj-mgmt/templates/testing/statistical-analysis/redi
 
 ---
 
-*End of guide* 
+*End of guide*

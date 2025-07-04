@@ -7,6 +7,7 @@ This document outlines the Redis-first architecture that will replace 80% of wor
 ## 📊 **Current System Analysis**
 
 ### **Pain Points Identified:**
+
 - **86 auth files** creating dependency web
 - **5-layer failure chain**: Frontend → Auth0 → Firebase → PHP → Tebra
 - **756 test files** but scattered testing strategies
@@ -14,6 +15,7 @@ This document outlines the Redis-first architecture that will replace 80% of wor
 - **Complex authentication**: Auth0 + Firebase token exchange
 
 ### **Existing Assets:**
+
 - ✅ **oclif CLI framework** operational (`src/cli/`)
 - ✅ **Comprehensive Jest setup** with TypeScript
 - ✅ **756 test files** covering unit/integration/real-api
@@ -60,6 +62,7 @@ This document outlines the Redis-first architecture that will replace 80% of wor
 ## 🔧 **Implementation Strategy**
 
 ### **Phase 1: Redis Foundation (Week 1)**
+
 ```typescript
 // Core Redis middleware setup
 export class RedisMiddleware {
@@ -89,6 +92,7 @@ export class RedisMiddleware {
 ```
 
 ### **Phase 2: CLI Integration (Week 2)**
+
 ```typescript
 // Redis-enabled CLI commands
 export class RedisCliCommands {
@@ -126,6 +130,7 @@ export class RedisCliCommands {
 ```
 
 ### **Phase 3: Testing Framework (Week 3)**
+
 ```typescript
 // Redis-based test infrastructure
 export class RedisTestFramework {
@@ -176,6 +181,7 @@ export class RedisTestFramework {
 ## 🧪 **Enhanced CLI Testing Commands**
 
 ### **New Redis-Enabled Commands:**
+
 ```bash
 # Redis infrastructure testing
 workflow-test redis:health                    # Redis connectivity & health
@@ -200,6 +206,7 @@ workflow-test reliability:failover              # Failover scenario testing
 ```
 
 ### **Test Coverage Enhancement:**
+
 ```typescript
 // Coverage targets for Redis middleware
 export const RedisCoverageTargets = {
@@ -226,28 +233,34 @@ export const RedisCoverageTargets = {
 ## 📈 **Migration Benefits**
 
 ### **Reliability Improvements:**
+
 - **Current**: 60% uptime (5 failure points)
 - **Target**: 95%+ uptime (Redis-first architecture)
 
 ### **Performance Gains:**
+
 - **Current**: 30-second polling for updates
 - **Target**: <100ms real-time pub/sub updates
 
 ### **Cost Reduction:**
+
 - **Current**: $200+/month (Firebase + Auth0 + Functions)
 - **Target**: $20-50/month (Redis Cloud instance)
 
 ### **Complexity Reduction:**
+
 - **Current**: 86 auth files, 5-layer chain
 - **Target**: Single Redis middleware layer
 
 ### **Testing Improvements:**
+
 - **Current**: 756 scattered test files
 - **Target**: Unified Redis-based testing framework
 
 ## 🎯 **Success Metrics**
 
 ### **Technical Metrics:**
+
 - Redis connection reliability: >99.9%
 - Workflow completion rate: >95%
 - Real-time update latency: <100ms
@@ -255,6 +268,7 @@ export const RedisCoverageTargets = {
 - Authentication failure rate: <0.1%
 
 ### **Business Metrics:**
+
 - Patient check-in time: <2 minutes
 - Staff productivity: +30%
 - System availability: >99%

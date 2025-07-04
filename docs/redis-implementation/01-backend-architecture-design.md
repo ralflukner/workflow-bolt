@@ -10,6 +10,7 @@
 ## 1. Current State Analysis
 
 ### 1.1 Technology Stack (Today)
+
 - **Frontend**: React 18 + Vite + Firebase hosting (static)
 - **Authentication**: Auth0 → Firebase Custom Token exchange (HIPAA compliant)
 - **Serverless Backend**: Firebase Functions (Node 18) – multiple endpoints
@@ -24,9 +25,10 @@
   - Scalability: Firestore queries ↔ HIPAA PHI limits
 
 ### 1.2 Failure Modes Observed
+
 | Layer | Symptom | Root Cause |
 |-------|---------|------------|
-| Firebase Fn | 404 / CORS | Function not deployed / missing IAM | 
+| Firebase Fn | 404 / CORS | Function not deployed / missing IAM |
 | PHP API | 502 / 504 | Container cold-start or unhandled exception |
 | Tebra SOAP | 429 | Rate-limit at vendor side |
 | Firestore | Hot-document contention | Front-end polling in tight loop |
@@ -36,6 +38,7 @@
 ## 2. Redis Middleware Architecture (Target)
 
 ### 2.1 High-Level Diagram
+
 ```
 ┌─────────┐      HTTPS       ┌─────────────┐      Redis Streams       ┌──────────────┐
 │ Frontend│ ───────────────▶ │ Express API │ ───────────────────────▶ │   Workers    │
@@ -46,6 +49,7 @@
 ```
 
 ### 2.2 Components
+
 1. **Express API Gateway** (Node 18)
    • Routes: `/api/v1/*` (REST) + `/ws` (Socket.IO)
    • Auth Middleware: Verify Auth0 JWT (skip Firebase), attach user claims
@@ -62,6 +66,7 @@
    • Subscribes to all streams, writes signed JSON lines to Cloud Logging (HIPAA)
 
 ### 2.3 Data Flow (Sync Schedule Example)
+
 1. Front-end POST `/api/v1/schedule/sync?date=2025-07-04`
 2. API validates & XADDs task `{action:"sync_schedule",date:..}` to `tasks`
 3. Worker consumes, calls Tebra SOAP, XADDs result to `task_results`
@@ -71,6 +76,7 @@
 ---
 
 ## 3. Circuit Breaker Implementation
+
 | Metric | Threshold | Action |
 |--------|-----------|--------|
 | `tebra:error_5xx` | 3 errors in 60 s | Open breaker (stop traffic 1 min) |
@@ -78,6 +84,7 @@
 | Manual override | Ops flag `cb:force_open` | Open until cleared |
 
 Redis Keys
+
 ```
 cb:tebra = { state: "closed" | "open" | "half", opened_at, last_fail }
 ```
@@ -87,9 +94,11 @@ cb:tebra = { state: "closed" | "open" | "half", opened_at, last_fail }
 ## 4. Data Flow Diagrams
 
 ### 4.1 Current vs Target
+
 _current & target diagrams will be rendered as Mermaid in appendix._
 
 ### 4.2 State Transition (Patient)
+
 1. scheduled → arrived → appt-prep → ready-for-md → with-doctor → completed
 2. Stored in Redis Hash `patient:{id}:{date}`
 
@@ -98,6 +107,7 @@ _current & target diagrams will be rendered as Mermaid in appendix._
 ## 5. Interface Specifications
 
 REST Endpoints (subset)
+
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/v1/providers` | Cached list (Redis TTL 1 h) |
@@ -106,12 +116,14 @@ REST Endpoints (subset)
 | GET | `/api/v1/schedule/status/:date` | Retrieve latest sync metrics |
 
 Redis Stream Schemas
+
 ```
 agent_updates  *  sender  string  action  string  payload  JSON
 tasks          *  task_id ULID    action  string  params   JSON
 ```
 
 Error Response (JSON)
+
 ```json
 {
   "success": false,
@@ -126,6 +138,7 @@ Error Response (JSON)
 ---
 
 ## 6. Security Design
+
 - **Auth**: Auth0 JWT + JWKS caching (60 s) – no Firebase hop
 - **Transport**: TLS 1.3 only; HSTS 1 year
 - **Data-at-Rest**: Redis Enterprise encryption; Google CMEK
@@ -135,6 +148,7 @@ Error Response (JSON)
 ---
 
 ## 7. Performance Requirements
+
 - **Latency**: <100 ms P95 for dashboard update events
 - **Throughput**: 1k schedule-sync tasks / hr peak
 - **Scalability**: Horizontally scale workers via Cloud Run jobs (max 20)
@@ -160,15 +174,17 @@ Success Metrics: 99.9 % uptime, <1 s end-to-end sync.
 ---
 
 ## 9. Open Questions & Next Steps
+
 1. Final decision: Memorystore Enterprise vs Redis Cloud HIPAA.
 2. Data retention policy for Redis Streams (history vs capped length).
 3. Contract for cross-agent task envelope (`payload` schema alignment).
 
 **Next Milestones**
+
 - [ ] Team review of this draft within 48 hours.
 - [ ] Prototype Express gateway + `/health` endpoint.
 - [ ] Define shared message envelope with Claude Code & Opus.
 
 ---
 
-_Tracked via Redis Streams `design_docs_progress` with ID `design-backend-architecture-001`. Please XADD updates with fields `section`, `status`, `comment`._ 
+_Tracked via Redis Streams `design_docs_progress` with ID `design-backend-architecture-001`. Please XADD updates with fields `section`, `status`, `comment`._

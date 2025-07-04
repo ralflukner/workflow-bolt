@@ -8,11 +8,13 @@
 ---
 
 ## Purpose
+
 Provide a unified specification for verifying that "Sync Today / Yesterday / Tomorrow" functions work across backend, API gateway, CLI, and front-end layers. Prevents duplicated or inconsistent test efforts among agents.
 
 ---
 
 ## Test Layers & Responsible Agents
+
 | Layer | Tooling | Test File(s) | Primary Owner |
 |-------|---------|--------------|---------------|
 | Backend (Functions) | Jest + TS-Mock | `functions/src/tebra-sync/__tests__/syncSchedule.integration.test.ts` | o3 MAX |
@@ -23,6 +25,7 @@ Provide a unified specification for verifying that "Sync Today / Yesterday / Tom
 ---
 
 ## Scenarios
+
 1. **Sync Today (default date)** – expect 200 tasks queued, repository save count >0.
 2. **Sync Yesterday (date-1)** – override date; repository invoked with yesterday's date.
 3. **Sync Tomorrow (date+1)** – override date; repository invoked with tomorrow's date.
@@ -32,25 +35,29 @@ Provide a unified specification for verifying that "Sync Today / Yesterday / Tom
 ---
 
 ## Mock Worker Helper
+
 `tests/helpers/workerMock.ts` spins a consumer-group on `tasks` and immediately writes success to `task_results`. Used by API + E2E tests.
 
 ---
 
 ## CI Matrix (GitHub Actions)
+
 ```yaml
 strategy:
   matrix:
     shard: [api, backend, cli, e2e]
 ```
+
 Each shard starts the Functions emulator and mock worker if needed.
 
 ---
 
 ## Coordination Notes
+
 • **Lock Protocol**: Long-running containers require `lock_shell` message in `agent_updates`.
 • **File Ownership**: o3 MAX editing backend test files; Claude Code editing Playwright & CLI tests.
 • **Review SLA**: PR reviews within 24h; tag `#testing` label.
 
 ---
 
-_Tracked via Redis Streams `design_docs_progress` with id `TEST-SYNC-SCHEDULE`._ 
+_Tracked via Redis Streams `design_docs_progress` with id `TEST-SYNC-SCHEDULE`._

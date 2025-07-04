@@ -79,4 +79,4 @@ flowchart TD
 
 ---
 
-*End of proposal.* 
+*End of proposal.*
