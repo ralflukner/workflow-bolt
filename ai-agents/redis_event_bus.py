@@ -470,7 +470,7 @@ def main():
     elif args.command == "send":
         client = connect_to_redis()
         if client:
-            send_message(client, sender_name, args.action, payload)
+            send_message(client, sender_name, args.action, payload)  # type: ignore[call-arg]
             print(f"✅ Message with action '{args.action}' sent.")
     elif args.command == "demo":
         demo_request_response(sender_name)
