@@ -1,3 +1,4 @@
+# pyright: reportGeneralTypeIssues=false, reportCallIssue=false
 import os
 import ssl
 import redis
