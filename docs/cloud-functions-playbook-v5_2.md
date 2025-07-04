@@ -130,4 +130,72 @@ checks public access, CMEK, VPC connector, dedicated SA, audit bucket lock, and 
 * Automate IAM expiry via Eventarc & Cloud Functions (listener deletes expired bindings).
 
 ---
+## 11. Function Creation & Deployment Example
+
+### Example: tebra_debug
+1. Create a new function:
+   ```bash
+   make new NAME=tebra_debug
+   ```
+   - This scaffolds a function with structured logging, error handling, and a test suite.
+2. Add/modify logic in `functions/tebra_debug/main.py` and tests in `tests/tebra_debug/test_main.py`.
+3. Ensure all runtime dependencies (e.g., `functions-framework`) are present in both `requirements.txt` and `tests/requirements-dev.txt`.
+4. Run tests:
+   ```bash
+   make test NAME=tebra_debug
+   ```
+   - If you see import errors, install missing packages in the shared venv and add them to the requirements files.
+5. Deploy:
+   ```bash
+   make deploy NAME=tebra_debug
+   ```
+   - The deployment script will retry on failure and log the result.
+6. Verify live endpoint:
+   ```bash
+   curl -X POST <function_url> -H "Content-Type: application/json" -d '{...}'
+   ```
+7. Check logs:
+   ```bash
+   make logs NAME=tebra_debug
+   ```
+
+---
+## 12. Troubleshooting: Missing Dependencies
+- If you see `ModuleNotFoundError` (e.g., for `functions_framework`), run:
+  ```bash
+  .venv-<repo>/bin/pip install functions-framework
+  ```
+- Add the missing package to both `requirements.txt` (for deployment) and `tests/requirements-dev.txt` (for local testing).
+- Re-run `make test` to confirm.
+
+---
+## 13. Recommended Next Steps
+- Build the next function (e.g., `patient_sync`) with `make new NAME=patient_sync`.
+- Expand integration tests (see `test-integration` target).
+- Add API documentation generator (e.g., `make docs`).
+- Set up monitoring dashboards and alerting.
+- Keep the TODO/project plan up to date as you complete each function.
+
+---
+## 14. Project Plan (Current)
+- [x] Bootstrap playbook v5.2.1 and environment
+- [x] Create and deploy tebra_debug function (with tests)
+- [ ] Build patient_sync function for patient data synchronization
+- [ ] VPC verification for Redis access
+- [ ] Centralize documentation
+- [ ] Set up GitHub Actions for CI/CD
+- [ ] Finish Redis queue architecture
+- [ ] Insert risk & issue log + governance appendix
+- [ ] Confirm Gemini's design-doc ownership/role
+- [ ] Create shared kanban (GitHub Projects / Jira)
+
+---
+## 15. Review & Recommendations
+- Claude followed the playbook precisely, automating all steps and using Make targets/scripts only.
+- The function template and test suite are robust and enforce best practices.
+- The only hiccup was a missing dependency (`functions-framework`), which was quickly resolved and should now be included in all new functions and the dev requirements.
+- **Recommendation:** Always update both requirements files when adding a new dependency. Consider a Makefile target to check for missing packages across all functions.
+- Continue to use the Make-based workflow for all new functions and keep the documentation and TODO/project plan current.
+
+---
 **Congratulations!**  You now have a fully automated, zero-trust, HIPAA-ready Cloud Functions development system.  Stick to the Make targets, keep Terraform as the source of truth, and audits will be painless.  🎉 
