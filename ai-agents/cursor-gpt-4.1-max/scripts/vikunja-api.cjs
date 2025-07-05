@@ -106,9 +106,16 @@ class VikunjaAPI {
   // Add labels to a task
   async addLabelsToTask(taskId, labelIds) {
     try {
+      // Get the current task first
+      const task = await this.getTask(taskId);
+      
+      // Update the task with the new labels
       const response = await axios.post(
-        `${this.baseUrl}/tasks/${taskId}/labels`,
-        { label_ids: labelIds },
+        `${this.baseUrl}/tasks/${taskId}`,
+        {
+          ...task,
+          labels: labelIds
+        },
         { headers: this.headers }
       );
       return response.data;
@@ -121,12 +128,21 @@ class VikunjaAPI {
   // Remove labels from a task
   async removeLabelsFromTask(taskId, labelIds) {
     try {
-      const response = await axios.delete(
-        `${this.baseUrl}/tasks/${taskId}/labels`,
+      // Get the current task first
+      const task = await this.getTask(taskId);
+      
+      // Remove the specified labels
+      const currentLabels = task.labels || [];
+      const updatedLabels = currentLabels.filter(label => !labelIds.includes(label.id));
+      
+      // Update the task with the filtered labels
+      const response = await axios.post(
+        `${this.baseUrl}/tasks/${taskId}`,
         {
-          headers: this.headers,
-          data: { label_ids: labelIds }
-        }
+          ...task,
+          labels: updatedLabels.map(l => l.id)
+        },
+        { headers: this.headers }
       );
       return response.data;
     } catch (error) {
@@ -219,12 +235,12 @@ class VikunjaAPI {
         'blocked': '#ef4444'
       };
       
-      // Remove old status labels
+      // Get current task
       const task = await this.getTask(taskId);
-      const oldStatusLabels = task.labels.filter(label => label.title.startsWith('status:'));
-      if (oldStatusLabels.length > 0) {
-        await this.removeLabelsFromTask(taskId, oldStatusLabels.map(l => l.id));
-      }
+      const currentLabels = task.labels || [];
+      
+      // Remove old status labels
+      const updatedLabels = currentLabels.filter(label => !label.title.startsWith('status:'));
       
       // Add new status label
       const statusLabel = await this.findOrCreateLabel(
@@ -232,10 +248,18 @@ class VikunjaAPI {
         statusLabels[status] || '#6b7280'
       );
       
-      await this.addLabelsToTask(taskId, [statusLabel.id]);
+      // Update task with new labels
+      const response = await axios.post(
+        `${this.baseUrl}/tasks/${taskId}`,
+        {
+          ...task,
+          labels: [...updatedLabels.map(l => l.id), statusLabel.id]
+        },
+        { headers: this.headers }
+      );
       
       console.log(`✅ Task ${taskId} status updated to ${status}`);
-      return true;
+      return response.data;
     } catch (error) {
       console.error('Error updating task status:', error.message);
       throw error;
