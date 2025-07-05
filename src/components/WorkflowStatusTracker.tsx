@@ -1,5 +1,5 @@
 import React, { useContext, useMemo } from 'react';
-import { PatientContext } from '../context/PatientContextDef';
+import { PatientContext } from '../contexts/PatientContext';
 import { Patient, PatientApptStatus } from '../types';
 import { useTimeContext } from '../hooks/useTimeContext';
 

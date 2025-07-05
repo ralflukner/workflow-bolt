@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Activity, RefreshCw } from 'lucide-react';
-import { PatientContext } from '@/context/PatientContextDef';
-import { PatientContextType } from '@/context/PatientContextType';
+import { PatientContext } from '../contexts/PatientContext';
+import { PatientContextType } from '../contexts/PatientContext';
 import { tebraDebugApi } from '@/services/tebraDebugApi';
 import { tebraApiService } from '@/services/tebraApiService';
 import { DataFlowStep, TebraMetrics, STEP_IDS, StepStatus } from '@/constants/tebraDebug';

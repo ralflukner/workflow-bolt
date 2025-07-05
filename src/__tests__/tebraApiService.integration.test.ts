@@ -13,21 +13,30 @@ import fs from 'fs';
 import path from 'path';
 
 // Mock Firebase for testing
+const mockFirebaseApp = {};
+const mockFunctions = {};
+const mockAuth = {
+  currentUser: { uid: 'test-user-id', email: 'test@example.com' }
+};
+
 jest.mock('firebase/app', () => ({
-  initializeApp: jest.fn(() => ({})),
-  getApp: jest.fn(() => ({})),
-  getApps: jest.fn(() => [{}])
+  initializeApp: jest.fn(() => mockFirebaseApp),
+  getApp: jest.fn(() => mockFirebaseApp),
+  getApps: jest.fn(() => [mockFirebaseApp])
 }));
 
 jest.mock('firebase/functions', () => ({
-  getFunctions: jest.fn(() => ({})),
+  getFunctions: jest.fn(() => mockFunctions),
   httpsCallable: jest.fn(() => jest.fn().mockResolvedValue({ data: [] }))
 }));
 
 jest.mock('firebase/auth', () => ({
-  getAuth: jest.fn(() => ({})),
-  onAuthStateChanged: jest.fn(() => jest.fn()),
-  currentUser: null
+  getAuth: jest.fn(() => mockAuth),
+  onAuthStateChanged: jest.fn((auth, callback) => {
+    callback(mockAuth.currentUser);
+    return jest.fn(); // Return unsubscribe function
+  }),
+  currentUser: mockAuth.currentUser
 }));
 
 const logFilePath = path.join(__dirname, '../../logs/tebraApiService.integration.log');

@@ -548,8 +548,14 @@ export async function exportScheduleToJSON(
   const { password, includeMetadata = true, sensitiveFields = ['name', 'phone', 'dob', 'memberId'] } = options;
   
   try {
-    // Store data temporarily in secure storage for export
-    const exportKey = `export_temp_${Date.now()}`;
+    // Create a new secure storage instance for export to avoid conflicts
+    const exportStorage = new (secureStorage.constructor as any)({
+      expirationTime: 5 * 60 * 1000, // 5 minutes
+      enableAuditLogging: false
+    });
+    
+    // Store data with a predictable key
+    const exportKey = 'schedule_export_data';
     const exportData = {
       patients,
       metadata: includeMetadata ? {
@@ -560,13 +566,13 @@ export async function exportScheduleToJSON(
       } : undefined
     };
     
-    secureStorage.store(exportKey, exportData);
+    exportStorage.store(exportKey, exportData);
     
-    // Export using secure storage encryption
-    const blob = await secureStorage.exportToJSON(password, sensitiveFields);
+    // Export using the temporary storage
+    const blob = await exportStorage.exportToJSON(password, sensitiveFields);
     
-    // Cleanup temporary data
-    secureStorage.delete(exportKey);
+    // Cleanup
+    exportStorage.destroy();
     
     secureLog(`📤 Exported ${patients.length} patient records to encrypted JSON`);
     return blob;
@@ -610,22 +616,32 @@ export async function importScheduleFromJSON(
     
     let foundData = false;
     
-    // Look through all imported data for patient arrays
-    for (const key of allKeys) {
-      const data = secureStorage.retrieve(key);
-      if (data && data.patients && Array.isArray(data.patients)) {
-        patients.push(...data.patients);
-        foundData = true;
-        secureLog(`✅ Found patient data in key: ${key} (${data.patients.length} patients)`);
-        break;
-      }
-      
-      // Also check if the data itself is an array of patients
-      if (data && Array.isArray(data) && data.length > 0 && data[0].name) {
-        patients.push(...data);
-        foundData = true;
-        secureLog(`✅ Found patient array in key: ${key} (${data.length} patients)`);
-        break;
+    // First, look for the specific export key
+    const exportData = secureStorage.retrieve('schedule_export_data');
+    if (exportData && exportData.patients && Array.isArray(exportData.patients)) {
+      patients.push(...exportData.patients);
+      foundData = true;
+      secureLog(`✅ Found patient data in schedule_export_data (${exportData.patients.length} patients)`);
+    }
+    
+    // If not found, look through all imported data for patient arrays
+    if (!foundData) {
+      for (const key of allKeys) {
+        const data = secureStorage.retrieve(key);
+        if (data && data.patients && Array.isArray(data.patients)) {
+          patients.push(...data.patients);
+          foundData = true;
+          secureLog(`✅ Found patient data in key: ${key} (${data.patients.length} patients)`);
+          break;
+        }
+        
+        // Also check if the data itself is an array of patients
+        if (data && Array.isArray(data) && data.length > 0 && data[0].name) {
+          patients.push(...data);
+          foundData = true;
+          secureLog(`✅ Found patient array in key: ${key} (${data.length} patients)`);
+          break;
+        }
       }
     }
     

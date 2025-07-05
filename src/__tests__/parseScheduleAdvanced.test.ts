@@ -252,9 +252,19 @@ RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 01/01/1980 (000) 000
       // Create file for import
       const file = new File([exportBlob], 'test-import.json', { type: 'application/json' });
       
+      // Debug: Check what's in the export
+      const exportText = await exportBlob.text();
+      console.log('Export text length:', exportText.length);
+      console.log('Export text preview:', exportText.substring(0, 200));
+      
       // Import
       const importOptions: JSONImportOptions = { password };
       const result = await importScheduleFromJSON(file, importOptions);
+      
+      console.log('Import result:', result);
+      console.log('Import success:', result.success);
+      console.log('Import patients count:', result.patients.length);
+      console.log('Import errors:', result.errors);
       
       expect(result.success).toBe(true);
       expect(result.patients).toHaveLength(1);
