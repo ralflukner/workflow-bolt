@@ -6,6 +6,7 @@ const VikunjaAPI = require('./vikunja-api.cjs');
 const AGENT_PROJECTS = {
   'cursor-claude-sonnet': 10,
   'cursor-gpt-4.1-max': 3,
+  'drlukner': 11,
   'shared': 9
 };
 
@@ -176,7 +177,7 @@ Usage:
   ./agent-tasks.cjs create "Title" "Description"    # Create cross-project task
   ./agent-tasks.cjs agents                          # List all agents
 
-Available agents: cursor-claude-sonnet, cursor-gpt-4.1-max, shared
+Available agents: cursor-claude-sonnet, cursor-gpt-4.1-max, drlukner, shared
 
 Examples:
   ./agent-tasks.cjs list cursor-claude-sonnet

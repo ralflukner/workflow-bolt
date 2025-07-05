@@ -35,7 +35,16 @@
     "test:run10": "node scripts/run-tests-limit.cjs 10",
     "test:run50": "node scripts/run-tests-limit.cjs 50",
     "test:run100": "node scripts/run-tests-limit.cjs 100",
-    "test:run150": "node scripts/run-tests-limit.cjs 150"
+    "test:run150": "node scripts/run-tests-limit.cjs 150",
+    "vikunja:dashboard": "node scripts/project-dashboard.cjs overview",
+    "vikunja:project": "node scripts/project-dashboard.cjs project",
+    "vikunja:overview": "node scripts/cross-project-tasks.cjs overview",
+    "vikunja:workload": "node scripts/cross-project-tasks.cjs workload",
+    "vikunja:assign": "node scripts/assign-tasks.cjs assign",
+    "vikunja:list": "node scripts/assign-tasks.cjs list",
+    "vikunja:agents": "node scripts/assign-tasks.cjs agents",
+    "vikunja:unassigned": "node scripts/assign-tasks.cjs unassigned",
+    "vikunja:bulk": "node scripts/assign-tasks.cjs bulk"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
