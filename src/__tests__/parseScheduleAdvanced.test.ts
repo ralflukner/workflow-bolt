@@ -122,7 +122,7 @@ RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 01/01/1980 (000) 000
 
   describe('Auto-Detection', () => {
     test('should detect advanced format correctly', () => {
-      const patients = parseScheduleAuto(sampleScheduleText);
+      const patients = parseScheduleAuto(sampleScheduleText, new Date(), { logFunction: mockSecureLog });
       expect(patients).toHaveLength(4);
       expect(mockSecureLog).toHaveBeenCalledWith(
         expect.stringContaining('🔍 Detected advanced schedule format')
@@ -131,7 +131,7 @@ RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 01/01/1980 (000) 000
 
     test('should detect TSV format', () => {
       const tsvData = 'Name\tDOB\tTime\nJohn Doe\t01/01/1980\t9:00 AM';
-      const patients = parseScheduleAuto(tsvData);
+      const patients = parseScheduleAuto(tsvData, new Date(), { logFunction: mockSecureLog });
       expect(mockSecureLog).toHaveBeenCalledWith(
         expect.stringContaining('🔍 Detected TSV format')
       );
@@ -139,7 +139,7 @@ RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 01/01/1980 (000) 000
 
     test('should default to advanced parser for unknown format', () => {
       const unknownData = 'Some random text without clear format';
-      const patients = parseScheduleAuto(unknownData);
+      const patients = parseScheduleAuto(unknownData, new Date(), { logFunction: mockSecureLog });
       expect(mockSecureLog).toHaveBeenCalledWith(
         expect.stringContaining('🔍 Format unclear - defaulting')
       );
@@ -320,7 +320,7 @@ RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 01/01/1980 (000) 000
       });
       
       expect(result.success).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('Checksum validation failed'));
+      expect(result.errors.some(error => error.includes('Checksum validation failed'))).toBe(true);
     });
 
     test('should handle overwrite options', async () => {
@@ -478,7 +478,7 @@ RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 01/01/1980 (000) 000
   describe('Error Handling and Edge Cases', () => {
     test('should handle malformed schedule text gracefully', () => {
       const malformedText = 'This is not a valid schedule format at all';
-      const patients = parseScheduleAdvanced(malformedText);
+      const patients = parseScheduleAdvanced(malformedText, new Date(), { logFunction: mockSecureLog });
       
       expect(patients).toHaveLength(0);
       expect(mockSecureLog).toHaveBeenCalledWith(
