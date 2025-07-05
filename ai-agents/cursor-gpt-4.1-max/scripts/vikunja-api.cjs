@@ -110,7 +110,7 @@ class VikunjaAPI {
       const task = await this.getTask(taskId);
       
       // Update the task with the new labels
-      const response = await axios.post(
+      const response = await axios.put(
         `${this.baseUrl}/tasks/${taskId}`,
         {
           ...task,
@@ -136,7 +136,7 @@ class VikunjaAPI {
       const updatedLabels = currentLabels.filter(label => !labelIds.includes(label.id));
       
       // Update the task with the filtered labels
-      const response = await axios.post(
+      const response = await axios.put(
         `${this.baseUrl}/tasks/${taskId}`,
         {
           ...task,
@@ -217,7 +217,7 @@ class VikunjaAPI {
       );
       
       // Update task with new labels
-      const response = await axios.post(
+      const response = await axios.put(
         `${this.baseUrl}/tasks/${taskId}`,
         {
           ...task,
@@ -260,7 +260,7 @@ class VikunjaAPI {
       );
       
       // Update task with new labels
-      const response = await axios.post(
+      const response = await axios.put(
         `${this.baseUrl}/tasks/${taskId}`,
         {
           ...task,

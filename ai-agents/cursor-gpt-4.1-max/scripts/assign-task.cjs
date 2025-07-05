@@ -1,108 +1,107 @@
 #!/usr/bin/env node
 
-// Simple task assignment system for AI agents using descriptions
+// Generic task assignment script for any agent/user in the shared system
 const VikunjaAPI = require('./vikunja-api.cjs');
 
-async function assignTask(taskId, assignee, comment = '') {
-  const api = new VikunjaAPI();
-  
-  try {
-    // Get current task details
-    const task = await api.getTask(taskId);
-    
-    // Create assignment annotation
-    const assignmentInfo = `\n\n--- ASSIGNMENT ---\nASSIGNED TO: ${assignee}\nASSIGNED ON: ${new Date().toISOString()}\nSTATUS: In Progress${comment ? `\nCOMMENT: ${comment}` : ''}`;
-    
-    // Update task with assignment
-    const updatedTask = await api.updateTask(taskId, {
-      description: task.description + assignmentInfo
-    });
-    
-    console.log(`✅ Task #${taskId} assigned to ${assignee}`);
-    console.log(`📋 Task: "${task.title}"`);
-    
-    return updatedTask;
-    
-  } catch (error) {
-    console.error(`❌ Failed to assign task #${taskId}:`, error.message);
-    throw error;
-  }
-}
-
-async function completeTask(taskId, completionComment = '') {
-  const api = new VikunjaAPI();
-  
-  try {
-    // Get current task
-    const task = await api.getTask(taskId);
-    
-    // Add completion info
-    const completionInfo = `\n\n--- COMPLETION ---\nCOMPLETED BY: cursor-claude-sonnet\nCOMPLETED ON: ${new Date().toISOString()}${completionComment ? `\nCOMPLETION NOTES: ${completionComment}` : ''}`;
-    
-    // Mark task as done with completion info
-    const completedTask = await api.updateTask(taskId, {
-      done: true,
-      description: task.description + completionInfo
-    });
-    
-    console.log(`✅ Task #${taskId} completed by cursor-claude-sonnet`);
-    console.log(`📋 Task: "${task.title}"`);
-    
-    return completedTask;
-    
-  } catch (error) {
-    console.error(`❌ Failed to complete task #${taskId}:`, error.message);
-    throw error;
-  }
-}
-
-// Add getTask method to API
-VikunjaAPI.prototype.getTask = async function(taskId) {
-  const axios = require('axios');
-  const response = await axios.get(`${this.baseUrl}/tasks/${taskId}`, { headers: this.headers });
-  return response.data;
-};
-
-// CLI interface
-async function main() {
-  const [,, command, taskId, ...args] = process.argv;
-  
-  switch (command) {
-    case 'assign':
-      if (!taskId) {
-        console.error('❌ Task ID required');
-        console.log('Usage: ./assign-task.cjs assign TASK_ID [comment]');
-        process.exit(1);
-      }
-      await assignTask(parseInt(taskId), 'cursor-claude-sonnet', args.join(' '));
-      break;
-      
-    case 'complete':
-      if (!taskId) {
-        console.error('❌ Task ID required');
-        console.log('Usage: ./assign-task.cjs complete TASK_ID [completion_notes]');
-        process.exit(1);
-      }
-      await completeTask(parseInt(taskId), args.join(' '));
-      break;
-      
-    default:
-      console.log(`
-🎯 Task Assignment Tool for cursor-claude-sonnet
+function showUsage() {
+  console.log(`
+🎯 Universal Task Assignment Tool
 
 Usage:
-  ./assign-task.cjs assign TASK_ID [comment]     # Assign task to cursor-claude-sonnet
-  ./assign-task.cjs complete TASK_ID [notes]     # Complete assigned task
+  ./assign-task.cjs TASK_ID AGENT_NAME [STATUS] [CATEGORY] [PRIORITY]
+
+Arguments:
+  TASK_ID     - The ID of the task to assign
+  AGENT_NAME  - Who to assign to: cursor-claude-sonnet, cursor-gpt-4.1-max, drlukner, etc.
+  STATUS      - Optional status: todo, in-progress, review, testing, done, blocked
+  CATEGORY    - Optional category: bug, feature, refactor, documentation, testing, etc.
+  PRIORITY    - Optional priority: critical, high, medium, low
 
 Examples:
-  ./assign-task.cjs assign 3007 "Starting research on user assignment"
-  ./assign-task.cjs complete 3007 "Implemented description-based assignment system"
+  ./assign-task.cjs 3014 cursor-claude-sonnet in-progress
+  ./assign-task.cjs 3015 drlukner review documentation high
+  ./assign-task.cjs 3016 cursor-gpt-4.1-max todo bug critical
+
+Available agents: cursor-claude-sonnet, cursor-gpt-4.1-max, drlukner
 `);
+}
+
+async function assignTask(taskId, agentName, status = 'assigned', category = null, priority = null) {
+  const api = new VikunjaAPI();
+  
+  try {
+    console.log(`🎯 Assigning task #${taskId} to ${agentName}...\n`);
+    
+    // Get current task details
+    const task = await api.getTask(taskId);
+    console.log(`📋 Task: "${task.title}"`);
+    
+    // Assign to agent
+    console.log(`🤖 Assigning to ${agentName}...`);
+    await api.assignTaskToAgent(taskId, agentName);
+    
+    // Update status if provided
+    if (status && status !== 'assigned') {
+      console.log(`📊 Setting status to: ${status}`);
+      await api.updateTaskStatus(taskId, status);
+    }
+    
+    // Add category label if provided
+    if (category) {
+      console.log(`🏷️  Adding category: ${category}`);
+      const categoryLabel = await api.findOrCreateLabel(`category:${category}`);
+      await api.addLabelsToTask(taskId, [categoryLabel.id]);
+    }
+    
+    // Add priority label if provided
+    if (priority) {
+      console.log(`🚨 Setting priority: ${priority}`);
+      const priorityLabel = await api.findOrCreateLabel(`priority:${priority}`);
+      await api.addLabelsToTask(taskId, [priorityLabel.id]);
+    }
+    
+    // Show final result
+    console.log('\n✅ Assignment complete!');
+    const updatedTask = await api.getTask(taskId);
+    console.log(`📋 "${updatedTask.title}"`);
+    console.log(`🏷️  Labels:`, updatedTask.labels?.map(l => l.title).join(', ') || 'none');
+    
+    // Show agent's current workload
+    console.log(`\n📊 ${agentName}'s current tasks:`);
+    const agentTasks = await api.getTasksByAgent(agentName);
+    const openTasks = agentTasks.filter(t => !t.done);
+    console.log(`${openTasks.length} open task(s):`);
+    openTasks.forEach(t => {
+      const statusLabel = t.labels?.find(l => l.title.startsWith('status:'));
+      const taskStatus = statusLabel ? statusLabel.title.replace('status:', '') : 'unknown';
+      console.log(`  - [${t.id}] ${t.title} (${taskStatus})`);
+    });
+    
+  } catch (error) {
+    console.error(`❌ Assignment failed:`, error.message);
+    process.exit(1);
   }
+}
+
+async function main() {
+  const [,, taskId, agentName, status, category, priority] = process.argv;
+  
+  if (!taskId || !agentName) {
+    showUsage();
+    process.exit(1);
+  }
+  
+  // Validate agent name
+  const validAgents = ['cursor-claude-sonnet', 'cursor-gpt-4.1-max', 'drlukner'];
+  if (!validAgents.includes(agentName)) {
+    console.error(`❌ Invalid agent: ${agentName}`);
+    console.error(`Valid agents: ${validAgents.join(', ')}`);
+    process.exit(1);
+  }
+  
+  await assignTask(parseInt(taskId), agentName, status, category, priority);
 }
 
 if (require.main === module) {
   main();
 }
-
-module.exports = { assignTask, completeTask };

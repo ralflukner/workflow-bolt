@@ -9,7 +9,8 @@ const LABEL_CONFIGS = {
   agents: {
     'cursor-gpt-4.1-max': { color: '#3b82f6', description: 'AI Agent - GPT-4.1 Max' },
     'cursor-claude-sonnet': { color: '#8b5cf6', description: 'AI Agent - Claude Sonnet' },
-    'drlukner': { color: '#10b981', description: 'Human User - Project Owner' }
+    'drlukner': { color: '#10b981', description: 'Human User - Project Owner' },
+    'gemini': { color: '#4285F4', description: 'AI Agent - Gemini' }
   },
   
   // Status labels

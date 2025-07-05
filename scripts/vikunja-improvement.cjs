@@ -28,7 +28,7 @@ async function showImprovementTasks() {
       console.log(`\n📁 ${category} (${tasks.length} tasks):`);
       tasks.forEach(task => {
         const priority = '🔥'.repeat(task.priority);
-        console.log(`  [${task.priority}] ${priority} ${task.title}`);
+        console.log(`  [${task.id}] [${task.priority}] ${priority} ${task.title}`);
         if (task.description) {
           const lines = task.description.split('\n').slice(0, 3);
           lines.forEach(line => {
