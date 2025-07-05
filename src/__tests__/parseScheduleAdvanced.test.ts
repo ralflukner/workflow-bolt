@@ -261,6 +261,8 @@ RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 01/01/1980 (000) 000
       const importOptions: JSONImportOptions = { password };
       const result = await importScheduleFromJSON(file, importOptions);
       
+      // Debug: Check what secureLog captured
+      console.log('SecureLog calls:', mockSecureLog.mock.calls.map(call => call[0]));
       console.log('Import result:', result);
       console.log('Import success:', result.success);
       console.log('Import patients count:', result.patients.length);

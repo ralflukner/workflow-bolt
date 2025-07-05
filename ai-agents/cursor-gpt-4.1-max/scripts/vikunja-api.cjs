@@ -76,6 +76,21 @@ class VikunjaAPI {
       throw error;
     }
   }
+
+  // Create a new project
+  async createProject(projectData) {
+    try {
+      const response = await axios.put(
+        `${this.baseUrl}/projects`,
+        projectData,
+        { headers: this.headers }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating project:', error.message);
+      throw error;
+    }
+  }
 }
 
 // Test the API

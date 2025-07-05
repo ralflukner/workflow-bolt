@@ -628,6 +628,8 @@ export async function importScheduleFromJSON(
     if (!foundData) {
       for (const key of allKeys) {
         const data = secureStorage.retrieve(key);
+        secureLog(`📥 Checking key: ${key}, data type: ${typeof data}, isArray: ${Array.isArray(data)}`);
+        
         if (data && data.patients && Array.isArray(data.patients)) {
           patients.push(...data.patients);
           foundData = true;
@@ -641,6 +643,11 @@ export async function importScheduleFromJSON(
           foundData = true;
           secureLog(`✅ Found patient array in key: ${key} (${data.length} patients)`);
           break;
+        }
+        
+        // Debug: log the structure of the data
+        if (data && typeof data === 'object') {
+          secureLog(`📥 Data structure for ${key}: ${JSON.stringify(Object.keys(data))}`);
         }
       }
     }
@@ -659,7 +666,9 @@ export async function importScheduleFromJSON(
     }
     
     if (!foundData) {
-      errors.push('No patient data found in imported file');
+      const errorMsg = `No patient data found in imported file. Available keys: ${allKeys.join(', ')}`;
+      secureLog(`❌ ${errorMsg}`);
+      errors.push(errorMsg);
       return { patients: [], success: false, errors };
     }
     

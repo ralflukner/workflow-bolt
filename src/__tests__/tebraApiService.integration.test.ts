@@ -1,18 +1,4 @@
-/**
- * Integration tests for TebraApiService
- * Tests the actual Firebase Functions integration
- *
- * NOTE: The Tebra SOAP API is expected to be available 24/7.
- * Any failures in these tests indicate a real issue with the API or connectivity.
- *
- * All test logs are also written to /logs/tebraApiService.integration.log for review.
- */
-
-import { tebraApiService } from '../services/tebraApiService';
-import fs from 'fs';
-import path from 'path';
-
-// Mock Firebase for testing
+// Mock Firebase for testing - MUST be at the top before any imports
 const mockFirebaseApp = {};
 const mockFunctions = {};
 const mockAuth = {
@@ -38,6 +24,20 @@ jest.mock('firebase/auth', () => ({
   }),
   currentUser: mockAuth.currentUser
 }));
+
+/**
+ * Integration tests for TebraApiService
+ * Tests the actual Firebase Functions integration
+ *
+ * NOTE: The Tebra SOAP API is expected to be available 24/7.
+ * Any failures in these tests indicate a real issue with the API or connectivity.
+ *
+ * All test logs are also written to /logs/tebraApiService.integration.log for review.
+ */
+
+import { tebraApiService } from '../services/tebraApiService';
+import fs from 'fs';
+import path from 'path';
 
 const logFilePath = path.join(__dirname, '../../logs/tebraApiService.integration.log');
 fs.mkdirSync(path.dirname(logFilePath), { recursive: true });
