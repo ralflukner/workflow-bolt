@@ -8,30 +8,6 @@ from typing import Dict, Any, List, Optional
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# One-time Redis connectivity check on function cold start
-import sys
-import os
-print(f"[REDIS_CHECK] Module loading at {datetime.utcnow()}", file=sys.stderr, flush=True)
-print(f"[REDIS_CHECK] Module loading at {datetime.utcnow()}", flush=True)
-
-try:
-    import redis
-    redis_host = os.environ.get('REDIS_HOST', '10.161.35.147')
-    redis_port = int(os.environ.get('REDIS_PORT', 6379))
-    print(f"[REDIS_CHECK] Connecting to Redis at {redis_host}:{redis_port}", flush=True)
-    
-    r = redis.Redis(
-        host=redis_host,
-        port=redis_port,
-        decode_responses=True,
-        socket_connect_timeout=2
-    )
-    result = r.ping()
-    print(f"[REDIS_CHECK] SUCCESS - Redis ping returned: {result}", flush=True)
-    print(f"[REDIS_CHECK] SUCCESS - VPC connectivity verified", file=sys.stderr, flush=True)
-except Exception as e:
-    print(f"[REDIS_CHECK] FAILED - Error: {type(e).__name__}: {str(e)}", flush=True)
-    print(f"[REDIS_CHECK] FAILED - {str(e)}", file=sys.stderr, flush=True)
 
 @functions_framework.http
 def tebra_debug(request):
