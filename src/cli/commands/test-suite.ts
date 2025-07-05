@@ -7,7 +7,7 @@ import { Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { existsSync, mkdirSync, readdirSync } from 'fs';
 import chalk from 'chalk';
-import { TestOrchestrator } from '../lib/TestOrchestrator.js';
+import { TestOrchestrator } from '../lib/TestOrchestrator';
 import { 
   TestConfig, 
   ImportMode, 
@@ -15,7 +15,7 @@ import {
   TestSuiteCommandFlags,
   TestResult,
   TestComparison
-} from '../../types/cli.js';
+} from '../../types/cli';
 
 export default class TestSuiteCommand extends Command {
   static summary = 'Run comprehensive integration test suite across all modes';

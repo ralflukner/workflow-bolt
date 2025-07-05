@@ -135,7 +135,7 @@ export default class TebraConnectionDebugCommand extends Command {
       const result = await Promise.race([
         tebraApi.testConnection(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
-      ]);
+      ]) as ApiResponse;
       const duration = Date.now() - startTime;
 
       if (debug) {
@@ -174,7 +174,7 @@ export default class TebraConnectionDebugCommand extends Command {
       const result = await Promise.race([
         tebraApi.healthCheck(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
-      ]);
+      ]) as ApiResponse;
       const duration = Date.now() - startTime;
 
       if (debug) {
@@ -223,7 +223,7 @@ export default class TebraConnectionDebugCommand extends Command {
         const result = await Promise.race([
           endpoint.test(),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
-        ]);
+        ]) as ApiResponse;
         const duration = Date.now() - startTime;
 
         const success = result && typeof result === 'object' && 'success' in result && result.success;
@@ -288,7 +288,7 @@ export default class TebraConnectionDebugCommand extends Command {
         const result = await Promise.race([
           dataTest.test(),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
-        ]);
+        ]) as ApiResponse;
         const duration = Date.now() - startTime;
 
         const success = result && typeof result === 'object' && 'success' in result && result.success;
@@ -356,7 +356,7 @@ export default class TebraConnectionDebugCommand extends Command {
         const result = await Promise.race([
           errorTest.test(),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
-        ]);
+        ]) as ApiResponse;
         const duration = Date.now() - startTime;
 
         // For error tests, we expect them to fail but handle errors gracefully
@@ -442,7 +442,7 @@ export default class TebraConnectionDebugCommand extends Command {
       const result = await Promise.race([
         endpoint.test(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
-      ]);
+      ]) as ApiResponse;
       const duration = Date.now() - startTime;
 
       const success = result && typeof result === 'object' && 'success' in result && result.success;

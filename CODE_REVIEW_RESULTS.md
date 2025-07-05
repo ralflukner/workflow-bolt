@@ -169,3 +169,50 @@ jobs:
 - [ ] From whom: ___
 - [ ] For what: ___
 ```
+
+---
+## 9. Test Failures & Repair Plan
+
+### Summary of Test Failures (npm run test:all)
+
+| Suite/File                                      | Error Type / Key Issue                                      |
+|-------------------------------------------------|-------------------------------------------------------------|
+| src/__tests__/parseScheduleAdvanced.test.ts      | Assertion mismatch, undefined variables, missing mocks      |
+| src/cli/__tests__/integration/import-workflow.integration.test.ts | Module not found (BrowserController)           |
+| src/cli/__tests__/unit/lib/TestOrchestrator.test.ts | Module not found (megaParseSchedule.js), require stack   |
+| src/__tests__/hipaaCompliance.basic.test.ts      | Assertion mismatch, missing audit logs, PHI handling        |
+| src/__tests__/secureStorage.test.ts              | Assertion mismatch, memory management, timeouts             |
+| src/cli/__tests__/unit/commands/verify.test.ts   | Module not found, Jest config, syntax errors                |
+| src/__tests__/scheduleImportDebug.test.ts        | Assertion mismatch, missing logs, error handling            |
+| integration/hipaaCompliance.integration.test.ts  | Assertion mismatch, data integrity, timeouts                |
+| General                                         | Heap out of memory, Jest config for large tests             |
+
+### Key Issues Identified
+- **Assertion mismatches:** Expected vs. received values do not match (e.g., invalid patient name not rejected, wrong error messages, missing logs).
+- **Undefined variables:** e.g., `sampleScheduleText` not defined.
+- **Missing mocks/dependencies:** e.g., `BrowserController`, `megaParseSchedule.js`.
+- **Module not found:** Import errors in CLI and integration tests.
+- **Heap out of memory:** Large test suites or memory leaks.
+- **Timeouts:** Long-running tests not properly configured.
+- **PHI handling:** Test data includes PHI; needs redaction or replacement.
+
+### Repair Plan (see ACTION_PLAN.md Phase 1 & 3)
+- [ ] Triage all failing tests and categorize by error type (assertion, missing mock, OOM, etc.)
+- [ ] Assign owners for each suite (Backend, Security, QA)
+- [ ] Clean up test data to remove PHI and use synthetic data
+- [ ] Fix undefined variables and add missing mocks
+- [ ] Resolve all module not found errors (update imports, add missing files)
+- [ ] Address heap out of memory by splitting large tests or increasing Jest memory limit
+- [ ] Add/adjust Jest timeouts for long-running tests
+- [ ] Update test assertions to match actual function output
+- [ ] Document all fixes and cross-reference PRs in this section
+
+**Next Steps:**
+- [ ] Triage and assign all test failures by 2025-01-07
+- [ ] Begin repairs immediately after triage
+- [ ] Update ACTION_PLAN.md with new tasks, owners, and due dates
+- [ ] Mark each test suite as passing in this document as repairs are completed
+
+**Reference:** See ACTION_PLAN.md Phase 1.5 and 3.0 for test repair and code quality improvement tasks.
+
+---

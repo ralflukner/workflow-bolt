@@ -12,12 +12,12 @@ import {
   PerformanceMetrics,
   TestLogger,
   LogEntry
-} from '../../types/cli.js';
-import { parseScheduleWithMegaParse } from '../../utils/megaParseSchedule.js';
-import { parseScheduleAdvanced } from '../../utils/parseScheduleAdvanced.js';
-import { parseSchedule } from '../../utils/parseSchedule.js';
-import { BrowserController } from './BrowserController.js';
-import { Patient } from '../../types/index.js';
+} from '../../types/cli';
+import { parseScheduleWithMegaParse } from '../../utils/megaParseSchedule';
+import { parseScheduleAdvanced } from '../../utils/parseScheduleAdvanced';
+import { parseSchedule } from '../../utils/parseSchedule';
+import { BrowserController } from './BrowserController';
+import { Patient } from '../../types/index';
 
 export class TestOrchestrator {
   private logger: TestLogger;

@@ -17,30 +17,36 @@ on:
 jobs:
   security-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # Required for OIDC
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v1
+      id: auth
+      uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-    - name: Export GCP project ID
-      env:
-        PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-      run: echo "GCP_PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
+        workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+        service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
     - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: luknerlumina-firebase
 
     - name: Configure gcloud
       run: |
-        gcloud config set project "$GCP_PROJECT_ID"
+        gcloud config set project luknerlumina-firebase
+        
+        # Verify OIDC authentication
+        gcloud auth list
+        echo "✅ OIDC authentication successful"
 
     - name: Security Check with GSM
       run: |
         chmod +x ./tebra-tools/scripts/security-check-gsm.sh
         ./tebra-tools/scripts/security-check-gsm.sh
       env:
-        GOOGLE_CLOUD_PROJECT: "$GCP_PROJECT_ID"
+        GOOGLE_CLOUD_PROJECT: luknerlumina-firebase

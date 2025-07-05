@@ -7,12 +7,12 @@ import { Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import chalk from 'chalk';
-import { BrowserController } from '../lib/BrowserController.js';
+import { BrowserController } from '../lib/BrowserController';
 import { 
   VerifyCommandFlags,
   ExpectedDashboardState,
   VerificationResult
-} from '../../types/cli.js';
+} from '../../types/cli';
 
 export default class VerifyCommand extends Command {
   static summary = 'Verify current Dashboard state matches expected data';

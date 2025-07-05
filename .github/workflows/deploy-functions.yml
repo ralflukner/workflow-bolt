@@ -1,0 +1,163 @@
+name: Deploy Cloud Functions
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'functions/**'
+      - 'Makefile'
+      - '.github/workflows/deploy-functions.yml'
+  workflow_dispatch:
+    inputs:
+      function_name:
+        description: 'Function to deploy (or "all" for all functions)'
+        required: true
+        default: 'all'
+        type: string
+
+env:
+  PROJECT_ID: luknerlumina-firebase
+  REGION: us-central1
+
+jobs:
+  security-check:
+    runs-on: ubuntu-latest
+    outputs:
+      functions-changed: ${{ steps.changes.outputs.functions }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for PHI/secrets in code
+        run: |
+          echo "🔍 Scanning for PHI and secrets..."
+          # Check for common PHI patterns
+          if grep -r -i -E "(ssn|social.security|phone.*number|email.*@|patient.*name)" functions/ --exclude-dir=__pycache__ || \
+             grep -r -E "([0-9]{3}-?[0-9]{2}-?[0-9]{4})" functions/ --exclude-dir=__pycache__ || \
+             grep -r -E "([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})" functions/ --exclude-dir=__pycache__; then
+            echo "❌ CRITICAL: PHI or sensitive data found in code!"
+            echo "This is a HIPAA violation. Please remove all PHI before deployment."
+            exit 1
+          fi
+          echo "✅ No PHI detected in functions code"
+
+      - name: Detect changed functions
+        id: changes
+        run: |
+          # Get list of changed function directories
+          CHANGED_FUNCTIONS=$(git diff --name-only HEAD~1 HEAD | grep '^functions/' | cut -d'/' -f2 | sort -u | tr '\n' ' ')
+          echo "functions=${CHANGED_FUNCTIONS}" >> $GITHUB_OUTPUT
+          echo "Changed functions: ${CHANGED_FUNCTIONS}"
+
+  deploy:
+    needs: security-check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # Required for OIDC
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure deployment
+        run: |
+          echo "🔧 Configuring deployment environment..."
+          gcloud config set project ${{ env.PROJECT_ID }}
+          
+          # Verify authentication
+          gcloud auth list
+          echo "✅ Authentication successful"
+
+      - name: Setup Python and dependencies
+        run: |
+          # Create shared venv for testing
+          python3 -m venv .venv-workflow-bolt
+          source .venv-workflow-bolt/bin/activate
+          pip install -q -U pip wheel
+          pip install -q pytest functions-framework redis
+
+      - name: Deploy functions
+        run: |
+          source .venv-workflow-bolt/bin/activate
+          
+          # Determine which functions to deploy
+          if [ "${{ github.event.inputs.function_name }}" = "all" ] || [ -z "${{ github.event.inputs.function_name }}" ]; then
+            # Deploy changed functions or all if manual trigger
+            FUNCTIONS_TO_DEPLOY="${{ needs.security-check.outputs.functions-changed }}"
+            if [ -z "$FUNCTIONS_TO_DEPLOY" ] && [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              FUNCTIONS_TO_DEPLOY="tebra_debug patient_sync"
+            fi
+          else
+            FUNCTIONS_TO_DEPLOY="${{ github.event.inputs.function_name }}"
+          fi
+          
+          if [ -z "$FUNCTIONS_TO_DEPLOY" ]; then
+            echo "ℹ️ No functions to deploy"
+            exit 0
+          fi
+          
+          echo "🚀 Deploying functions: $FUNCTIONS_TO_DEPLOY"
+          
+          for func in $FUNCTIONS_TO_DEPLOY; do
+            echo "📦 Testing and deploying $func..."
+            
+            # Test before deploy
+            if make test NAME=$func; then
+              echo "✅ Tests passed for $func"
+              
+              # Deploy with VPC connector
+              make deploy NAME=$func VPC_CONNECTOR=redis-connector
+              
+              # Verify deployment
+              URL=$(gcloud functions describe $func --gen2 --region=${{ env.REGION }} --format='value(serviceConfig.uri)')
+              echo "🔗 $func deployed to: $URL"
+              
+            else
+              echo "❌ Tests failed for $func - skipping deployment"
+              exit 1
+            fi
+          done
+
+      - name: Post-deployment verification
+        run: |
+          echo "🔍 Verifying deployments..."
+          
+          # Check function status
+          gcloud functions list --filter="region:${{ env.REGION }}" --format="table(name,state,updateTime)"
+          
+          # Verify VPC connectivity for critical functions
+          for func in tebra_debug patient_sync; do
+            VPC_CONNECTOR=$(gcloud functions describe $func --gen2 --region=${{ env.REGION }} --format="value(serviceConfig.vpcConnector)" 2>/dev/null || echo "none")
+            if [[ "$VPC_CONNECTOR" == *"redis-connector"* ]]; then
+              echo "✅ $func: VPC connector attached"
+            else
+              echo "⚠️ $func: No VPC connector found"
+            fi
+          done
+
+      - name: Update deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Deployment completed successfully"
+            echo "🔐 Security: OIDC authentication used (no service account keys)"
+            echo "🛡️ VPC: Functions deployed with secure Redis connectivity"
+          else
+            echo "❌ Deployment failed"
+            echo "Please check logs and security requirements"
+          fi

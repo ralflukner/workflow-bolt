@@ -3,6 +3,10 @@
 /**
  * Comprehensive Integration Test for Sync Today and Sync Tomorrow
  * Tests the full sync pipeline to verify functionality
+ * 
+ * ⚠️  SYNTHETIC TEST DATA ONLY - NO REAL PHI
+ * All patient and provider data in this file is synthetic and for testing only.
+ * Names, emails, and phone numbers are clearly marked as test data.
  */
 
 const { syncSchedule } = require('./functions/src/tebra-sync/syncSchedule');
@@ -74,34 +78,34 @@ const createMockDeps = () => ({
           ID: 'patient-1',
           PatientId: 'patient-1',
           PatientNumber: 'P001',
-          FirstName: 'John',
-          LastName: 'Doe',
-          DateOfBirth: '1980-05-15',
+          FirstName: 'TestPatient',
+          LastName: 'Alpha',
+          DateOfBirth: '1980-01-01',
           Gender: 'M',
-          HomePhone: '555-0123',
-          Email: 'john.doe@email.com',
+          HomePhone: '000-000-0001',
+          Email: 'test.patient.alpha@example.local',
         },
         'patient-2': {
           ID: 'patient-2',
           PatientId: 'patient-2',
           PatientNumber: 'P002',
-          FirstName: 'Jane',
-          LastName: 'Smith',
-          DateOfBirth: '1975-08-20',
+          FirstName: 'TestPatient',
+          LastName: 'Beta',
+          DateOfBirth: '1975-01-01',
           Gender: 'F',
-          MobilePhone: '555-0124',
-          Email: 'jane.smith@email.com',
+          MobilePhone: '000-000-0002',
+          Email: 'test.patient.beta@example.local',
         },
         'patient-3': {
           ID: 'patient-3',
           PatientId: 'patient-3',
           PatientNumber: 'P003',
-          FirstName: 'Alice',
-          LastName: 'Johnson',
+          FirstName: 'TestPatient',
+          LastName: 'Gamma',
           DateOfBirth: '1990-01-01',
           Gender: 'F',
-          HomePhone: '555-0125',
-          Email: 'alice.johnson@email.com',
+          HomePhone: '000-000-0003',
+          Email: 'test.patient.gamma@example.local',
         },
       };
       
@@ -114,16 +118,16 @@ const createMockDeps = () => ({
         {
           ID: 'provider-1',
           ProviderId: 'provider-1',
-          FirstName: 'Sarah',
-          LastName: 'Johnson',
+          FirstName: 'TestProvider',
+          LastName: 'Alpha',
           Title: 'Dr.',
           Degree: 'MD',
         },
         {
           ID: 'provider-2',
           ProviderId: 'provider-2',
-          FirstName: 'Michael',
-          LastName: 'Brown',
+          FirstName: 'TestProvider',
+          LastName: 'Beta',
           Title: 'Dr.',
           Degree: 'OD',
         },

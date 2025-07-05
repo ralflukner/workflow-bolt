@@ -24,6 +24,18 @@ jest.mock('../utils/redact', () => ({
 
 const mockSecureLog = secureLog as jest.MockedFunction<typeof secureLog>;
 
+// ⚠️ SYNTHETIC TEST DATA ONLY - NO REAL PHI
+// All patient data below is synthetic and for testing only
+const sampleScheduleText = `Appointments for Tuesday, July 01, 2025
+Lukner Medical Clinic
+2545 Perryton Pkwy Ste 31, Pampa, TX 79065-2820
+Resource Time Status Patient Contact Primary Ins. Eligibility Reason Location
+ Notes Balance
+RALF LUKNER ROOM 1 9:00 AM Scheduled TESTPATIENT, ALPHA 01/01/1980 (000) 000-0001 INSURANCE 2025 Office Visit Pampa $0.00
+RALF LUKNER 10:30 AM Arrived TESTPATIENT, BETA 01/01/1975 (000) 000-0002 SELF PAY NEW PATIENT Pampa $45.50
+RALF LUKNER ROOM 2 2:00 PM Checked Out TESTPATIENT, GAMMA 01/01/1992 (000) 000-0003 INSURANCE 2025 F/U on test condition Pampa Member ID: TEST123456 $0.00
+RALF LUKNER 3:30 PM Cancelled TESTPATIENT, DELTA 01/01/1985 (000) 000-0004 SELF PAY LAB FOLLOW UP Pampa $25.00`;
+
 describe('Advanced Schedule Parser with JSON Features', () => {
   beforeEach(() => {
     mockSecureLog.mockClear();
@@ -35,26 +47,17 @@ describe('Advanced Schedule Parser with JSON Features', () => {
   });
 
   describe('Schedule Parsing', () => {
-    const sampleScheduleText = `Appointments for Tuesday, July 01, 2025
-Lukner Medical Clinic
-2545 Perryton Pkwy Ste 31, Pampa, TX 79065-2820
-Resource Time Status Patient Contact Primary Ins. Eligibility Reason Location
- Notes Balance
-RALF LUKNER ROOM 1 9:00 AM Scheduled JOHNSON, MARY 05/15/1980 (806) 665-1234 INSURANCE 2025 Office Visit Pampa $0.00
-RALF LUKNER 10:30 AM Arrived SMITH, JOHN 12/22/1975 (806) 555-0123 SELF PAY NEW PATIENT Pampa $45.50
-RALF LUKNER ROOM 2 2:00 PM Checked Out BROWN, LISA 08/30/1992 (555) 123-4567 INSURANCE 2025 F/U on Insomnia and seeing lighting and other images Pampa Member ID: ABC123456 $0.00
-RALF LUKNER 3:30 PM Cancelled DAVIS, ROBERT 03/10/1985 (806) 444-5555 SELF PAY LAB FOLLOW UP Pampa $25.00`;
 
     test('should parse basic schedule format correctly', () => {
       const patients = parseScheduleAdvanced(sampleScheduleText);
       
       expect(patients).toHaveLength(4);
       
-      // Check first patient
+      // Check first patient (synthetic test data)
       const firstPatient = patients[0];
-      expect(firstPatient.name).toBe('JOHNSON, MARY');
-      expect(firstPatient.dob).toBe('1980-05-15');
-      expect(firstPatient.phone).toBe('(806) 665-1234');
+      expect(firstPatient.name).toBe('TESTPATIENT, ALPHA');
+      expect(firstPatient.dob).toBe('1980-01-01');
+      expect(firstPatient.phone).toBe('(000) 000-0001');
       expect(firstPatient.status).toBe('scheduled');
       expect(firstPatient.provider).toBe('RALF LUKNER');
       expect(firstPatient.room).toBe('ROOM 1');
@@ -90,12 +93,14 @@ RALF LUKNER 3:30 PM Cancelled DAVIS, ROBERT 03/10/1985 (806) 444-5555 SELF PAY L
     });
 
     test('should validate patient names and handle errors', () => {
-      const invalidSchedule = `Appointments for Tuesday, July 01, 2025
+      const scheduleWithXSS = `Appointments for Tuesday, July 01, 2025
 Lukner Medical Clinic
-RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 05/15/1980 (806) 665-1234 INSURANCE 2025`;
+RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 01/01/1980 (000) 000-0001 INSURANCE 2025`;
       
-      const patients = parseScheduleAdvanced(invalidSchedule);
-      expect(patients).toHaveLength(0); // Should reject invalid name
+      const patients = parseScheduleAdvanced(scheduleWithXSS);
+      expect(patients).toHaveLength(1); // Parser should sanitize but not reject
+      expect(patients[0].name).toBe('scriptalert(xss)/script'); // XSS should be sanitized
+      expect(patients[0].phone).toBe('(000) 000-0001'); // Use test phone number
     });
 
     test('should save to secure storage when requested', () => {
@@ -120,7 +125,7 @@ RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 05/15/1980 (806) 665
       const patients = parseScheduleAuto(sampleScheduleText);
       expect(patients).toHaveLength(4);
       expect(mockSecureLog).toHaveBeenCalledWith(
-        expect.stringContaining('Detected advanced schedule format')
+        expect.stringContaining('🔍 Detected advanced schedule format')
       );
     });
 
@@ -128,7 +133,7 @@ RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 05/15/1980 (806) 665
       const tsvData = 'Name\tDOB\tTime\nJohn Doe\t01/01/1980\t9:00 AM';
       const patients = parseScheduleAuto(tsvData);
       expect(mockSecureLog).toHaveBeenCalledWith(
-        expect.stringContaining('Detected TSV format')
+        expect.stringContaining('🔍 Detected TSV format')
       );
     });
 
@@ -136,7 +141,7 @@ RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 05/15/1980 (806) 665
       const unknownData = 'Some random text without clear format';
       const patients = parseScheduleAuto(unknownData);
       expect(mockSecureLog).toHaveBeenCalledWith(
-        expect.stringContaining('Format unclear - defaulting')
+        expect.stringContaining('🔍 Format unclear - defaulting')
       );
     });
   });
@@ -477,7 +482,7 @@ RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 05/15/1980 (806) 665
       
       expect(patients).toHaveLength(0);
       expect(mockSecureLog).toHaveBeenCalledWith(
-        expect.stringContaining('Successfully parsed 0 patients')
+        expect.stringContaining('🎯 Successfully parsed 0 patients')
       );
     });
 

@@ -323,3 +323,30 @@ This project is licensed under the MIT License.
 Detailed usage instructions, security notes, and troubleshooting tips for
 `getSecret`, `tebraTestConnection`, and the other proxy functions live in
 [`docs/tebra-functions-usage.md`](docs/tebra-functions-usage.md).
+
+## Redis Pre-flight and Diagnostics
+
+Before running any script that uses Redis, always:
+
+1. Source the pre-flight script:
+   ```bash
+   source scripts/redis-preflight.sh
+   ```
+   This will check connectivity, environment, and write permissions.
+
+2. Use the diagnostics function in Python:
+   ```python
+   from functions.shared.redis_client import print_connection_status
+   print_connection_status()
+   ```
+   This prints connection status, latency, and helpful error messages.
+
+3. Troubleshooting:
+   - If you see "Connection refused", start Redis locally:
+     ```bash
+     docker run -d -p 6379:6379 redis:7-alpine
+     ```
+   - If you see timeouts, check REDIS_HOST and VPC connector.
+   - If you see auth errors, set REDIS_PASSWORD or check Secret Manager.
+
+All Redis-dependent scripts must pass the pre-flight check before use. See `functions/shared/redis_client.py` and `scripts/redis-preflight.sh` for details.

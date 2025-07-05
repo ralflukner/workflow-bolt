@@ -34,6 +34,13 @@ export interface HealthCheckResult {
   details?: Record<string, unknown>;
 }
 
+interface CloudRunHealthData {
+  status: 'healthy' | 'unhealthy';
+  httpStatus?: number;
+  cloudRunUrl?: string;
+  error?: string;
+}
+
 /**
  * Generate a correlation ID for tracing requests
  */
@@ -253,8 +260,9 @@ export class TebraDebugApiService {
       );
 
       const duration = Date.now() - startTime;
+      const cloudRunData = result.data as CloudRunHealthData;
 
-      if (result.success && result.data?.status === 'healthy') {
+      if (result.success && cloudRunData?.status === 'healthy') {
         return {
           status: 'healthy',
           message: 'Cloud Run service healthy via Firebase proxy',
@@ -262,21 +270,21 @@ export class TebraDebugApiService {
           correlationId,
           details: { 
             authenticated: true, 
-            cloudRunStatus: result.data.status,
-            httpStatus: result.data.httpStatus,
-            cloudRunUrl: result.data.cloudRunUrl
+            cloudRunStatus: cloudRunData.status,
+            httpStatus: cloudRunData.httpStatus,
+            cloudRunUrl: cloudRunData.cloudRunUrl
           }
         };
-      } else if (result.success && result.data?.status === 'unhealthy') {
+      } else if (result.success && cloudRunData?.status === 'unhealthy') {
         return {
           status: 'error',
-          message: `Cloud Run service unhealthy: ${result.data.error || 'Unknown error'}`,
+          message: `Cloud Run service unhealthy: ${cloudRunData.error || 'Unknown error'}`,
           duration,
           correlationId,
           details: { 
             authenticated: true, 
-            cloudRunStatus: result.data.status,
-            error: result.data.error
+            cloudRunStatus: cloudRunData.status,
+            error: cloudRunData.error
           }
         };
       } else {

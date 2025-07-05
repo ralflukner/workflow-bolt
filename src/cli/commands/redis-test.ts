@@ -4,8 +4,8 @@
 
 import { Command, Flags } from '@oclif/core';
 import chalk from 'chalk';
-import { RedisTestFramework, TestScenario, RedisTestConfig } from '../lib/RedisTestFramework.js';
-import { ImportMode } from '../../types/cli.js';
+import { RedisTestFramework, TestScenario, RedisTestConfig } from '../lib/RedisTestFramework';
+import { ImportMode } from '../../types/cli';
 
 export default class RedisTestCommand extends Command {
   static summary = 'Test Redis Streams integration for multi-agent coordination';

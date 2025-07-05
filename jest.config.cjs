@@ -12,7 +12,8 @@ module.exports = {
   },
   moduleNameMapper: {
     '\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    '^@/(.*)$': '<rootDir>/src/$1'
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^puppeteer$': '<rootDir>/__mocks__/puppeteer.js'
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.tsx'],
   testMatch: [
@@ -48,7 +49,8 @@ module.exports = {
       },
       moduleNameMapper: {
         '\.(css|less|scss|sass)$': 'identity-obj-proxy',
-        '^@/(.*)$': '<rootDir>/src/$1'
+        '^@/(.*)$': '<rootDir>/src/$1',
+        '^puppeteer$': '<rootDir>/__mocks__/puppeteer.cjs'
       },
       setupFilesAfterEnv: ['<rootDir>/src/setupTests.tsx'],
       testMatch: [
@@ -89,7 +91,8 @@ module.exports = {
       },
       moduleNameMapper: {
         '\.(css|less|scss|sass)$': 'identity-obj-proxy',
-        '^@/(.*)$': '<rootDir>/src/$1'
+        '^@/(.*)$': '<rootDir>/src/$1',
+        '^puppeteer$': '<rootDir>/__mocks__/puppeteer.cjs'
       },
       setupFilesAfterEnv: ['<rootDir>/src/setupTests.tsx'],
       testMatch: [
@@ -123,7 +126,8 @@ module.exports = {
       },
       moduleNameMapper: {
         '\.(css|less|scss|sass)$': 'identity-obj-proxy',
-        '^@/(.*)$': '<rootDir>/src/$1'
+        '^@/(.*)$': '<rootDir>/src/$1',
+        '^puppeteer$': '<rootDir>/__mocks__/puppeteer.cjs'
       },
       setupFilesAfterEnv: ['<rootDir>/src/cli/__tests__/setup.ts'],
       testMatch: [
@@ -155,7 +159,8 @@ module.exports = {
       },
       moduleNameMapper: {
         '\.(css|less|scss|sass)$': 'identity-obj-proxy',
-        '^@/(.*)$': '<rootDir>/src/$1'
+        '^@/(.*)$': '<rootDir>/src/$1',
+        '^puppeteer$': '<rootDir>/__mocks__/puppeteer.cjs'
       },
       setupFilesAfterEnv: ['<rootDir>/src/setupTests.tsx'],
       testMatch: [

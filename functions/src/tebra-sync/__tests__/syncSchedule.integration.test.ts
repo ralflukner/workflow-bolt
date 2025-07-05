@@ -1,3 +1,7 @@
+/**
+ * ⚠️  SYNTHETIC TEST DATA ONLY - NO REAL PHI
+ * All patient and provider data in this file is synthetic and for testing only.
+ */
 import { syncSchedule, SyncDeps } from '../syncSchedule';
 import { TebraClient } from '../../types/tebra';
 import { DailySessionRepo } from '../../services/firestoreDailySession';
@@ -74,25 +78,25 @@ describe('syncSchedule Integration Tests', () => {
           ID: 'patient-1',
           PatientId: 'patient-1',
           PatientNumber: 'P001',
-          FirstName: 'John',
-          LastName: 'Doe',
-          DateOfBirth: '1980-05-15',
+          FirstName: 'TestPatient',
+          LastName: 'Alpha',
+          DateOfBirth: '1980-01-01',
           Gender: 'M',
-          HomePhone: '555-0123',
-          MobilePhone: '555-0124',
-          Email: 'john.doe@email.com',
+          HomePhone: '000-000-0001',
+          MobilePhone: '000-000-0002',
+          Email: 'test.patient.alpha@example.local',
         },
         'patient-2': {
           ID: 'patient-2',
           PatientId: 'patient-2',
           PatientNumber: 'P002',
-          FirstName: 'Jane',
-          LastName: 'Smith',
-          DateOfBirth: '1975-08-20',
+          FirstName: 'TestPatient',
+          LastName: 'Beta',
+          DateOfBirth: '1975-01-01',
           Gender: 'F',
-          HomePhone: '555-0125',
-          MobilePhone: '555-0126',
-          Email: 'jane.smith@email.com',
+          HomePhone: '000-000-0003',
+          MobilePhone: '000-000-0004',
+          Email: 'test.patient.beta@example.local',
         },
       };
 
@@ -100,16 +104,16 @@ describe('syncSchedule Integration Tests', () => {
         {
           ID: 'provider-1',
           ProviderId: 'provider-1',
-          FirstName: 'Sarah',
-          LastName: 'Johnson',
+          FirstName: 'TestProvider',
+          LastName: 'Alpha',
           Title: 'Dr.',
           Degree: 'MD',
         },
         {
           ID: 'provider-2',
           ProviderId: 'provider-2',
-          FirstName: 'Michael',
-          LastName: 'Brown',
+          FirstName: 'TestProvider',
+          LastName: 'Beta',
           Title: 'Dr.',
           Degree: 'OD',
         },
@@ -131,17 +135,17 @@ describe('syncSchedule Integration Tests', () => {
         expect.arrayContaining([
           expect.objectContaining({
             id: 'patient-1',
-            name: 'John Doe',
-            dob: '1980-05-15',
-            provider: 'Dr. Sarah Johnson',
+            name: 'TestPatient Alpha',
+            dob: '1980-01-01',
+            provider: 'Dr. TestProvider Alpha',
             appointmentType: 'type-1',
             status: 'scheduled',
           }),
           expect.objectContaining({
             id: 'patient-2',
-            name: 'Jane Smith',
-            dob: '1975-08-20',
-            provider: 'Dr. Michael Brown',
+            name: 'TestPatient Beta',
+            dob: '1975-01-01',
+            provider: 'Dr. TestProvider Beta',
             appointmentType: 'type-2',
             status: 'arrived',
             checkInTime: expect.any(String),
@@ -170,9 +174,9 @@ describe('syncSchedule Integration Tests', () => {
 
       const mockPatient = {
         ID: 'patient-1',
-        FirstName: 'John',
-        LastName: 'Doe',
-        DateOfBirth: '1980-05-15',
+        FirstName: 'TestPatient',
+        LastName: 'Alpha',
+        DateOfBirth: '1980-01-01',
       };
 
       mockTebra.getAppointments.mockResolvedValue([mockAppointment]);
@@ -211,16 +215,16 @@ describe('syncSchedule Integration Tests', () => {
         ID: 'patient-10',
         PatientId: 'patient-10',
         PatientNumber: 'P010',
-        FirstName: 'Alice',
-        LastName: 'Wonderland',
+        FirstName: 'TestPatient',
+        LastName: 'Gamma',
         DateOfBirth: '1990-01-01',
       };
 
       const mockProvider = {
         ID: 'provider-10',
         ProviderId: 'provider-10',
-        FirstName: 'Greg',
-        LastName: 'House',
+        FirstName: 'TestProvider',
+        LastName: 'Gamma',
         Title: 'Dr.',
         Degree: 'MD',
       };
@@ -239,8 +243,8 @@ describe('syncSchedule Integration Tests', () => {
         expect.arrayContaining([
           expect.objectContaining({
             id: 'patient-10',
-            name: 'Alice Wonderland',
-            provider: 'Dr. Greg House',
+            name: 'TestPatient Gamma',
+            provider: 'Dr. TestProvider Gamma',
             appointmentType: 'type-10',
             status: 'scheduled',
           }),
@@ -267,15 +271,15 @@ describe('syncSchedule Integration Tests', () => {
       const mockPatient = {
         ID: 'patient-y1',
         PatientId: 'patient-y1',
-        FirstName: 'Yesterday',
-        LastName: 'Person',
+        FirstName: 'TestPatient',
+        LastName: 'Delta',
       };
 
       const mockProvider = {
         ID: 'provider-y1',
         ProviderId: 'provider-y1',
-        FirstName: 'Doc',
-        LastName: 'Yest',
+        FirstName: 'TestProvider',
+        LastName: 'Delta',
         Title: 'Dr.',
       };
 
@@ -292,8 +296,8 @@ describe('syncSchedule Integration Tests', () => {
         expect.arrayContaining([
           expect.objectContaining({
             id: 'patient-y1',
-            name: 'Yesterday Person',
-            provider: 'Dr. Doc Yest',
+            name: 'TestPatient Delta',
+            provider: 'Dr. TestProvider Delta',
             status: 'arrived',
           }),
         ]),
@@ -335,9 +339,9 @@ describe('syncSchedule Integration Tests', () => {
         .mockRejectedValueOnce(new Error('Patient not found'))
         .mockResolvedValueOnce({
           ID: 'patient-2',
-          FirstName: 'Jane',
-          LastName: 'Smith',
-          DateOfBirth: '1975-08-20',
+          FirstName: 'TestPatient',
+          LastName: 'Beta',
+          DateOfBirth: '1975-01-01',
         });
       mockTebra.getProviders.mockResolvedValue([]);
 
@@ -370,9 +374,9 @@ describe('syncSchedule Integration Tests', () => {
       mockTebra.getAppointments.mockResolvedValue(mockAppointments);
       mockTebra.getPatientById.mockResolvedValue({
         ID: 'patient-2',
-        FirstName: 'Jane',
-        LastName: 'Smith',
-        DateOfBirth: '1975-08-20',
+        FirstName: 'TestPatient',
+        LastName: 'Beta',
+        DateOfBirth: '1975-01-01',
       });
       mockTebra.getProviders.mockResolvedValue([]);
 
@@ -443,9 +447,9 @@ describe('syncSchedule Integration Tests', () => {
 
       const mockPatient = {
         ID: 'patient-1',
-        FirstName: 'John',
-        LastName: 'Doe',
-        DateOfBirth: '05/15/1980', // Different date format
+        FirstName: 'TestPatient',
+        LastName: 'Alpha',
+        DateOfBirth: '01/01/1980', // Different date format
       };
 
       mockTebra.getAppointments.mockResolvedValue([mockAppointment]);
@@ -476,10 +480,10 @@ describe('syncSchedule Integration Tests', () => {
       const mockPatient = {
         ID: 'patient-1',
         PatientId: 'patient-1',
-        FirstName: '  John  ',
-        LastName: '  Doe  ',
-        Email: '  john.doe@email.com  ',
-        Phone: '+1 (555) 012-3456',
+        FirstName: '  TestPatient  ',
+        LastName: '  Alpha  ',
+        Email: '  test.patient.alpha@example.local  ',
+        Phone: '+1 (000) 000-0001',
       };
 
       mockTebra.getAppointments.mockResolvedValue([mockAppointment]);
@@ -492,9 +496,9 @@ describe('syncSchedule Integration Tests', () => {
         expect.any(String),
         expect.arrayContaining([
           expect.objectContaining({
-            name: 'John Doe', // Trimmed
-            email: 'john.doe@email.com', // Trimmed
-            phone: '+1 (555) 012-3456', // Original format preserved in mapper
+            name: 'TestPatient Alpha', // Trimmed
+            email: 'test.patient.alpha@example.local', // Trimmed
+            phone: '+1 (000) 000-0001', // Original format preserved in mapper
           }),
         ]),
         expect.any(String)

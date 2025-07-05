@@ -15,7 +15,7 @@ import {
   ImportMode,
   PatientSummary,
   UIElementState
-} from '../../types/cli.js';
+} from '../../types/cli';
 
 export class BrowserController implements IBrowserController {
   private browser?: Browser;

@@ -7,13 +7,13 @@ import { Command, Flags, Args } from '@oclif/core';
 import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import chalk from 'chalk';
-import { TestOrchestrator } from '../lib/TestOrchestrator.js';
+import { TestOrchestrator } from '../lib/TestOrchestrator';
 import { 
   TestConfig, 
   ImportMode, 
   ScheduleFormat,
   ImportCommandFlags 
-} from '../../types/cli.js';
+} from '../../types/cli';
 
 export default class ImportCommand extends Command {
   static summary = 'Test schedule import workflow with Dashboard verification';

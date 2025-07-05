@@ -1,0 +1,886 @@
+
+> vite-react-typescript-starter@0.3.0-beta.3 test
+> cross-env NODE_OPTIONS='--experimental-vm-modules' jest --config jest.config.cjs --runInBand
+
+FAIL unit src/__tests__/parseScheduleAdvanced.test.ts
+  ● Advanced Schedule Parser with JSON Features › Schedule Parsing › should validate patient names and handle errors
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 0
+    Received length: 1
+    Received array:  [{"appointmentTime": "2025-07-01T14:00:00.000Z", "appointmentType": "Office Visit", "balance": undefined, "checkInTime": undefined, "chiefComplaint": "Office Visit", "dob": "1980-05-15", "insurance": "INSURANCE 2025", "memberId": undefined, "name": "scriptalert(xss)/script", "phone": "(806) 665-1234", "provider": "RALF LUKNER", "room": undefined, "status": "scheduled"}]
+
+       96 |       
+       97 |       const patients = parseScheduleAdvanced(invalidSchedule);
+    >  98 |       expect(patients).toHaveLength(0); // Should reject invalid name
+          |                        ^
+       99 |     });
+      100 |
+      101 |     test('should save to secure storage when requested', () => {
+
+      at Object.toHaveLength (src/__tests__/parseScheduleAdvanced.test.ts:98:24)
+
+  ● Advanced Schedule Parser with JSON Features › Auto-Detection › should detect advanced format correctly
+
+    ReferenceError: sampleScheduleText is not defined
+
+      118 |   describe('Auto-Detection', () => {
+      119 |     test('should detect advanced format correctly', () => {
+    > 120 |       const patients = parseScheduleAuto(sampleScheduleText);
+          |                                          ^
+      121 |       expect(patients).toHaveLength(4);
+      122 |       expect(mockSecureLog).toHaveBeenCalledWith(
+      123 |         expect.stringContaining('Detected advanced schedule format')
+
+      at Object.sampleScheduleText (src/__tests__/parseScheduleAdvanced.test.ts:120:42)
+
+  ● Advanced Schedule Parser with JSON Features › Auto-Detection › should detect TSV format
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "Detected TSV format"
+    Received
+           1: "AUDIT: CLEAR all-data (0 bytes) - SUCCESS"
+           2: "🧹 Cleared all secure storage (0 items)"
+
+    Number of calls: 2
+
+      128 |       const tsvData = 'Name\tDOB\tTime\nJohn Doe\t01/01/1980\t9:00 AM';
+      129 |       const patients = parseScheduleAuto(tsvData);
+    > 130 |       expect(mockSecureLog).toHaveBeenCalledWith(
+          |                             ^
+      131 |         expect.stringContaining('Detected TSV format')
+      132 |       );
+      133 |     });
+
+      at Object.toHaveBeenCalledWith (src/__tests__/parseScheduleAdvanced.test.ts:130:29)
+
+  ● Advanced Schedule Parser with JSON Features › Auto-Detection › should default to advanced parser for unknown format
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "Format unclear - defaulting"
+    Received
+           1: "AUDIT: CLEAR all-data (0 bytes) - SUCCESS"
+           2: "🧹 Cleared all secure storage (0 items)"
+           3: "AUDIT [2025-07-05T02:04:50.072Z]: Schedule import initiated [REDACTED - PHI ACCESS]"
+
+    Number of calls: 4
+
+      136 |       const unknownData = 'Some random text without clear format';
+      137 |       const patients = parseScheduleAuto(unknownData);
+    > 138 |       expect(mockSecureLog).toHaveBeenCalledWith(
+          |                             ^
+      139 |         expect.stringContaining('Format unclear - defaulting')
+      140 |       );
+      141 |     });
+
+      at Object.toHaveBeenCalledWith (src/__tests__/parseScheduleAdvanced.test.ts:138:29)
+
+  ● Advanced Schedule Parser with JSON Features › JSON Import Functionality › should import schedule from encrypted JSON
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      252 |       const result = await importScheduleFromJSON(file, importOptions);
+      253 |       
+    > 254 |       expect(result.success).toBe(true);
+          |                              ^
+      255 |       expect(result.patients).toHaveLength(1);
+      256 |       expect(result.errors).toHaveLength(0);
+      257 |       
+
+      at Object.toBe (src/__tests__/parseScheduleAdvanced.test.ts:254:30)
+
+  ● Advanced Schedule Parser with JSON Features › JSON Import Functionality › should validate imported patient data
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "missing required fields"
+    Received string:    "\"[object Object]\" is not valid JSON"
+
+      285 |       expect(result.patients).toHaveLength(0);
+      286 |       expect(result.errors.length).toBeGreaterThan(0);
+    > 287 |       expect(result.errors[0]).toContain('missing required fields');
+          |                                ^
+      288 |     });
+      289 |
+      290 |     test('should handle wrong password gracefully', async () => {
+
+      at Object.toContain (src/__tests__/parseScheduleAdvanced.test.ts:287:32)
+
+  ● Advanced Schedule Parser with JSON Features › JSON Import Functionality › should handle checksum validation
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: StringContaining "Checksum validation failed"
+    Received array: ["Checksum validation failed - file may be corrupted"]
+
+    Looks like you wanted to test for object/array equality with the stricter `toContain` matcher. You probably need to use `toContainEqual` instead.
+
+      316 |       
+      317 |       expect(result.success).toBe(false);
+    > 318 |       expect(result.errors).toContain(expect.stringContaining('Checksum validation failed'));
+          |                             ^
+      319 |     });
+      320 |
+      321 |     test('should handle overwrite options', async () => {
+
+      at Object.toContain (src/__tests__/parseScheduleAdvanced.test.ts:318:29)
+
+  ● Advanced Schedule Parser with JSON Features › JSON Import Functionality › should handle overwrite options
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      334 |       
+      335 |       expect(result.success).toBe(false);
+    > 336 |       expect(result.errors.some(error => error.includes('already exists'))).toBe(true);
+          |                                                                             ^
+      337 |       
+      338 |       // Now try with overwrite enabled
+      339 |       const resultWithOverwrite = await importScheduleFromJSON(file2, {
+
+      at Object.toBe (src/__tests__/parseScheduleAdvanced.test.ts:336:77)
+
+  ● Advanced Schedule Parser with JSON Features › JSON Export/Import Cycle Testing › should complete full export/import cycle without data loss
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      383 |       const result = await testJSONExportImportCycle(complexPatients, password);
+      384 |       
+    > 385 |       expect(result.success).toBe(true);
+          |                              ^
+      386 |       expect(result.errors).toHaveLength(0);
+      387 |       expect(result.originalCount).toBe(2);
+      388 |       expect(result.importedCount).toBe(2);
+
+      at Object.toBe (src/__tests__/parseScheduleAdvanced.test.ts:385:30)
+
+  ● Advanced Schedule Parser with JSON Features › JSON Export/Import Cycle Testing › should handle large datasets in cycle test
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      425 |       const result = await testJSONExportImportCycle(largeDataset, 'LargeTest123!');
+      426 |       
+    > 427 |       expect(result.success).toBe(true);
+          |                              ^
+      428 |       expect(result.originalCount).toBe(50);
+      429 |       expect(result.importedCount).toBe(50);
+      430 |     });
+
+      at Object.toBe (src/__tests__/parseScheduleAdvanced.test.ts:427:30)
+
+  ● Advanced Schedule Parser with JSON Features › Error Handling and Edge Cases › should handle malformed schedule text gracefully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "Successfully parsed 0 patients"
+    Received
+           1: "AUDIT: CLEAR all-data (0 bytes) - SUCCESS"
+           2: "🧹 Cleared all secure storage (0 items)"
+           3: "AUDIT [2025-07-05T02:04:50.072Z]: Schedule import initiated [REDACTED - PHI ACCESS]"
+
+    Number of calls: 4
+
+      477 |       
+      478 |       expect(patients).toHaveLength(0);
+    > 479 |       expect(mockSecureLog).toHaveBeenCalledWith(
+          |                             ^
+      480 |         expect.stringContaining('Successfully parsed 0 patients')
+      481 |       );
+      482 |     });
+
+      at Object.toHaveBeenCalledWith (src/__tests__/parseScheduleAdvanced.test.ts:479:29)
+
+FAIL integration src/cli/__tests__/integration/import-workflow.integration.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '../../../lib/BrowserController' from 'src/cli/__tests__/integration/import-workflow.integration.test.ts'
+
+      16 | jest.mock('fs');
+      17 | jest.mock('path');
+    > 18 | jest.mock('../../../lib/BrowserController');
+         |      ^
+      19 |
+      20 | describe('Import Workflow Integration Tests', () => {
+      21 |   let importCommand: ImportCommand;
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/index.js:868:11)
+      at Object.mock (src/cli/__tests__/integration/import-workflow.integration.test.ts:18:6)
+
+FAIL cli src/cli/__tests__/unit/lib/TestOrchestrator.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '../../utils/megaParseSchedule.js' from 'src/cli/lib/TestOrchestrator.ts'
+
+    Require stack:
+      src/cli/lib/TestOrchestrator.ts
+      src/cli/__tests__/unit/lib/TestOrchestrator.test.ts
+
+      14 |   LogEntry
+      15 | } from '../../types/cli.js';
+    > 16 | import { parseScheduleWithMegaParse } from '../../utils/megaParseSchedule.js';
+         | ^
+      17 | import { parseScheduleAdvanced } from '../../utils/parseScheduleAdvanced.js';
+      18 | import { parseSchedule } from '../../utils/parseSchedule.js';
+      19 | import { BrowserController } from './BrowserController.js';
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/index.js:868:11)
+      at Object.require (src/cli/lib/TestOrchestrator.ts:16:1)
+      at Object.require (src/cli/__tests__/unit/lib/TestOrchestrator.test.ts:6:1)
+
+FAIL unit src/cli/__tests__/unit/lib/TestOrchestrator.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '../../utils/megaParseSchedule.js' from 'src/cli/lib/TestOrchestrator.ts'
+
+    Require stack:
+      src/cli/lib/TestOrchestrator.ts
+      src/cli/__tests__/unit/lib/TestOrchestrator.test.ts
+
+      14 |   LogEntry
+      15 | } from '../../types/cli.js';
+    > 16 | import { parseScheduleWithMegaParse } from '../../utils/megaParseSchedule.js';
+         | ^
+      17 | import { parseScheduleAdvanced } from '../../utils/parseScheduleAdvanced.js';
+      18 | import { parseSchedule } from '../../utils/parseSchedule.js';
+      19 | import { BrowserController } from './BrowserController.js';
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/index.js:868:11)
+      at Object.require (src/cli/lib/TestOrchestrator.ts:16:1)
+      at Object.require (src/cli/__tests__/unit/lib/TestOrchestrator.test.ts:6:1)
+
+FAIL unit src/__tests__/hipaaCompliance.basic.test.ts
+  ● Basic HIPAA Compliance Tests › Administrative Safeguards › should maintain audit logs for all PHI access
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "test-user"
+    Received: undefined
+
+      55 |       
+      56 |       // Verify user tracking
+    > 57 |       expect(storeEntry?.userId).toBe('test-user');
+         |                                  ^
+      58 |     });
+      59 |
+      60 |     test('should implement information access management', () => {
+
+      at Object.toBe (src/__tests__/hipaaCompliance.basic.test.ts:57:34)
+
+  ● Basic HIPAA Compliance Tests › Schedule Import HIPAA Compliance › should handle PHI in schedule parsing with HIPAA compliance
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      333 |         entry.key.includes('hipaa-schedule') || entry.key.includes('schedule')
+      334 |       );
+    > 335 |       expect(scheduleEntries.length).toBeGreaterThan(0);
+          |                                      ^
+      336 |     });
+      337 |
+      338 |     test('should sanitize potentially malicious input (security safeguard)', () => {
+
+      at Object.toBeGreaterThan (src/__tests__/hipaaCompliance.basic.test.ts:335:38)
+
+  ● Basic HIPAA Compliance Tests › Schedule Import HIPAA Compliance › should sanitize potentially malicious input (security safeguard)
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      352 |         call[0].includes('❌') || call[0].includes('Error') || call[0].includes('Failed')
+      353 |       );
+    > 354 |       expect(securityLogs.length).toBeGreaterThan(0);
+          |                                   ^
+      355 |     });
+      356 |
+      357 |     test('should maintain data integrity during processing', () => {
+
+      at Object.toBeGreaterThan (src/__tests__/hipaaCompliance.basic.test.ts:354:35)
+
+PASS unit src/components/__tests__/Dashboard.test.tsx
+FAIL unit src/__tests__/secureStorage.test.ts (10.39 s)
+  ● Console
+
+    console.error
+      Error: Uncaught [Error: expect(received).toBe(expected) // Object.is equality
+      
+      Expected: 0
+      Received: 1]
+          at reportException (/Users/ralfb.luknermdphd/PycharmProjects/workflow-bolt/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+          at Timeout.task [as _onTimeout] (/Users/ralfb.luknermdphd/PycharmProjects/workflow-bolt/node_modules/jsdom/lib/jsdom/browser/Window.js:584:9)
+          at listOnTimeout (node:internal/timers:581:17)
+          at processTimers (node:internal/timers:519:7) {
+        detail: JestAssertionError: expect(received).toBe(expected) // Object.is equality
+        
+        Expected: 0
+        Received: 1
+            at toBe (/Users/ralfb.luknermdphd/PycharmProjects/workflow-bolt/src/__tests__/secureStorage.test.ts:447:33)
+            at Timeout.task [as _onTimeout] (/Users/ralfb.luknermdphd/PycharmProjects/workflow-bolt/node_modules/jsdom/lib/jsdom/browser/Window.js:579:19)
+            at listOnTimeout (node:internal/timers:581:17)
+            at processTimers (node:internal/timers:519:7) {
+          matcherResult: {
+            actual: 1,
+            expected: 0,
+            message: 'expect(received).toBe(expected) // Object.is equality\n' +
+              '\n' +
+              'Expected: 0\n' +
+              'Received: 1',
+            name: 'toBe',
+            pass: false
+          }
+        },
+        type: 'unhandled exception'
+      }
+
+      at VirtualConsole.<anonymous> (node_modules/@jest/environment-jsdom-abstract/build/index.js:78:23)
+      at reportException (node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:70:28)
+      at Timeout.task [as _onTimeout] (node_modules/jsdom/lib/jsdom/browser/Window.js:584:9)
+
+  ● SecureStorage › JSON Export/Import with Real Encryption › should import data from encrypted JSON blob
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      202 |       const importResult = await storage.importFromJSON(file, password);
+      203 |       
+    > 204 |       expect(importResult.success).toBe(true);
+          |                                    ^
+      205 |       expect(importResult.imported).toBe(2);
+      206 |       expect(importResult.errors).toHaveLength(0);
+      207 |       
+
+      at Object.toBe (src/__tests__/secureStorage.test.ts:204:36)
+
+  ● SecureStorage › JSON Export/Import with Real Encryption › should handle export/import cycle without data loss
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      245 |       const importResult = await newStorage.importFromJSON(file, password);
+      246 |       
+    > 247 |       expect(importResult.success).toBe(true);
+          |                                    ^
+      248 |       
+      249 |       const importedData = newStorage.retrieve('complex-data');
+      250 |       expect(importedData).toEqual(complexData);
+
+      at Object.toBe (src/__tests__/secureStorage.test.ts:247:36)
+
+  ● SecureStorage › JSON Export/Import with Real Encryption › should validate checksum during import
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: StringContaining "Checksum validation failed"
+    Received array: ["Checksum validation failed - file may be corrupted"]
+
+    Looks like you wanted to test for object/array equality with the stricter `toContain` matcher. You probably need to use `toContainEqual` instead.
+
+      282 |       
+      283 |       expect(importResult.success).toBe(false);
+    > 284 |       expect(importResult.errors).toContain(expect.stringContaining('Checksum validation failed'));
+          |                                   ^
+      285 |     });
+      286 |
+      287 |     test('should handle overwrite options correctly', async () => {
+
+      at Object.toContain (src/__tests__/secureStorage.test.ts:284:35)
+
+  ● SecureStorage › JSON Export/Import with Real Encryption › should handle overwrite options correctly
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: StringContaining "already exists"
+    Received array: ["\"[object Object]\" is not valid JSON"]
+
+      301 |       
+      302 |       expect(importResult1.success).toBe(false);
+    > 303 |       expect(importResult1.errors).toContain(expect.stringContaining('already exists'));
+          |                                    ^
+      304 |       
+      305 |       // Now try with overwrite enabled
+      306 |       const importResult2 = await storage.importFromJSON(file, password, undefined, {
+
+      at Object.toContain (src/__tests__/secureStorage.test.ts:303:36)
+
+  ● SecureStorage › Performance and Edge Cases › should handle empty data gracefully
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      349 |       const importResult = await storage.importFromJSON(file, 'password');
+      350 |       
+    > 351 |       expect(importResult.success).toBe(true);
+          |                                    ^
+      352 |       expect(importResult.imported).toBe(0);
+      353 |     });
+      354 |
+
+      at Object.toBe (src/__tests__/secureStorage.test.ts:351:36)
+
+  ● SecureStorage › Memory Management › should handle cleanup interval correctly
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: 1
+
+      445 |       setTimeout(() => {
+      446 |         const stats = quickCleanup.getStats();
+    > 447 |         expect(stats.itemCount).toBe(0); // Should be cleaned up
+          |                                 ^
+      448 |         quickCleanup.destroy();
+      449 |         jest.useFakeTimers();
+      450 |         done();
+
+      at toBe (src/__tests__/secureStorage.test.ts:447:33)
+      at Timeout.task [as _onTimeout] (node_modules/jsdom/lib/jsdom/browser/Window.js:579:19)
+
+  ● SecureStorage › Memory Management › should handle cleanup interval correctly
+
+    thrown: "Exceeded timeout of 10000 ms for a test while waiting for `done()` to be called.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      432 |     });
+      433 |
+    > 434 |     test('should handle cleanup interval correctly', (done) => {
+          |     ^
+      435 |       // Create storage with short cleanup interval
+      436 |       const quickCleanup = new SecureStorage({
+      437 |         expirationTime: 50, // 50ms expiration
+
+      at test (src/__tests__/secureStorage.test.ts:434:5)
+      at describe (src/__tests__/secureStorage.test.ts:420:3)
+      at Object.describe (src/__tests__/secureStorage.test.ts:16:1)
+
+FAIL cli src/cli/__tests__/unit/commands/verify.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '../lib/BrowserController.js' from 'src/cli/commands/verify.ts'
+
+    Require stack:
+      src/cli/commands/verify.ts
+      src/cli/__tests__/unit/commands/verify.test.ts
+
+       8 | import { existsSync, mkdirSync } from 'fs';
+       9 | import chalk from 'chalk';
+    > 10 | import { BrowserController } from '../lib/BrowserController.js';
+         | ^
+      11 | import { 
+      12 |   VerifyCommandFlags,
+      13 |   ExpectedDashboardState,
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/index.js:868:11)
+      at Object.require (src/cli/commands/verify.ts:10:1)
+      at Object.require (src/cli/__tests__/unit/commands/verify.test.ts:6:1)
+
+FAIL unit src/cli/__tests__/unit/commands/verify.test.ts
+  ● Test suite failed to run
+
+    Must use import to load ES Module: /Users/ralfb.luknermdphd/PycharmProjects/workflow-bolt/node_modules/chalk/source/index.js
+
+       7 | import { join } from 'path';
+       8 | import { existsSync, mkdirSync } from 'fs';
+    >  9 | import chalk from 'chalk';
+         | ^
+      10 | import { BrowserController } from '../lib/BrowserController.js';
+      11 | import { 
+      12 |   VerifyCommandFlags,
+
+      at Runtime.requireModule (node_modules/jest-runtime/build/index.js:803:21)
+      at Object.require (src/cli/commands/verify.ts:9:1)
+      at Object.require (src/cli/__tests__/unit/commands/verify.test.ts:6:1)
+
+PASS unit src/utils/__tests__/parseSchedule.test.ts
+FAIL unit src/__tests__/scheduleImportDebug.test.ts
+  ● Schedule Import Debug Tests › Format Detection Issues › should detect when schedule format is not recognized
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      37 |         call[0].includes('Detected')
+      38 |       );
+    > 39 |       expect(formatLogs.length).toBeGreaterThan(0);
+         |                                 ^
+      40 |     });
+      41 |
+      42 |     test('should handle mixed format confusion', () => {
+
+      at Object.toBeGreaterThan (src/__tests__/scheduleImportDebug.test.ts:39:33)
+
+  ● Schedule Import Debug Tests › Format Detection Issues › should handle mixed format confusion
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      56 |         call[0].includes('Skipping line')
+      57 |       );
+    > 58 |       expect(parseLogs.length).toBeGreaterThan(0);
+         |                                ^
+      59 |     });
+      60 |   });
+      61 |
+
+      at Object.toBeGreaterThan (src/__tests__/scheduleImportDebug.test.ts:58:32)
+
+  ● Schedule Import Debug Tests › Data Parsing Edge Cases › should catch invalid date formats
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      77 |         call[0].includes('date')
+      78 |       );
+    > 79 |       expect(dateLogs.length).toBeGreaterThan(0);
+         |                               ^
+      80 |     });
+      81 |
+      82 |     test('should catch malformed time formats', () => {
+
+      at Object.toBeGreaterThan (src/__tests__/scheduleImportDebug.test.ts:79:31)
+
+  ● Schedule Import Debug Tests › Data Parsing Edge Cases › should catch malformed time formats
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+       96 |         call[0].includes('Skipping line')
+       97 |       );
+    >  98 |       expect(timeLogs.length).toBeGreaterThan(0);
+          |                               ^
+       99 |     });
+      100 |
+      101 |     test('should catch missing required fields', () => {
+
+      at Object.toBeGreaterThan (src/__tests__/scheduleImportDebug.test.ts:98:31)
+
+  ● Schedule Import Debug Tests › Data Parsing Edge Cases › should catch missing required fields
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      115 |         call[0].includes('Skipping line')
+      116 |       );
+    > 117 |       expect(fieldLogs.length).toBeGreaterThan(0);
+          |                                ^
+      118 |     });
+      119 |   });
+      120 |
+
+      at Object.toBeGreaterThan (src/__tests__/scheduleImportDebug.test.ts:117:32)
+
+  ● Schedule Import Debug Tests › Error Recovery and Resilience › should continue processing after encountering bad lines
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      212 |         call[0].includes('❌') || call[0].includes('Error') || call[0].includes('Skipping')
+      213 |       );
+    > 214 |       expect(errorLogs.length).toBeGreaterThan(0);
+          |                                ^
+      215 |     });
+      216 |
+      217 |     test('should handle completely empty or whitespace input', () => {
+
+      at Object.toBeGreaterThan (src/__tests__/scheduleImportDebug.test.ts:214:32)
+
+  ● Schedule Import Debug Tests › Error Recovery and Resilience › should handle completely empty or whitespace input
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      234 |           call[0].includes('No valid appointments')
+      235 |         );
+    > 236 |         expect(emptyLogs.length).toBeGreaterThan(0);
+          |                                  ^
+      237 |       });
+      238 |     });
+      239 |
+
+      at toBeGreaterThan (src/__tests__/scheduleImportDebug.test.ts:236:34)
+          at Array.forEach (<anonymous>)
+      at Object.forEach (src/__tests__/scheduleImportDebug.test.ts:226:19)
+
+  ● Schedule Import Debug Tests › Error Recovery and Resilience › should handle extremely long lines without crashing
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      264 |         call[0].includes('Successfully parsed')
+      265 |       );
+    > 266 |       expect(processLogs.length).toBeGreaterThan(0);
+          |                                  ^
+      267 |     });
+      268 |   });
+      269 |
+
+      at Object.toBeGreaterThan (src/__tests__/scheduleImportDebug.test.ts:266:34)
+
+  ● Schedule Import Debug Tests › Real-world Error Scenarios › should handle clipboard paste artifacts
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      327 |         call[0].includes('Processing') || call[0].includes('Successfully parsed')
+      328 |       );
+    > 329 |       expect(processLogs.length).toBeGreaterThan(0);
+          |                                  ^
+      330 |     });
+      331 |
+      332 |     test('should identify encoding issues', () => {
+
+      at Object.toBeGreaterThan (src/__tests__/scheduleImportDebug.test.ts:329:34)
+
+  ● Schedule Import Debug Tests › Real-world Error Scenarios › should provide helpful error messages for common mistakes
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      376 |           call[0].includes('Successfully parsed')
+      377 |         );
+    > 378 |         expect(feedbackLogs.length).toBeGreaterThan(0);
+          |                                     ^
+      379 |       });
+      380 |     });
+      381 |   });
+
+      at toBeGreaterThan (src/__tests__/scheduleImportDebug.test.ts:378:37)
+          at Array.forEach (<anonymous>)
+      at Object.forEach (src/__tests__/scheduleImportDebug.test.ts:362:22)
+
+FAIL unit src/__tests__/unit/TebraDebugDashboardContainer.test.tsx
+  ● Test suite failed to run
+
+    ReferenceError: /Users/ralfb.luknermdphd/PycharmProjects/workflow-bolt/src/__tests__/unit/TebraDebugDashboardContainer.test.tsx: The module factory of `jest.mock()` is not allowed to reference any out-of-scope variables.
+    Invalid variable access: jsx_runtime_1
+    Allowed objects: AbortController, AbortSignal, AggregateError, Array, ArrayBuffer, Atomics, BigInt, BigInt64Array, BigUint64Array, Blob, Boolean, BroadcastChannel, Buffer, ByteLengthQueuingStrategy, CompressionStream, CountQueuingStrategy, Crypto, CryptoKey, CustomEvent, DOMException, DataView, Date, DecompressionStream, Error, EvalError, Event, EventTarget, File, FinalizationRegistry, Float32Array, Float64Array, FormData, Function, Generator, GeneratorFunction, Headers, Infinity, Int16Array, Int32Array, Int8Array, InternalError, Intl, JSON, Map, Math, MessageChannel, MessageEvent, MessagePort, NaN, Number, Object, Performance, PerformanceEntry, PerformanceMark, PerformanceMeasure, PerformanceObserver, PerformanceObserverEntryList, PerformanceResourceTiming, Promise, Proxy, RangeError, ReadableByteStreamController, ReadableStream, ReadableStreamBYOBReader, ReadableStreamBYOBRequest, ReadableStreamDefaultController, ReadableStreamDefaultReader, ReferenceError, Reflect, RegExp, Request, Response, Set, SharedArrayBuffer, String, SubtleCrypto, Symbol, SyntaxError, TextDecoder, TextDecoderStream, TextEncoder, TextEncoderStream, TransformStream, TransformStreamDefaultController, TypeError, URIError, URL, URLSearchParams, Uint16Array, Uint32Array, Uint8Array, Uint8ClampedArray, WeakMap, WeakRef, WeakSet, WebAssembly, WritableStream, WritableStreamDefaultController, WritableStreamDefaultWriter, __dirname, __filename, arguments, atob, btoa, clearImmediate, clearInterval, clearTimeout, console, crypto, decodeURI, decodeURIComponent, encodeURI, encodeURIComponent, escape, eval, expect, exports, fetch, global, globalThis, isFinite, isNaN, jest, module, parseFloat, parseInt, performance, process, queueMicrotask, require, setImmediate, setInterval, setTimeout, structuredClone, undefined, unescape.
+    Note: This is a precaution to guard against uninitialized mock variables. If it is ensured that the mock is required lazily, variable names prefixed with `mock` (case insensitive) are permitted.
+
+      10 | // Mock Lucide icons
+      11 | jest.mock('lucide-react', () => ({
+    > 12 |     Activity: () => (0, jsx_runtime_1.jsx)("div", { "data-testid": "activity-icon" }),
+         |                         ^^^^^^^^^^^^^
+      13 |     RefreshCw: () => (0, jsx_runtime_1.jsx)("div", { "data-testid": "refresh-icon" })
+      14 | }));
+      15 | const react_1 = __importDefault(require("react"));
+
+      at File.buildCodeFrameError (node_modules/@babel/core/src/transformation/file/file.ts:256:12)
+      at NodePath.buildError [as buildCodeFrameError] (node_modules/@babel/traverse/src/path/index.ts:142:21)
+      at call (node_modules/@babel/traverse/src/visitors.ts:303:14)
+      at NodePath.call [as _call] (node_modules/@babel/traverse/src/path/context.ts:36:20)
+      at NodePath.call (node_modules/@babel/traverse/src/path/context.ts:21:18)
+      at NodePath.call [as visit] (node_modules/@babel/traverse/src/path/context.ts:97:31)
+      at TraversalContext.visit [as visitQueue] (node_modules/@babel/traverse/src/context.ts:148:16)
+      at TraversalContext.visitQueue [as visitMultiple] (node_modules/@babel/traverse/src/context.ts:99:17)
+      at TraversalContext.visitMultiple [as visit] (node_modules/@babel/traverse/src/context.ts:178:19)
+      at visit (node_modules/@babel/traverse/src/traverse-node.ts:208:17)
+      at NodePath.visit (node_modules/@babel/traverse/src/path/context.ts:104:33)
+      at TraversalContext.visit [as visitQueue] (node_modules/@babel/traverse/src/context.ts:148:16)
+      at TraversalContext.visitQueue [as visitSingle] (node_modules/@babel/traverse/src/context.ts:109:19)
+      at TraversalContext.visitSingle [as visit] (node_modules/@babel/traverse/src/context.ts:180:19)
+      at visit (node_modules/@babel/traverse/src/traverse-node.ts:208:17)
+      at traverse (node_modules/@babel/traverse/src/index.ts:83:15)
+      at transformFile (node_modules/@babel/core/src/transformation/index.ts:119:15)
+          at transformFile.next (<anonymous>)
+      at transformFile (node_modules/@babel/core/src/transformation/index.ts:49:12)
+          at run.next (<anonymous>)
+      at transform (node_modules/@babel/core/src/transform.ts:29:20)
+          at transform.next (<anonymous>)
+      at evaluateSync (node_modules/gensync/index.js:251:28)
+      at sync (node_modules/gensync/index.js:89:14)
+      at fn (node_modules/@babel/core/src/errors/rewrite-stack-trace.ts:99:14)
+      at transformSync (node_modules/@babel/core/src/transform.ts:66:52)
+      at TsJestTransformer.process (node_modules/ts-jest/dist/legacy/ts-jest-transformer.js:135:32)
+      at ScriptTransformer.transformSource (node_modules/@jest/transform/build/index.js:422:31)
+      at ScriptTransformer._transformAndBuildScript (node_modules/@jest/transform/build/index.js:519:40)
+      at ScriptTransformer.transform (node_modules/@jest/transform/build/index.js:558:19)
+
+FAIL integration src/__tests__/integration/hipaaCompliance.integration.test.ts (5.21 s)
+  ● HIPAA Compliance Integration Tests › End-to-End HIPAA Workflow › should complete full HIPAA-compliant workflow
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      84 |       });
+      85 |
+    > 86 |       expect(importResult.success).toBe(true);
+         |                                    ^
+      87 |       expect(importResult.patients).toHaveLength(4);
+      88 |       expect(importResult.errors).toHaveLength(0);
+      89 |
+
+      at Object.toBe (src/__tests__/integration/hipaaCompliance.integration.test.ts:86:36)
+
+  ● HIPAA Compliance Integration Tests › End-to-End HIPAA Workflow › should handle large dataset with HIPAA compliance
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      136 |       const cycleResult = await testJSONExportImportCycle(patients, 'LargeDataTest456!');
+      137 |       
+    > 138 |       expect(cycleResult.success).toBe(true);
+          |                                   ^
+      139 |       expect(cycleResult.originalCount).toBe(50);
+      140 |       expect(cycleResult.importedCount).toBe(50);
+      141 |       expect(cycleResult.errors).toHaveLength(0);
+
+      at Object.toBe (src/__tests__/integration/hipaaCompliance.integration.test.ts:138:35)
+
+  ● HIPAA Compliance Integration Tests › End-to-End HIPAA Workflow › should handle password protection correctly
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      180 |       const correctResult = await importScheduleFromJSON(correctFile, { password: correctPassword });
+      181 |       
+    > 182 |       expect(correctResult.success).toBe(true);
+          |                                     ^
+      183 |       expect(correctResult.patients).toHaveLength(4);
+      184 |     });
+      185 |
+
+      at Object.toBe (src/__tests__/integration/hipaaCompliance.integration.test.ts:182:37)
+
+  ● HIPAA Compliance Integration Tests › End-to-End HIPAA Workflow › should demonstrate security difference between modes
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      198 |         call[0].includes('HIPAA') || call[0].includes('🔒') || call[0].includes('🛡️')
+      199 |       );
+    > 200 |       expect(hasSecurityLog).toBe(true);
+          |                              ^
+      201 |
+      202 |       // Verify sensitive data is not in plain text in logs
+      203 |       const hasPlainTextPHI = mockSecureLog.mock.calls.some(call =>
+
+      at Object.toBe (src/__tests__/integration/hipaaCompliance.integration.test.ts:200:30)
+
+  ● HIPAA Compliance Integration Tests › End-to-End HIPAA Workflow › should handle data expiration correctly
+
+    thrown: "Exceeded timeout of 5000 ms for a test while waiting for `done()` to be called.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      207 |     });
+      208 |
+    > 209 |     test('should handle data expiration correctly', (done) => {
+          |     ^
+      210 |       // Create storage with very short expiration for testing
+      211 |       const shortStorage = new (secureStorage.constructor as any)({
+      212 |         expirationTime: 100, // 100ms
+
+      at test (src/__tests__/integration/hipaaCompliance.integration.test.ts:209:5)
+      at describe (src/__tests__/integration/hipaaCompliance.integration.test.ts:42:3)
+      at Object.describe (src/__tests__/integration/hipaaCompliance.integration.test.ts:22:1)
+
+  ● HIPAA Compliance Integration Tests › Security Validation › should validate data integrity with checksums
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: StringContaining "Checksum validation failed"
+    Received array: ["Checksum validation failed - file may be corrupted"]
+
+    Looks like you wanted to test for object/array equality with the stricter `toContain` matcher. You probably need to use `toContainEqual` instead.
+
+      282 |       
+      283 |       expect(importResult.success).toBe(false);
+    > 284 |       expect(importResult.errors).toContain(expect.stringContaining('Checksum validation failed'));
+          |                                   ^
+      285 |     });
+      286 |
+      287 |     test('should handle memory cleanup on page unload simulation', () => {
+
+      at Object.toContain (src/__tests__/integration/hipaaCompliance.integration.test.ts:284:35)
+
+PASS unit src/__tests__/unit/tebraConfigValidation.test.ts
+
+<--- Last few GCs --->
+
+[73675:0x150008000]    32450 ms: Scavenge 4047.1 (4122.5) -> 4039.1 (4126.3) MB, 5.79 / 0.00 ms  (average mu = 0.147, current mu = 0.063) allocation failure; 
+[73675:0x150008000]    32460 ms: Scavenge 4050.8 (4126.3) -> 4042.9 (4130.0) MB, 6.00 / 0.00 ms  (average mu = 0.147, current mu = 0.063) allocation failure; 
+[73675:0x150008000]    33218 ms: Mark-Compact 4054.4 (4130.0) -> 4045.8 (4136.8) MB, 754.46 / 0.00 ms  (average mu = 0.123, current mu = 0.097) allocation failure; scavenge might not succeed
+
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0x100e52658 node::OOMErrorHandler(char const*, v8::OOMDetails const&) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+ 2: 0x100fc81d4 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+ 3: 0x101154964 v8::internal::Heap::CallGCPrologueCallbacks(v8::GCType, v8::GCCallbackFlags, v8::internal::GCTracer::Scope::ScopeId) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+ 4: 0x1011518c8 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+ 5: 0x101145338 v8::internal::HeapAllocator::AllocateRawWithLightRetrySlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+ 6: 0x101145ae0 v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+ 7: 0x101139064 v8::internal::Factory::NewFillerObject(int, v8::internal::AllocationAlignment, v8::internal::AllocationType, v8::internal::AllocationOrigin) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+ 8: 0x1013e6070 v8::internal::Runtime_AllocateInYoungGeneration(int, unsigned long*, v8::internal::Isolate*) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+ 9: 0x100c90c44 Builtins_CEntry_Return1_ArgvOnStack_NoBuiltinExit [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+10: 0x100c3ea38 Builtins_AsyncFunctionAwaitCaught [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+11: 0x1080ae484 
+12: 0x100c3f210 Builtins_AsyncFunctionAwaitResolveClosure [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+13: 0x100cecfb8 Builtins_PromiseFulfillReactionJob [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+14: 0x100c2eb94 Builtins_RunMicrotasks [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+15: 0x100c063f4 Builtins_JSRunMicrotasksEntry [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+16: 0x1010ea578 v8::internal::(anonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+17: 0x1010ead58 v8::internal::(anonymous namespace)::InvokeWithTryCatch(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+18: 0x10110e398 v8::internal::MicrotaskQueue::PerformCheckpointInternal(v8::Isolate*) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+19: 0x100d80bf8 node::InternalCallbackScope::Close() [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+20: 0x100d81108 node::InternalMakeCallback(node::Environment*, v8::Local<v8::Object>, v8::Local<v8::Object>, v8::Local<v8::Function>, int, v8::Local<v8::Value>*, node::async_context) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+21: 0x100d814f8 node::MakeCallback(v8::Isolate*, v8::Local<v8::Object>, v8::Local<v8::Function>, int, v8::Local<v8::Value>*, node::async_context) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+22: 0x100df2d98 node::Environment::CheckImmediate(uv_check_s*) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+23: 0x103388214 uv__run_check [/opt/homebrew/Cellar/libuv/1.51.0/lib/libuv.1.dylib]
+24: 0x103382b88 uv_run [/opt/homebrew/Cellar/libuv/1.51.0/lib/libuv.1.dylib]
+25: 0x100d819a4 node::SpinEventLoopInternal(node::Environment*) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+26: 0x100e97320 node::NodeMainInstance::Run(node::ExitCode*, node::Environment*) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+27: 0x100e9706c node::NodeMainInstance::Run() [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+28: 0x100e186cc node::Start(int, char**) [/opt/homebrew/Cellar/node@20/20.19.3/bin/node]
+29: 0x18a366b98 start [/usr/lib/dyld]

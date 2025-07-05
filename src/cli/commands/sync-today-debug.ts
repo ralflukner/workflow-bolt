@@ -189,9 +189,7 @@ export default class SyncTodayDebugCommand extends Command {
       } else {
         console.log(chalk.red(`❌ Step ${stepNumber} FAILED`));
         console.log(chalk.red(`Error: ${result.error}`));
-        if (debug && result.details) {
-          console.log(chalk.gray('Error details:'), JSON.stringify(result.details, null, 2));
-        }
+        
       }
     } catch (error) {
       console.log(chalk.red(`💥 Step ${stepNumber} CRASHED`));
