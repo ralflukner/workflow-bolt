@@ -18,6 +18,14 @@ import TebraDebugDashboardWrapper from './TebraDebugDashboardWrapper';
 import DashboardErrorBoundary from './DashboardErrorBoundary';
 import SecurityNotice from './SecurityNotice';
 
+import { PatientContextType } from '../contexts/PatientContext';
+import { TimeContextType } from '../contexts/TimeContext';
+
+interface DashboardProps extends WithContextsProps {
+  patientContext: PatientContextType;
+  timeContext: TimeContextType;
+}
+
 interface State {
   showNewPatientForm: boolean;
   showImportSchedule: boolean;
@@ -31,10 +39,10 @@ interface State {
   showSecurityNotice: boolean;
 }
 
-class DashboardClass extends Component<WithContextsProps, State> {
+class DashboardClass extends Component<DashboardProps, State> {
   private isExporting: { current: boolean };
 
-  constructor(props: WithContextsProps) {
+  constructor(props: DashboardProps) {
     super(props);
     this.state = {
       showNewPatientForm: false,
@@ -224,7 +232,7 @@ class DashboardClass extends Component<WithContextsProps, State> {
       report += `No patients have checked in yet.\n`;
     } else {
       report += `Mean Wait Time (all in-house and checked-out patients): ${meanWaitTime} minutes\n`;
-      report += `Maximum Wait Time (all in-house and checked-out patients): ${maxWaitTime} minutes\n\n`;
+      report += `Maximum Wait Time: ${maxWaitTime} minutes\n\n`;
 
       checkedInPatients.forEach(patient => {
         const waitTime = getWaitTime(patient);
@@ -258,8 +266,8 @@ class DashboardClass extends Component<WithContextsProps, State> {
         <DashboardHeader
           showDebugPanels={showDebugPanels}
           onToggleDebug={() => this.setState(prevState => ({ showDebugPanels: !prevState.showDebugPanels }))}
-          showDebugTextWindow={showDebugTextWindow}
           onToggleDebugTextWindow={() => this.setState(prevState => ({ showDebugTextWindow: !prevState.showDebugTextWindow }))}
+          showDebugTextWindow={showDebugTextWindow}
           onShowNewPatient={() => this.setState({ showNewPatientForm: true })}
           onShowImportSchedule={() => this.setState({ showImportSchedule: true })}
           onShowImportJSON={() => this.setState({ showImportJSON: true })}
@@ -350,4 +358,4 @@ class DashboardClass extends Component<WithContextsProps, State> {
   }
 }
 
-export default withContexts<{}>(DashboardClass);
+export default withContexts<DashboardProps>(DashboardClass);
