@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // CLI for managing Vikunja tasks for workflow-bolt
-const VikunjaAPI = require('./vikunja-api.cjs');
+const VikunjaAPI = require('../ai-agents/cursor-gpt-4.1-max/scripts/vikunja-api.cjs');
 const api = new VikunjaAPI();
 
 const PROJECT_ID = 3; // cursor-gpt-4.1-max Tasks
