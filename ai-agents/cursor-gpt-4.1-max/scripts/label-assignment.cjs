@@ -43,11 +43,11 @@ async function assignTaskWithLabel(taskId, assignee, status = 'in-progress') {
       !Object.values(STATUS_LABELS).includes(label.title)
     );
     
-    // Add new assignment and status labels
+    // Add new assignment and status labels (as strings for the API to handle)
     const newLabels = [
-      ...filteredLabels,
-      { title: USER_LABELS[assignee] },
-      { title: STATUS_LABELS[status] }
+      ...filteredLabels.map(l => l.title || l),
+      USER_LABELS[assignee],
+      STATUS_LABELS[status]
     ];
     
     // Update task with labels
