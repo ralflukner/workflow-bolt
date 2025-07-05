@@ -30,7 +30,12 @@
     "deploy:verify": "node test-functions-deployment.cjs",
     "deploy:safe": "npm run deploy:check && npm run deploy:functions && npm run deploy:verify",
     "workflow-test": "node dist/cli/bin/workflow-test",
-    "dev:build": "SKIP_GSM=1 npm run build"
+    "dev:build": "SKIP_GSM=1 npm run build",
+    "test:run": "npm run test:all",
+    "test:run10": "node scripts/run-tests-limit.cjs 10",
+    "test:run50": "node scripts/run-tests-limit.cjs 50",
+    "test:run100": "node scripts/run-tests-limit.cjs 100",
+    "test:run150": "node scripts/run-tests-limit.cjs 150"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",

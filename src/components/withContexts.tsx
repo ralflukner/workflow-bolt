@@ -27,8 +27,25 @@ export function withContexts<P extends object = {}>(
               {(timeContext) => {
                 // Ensure contexts are available
                 if (!patientContext || !timeContext) {
-                  console.error('Context not available in withContexts HOC');
-                  return <div>Context Error</div>;
+                  console.error('Context not available in withContexts HOC', {
+                    patientContext: !!patientContext,
+                    timeContext: !!timeContext,
+                    component: WrappedComponent.name
+                  });
+                  return (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                      <div className="bg-white p-8 rounded-lg shadow-md max-w-md">
+                        <h2 className="text-2xl font-bold text-red-600 mb-4">Context Error</h2>
+                        <p className="text-gray-600 mb-4">Component context not available. Please ensure you're within the provider hierarchy.</p>
+                        <button
+                          onClick={() => window.location.reload()}
+                          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                        >
+                          Reload Page
+                        </button>
+                      </div>
+                    </div>
+                  );
                 }
                 
                 return (

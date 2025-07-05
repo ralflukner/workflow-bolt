@@ -133,11 +133,19 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
 }
 
 /**
- * Get complete Firebase configuration
+ * Get complete Firebase configuration with improved resilience
  */
 export async function getFirebaseConfigWithGSM(): Promise<FirebaseConfigType> {
+  // Try environment variables first (most reliable during initial load)
+  const envConfig = getFirebaseConfigFromEnv();
+  if (envConfig) {
+    console.log('[Instrumentation] Firebase config loaded from environment variables');
+    return envConfig;
+  }
+
+  // Fallback to backend (only if env config not available)
   try {
-    console.log('[Instrumentation] Calling fetchFirebaseConfigFromBackend...');
+    console.log('[Instrumentation] Environment config not available, trying backend...');
     return await fetchFirebaseConfigFromBackend();
   } catch (error) {
     console.error('[Instrumentation] Failed to get Firebase config:', error);

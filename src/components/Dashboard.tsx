@@ -246,16 +246,16 @@ class DashboardClass extends Component<DashboardProps, State> {
     // Type-safe status counting using enum values
     const statusCounts = patients.reduce((acc, patient) => {
       const status = patient.status || PatientStatus.SCHEDULED;
-      acc[status] = (acc[status] || 0) + 1;
+      acc[status as string] = (acc[status as string] || 0) + 1;
       return acc;
-    }, {} as Record<PatientStatus, number>);
+    }, {} as Record<string, number>);
     
     // Ensure we have all expected statuses with default 0 values
     const allStatuses = Object.values(PatientStatus);
     const result: Record<string, number> = {};
     
     allStatuses.forEach(status => {
-      result[status] = statusCounts[status] || 0;
+      result[status] = statusCounts[status as string] || 0;
     });
     
     return result;
@@ -278,7 +278,7 @@ class DashboardClass extends Component<DashboardProps, State> {
     const today = new Date().toDateString();
     return patients.filter(patient => {
       const appointmentDate = new Date(patient.appointmentTime).toDateString();
-      return appointmentDate === today && PatientStatusUtils.isCompleted(patient.status);
+      return appointmentDate === today && PatientStatusUtils.isCompleted(patient.status as PatientStatus);
     }).length;
   };
 
@@ -395,10 +395,40 @@ class DashboardClass extends Component<DashboardProps, State> {
           <NewPatientForm onClose={() => this.setState({ showNewPatientForm: false })} />
         )}
         {showImportSchedule && (
-          <ImportSchedule onClose={() => this.setState({ showImportSchedule: false })} />
+          <ErrorBoundary fallback={
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-8 rounded-lg shadow-md max-w-md">
+                <h2 className="text-2xl font-bold text-red-600 mb-4">Import Schedule Error</h2>
+                <p className="text-gray-600 mb-4">The import schedule component failed to load.</p>
+                <button
+                  onClick={() => this.setState({ showImportSchedule: false })}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          }>
+            <ImportSchedule onClose={() => this.setState({ showImportSchedule: false })} />
+          </ErrorBoundary>
         )}
         {showImportJSON && (
-          <ImportJSON onClose={() => this.setState({ showImportJSON: false })} />
+          <ErrorBoundary fallback={
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-8 rounded-lg shadow-md max-w-md">
+                <h2 className="text-2xl font-bold text-red-600 mb-4">Import JSON Error</h2>
+                <p className="text-gray-600 mb-4">The import JSON component failed to load.</p>
+                <button
+                  onClick={() => this.setState({ showImportJSON: false })}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          }>
+            <ImportJSON onClose={() => this.setState({ showImportJSON: false })} />
+          </ErrorBoundary>
         )}
         {showReportModal && (
           <ReportModal

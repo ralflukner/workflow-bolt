@@ -44,16 +44,16 @@ export const PatientStatusCategories = {
 
 // Utility functions for type-safe status checking
 export class PatientStatusUtils {
-  static isWaiting(status: PatientStatus): boolean {
-    return PatientStatusCategories.WAITING.includes(status);
+  static isWaiting(status: PatientStatus | string): boolean {
+    return PatientStatusCategories.WAITING.includes(status as PatientStatus);
   }
   
-  static isCompleted(status: PatientStatus): boolean {
-    return PatientStatusCategories.COMPLETED_TODAY.includes(status);
+  static isCompleted(status: PatientStatus | string): boolean {
+    return PatientStatusCategories.COMPLETED_TODAY.includes(status as PatientStatus);
   }
   
-  static isInProgress(status: PatientStatus): boolean {
-    return PatientStatusCategories.IN_PROGRESS.includes(status);
+  static isInProgress(status: PatientStatus | string): boolean {
+    return PatientStatusCategories.IN_PROGRESS.includes(status as PatientStatus);
   }
   
   static getDisplayLabel(status: PatientStatus): string {
@@ -91,8 +91,8 @@ export function normalizePatientStatus(externalStatus: ExternalPatientStatus): P
   return mappings[normalized] || PatientStatus.SCHEDULED;
 }
 
-// Legacy type for backward compatibility
-export type PatientApptStatus = PatientStatus;
+// Legacy type for backward compatibility - temporarily permissive
+export type PatientApptStatus = PatientStatus | string;
 
 export type AppointmentType = 'Office Visit' | 'LABS' | 'New Patient';
 
@@ -103,10 +103,10 @@ export interface Patient {
   appointmentTime: string;
   appointmentType?: AppointmentType;
   /**
-   * Type-safe patient status using enum
+   * Patient status - temporarily accepting both enum and string for migration
    * Represents the patient's progress through the clinic workflow
    */
-  status: PatientStatus;
+  status: PatientStatus | string;
   chiefComplaint?: string;
   provider: string;
   room?: string;

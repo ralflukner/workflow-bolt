@@ -3,7 +3,7 @@
  * Uses MegaParse's advanced document parsing capabilities to handle complex multi-line formats
  */
 
-import { PatientApptStatus, AppointmentType } from '../types';
+import { PatientStatus, AppointmentType } from '../types';
 import { secureLog } from './redact';
 import { ImportedPatient } from './parseScheduleAdvanced';
 
@@ -415,24 +415,24 @@ class MegaParseScheduleClient {
   /**
    * Map status strings to internal types
    */
-  private mapStatusToInternal(status: string): PatientApptStatus {
+  private mapStatusToInternal(status: string): PatientStatus {
     const statusLower = status.toLowerCase().trim();
     
     switch (statusLower) {
       case 'cancelled':
       case 'canceled':
-        return 'Cancelled';
+        return PatientStatus.CANCELLED;
       case 'checked out':
       case 'checkedout':
-        return 'completed';
+        return PatientStatus.COMPLETED;
       case 'scheduled':
-        return 'scheduled';
+        return PatientStatus.SCHEDULED;
       case 'confirmed':
-        return 'scheduled';
+        return PatientStatus.SCHEDULED;
       case 'arrived':
-        return 'arrived';
+        return PatientStatus.ARRIVED;
       default:
-        return 'scheduled';
+        return PatientStatus.SCHEDULED;
     }
   }
 }

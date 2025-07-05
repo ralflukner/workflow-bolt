@@ -21,10 +21,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (isLoading) {
-    console.log('Auth0 Loading State:', { isAuthenticated, isLoading });
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">Loading authentication...</div>
       </div>
     );
   }
