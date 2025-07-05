@@ -233,9 +233,47 @@ if (!VikunjaAPI.prototype.getTask) {
 }
 
 VikunjaAPI.prototype.updateTaskLabels = async function(taskId, labels) {
+  // First, get or create the labels
+  const labelObjects = [];
+  for (const label of labels) {
+    if (typeof label === 'string') {
+      // Create label if it doesn't exist
+      try {
+        const existingLabels = await this.getLabels();
+        let existingLabel = existingLabels.find(l => l.title === label);
+        
+        if (!existingLabel) {
+          existingLabel = await this.createLabel(label);
+        }
+        labelObjects.push(existingLabel);
+      } catch (error) {
+        console.log(`Creating new label: ${label}`);
+        const newLabel = await this.createLabel(label);
+        labelObjects.push(newLabel);
+      }
+    } else {
+      labelObjects.push(label);
+    }
+  }
+  
+  // Update task with label objects
   const response = await axios.post(
     `${this.baseUrl}/tasks/${taskId}`,
-    { labels },
+    { labels: labelObjects },
+    { headers: this.headers }
+  );
+  return response.data;
+};
+
+VikunjaAPI.prototype.getLabels = async function() {
+  const response = await axios.get(`${this.baseUrl}/labels`, { headers: this.headers });
+  return response.data;
+};
+
+VikunjaAPI.prototype.createLabel = async function(title) {
+  const response = await axios.put(
+    `${this.baseUrl}/labels`, 
+    { title }, 
     { headers: this.headers }
   );
   return response.data;
