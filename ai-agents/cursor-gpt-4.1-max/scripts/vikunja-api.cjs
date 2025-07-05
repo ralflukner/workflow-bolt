@@ -200,6 +200,10 @@ class VikunjaAPI {
   // Assign task to agent using labels
   async assignTaskToAgent(taskId, agentName) {
     try {
+      // Get current task
+      const task = await this.getTask(taskId);
+      const currentLabels = task.labels || [];
+      
       // Create or find agent label
       const agentLabel = await this.findOrCreateLabel(
         `agent:${agentName}`,
@@ -212,11 +216,18 @@ class VikunjaAPI {
         '#f59e0b'
       );
       
-      // Add labels to task
-      await this.addLabelsToTask(taskId, [agentLabel.id, statusLabel.id]);
+      // Update task with new labels
+      const response = await axios.post(
+        `${this.baseUrl}/tasks/${taskId}`,
+        {
+          ...task,
+          labels: [...currentLabels.map(l => l.id), agentLabel.id, statusLabel.id]
+        },
+        { headers: this.headers }
+      );
       
       console.log(`✅ Task ${taskId} assigned to ${agentName} using labels`);
-      return true;
+      return response.data;
     } catch (error) {
       console.error('Error assigning task to agent:', error.message);
       throw error;
