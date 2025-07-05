@@ -50,7 +50,9 @@
     "labels:status": "node scripts/label-manager.cjs status",
     "labels:list": "node scripts/label-manager.cjs list",
     "labels:summary": "node scripts/label-manager.cjs summary",
-    "labels:bulk": "node scripts/label-manager.cjs bulk"
+    "labels:bulk": "node scripts/label-manager.cjs bulk",
+    "labels:dashboard": "node scripts/label-dashboard.cjs overview",
+    "labels:workload": "node scripts/label-dashboard.cjs workload"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
