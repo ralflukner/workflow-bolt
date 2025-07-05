@@ -40,13 +40,47 @@ function validateFirebaseConfig(config: unknown): config is FirebaseConfigType {
 }
 
 /**
- * Fetch Firebase configuration from backend
+ * Get Firebase configuration from environment variables (primary method)
+ */
+function getFirebaseConfigFromEnv(): FirebaseConfigType | null {
+  if (!import.meta.env?.VITE_FIREBASE_API_KEY) {
+    return null;
+  }
+
+  const envConfig = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain:
+      import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
+      'luknerlumina-firebase.firebaseapp.com',
+    projectId:
+      import.meta.env.VITE_FIREBASE_PROJECT_ID || 'luknerlumina-firebase',
+    storageBucket:
+      import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
+      'luknerlumina-firebase.firebasestorage.app',
+    messagingSenderId:
+      import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '623450773640',
+    appId:
+      import.meta.env.VITE_FIREBASE_APP_ID ||
+      '1:623450773640:web:9afd63d3ccbb1fcb6fe73d',
+    measurementId:
+      import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-W6TX8WRN2Z'
+  };
+
+  if (validateFirebaseConfig(envConfig)) {
+    return envConfig;
+  }
+
+  return null;
+}
+
+/**
+ * Fetch Firebase configuration from backend (fallback method)
  */
 async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
-  const FETCH_TIMEOUT = 10000; // 10 seconds
+  const FETCH_TIMEOUT = 5000; // Reduced to 5 seconds
 
   try {
-    console.log('[Instrumentation] Fetching Firebase config from backend endpoint:', FIREBASE_CONFIG_ENDPOINT);
+    console.log('[Instrumentation] Attempting backend config fetch (fallback):', FIREBASE_CONFIG_ENDPOINT);
     // Fetch from the configurable getFirebaseConfig endpoint
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
@@ -88,43 +122,12 @@ async function fetchFirebaseConfigFromBackend(): Promise<FirebaseConfigType> {
     return config;
   } catch (error: unknown) {
     if (error instanceof Error && error.name === 'AbortError') {
-      console.error('[Instrumentation] Firebase config fetch timed out');
+      console.warn('[Instrumentation] Backend config fetch timed out - this is expected during initial load');
     } else {
-      console.error('[Instrumentation] Failed to fetch Firebase config from backend:', error);
+      console.warn('[Instrumentation] Backend config fetch failed - this is expected during initial load:', error);
     }
-    // Fall back to environment variables if available
-    if (import.meta.env?.VITE_FIREBASE_API_KEY) {
-      console.warn('[Instrumentation] Using Firebase config from environment variables as fallback');
-      const fallbackConfig = {
-        apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-        authDomain:
-          import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
-          'luknerlumina-firebase.firebaseapp.com',
-        projectId:
-          import.meta.env.VITE_FIREBASE_PROJECT_ID || 'luknerlumina-firebase',
-        storageBucket:
-          import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
-          'luknerlumina-firebase.firebasestorage.app',
-        messagingSenderId:
-          import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '623450773640',
-        appId:
-          import.meta.env.VITE_FIREBASE_APP_ID ||
-          '1:623450773640:web:9afd63d3ccbb1fcb6fe73d',
-        measurementId:
-          import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-W6TX8WRN2Z'
-      };
-      const maskedFallback = { ...fallbackConfig, apiKey: '***', appId: '***' };
-      console.log('[Instrumentation] Fallback config:', maskedFallback);
-
-      if (!validateFirebaseConfig(fallbackConfig)) {
-        throw Object.assign(
-          new Error('Invalid Firebase configuration in environment variables'),
-          { type: 'FALLBACK_VALIDATION_ERROR' }
-        );
-      }
-
-      return fallbackConfig;
-    }
+    
+    // This will be handled by the main function
     throw error;
   }
 }
