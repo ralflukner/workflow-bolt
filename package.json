@@ -44,7 +44,13 @@
     "vikunja:list": "node scripts/assign-tasks.cjs list",
     "vikunja:agents": "node scripts/assign-tasks.cjs agents",
     "vikunja:unassigned": "node scripts/assign-tasks.cjs unassigned",
-    "vikunja:bulk": "node scripts/assign-tasks.cjs bulk"
+    "vikunja:bulk": "node scripts/assign-tasks.cjs bulk",
+    "labels:init": "node scripts/label-manager.cjs init",
+    "labels:assign": "node scripts/label-manager.cjs assign",
+    "labels:status": "node scripts/label-manager.cjs status",
+    "labels:list": "node scripts/label-manager.cjs list",
+    "labels:summary": "node scripts/label-manager.cjs summary",
+    "labels:bulk": "node scripts/label-manager.cjs bulk"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
