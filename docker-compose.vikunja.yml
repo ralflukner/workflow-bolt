@@ -1,0 +1,39 @@
+services:
+  vikunja-db:
+    image: postgres:13
+    environment:
+      POSTGRES_PASSWORD: supersecret
+      POSTGRES_USER: vikunja
+      POSTGRES_DB: vikunja
+    volumes:
+      - vikunja-db:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - vikunja
+
+  vikunja:
+    image: vikunja/vikunja:latest
+    environment:
+      VIKUNJA_DATABASE_HOST: vikunja-db
+      VIKUNJA_DATABASE_PASSWORD: supersecret
+      VIKUNJA_DATABASE_TYPE: postgres
+      VIKUNJA_DATABASE_USER: vikunja
+      VIKUNJA_DATABASE_DATABASE: vikunja
+      VIKUNJA_SERVICE_PUBLICURL: http://localhost:3456
+      VIKUNJA_SERVICE_MAXFILESIZE: 20MB
+    ports:
+      - 3456:3456
+    volumes:
+      - vikunja-files:/app/vikunja/files
+    depends_on:
+      - vikunja-db
+    restart: unless-stopped
+    networks:
+      - vikunja
+
+volumes:
+  vikunja-db:
+  vikunja-files:
+
+networks:
+  vikunja:

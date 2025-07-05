@@ -1,0 +1,14 @@
+{
+  "name": "Workflow-Bolt Healthcare Integration",
+  "details": "HIPAA-compliant workflow management for medical practices",
+  "author": "Lukner Medical Clinic PLLC",
+  "capabilities": [
+    "board-buttons",
+    "card-badges", 
+    "card-buttons",
+    "show-settings",
+    "authorization-status"
+  ],
+  "connectorUrl": "https://yourusername.github.io/workflow-bolt-trello-powerup/",
+  "iconUrl": "https://yourusername.github.io/workflow-bolt-trello-powerup/icon.png"
+}

@@ -65,9 +65,22 @@ export const useTestAuth0Audience = () => {
   return { testTokenAudience };
 };
 
+// Standalone function for testing Auth0 audience without hooks
+export const testAuth0AudienceStandalone = () => {
+  console.log('🔍 Testing Auth0 audience configuration...');
+  console.log('📋 Expected audience:', 'https://api.patientflow.com');
+  console.log('📋 Frontend config audience:', import.meta.env.VITE_AUTH0_AUDIENCE);
+  console.log('📋 Domain:', import.meta.env.VITE_AUTH0_DOMAIN);
+  console.log('📋 Client ID:', import.meta.env.VITE_AUTH0_CLIENT_ID);
+  
+  if (import.meta.env.VITE_AUTH0_AUDIENCE === 'https://api.patientflow.com') {
+    console.log('✅ Auth0 audience configuration is correct');
+  } else {
+    console.log('❌ Auth0 audience mismatch!');
+  }
+};
+
 // Export for browser console
 if (typeof window !== 'undefined') {
-  (window as unknown as Record<string, unknown>).testAuth0Audience = () => {
-    console.log('🔧 Use the useTestAuth0Audience hook in a React component');
-  };
+  (window as unknown as Record<string, unknown>).testAuth0Audience = testAuth0AudienceStandalone;
 }

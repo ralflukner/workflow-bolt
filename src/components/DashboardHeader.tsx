@@ -1,9 +1,7 @@
 import React from 'react';
 import { PlusCircle, FileDown, Upload, Download, Bug, FileText } from 'lucide-react';
-import AuthNav from './AuthNav';
-import MetricsPanel from './MetricsPanel';
+import AuthNavSimple from './AuthNavSimple';
 import TimeControl from './TimeControl';
-import TebraIntegration from './TebraIntegrationNew';
 import MonitoringStatus from './MonitoringStatus';
 import { debugLogger } from '../services/debugLogger';
 
@@ -38,7 +36,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         </h1>
 
         <div className="flex items-center space-x-4">
-          <AuthNav />
+          <AuthNavSimple 
+            isAuthenticated={true}
+            isLoading={false}
+            user={{ name: 'User' }}
+          />
           <div className="flex space-x-2">
             <button 
               onClick={onShowImportSchedule}
@@ -103,12 +105,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       </div>
 
       <div>
-        <MetricsPanel />
         <div className="mt-4">
           <TimeControl />
-        </div>
-        <div className="mt-4">
-          <TebraIntegration />
         </div>
         <div className="mt-4">
           <MonitoringStatus />

@@ -1,18 +1,98 @@
 /**
- * PatientApptStatus - Combined status type for patient workflow and appointment scheduling
- * Represents both the internal workflow status and external scheduling status
- * Used for tracking the patient's progress through the clinic workflow
+ * Robust Patient Status System using TypeScript enums and utilities
+ * Eliminates string literal fragility with type-safe status management
  */
-export type PatientApptStatus = 
-  // Internal workflow statuses (lowercase kebab-case)
-  | 'scheduled' | 'arrived' | 'appt-prep' | 'ready-for-md' | 'seen-by-md' | 'completed' | 'rescheduled' | 'cancelled' | 'no-show'
-  // External scheduling statuses (Title Case with spaces)
-  | 'Scheduled' | 'Reminder Sent' | 'Confirmed' | 'Arrived' | 'Checked In' | 'Roomed' | 'Appt Prep Started' 
-  | 'Ready for MD' | 'With Doctor' | 'Seen by MD' | 'Checked Out' | 'No Show' | 'Rescheduled' | 'Cancelled';
 
-// For backward compatibility and type safety during transition
-export type PatientStatus = 'scheduled' | 'arrived' | 'appt-prep' | 'ready-for-md' | 'With Doctor' | 'seen-by-md' | 'completed' | 'rescheduled' | 'cancelled' | 'no-show';
-export type AppointmentStatus = 'Scheduled' | 'Reminder Sent' | 'Confirmed' | 'Arrived' | 'Checked In' | 'Roomed' | 'Appt Prep Started' | 'Ready for MD' | 'With Doctor' | 'Seen by MD' | 'Checked Out' | 'No Show' | 'Rescheduled' | 'Cancelled';
+// Core status enum - single source of truth
+export enum PatientStatus {
+  SCHEDULED = 'scheduled',
+  ARRIVED = 'arrived',
+  APPT_PREP = 'appt-prep',
+  READY_FOR_MD = 'ready-for-md',
+  WITH_DOCTOR = 'with-doctor',
+  SEEN_BY_MD = 'seen-by-md',
+  COMPLETED = 'completed',
+  CHECKED_OUT = 'checked-out',
+  RESCHEDULED = 'rescheduled',
+  CANCELLED = 'cancelled',
+  NO_SHOW = 'no-show'
+}
+
+// Display labels for UI - type-safe mapping
+export const PatientStatusLabels: Record<PatientStatus, string> = {
+  [PatientStatus.SCHEDULED]: 'Scheduled',
+  [PatientStatus.ARRIVED]: 'Arrived',
+  [PatientStatus.APPT_PREP]: 'Appt Prep',
+  [PatientStatus.READY_FOR_MD]: 'Ready for MD',
+  [PatientStatus.WITH_DOCTOR]: 'With Doctor',
+  [PatientStatus.SEEN_BY_MD]: 'Seen by MD',
+  [PatientStatus.COMPLETED]: 'Completed',
+  [PatientStatus.CHECKED_OUT]: 'Checked Out',
+  [PatientStatus.RESCHEDULED]: 'Rescheduled',
+  [PatientStatus.CANCELLED]: 'Cancelled',
+  [PatientStatus.NO_SHOW]: 'No Show'
+};
+
+// Status categories for business logic
+export const PatientStatusCategories = {
+  WAITING: [PatientStatus.ARRIVED, PatientStatus.APPT_PREP, PatientStatus.READY_FOR_MD],
+  IN_PROGRESS: [PatientStatus.WITH_DOCTOR, PatientStatus.SEEN_BY_MD],
+  COMPLETED_TODAY: [PatientStatus.COMPLETED, PatientStatus.CHECKED_OUT],
+  CANCELLED_OR_NO_SHOW: [PatientStatus.CANCELLED, PatientStatus.NO_SHOW],
+  FUTURE: [PatientStatus.SCHEDULED, PatientStatus.RESCHEDULED]
+} as const;
+
+// Utility functions for type-safe status checking
+export class PatientStatusUtils {
+  static isWaiting(status: PatientStatus): boolean {
+    return PatientStatusCategories.WAITING.includes(status);
+  }
+  
+  static isCompleted(status: PatientStatus): boolean {
+    return PatientStatusCategories.COMPLETED_TODAY.includes(status);
+  }
+  
+  static isInProgress(status: PatientStatus): boolean {
+    return PatientStatusCategories.IN_PROGRESS.includes(status);
+  }
+  
+  static getDisplayLabel(status: PatientStatus): string {
+    return PatientStatusLabels[status];
+  }
+  
+  static fromString(statusString: string): PatientStatus | null {
+    // Handle legacy string values safely
+    const statusValues = Object.values(PatientStatus) as string[];
+    const found = statusValues.find(s => s === statusString);
+    return found ? (found as PatientStatus) : null;
+  }
+}
+
+// For external API compatibility (Tebra, etc.)
+export type ExternalPatientStatus = string;
+
+// Migration helper - converts external status to internal enum
+export function normalizePatientStatus(externalStatus: ExternalPatientStatus): PatientStatus {
+  const normalized = externalStatus.toLowerCase().replace(/\s+/g, '-');
+  
+  // Handle common external status mappings
+  const mappings: Record<string, PatientStatus> = {
+    'checked-in': PatientStatus.ARRIVED,
+    'roomed': PatientStatus.APPT_PREP,
+    'ready-for-md': PatientStatus.READY_FOR_MD,
+    'with-doctor': PatientStatus.WITH_DOCTOR,
+    'checked-out': PatientStatus.CHECKED_OUT,
+    'completed': PatientStatus.COMPLETED,
+    'scheduled': PatientStatus.SCHEDULED,
+    'cancelled': PatientStatus.CANCELLED,
+    'no-show': PatientStatus.NO_SHOW
+  };
+  
+  return mappings[normalized] || PatientStatus.SCHEDULED;
+}
+
+// Legacy type for backward compatibility
+export type PatientApptStatus = PatientStatus;
 
 export type AppointmentType = 'Office Visit' | 'LABS' | 'New Patient';
 
@@ -23,12 +103,10 @@ export interface Patient {
   appointmentTime: string;
   appointmentType?: AppointmentType;
   /**
-   * Combined status for both internal workflow and external scheduling
-   * Used for tracking the patient's progress through the clinic workflow
-   * Can be either an internal workflow status (lowercase kebab-case)
-   * or an external scheduling status (Title Case with spaces)
+   * Type-safe patient status using enum
+   * Represents the patient's progress through the clinic workflow
    */
-  status: PatientApptStatus;
+  status: PatientStatus;
   chiefComplaint?: string;
   provider: string;
   room?: string;

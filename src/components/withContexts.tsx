@@ -4,20 +4,8 @@
  */
 
 import React, { Component, ComponentType } from 'react';
-import { PatientContext } from '../context/PatientContextDef';
-import { PatientContextType } from '../context/PatientContextType';
-import { TimeContext } from '../context/TimeContextDef';
-import { TimeMode } from '../types';
-
-// Define TimeContextType to match the one in TimeContextDef.ts
-interface TimeContextType {
-  timeMode: TimeMode;
-  toggleSimulation: () => void;
-  adjustTime: (minutesToAdd: number, newTime?: Date) => void;
-  getCurrentTime: () => Date;
-  formatTime: (date: Date) => string;
-  formatDateTime: (date: Date) => string;
-}
+import { PatientContext, PatientContextType } from '../contexts/PatientContext';
+import { TimeContext, TimeContextType } from '../contexts/TimeContext';
 
 export interface WithContextsProps {
   patientContext: PatientContextType;
@@ -27,7 +15,7 @@ export interface WithContextsProps {
 /**
  * HOC that provides both PatientContext and TimeContext to class components
  */
-export function withContexts<P extends object>(
+export function withContexts<P extends object = {}>(
   WrappedComponent: ComponentType<P & WithContextsProps>
 ) {
   return class WithContexts extends Component<P> {

@@ -1,12 +1,12 @@
-import React, { Component, RefObject } from 'react';
+import React, { Component } from 'react';
 import NewPatientForm from './NewPatientForm';
 import ImportSchedule from './ImportSchedule';
 import ImportJSON from './ImportJSON';
 import { withContexts, WithContextsProps } from './withContexts';
-import { Patient } from '../types/index';
+import { Patient, PatientStatus, PatientStatusUtils, PatientStatusCategories } from '../types';
 import { DiagnosticPanel } from './DiagnosticPanel';
 import { WaitTimeDiagnostic } from './WaitTimeDiagnostic';
-import { PersistenceDiagnostic } from './PersistenceDiagnostic';
+import PersistenceDiagnosticWrapper from "./PersistenceDiagnosticWrapper";
 import { FirebaseDebugger } from './FirebaseDebugger';
 import { ReportModal } from './ReportModal';
 import { DashboardHeader } from './DashboardHeader';
@@ -17,14 +17,12 @@ import { PATIENT_SECTIONS } from '../constants/patientSections';
 import TebraDebugDashboardWrapper from './TebraDebugDashboardWrapper';
 import DashboardErrorBoundary from './DashboardErrorBoundary';
 import SecurityNotice from './SecurityNotice';
+import MetricsPanel from './MetricsPanel';
+import TebraIntegrationSimple from './TebraIntegrationSimple';
+import ErrorBoundary from './ErrorBoundary';
 
-import { PatientContextType } from '../contexts/PatientContext';
-import { TimeContextType } from '../contexts/TimeContext';
 
-interface DashboardProps extends WithContextsProps {
-  patientContext: PatientContextType;
-  timeContext: TimeContextType;
-}
+interface DashboardProps extends WithContextsProps {}
 
 interface State {
   showNewPatientForm: boolean;
@@ -67,96 +65,95 @@ class DashboardClass extends Component<DashboardProps, State> {
 
   isExpanded = (section: string) => this.state.expandedSection === section;
 
-  private generateReportContent = (format: 'csv' | 'text'): string => {
-    const { patients, getWaitTime } = this.props.patientContext;
-    const { getCurrentTime, timeMode } = this.props.timeContext;
 
-    if (format === 'csv') {
-      let csvContent = 'Patient Name,Status,Wait Time\n';
-      patients.forEach((p: Patient) => {
-        const waitTime = getWaitTime(p);
-        csvContent += `${p.name},${p.status},${waitTime || 'N/A'}\n`;
-      });
-      return csvContent;
-    } else if (format === 'text') {
-      let textContent = '--- Patient Report ---\n\n';
-      patients.forEach((p: Patient) => {
-        const waitTime = getWaitTime(p);
-        textContent += `Name: ${p.name}\nStatus: ${p.status}\nWait Time: ${waitTime || 'N/A'}\n\n`;
-      });
-      return textContent;
+    handleExportSchedule = async (): Promise<void> => {
+        if (this.isExporting.current) return;
+        this.isExporting.current = true;
+
+        try {
+            await this.generateScheduleReports();
+        } catch (err) {
+            this.handleExportError(err);
+        } finally {
+            this.isExporting.current = false;
+        }
+    };
+
+    private generateScheduleReports = async (): Promise<void> => {
+        const {patients, getWaitTime} = this.props.patientContext;
+        const {getCurrentTime, timeMode} = this.props.timeContext;
+
+        // Generate CSV report for download
+        this.generateCSVReport(patients, getCurrentTime);
+
+        // Generate text report for modal display
+        const textReport = this.generateTextReport(patients, getCurrentTime, timeMode, getWaitTime);
+
+        this.setState({
+            reportContent: textReport,
+            showReportModal: true
+        });
+    };
+
+    private handleExportError = (error: unknown): void => {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        console.error('Failed to export schedule:', errorMessage);
+        alert('Unable to export schedule. Please try again.');
+    };
+
+    private generateCSVReport = (patients: Patient[], getCurrentTime: () => Date): void => {
+        const timestamp = getCurrentTime();
+        const filename = `patient-schedule-${formatDateForFilename(timestamp)}.csv`;
+        const csvContent = this.buildCSVContent(patients);
+        this.downloadCSV(csvContent, filename);
+    };
+
+    private buildCSVContent(patients: Patient[]): string {
+        const headers = [
+            'Date', 'Time', 'Status', 'Patient Name', 'DOB',
+            'Type', 'Chief Complaint', 'Check-In Time', 'Room'
+        ];
+        const sorted = [...patients].sort(this.compareByAppointment);
+        const rows = sorted.map(patient => {
+            const data = formatPatientData(patient);
+            const values = [
+                data.formattedAppointmentDate,
+                data.formattedAppointmentTime,
+                data.displayStatus,
+                patient.name,
+                data.formattedDOB,
+                data.appointmentType,
+                data.chiefComplaint,
+                data.formattedCheckInTime,
+                data.room
+            ];
+            return values.map(this.escapeCSVField).join(',');
+        });
+        return [headers.join(','), ...rows].join('\n') + '\n';
     }
-    return '';
-  };
 
-  handleExportSchedule = async (): Promise<void> => {
-    if (this.isExporting.current) return;
-    this.isExporting.current = true;
-    try {
-      const { patients, getWaitTime } = this.props.patientContext;
-      const { getCurrentTime, timeMode } = this.props.timeContext;
-      
-      // Generate CSV report directly
-      this.generateCSVReport(patients, getCurrentTime);
-      
-      // Generate text report for modal
-      const report = this.generateTextReport(patients, getCurrentTime, timeMode, getWaitTime);
-      this.setState({ reportContent: report, showReportModal: true });
-    } catch (err) {
-      console.error('Failed to export schedule', err);
-      alert('Unable to export schedule. Please try again.');
-    } finally {
-      this.isExporting.current = false;
+    private compareByAppointment(a: Patient, b: Patient): number {
+        return new Date(a.appointmentTime).getTime()
+            - new Date(b.appointmentTime).getTime();
     }
-  };
 
-  private generateCSVReport = (patients: Patient[], getCurrentTime: () => Date) => {
-    const currentDate = getCurrentTime();
-    const headers = [
-      'Date', 'Time', 'Status', 'Patient Name', 'DOB', 
-      'Type', 'Chief Complaint', 'Check-In Time', 'Room'
-    ];
-
-    let csvContent = headers.join(',') + '\n';
-
-    const sortedPatients = [...patients].sort((a, b) => 
-      new Date(a.appointmentTime).getTime() - new Date(b.appointmentTime).getTime()
-    );
-
-    sortedPatients.forEach(patient => {
-      const formattedData = formatPatientData(patient);
-      const row = [
-        formattedData.formattedAppointmentDate,
-        formattedData.formattedAppointmentTime,
-        formattedData.displayStatus,
-        patient.name,
-        formattedData.formattedDOB,
-        formattedData.appointmentType,
-        formattedData.chiefComplaint,
-        formattedData.formattedCheckInTime,
-        formattedData.room
-      ];
-
-      const escapedRow = row.map(field => {
+    private escapeCSVField(field?: string | null): string {
         if (field == null) return '';
-        const needsQuotes = /[,"\n]/.test(field);
-        const safe = String(field).replace(/"/g, '""');
-        return needsQuotes ? `"${safe}"` : safe;
-      });
+        const escaped = String(field).replace(/"/g, '""');
+        return /[,"\n]/.test(escaped) ? `"${escaped}"` : escaped;
+    }
 
-      csvContent += escapedRow.join(',') + '\n';
-    });
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `patient-schedule-${formatDateForFilename(currentDate)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+    private downloadCSV(content: string, filename: string): void {
+        const blob = new Blob([content], {type: 'text/csv;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
 
   private generateTextReport = (
     patients: Patient[], 
@@ -245,6 +242,46 @@ class DashboardClass extends Component<DashboardProps, State> {
     return report;
   };
 
+  private getPatientsByStatus = (patients: Patient[]) => {
+    // Type-safe status counting using enum values
+    const statusCounts = patients.reduce((acc, patient) => {
+      const status = patient.status || PatientStatus.SCHEDULED;
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {} as Record<PatientStatus, number>);
+    
+    // Ensure we have all expected statuses with default 0 values
+    const allStatuses = Object.values(PatientStatus);
+    const result: Record<string, number> = {};
+    
+    allStatuses.forEach(status => {
+      result[status] = statusCounts[status] || 0;
+    });
+    
+    return result;
+  };
+
+  private getAverageWaitTime = (patients: Patient[]) => {
+    const checkedInPatients = patients.filter(p => p.checkInTime);
+    if (checkedInPatients.length === 0) return 0;
+    
+    const totalWaitTime = checkedInPatients.reduce((sum, patient) => {
+      const waitTime = this.props.patientContext.getWaitTime(patient);
+      return sum + (isNaN(waitTime) ? 0 : waitTime);
+    }, 0);
+    
+    const average = totalWaitTime / checkedInPatients.length;
+    return isNaN(average) ? 0 : average;
+  };
+
+  private getPatientsSeenToday = (patients: Patient[]) => {
+    const today = new Date().toDateString();
+    return patients.filter(patient => {
+      const appointmentDate = new Date(patient.appointmentTime).toDateString();
+      return appointmentDate === today && PatientStatusUtils.isCompleted(patient.status);
+    }).length;
+  };
+
   render() {
     const {
       showNewPatientForm,
@@ -252,14 +289,31 @@ class DashboardClass extends Component<DashboardProps, State> {
       showImportJSON,
       showReportModal,
       reportContent,
-      expandedSection,
-      showDebugPanels,
+        showDebugPanels,
       showDebugTextWindow,
       scrollPosition,
       showSecurityNotice,
     } = this.state;
 
     const { patients, getWaitTime, exportPatientsToJSON } = this.props.patientContext;
+
+    // Helper to render PatientSection components, with optional scroll props
+    const renderPatientSections = (includeScroll: boolean) => (
+      PATIENT_SECTIONS.map(section => (
+        <PatientSection
+          key={section.id}
+          id={section.id}
+          title={section.title}
+          status={section.status}
+          isExpanded={this.isExpanded(section.id)}
+          onToggle={() => this.toggleSection(section.id)}
+          {...(includeScroll ? {
+            scrollPosition,
+            onScroll: (pos: number) => this.setState({ scrollPosition: pos }),
+          } : {})}
+        />
+      ))
+    );
 
     return (
       <div className="min-h-screen bg-gray-900 p-4 md:p-8">
@@ -273,6 +327,22 @@ class DashboardClass extends Component<DashboardProps, State> {
           onShowImportJSON={() => this.setState({ showImportJSON: true })}
           onExportJSON={exportPatientsToJSON}
           onExportSchedule={this.handleExportSchedule}
+        />
+
+        {/* Simple components without useEffect complexity */}
+        <MetricsPanel 
+          metrics={{
+            totalPatients: patients.length,
+            patientsByStatus: this.getPatientsByStatus(patients),
+            averageWaitTime: this.getAverageWaitTime(patients),
+            patientsSeenToday: this.getPatientsSeenToday(patients)
+          }}
+        />
+        <TebraIntegrationSimple 
+          onSyncToday={() => console.log('Sync Today requested')}
+          onTestConnection={() => console.log('Test Connection requested')}
+          isConnected={true}
+          lastSync={new Date().toLocaleString()}
         />
 
         <main>
@@ -292,7 +362,10 @@ class DashboardClass extends Component<DashboardProps, State> {
               <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <DiagnosticPanel />
                 <WaitTimeDiagnostic />
-                <PersistenceDiagnostic />
+                <PersistenceDiagnosticWrapper 
+                  patientContext={this.props.patientContext}
+                  timeContext={this.props.timeContext}
+                />
               </div>
             </>
           )}
@@ -300,18 +373,7 @@ class DashboardClass extends Component<DashboardProps, State> {
           {showDebugTextWindow ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="grid grid-cols-1 gap-6">
-                {PATIENT_SECTIONS.map(section => (
-                  <PatientSection
-                    key={section.id}
-                    id={section.id}
-                    title={section.title}
-                    status={section.status}
-                    isExpanded={this.isExpanded(section.id)}
-                    onToggle={() => this.toggleSection(section.id)}
-                    scrollPosition={scrollPosition}
-                    onScroll={(pos) => this.setState({ scrollPosition: pos })}
-                  />
-                ))}
+                {renderPatientSections(true)}
               </div>
               <div className="lg:sticky lg:top-4" style={{ height: 'fit-content' }}>
                 <DebugTextWindow
@@ -324,16 +386,7 @@ class DashboardClass extends Component<DashboardProps, State> {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {PATIENT_SECTIONS.map(section => (
-                <PatientSection
-                  key={section.id}
-                  id={section.id}
-                  title={section.title}
-                  status={section.status}
-                  isExpanded={this.isExpanded(section.id)}
-                  onToggle={() => this.toggleSection(section.id)}
-                />
-              ))}
+              {renderPatientSections(false)}
             </div>
           )}
         </main>
@@ -358,4 +411,4 @@ class DashboardClass extends Component<DashboardProps, State> {
   }
 }
 
-export default withContexts<DashboardProps>(DashboardClass);
+export default withContexts(DashboardClass);

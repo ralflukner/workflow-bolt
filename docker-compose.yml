@@ -1,0 +1,160 @@
+version: '3.8'
+
+x-app-env: &app-env
+  environment:
+    - DEBUG=0
+    - DJANGO_SETTINGS_MODULE=plane.settings.production
+    
+    # Database
+    - POSTGRES_USER=plane
+    - POSTGRES_PASSWORD=plane
+    - POSTGRES_DB=plane
+    - DATABASE_URL=postgresql://plane:plane@planeso-db:5432/plane
+    
+    # Redis
+    - REDIS_URL=redis://planeso-redis:6379/
+    
+    # Email Configuration (optional)
+    - EMAIL_HOST=
+    - EMAIL_HOST_USER=
+    - EMAIL_HOST_PASSWORD=
+    - EMAIL_PORT=587
+    - EMAIL_USE_TLS=1
+    - EMAIL_FROM=noreply@yourdomain.com
+    
+    # Security
+    - SECRET_KEY=60gp0byfz2dvffa45cxl20p1sab9xzgztkzrv2l23qgbc=
+    - WEB_URL=http://localhost
+    
+    # AWS S3 (optional, for file uploads)
+    - USE_MINIO=1
+    - AWS_ACCESS_KEY_ID=access-key
+    - AWS_SECRET_ACCESS_KEY=secret-key
+    - AWS_S3_ENDPOINT_URL=http://planeso-minio:9000
+    - AWS_S3_BUCKET_NAME=uploads
+    - AWS_REGION=us-east-1
+    - AWS_DEFAULT_ACL=public-read
+    
+    # License (leave empty for self-hosted)
+    - LICENSE_ENGINE_BASE_URL=
+
+services:
+  planeso-redis:
+    image: redis:6.2-alpine
+    restart: unless-stopped
+    command: redis-server --requirepass plane
+    environment:
+      - REDIS_PASSWORD=plane
+    volumes:
+      - redisdata:/data
+
+  planeso-db:
+    image: postgres:13
+    restart: unless-stopped
+    command: postgres -c 'max_connections=1000'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=plane
+      - POSTGRES_PASSWORD=plane
+      - POSTGRES_DB=plane
+      - PGDATA=/var/lib/postgresql/data
+
+  planeso-minio:
+    image: minio/minio
+    restart: unless-stopped
+    command: server /export --console-address ":9001"
+    volumes:
+      - uploads:/export
+    environment:
+      - MINIO_ROOT_USER=access-key
+      - MINIO_ROOT_PASSWORD=secret-key
+    ports:
+      - "9001:9001"
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - planeso-minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add plane-minio http://planeso-minio:9000 access-key secret-key;
+      /usr/bin/mc mb plane-minio/uploads;
+      /usr/bin/mc policy download plane-minio/uploads;
+      exit 0;
+      "
+
+  plane-migrator:
+    <<: *app-env
+    image: makeplane/plane-backend:latest
+    depends_on:
+      - planeso-db
+      - planeso-redis
+    command: >
+      sh -c "python manage.py wait_for_db &&
+             python manage.py migrate"
+
+  plane-backend:
+    <<: *app-env
+    image: makeplane/plane-backend:latest
+    restart: unless-stopped
+    depends_on:
+      - plane-migrator
+      - planeso-db
+      - planeso-redis
+    volumes:
+      - logs_api:/code/plane/logs
+    ports:
+      - "8000:8000"
+
+  plane-worker:
+    <<: *app-env
+    image: makeplane/plane-backend:latest
+    restart: unless-stopped
+    depends_on:
+      - plane-backend
+      - planeso-db
+      - planeso-redis
+    command: python manage.py rqworker
+    volumes:
+      - logs_worker:/code/plane/logs
+
+  plane-beat-worker:
+    <<: *app-env
+    image: makeplane/plane-backend:latest
+    restart: unless-stopped
+    depends_on:
+      - plane-backend
+      - planeso-db
+      - planeso-redis
+    command: python manage.py rqscheduler
+    volumes:
+      - logs_beat-worker:/code/plane/logs
+
+  plane-frontend:
+    image: makeplane/plane-frontend:latest
+    restart: unless-stopped
+    depends_on:
+      - plane-backend
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+    ports:
+      - "3000:3000"
+
+  plane-space:
+    image: makeplane/plane-space:latest
+    restart: unless-stopped
+    depends_on:
+      - plane-backend
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+    ports:
+      - "4000:4000"
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:
+  logs_api:
+  logs_worker:
+  logs_beat-worker: 

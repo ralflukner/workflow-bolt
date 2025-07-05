@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow-Bolt Power-Up Icon Generator</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 600px;
+            margin: 2em auto;
+            padding: 2em;
+            background: #f8fafc;
+        }
+        canvas {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            margin: 1em 0;
+            background: white;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        .info {
+            background: #e0f2fe;
+            padding: 1em;
+            border-radius: 6px;
+            margin: 1em 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Workflow-Bolt Power-Up Icon Generator</h1>
+    
+    <div class="info">
+        <p><strong>Instructions:</strong></p>
+        <ol>
+            <li>Click "Generate Icon" to create the 144x144px icon</li>
+            <li>Click "Download PNG" to save the icon file</li>
+            <li>Upload the downloaded file to your hosting service</li>
+            <li>Use the HTTPS URL in your Trello Power-Up configuration</li>
+        </ol>
+    </div>
+    
+    <canvas id="canvas" width="144" height="144"></canvas>
+    <br>
+    <button onclick="generateIcon()">🎨 Generate Icon</button>
+    <button onclick="downloadIcon()">💾 Download PNG</button>
+    
+    <div id="result" style="margin-top: 1em;"></div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function generateIcon() {
+            // Clear canvas
+            ctx.clearRect(0, 0, 144, 144);
+            
+            // Blue gradient background
+            const gradient = ctx.createRadialGradient(72, 72, 0, 72, 72, 72);
+            gradient.addColorStop(0, '#3b82f6');
+            gradient.addColorStop(1, '#1e40af');
+            
+            // Fill background circle
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(72, 72, 72, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Inner circle with slight transparency
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.8)';
+            ctx.beginPath();
+            ctx.arc(72, 72, 60, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // White workflow arrows
+            ctx.fillStyle = 'white';
+            
+            // Arrow 1 (top-left to center)
+            ctx.beginPath();
+            ctx.moveTo(30, 45);
+            ctx.lineTo(50, 45);
+            ctx.lineTo(50, 35);
+            ctx.lineTo(75, 50);
+            ctx.lineTo(50, 65);
+            ctx.lineTo(50, 55);
+            ctx.lineTo(30, 55);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Arrow 2 (center to top-right)
+            ctx.beginPath();
+            ctx.moveTo(75, 65);
+            ctx.lineTo(95, 65);
+            ctx.lineTo(95, 55);
+            ctx.lineTo(120, 70);
+            ctx.lineTo(95, 85);
+            ctx.lineTo(95, 75);
+            ctx.lineTo(75, 75);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Arrow 3 (bottom flow)
+            ctx.beginPath();
+            ctx.moveTo(45, 90);
+            ctx.lineTo(65, 90);
+            ctx.lineTo(65, 80);
+            ctx.lineTo(90, 95);
+            ctx.lineTo(65, 110);
+            ctx.lineTo(65, 100);
+            ctx.lineTo(45, 100);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Medical cross (representing healthcare workflow)
+            ctx.fillStyle = 'white';
+            // Vertical bar
+            ctx.fillRect(67, 25, 10, 40);
+            // Horizontal bar  
+            ctx.fillRect(52, 40, 40, 10);
+            
+            // Gear symbol (bottom-right, representing automation)
+            ctx.save();
+            ctx.translate(100, 110);
+            ctx.scale(0.6, 0.6);
+            
+            // Gear teeth
+            ctx.fillStyle = 'white';
+            for (let i = 0; i < 8; i++) {
+                ctx.save();
+                ctx.rotate((i * Math.PI) / 4);
+                ctx.fillRect(-2, -12, 4, 6);
+                ctx.restore();
+            }
+            
+            // Gear body
+            ctx.beginPath();
+            ctx.arc(0, 0, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Gear center hole
+            ctx.fillStyle = '#1e40af';
+            ctx.beginPath();
+            ctx.arc(0, 0, 3, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.restore();
+            
+            // Data flow dots (representing data connections)
+            const dots = [
+                {x: 40, y: 30, alpha: 0.8, size: 2},
+                {x: 50, y: 25, alpha: 0.6, size: 1.5},
+                {x: 100, y: 45, alpha: 0.8, size: 2},
+                {x: 110, y: 35, alpha: 0.6, size: 1.5},
+                {x: 70, y: 115, alpha: 0.8, size: 2},
+                {x: 80, y: 120, alpha: 0.6, size: 1.5}
+            ];
+            
+            dots.forEach(dot => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${dot.alpha})`;
+                ctx.beginPath();
+                ctx.arc(dot.x, dot.y, dot.size, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            // Subtle border
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(72, 72, 71, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            // Add subtle inner glow effect
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(72, 72, 55, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            document.getElementById('result').innerHTML = 
+                '<p style="color: #059669;">✅ Icon generated successfully! Size: 144px × 144px</p>';
+        }
+        
+        function downloadIcon() {
+            const link = document.createElement('a');
+            link.download = 'trello-power-up-icon.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+            document.getElementById('result').innerHTML += 
+                '<p style="color: #059669;">📥 Icon downloaded as "trello-power-up-icon.png"</p>' +
+                '<p><strong>Next steps:</strong></p>' +
+                '<ol>' +
+                '<li>Upload this file to your web hosting (e.g., in public/images/ folder)</li>' +
+                '<li>Use the HTTPS URL in your Trello Power-Up configuration</li>' +
+                '<li>Example URL: <code>https://workflow-bolt.netlify.app/images/trello-power-up-icon.png</code></li>' +
+                '</ol>';
+        }
+        
+        // Auto-generate on page load
+        window.addEventListener('load', generateIcon);
+    </script>
+</body>
+</html>

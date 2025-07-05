@@ -1,10 +1,28 @@
 import React from 'react';
-import { usePatientContext } from '../hooks/usePatientContext';
 import { Users, Clock, AlertTriangle } from 'lucide-react';
+import { PatientStatus, PatientStatusCategories } from '../types';
 
-const MetricsPanel: React.FC = () => {
-  const { getMetrics } = usePatientContext();
-  const metrics = getMetrics();
+interface MetricsPanelProps {
+  metrics?: {
+    totalPatients: number;
+    patientsByStatus: Record<string, number>;
+    averageWaitTime: number;
+    patientsSeenToday: number;
+  };
+}
+
+const MetricsPanel: React.FC<MetricsPanelProps> = ({ 
+  metrics = {
+    totalPatients: 0,
+    patientsByStatus: {},
+    averageWaitTime: 0,
+    patientsSeenToday: 0
+  }
+}) => {
+  // Type-safe calculation of waiting patients using enum categories
+  const waitingPatients = PatientStatusCategories.WAITING.reduce((sum, status) => {
+    return sum + (metrics.patientsByStatus[status] || 0);
+  }, 0);
   
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -25,7 +43,7 @@ const MetricsPanel: React.FC = () => {
         <div>
           <p className="text-gray-400 text-sm">Waiting Patients</p>
           <p className="text-2xl font-bold text-white">
-            {metrics.patientsByStatus.arrived + metrics.patientsByStatus['appt-prep'] + metrics.patientsByStatus['ready-for-md']}
+            {(metrics.patientsByStatus.arrived || 0) + (metrics.patientsByStatus['appt-prep'] || 0) + (metrics.patientsByStatus['ready-for-md'] || 0)}
           </p>
         </div>
       </div>
@@ -37,7 +55,7 @@ const MetricsPanel: React.FC = () => {
         <div>
           <p className="text-gray-400 text-sm">Avg. Wait Time</p>
           <p className="text-2xl font-bold text-white">
-            {Math.round(metrics.averageWaitTime)} min
+            {Math.round(metrics.averageWaitTime || 0)} min
           </p>
         </div>
       </div>

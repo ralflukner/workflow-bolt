@@ -183,3 +183,6 @@ key.json
 # Ignore sensitive-backup.git backup repository and all its contents
 sensitive-backup.git/
 /local.env
+
+# Local Netlify folder
+.netlify

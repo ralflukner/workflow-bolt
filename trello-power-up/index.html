@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow-Bolt Trello Power-Up</title>
+    <style>
+        body { 
+            font-family: system-ui, sans-serif; 
+            margin: 2em; 
+            background: #f8fafc; 
+            color: #222; 
+        }
+        .branding { 
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 1em; 
+        }
+        .branding img { 
+            height: 40px; 
+            margin-right: 1em; 
+        }
+        h1 { color: #2a7ae2; }
+        .desc { color: #444; margin-bottom: 2em; }
+        .warning {
+            background: #fef3cd;
+            border: 1px solid #fdbf47;
+            color: #8a6914;
+            padding: 1em;
+            border-radius: 6px;
+            margin: 1em 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="branding">
+        <h1>Workflow-Bolt Trello Power-Up</h1>
+    </div>
+    
+    <div class="warning">
+        <strong>⚠️ Private Healthcare Tool</strong><br>
+        This is a connector for healthcare workflow management. 
+        If you're not authorized to use this system, please close this page.
+    </div>
+    
+    <div class="desc">
+        <p>
+            This Trello Power-Up connects boards to <b>Workflow-Bolt</b> for healthcare workflow management.<br>
+            Authorized clinics can sync patient schedules and automate workflows.
+        </p>
+        <p style="font-size:0.95em;color:#888;">
+            HIPAA-compliant integration for medical practices only.
+        </p>
+    </div>
+    
+    <!-- Trello Power-Up JavaScript -->
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <script>
+        // This is just the iframe connector - actual Power-Up logic would go here
+        window.TrelloPowerUp.iframe();
+    </script>
+</body>
+</html>

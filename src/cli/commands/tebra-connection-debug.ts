@@ -1,3 +1,4 @@
+import { ApiResponse } from "../../types/api";
 import { Command, Flags } from '@oclif/core';
 import tebraApi from '../../services/tebraFirebaseApi';
 import chalk from 'chalk';
