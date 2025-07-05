@@ -4,6 +4,12 @@ set -euo pipefail
 NAME="$1"
 GCLOUD_CMD="$2"
 
+# SECURITY: Block unauthenticated deployments
+if [[ "$GCLOUD_CMD" == *--allow-unauthenticated* ]]; then
+  echo "❌ ERROR: --allow-unauthenticated flag is forbidden. Use IAM-based authentication only." >&2
+  exit 1
+fi
+
 echo "🚀 Deploying $NAME..."
 
 # Deploy with retry logic
