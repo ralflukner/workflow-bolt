@@ -43,7 +43,7 @@ const MetricsPanel: React.FC<MetricsPanelProps> = ({
         <div>
           <p className="text-gray-400 text-sm">Waiting Patients</p>
           <p className="text-2xl font-bold text-white">
-            {(metrics.patientsByStatus.arrived || 0) + (metrics.patientsByStatus['appt-prep'] || 0) + (metrics.patientsByStatus['ready-for-md'] || 0)}
+            {waitingPatients}
           </p>
         </div>
       </div>
