@@ -80,8 +80,8 @@ async function updateTaskStatus(taskId, status) {
     
     // Add new status label
     const newLabels = [
-      ...filteredLabels,
-      { title: STATUS_LABELS[status] }
+      ...filteredLabels.map(l => l.title || l),
+      STATUS_LABELS[status]
     ];
     
     // Mark as done if status is 'done'
