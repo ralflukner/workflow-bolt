@@ -16,6 +16,7 @@ const mockSecureLog = secureLog as jest.MockedFunction<typeof secureLog>;
 
 describe('Basic HIPAA Compliance Tests', () => {
   beforeEach(() => {
+    // Clear any existing data and reset the storage
     secureStorage.clearAllData();
     mockSecureLog.mockClear();
   });
@@ -32,28 +33,31 @@ describe('Basic HIPAA Compliance Tests', () => {
         phone: '(555) 123-4567'
       };
 
-      // Store PHI
-      secureStorage.store('test-patient', testPHI, 'test-user');
+      // Store PHI with user ID
+      const storeSuccess = secureStorage.store('test-patient', testPHI, 'test-user');
+      expect(storeSuccess).toBe(true);
       
-      // Retrieve PHI
-      secureStorage.retrieve('test-patient', 'test-user');
+      // Retrieve PHI with user ID
+      const retrieved = secureStorage.retrieve('test-patient', 'test-user');
+      expect(retrieved).toEqual(testPHI);
       
-      // Delete PHI
-      secureStorage.delete('test-patient', 'test-user');
+      // Delete PHI with user ID
+      const deleteSuccess = secureStorage.delete('test-patient', 'test-user');
+      expect(deleteSuccess).toBe(true);
 
       // Verify audit trail exists
       const auditLog = secureStorage.getAuditLog();
       expect(auditLog.length).toBeGreaterThanOrEqual(3);
       
-      const storeEntry = auditLog.find(entry => entry.action === 'STORE');
-      const retrieveEntry = auditLog.find(entry => entry.action === 'RETRIEVE');
-      const deleteEntry = auditLog.find(entry => entry.action === 'DELETE');
+      const storeEntry = auditLog.find(entry => entry.action === 'STORE' && entry.key === 'test-patient');
+      const retrieveEntry = auditLog.find(entry => entry.action === 'RETRIEVE' && entry.key === 'test-patient');
+      const deleteEntry = auditLog.find(entry => entry.action === 'DELETE' && entry.key === 'test-patient');
       
       expect(storeEntry).toBeTruthy();
       expect(retrieveEntry).toBeTruthy();
       expect(deleteEntry).toBeTruthy();
       
-      // Verify user tracking
+      // Verify user tracking - check that the store entry has the correct userId
       expect(storeEntry?.userId).toBe('test-user');
     });
 
@@ -313,6 +317,9 @@ Lukner Medical Clinic
 RALF LUKNER 9:00 AM Scheduled HIPAA, COMPLIANT 01/15/1985 (555) 123-4567 INSURANCE 2025 Office Visit $0.00`;
 
     test('should handle PHI in schedule parsing with HIPAA compliance', () => {
+      // Clear storage before test
+      secureStorage.clearAllData();
+      
       const patients = parseScheduleAdvanced(sampleHIPAAData, new Date('2025-07-01'), {
         securityAudit: true,
         saveToSecureStorage: true,
@@ -327,7 +334,7 @@ RALF LUKNER 9:00 AM Scheduled HIPAA, COMPLIANT 01/15/1985 (555) 123-4567 INSURAN
       expect(storedData).toBeTruthy();
       expect(storedData.patients).toHaveLength(1);
       
-      // Verify audit trail
+      // Verify audit trail - look for entries related to schedule processing
       const auditLog = secureStorage.getAuditLog();
       const scheduleEntries = auditLog.filter(entry => 
         entry.key.includes('hipaa-schedule') || entry.key.includes('schedule')
@@ -339,6 +346,9 @@ RALF LUKNER 9:00 AM Scheduled HIPAA, COMPLIANT 01/15/1985 (555) 123-4567 INSURAN
       const maliciousSchedule = `Appointments for Tuesday, July 01, 2025
 Lukner Medical Clinic
 RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 01/15/1985 (555) 123-4567`;
+
+      // Clear any existing logs
+      mockSecureLog.mockClear();
 
       const patients = parseScheduleAdvanced(maliciousSchedule, new Date('2025-07-01'), {
         securityAudit: true

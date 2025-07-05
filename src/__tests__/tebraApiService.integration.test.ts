@@ -12,6 +12,24 @@ import { tebraApiService } from '../services/tebraApiService';
 import fs from 'fs';
 import path from 'path';
 
+// Mock Firebase for testing
+jest.mock('firebase/app', () => ({
+  initializeApp: jest.fn(() => ({})),
+  getApp: jest.fn(() => ({})),
+  getApps: jest.fn(() => [{}])
+}));
+
+jest.mock('firebase/functions', () => ({
+  getFunctions: jest.fn(() => ({})),
+  httpsCallable: jest.fn(() => jest.fn().mockResolvedValue({ data: [] }))
+}));
+
+jest.mock('firebase/auth', () => ({
+  getAuth: jest.fn(() => ({})),
+  onAuthStateChanged: jest.fn(() => jest.fn()),
+  currentUser: null
+}));
+
 const logFilePath = path.join(__dirname, '../../logs/tebraApiService.integration.log');
 fs.mkdirSync(path.dirname(logFilePath), { recursive: true });
 function logToFile(...args: any[]) {

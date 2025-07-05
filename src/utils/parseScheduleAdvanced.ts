@@ -604,27 +604,39 @@ export async function importScheduleFromJSON(
     const stats = secureStorage.getStats();
     secureLog(`📥 Processing ${stats.itemCount} imported items`);
     
-    // Try to find patient data in various possible keys
-    const possibleKeys = ['patients', 'schedule_data', 'export_data'];
+    // Get all keys from storage to find the exported data
+    const allKeys = Array.from((secureStorage as any).storage.keys()) as string[];
+    secureLog(`📥 Available keys: ${allKeys.join(', ')}`);
+    
     let foundData = false;
     
-    for (const key of possibleKeys) {
+    // Look through all imported data for patient arrays
+    for (const key of allKeys) {
       const data = secureStorage.retrieve(key);
       if (data && data.patients && Array.isArray(data.patients)) {
         patients.push(...data.patients);
         foundData = true;
-        secureLog(`✅ Found patient data in key: ${key}`);
+        secureLog(`✅ Found patient data in key: ${key} (${data.patients.length} patients)`);
+        break;
+      }
+      
+      // Also check if the data itself is an array of patients
+      if (data && Array.isArray(data) && data.length > 0 && data[0].name) {
+        patients.push(...data);
+        foundData = true;
+        secureLog(`✅ Found patient array in key: ${key} (${data.length} patients)`);
         break;
       }
     }
     
     if (!foundData) {
-      // Look through all imported data for patient arrays
-      for (let i = 0; i < 100; i++) { // Reasonable limit
+      // Try to find data in the first few imported items with generic names
+      for (let i = 0; i < 10; i++) {
         const data = secureStorage.retrieve(`item_${i}`);
         if (data && data.patients && Array.isArray(data.patients)) {
           patients.push(...data.patients);
           foundData = true;
+          secureLog(`✅ Found patient data in item_${i} (${data.patients.length} patients)`);
           break;
         }
       }
