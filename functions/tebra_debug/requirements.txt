@@ -1,2 +1,3 @@
 functions-framework==3.*
+redis==5.*
 # Add your production dependencies here

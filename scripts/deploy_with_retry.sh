@@ -11,7 +11,7 @@ RETRY_COUNT=0
 MAX_RETRIES=3
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if cd "functions/$NAME" && $GCLOUD_CMD --allow-unauthenticated; then
+    if cd "functions/$NAME" && $GCLOUD_CMD; then
         echo "✅ Deployed $NAME successfully!"
         exit 0
     else

@@ -15,3 +15,38 @@ This document records the findings of the code review based on the plan in `CODE
 *   **`health_dashboard.sh`:** As previously noted, this script is missing.
 *   **Over-provisioned Resources:** The `cloudrun.yaml` file specifies `512Mi` of memory for a Cloud Run service. The `tebra-proxy` deployment scripts also specify `512Mi`. Without access to actual usage metrics, it's impossible to know if this is over-provisioned.
 *   **Log-based Metrics:** There's no explicit configuration for excluding log-based metrics from the default Logging bucket.
+
+### 8. Static Analysis & Linting
+
+The following TypeScript errors were identified during the review:
+
+*   **`src/components/Dashboard.tsx` (1 problem)**
+    *   `TS2769`: No overload matches this call. Overload 1 of 2, '(props: { patientContext: PatientContextType; timeContext: TimeContextType; }): withContexts<{ patientContext: PatientContextType; timeContext: TimeContextType; }>.V
+
+*   **`src/cli/commands/sync-today-debug.ts` (2 problems)**
+    *   `TS2339`: Property 'details' does not exist on type '{ success: boolean; error?: string | undefined; data?: any; }'.
+    *   `TS2339`: Property 'details' does not exist on type '{ success: boolean; error?: string | undefined; data?: any; }'.
+
+*   **`src/cli/commands/tebra-connection-debug.ts` (10 problems)**
+    *   `TS2322`: Type 'unknown' is not assignable to type 'boolean'.
+    *   `TS2339`: Property 'error' does not exist on type 'object & Record<"success", unknown>'.
+    *   `TS2339`: Property 'data' does not exist on type 'object & Record<"success", unknown>'.
+    *   `TS2322`: Type 'unknown' is not assignable to type 'boolean'.
+    *   `TS2339`: Property 'error' does not exist on type 'object & Record<"success", unknown>'.
+    *   `TS2339`: Property 'data' does not exist on type 'object & Record<"success", unknown>'.
+    *   `TS2339`: Property 'data' does not exist on type 'object & Record<"success", unknown>'.
+    *   `TS2339`: Property 'data' does not exist on type 'object & Record<"success", unknown>'.
+    *   `TS2339`: Property 'data' does not exist on type 'object & Record<"success", unknown>'.
+    *   `TS2339`: Property 'error' does not exist on type 'object & Record<"success", unknown>'.
+
+*   **`src/services/tebraDebugApi.ts` (8 problems)**
+    *   `TS2339`: Property 'status' does not exist on type 'f'.
+    *   `TS2339`: Property 'status' does not exist on type '0'.
+    *   `TS2339`: Property 'httpStatus' does not exist on type 'U'.
+    *   `TS2339`: Property 'cloudRunUrl' does not exist on type 'f'.
+    *   `TS2339`: Property 'status' does not exist on type 'I'.
+    *   `TS2339`: Property 'error' does not exist on type '0'.
+    *   `TS2339`: Property 'status' does not exist on type 'f'.
+    *   `TS2339`: Property 'error' does not exist on type '0'.
+
+**Summary**: 36 errors and 2 warnings were reported.

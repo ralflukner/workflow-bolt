@@ -1,168 +1,277 @@
-# Guidance-Authoring Playbook
+# Guidance-Authoring Playbook v3.0
 
-_A lightweight checklist for writing bullet-proof technical instructions in the workflow-bolt repo._
-
----
-## Quick Checklist (TL;DR)
-✅ Test commands → Context → Expected output → Fallback → Troubleshooting
+_The definitive standard for writing production-grade technical instructions, validation protocols, and operational procedures in workflow-bolt._
 
 ---
-## Core Principles
+## 🚀 Quick Start Templates
 
-### 1. Test First, Write Second
+**For Redis/VPC Verification:**
 ```bash
-# ❌ Don't guess
-# gcloud functions list --region us-central1  # wrong flag for CF list
-
-# ✅ Tested
-gcloud functions list --filter="location:us-central1" --format="table(name,location,state)"
+make test-redis FUNC=<function_name>                # Positive test
+make test-redis FUNC=<function_name> REDIS_IP=192.168.99.99  # Negative test
+make clean-test-code FUNC=<function_name>           # Cleanup
 ```
-
-### 2. Context is King
-```
-Context: Local machine with gcloud auth (project: luknerlumina-firebase)
-Context: Inside Cloud Function container (has VPC access)
-Context: Cloud Shell (no VPC access to private IPs)
-```
-
-### 3. Show Success Criteria
+**For Function Deployment:**
 ```bash
-gcloud functions describe tebra_debug --gen2 --region=us-central1 \
-  --format="value(serviceConfig.vpcConnector)"
-# Expect: projects/PROJECT/locations/us-central1/connectors/redis-connector
-# If blank → redeploy with --vpc-connector
+make deploy NAME=<function> VPC_CONNECTOR=redis-connector
+make validate NAME=<function>
+make rollback NAME=<function>  # If issues
 ```
-
-### 4. Progressive Verification
-1. **READ** – list resources (always safe)  
-2. **INSPECT** – describe config (safe)  
-3. **TEST** – runtime curl or unit test (safe)  
-4. **MODIFY** – deploy / update (requires confirmation)
 
 ---
-## Command-Snippet Template
+## 📋 Universal Pre-Flight Checklist
+Before ANY production change:
+- Current state documented (`git status`, `gcloud functions list`)
+- Rollback plan ready
+- Change window approved (if applicable)
+- Monitoring dashboard open
+- Test in dev/staging first
+
+---
+## 🎯 Core Principles (Enhanced)
+
+### 1. Test Pyramid
+```
+Unit Tests → Integration Tests → E2E Tests → Negative Tests → Load Tests
+     ↓              ↓                ↓              ↓            ↓
+  Fast/Many    Medium/Some      Slow/Few      Critical      Pre-prod
+```
+### 2. Context Hierarchy
+```
+WHERE: Project root → Cloud Shell → Container → Production
+WHEN: Dev hours → Maintenance window → Emergency
+WHO: Developer → DevOps → SRE
+```
+### 3. Success/Failure Matrix
+| Test Type | Success Criteria | Failure Criteria | Action on Failure |
+|-----------|-----------------|------------------|------------------|
+| Positive  | Expected output + 200 OK | Any deviation | Debug → Retry → Escalate |
+| Negative  | Expected error + proper log | Success when should fail | CRITICAL: Stop all work |
+| Load      | <100ms p99, 0 errors | Timeouts, errors | Scale → Optimize → Defer |
+
+### 4. The 3R Rule
+- **Repeatable:** Same result every time
+- **Reversible:** Can undo/rollback
+- **Recorded:** Logged and auditable
+
+---
+## 📝 Enhanced Command Template
 ```markdown
-### <Task Name> — <one-line description>
+### [SEVERITY: LOW|MEDIUM|HIGH|CRITICAL] Task Name
 
-**Context:** <where to run>
+**Context:** 
+- WHERE: <exact location>
+- WHEN: <time constraints>
+- DURATION: <estimated time>
+- RISK: <what could go wrong>
 
+**Pre-requisites:**
 ```bash
-# Purpose: <why>
-<TESTED COMMAND>
-# Expect:
-# <exact output>
-
-# Fallback if above fails
-<ALTERNATIVE COMMAND>
+# Verify state before proceeding
+command-to-check-prerequisites
+# Expected: <output>
 ```
+**Main Execution:**
+```bash
+# Step 1: <purpose> [SAFE|MODIFIES|DANGEROUS]
+tested-command-here
+# Expected output:
+# <exact expected output>
+# Time: ~10s
 
-Troubleshooting:
-Error: <exact error> → Fix: <exact command>
-Blank output → Check: <what to verify>
+# Step 2: Validate change
+validation-command
+# Expected: <success indicator>
+```
+**Rollback Plan:**
+```bash
+# If anything goes wrong:
+rollback-command
+# Verify rollback:
+verification-command
+```
+**Post-Validation:**
+- Logs clean
+- Metrics normal
+- No alerts firing
+- Document completed
 ```
 
 ---
-## 🚨 Common Pitfalls & Fixes
-| Issue | Wrong | Right |
-|-------|-------|-------|
-| Region flag on `gcloud functions list` | `--region us-central1` | `--filter="location:us-central1"` |
-| Gen-2 describe | `gcloud functions describe FUNC` | `gcloud functions describe FUNC --gen2 --region=us-central1` |
-| VPC test from wrong place | Curl from Cloud Shell | Curl from function endpoint `/redis-health` |
-| Auth header missing | `curl $URL` | `curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" $URL` |
+## 🔒 Security Considerations
+
+### Secrets Handling
+```bash
+# NEVER hardcode secrets
+BAD:  redis.Redis(password="actual-password")
+GOOD: redis.Redis(password=os.environ.get('REDIS_PASSWORD'))
+
+# Use Secret Manager
+gcloud secrets versions access latest --secret="redis-password"
+```
+**Access Control**
+- Always use least privilege
+- Service accounts > personal accounts
+- Time-bound access when possible
 
 ---
-## ✅ Success Criteria Block
+## 🧪 Comprehensive Testing Guide
+
+### 1. Positive Test (Happy Path)
+```bash
+curl -X POST $URL -d '{"valid":"data"}'
+# Expect: 200 OK, {"status":"success"}
+```
+### 2. Negative Tests (REQUIRED)
+```bash
+# Test A: Invalid input
+curl -X POST $URL -d '{"invalid"}'
+# Expect: 400 Bad Request
+
+# Test B: Wrong config
+REDIS_IP=999.999.999.999 make deploy NAME=func
+# Expect: Connection error in logs
+
+# Test C: Missing permissions
+gcloud auth revoke && curl $URL
+# Expect: 403 Forbidden
+```
+### 3. Edge Cases
+```bash
+# Concurrent requests
+for i in {1..10}; do curl $URL & done; wait
+# Expect: All succeed, no race conditions
+
+# Large payload
+curl -X POST $URL -d @10mb-file.json
+# Expect: 413 or successful processing
+```
+
+---
+## 📊 Monitoring & Alerting Setup
+
+**Required Metrics**
+```yaml
+alerts:
+  - name: "Function Error Rate"
+    condition: error_rate > 1%
+    duration: 5m
+    severity: WARNING
+    
+  - name: "Redis Connection Failed"
+    condition: log_match("Redis.*failed")
+    duration: 1m
+    severity: CRITICAL
+    
+  - name: "High Latency"
+    condition: p95_latency > 1s
+    duration: 10m
+    severity: WARNING
+```
+**Dashboard Elements**
+- Request rate
+- Error rate
+- Latency (p50, p95, p99)
+- Redis connection status
+- VPC connector health
+
+---
+## 🚨 Troubleshooting Matrix
+| Symptom         | Likely Cause         | Quick Check                | Fix                        |
+|-----------------|---------------------|----------------------------|----------------------------|
+| 404 Not Found   | Function not deployed| gcloud functions list      | make deploy                |
+| 403 Forbidden   | No auth/wrong auth   | gcloud auth list           | Add auth header            |
+| 500 Internal    | Code error           | Check logs                 | Fix code, redeploy         |
+| Timeout         | Cold start/network   | Check metrics              | Increase timeout/memory    |
+| No logs         | Wrong filter         | Remove filters             | Check all log streams      |
+
+---
+## ✅ Production Readiness Checklist v3
+
+**Code Quality**
+- [ ] All tests passing (unit, integration, e2e)
+- [ ] No hardcoded secrets/IPs
+- [ ] Error handling comprehensive
+- [ ] Logging at appropriate levels
+- [ ] No debug/test code in production
+
+**Infrastructure**
+- [ ] VPC connector attached and tested
+- [ ] Proper IAM roles assigned
+- [ ] Secrets in Secret Manager
+- [ ] Backup/DR plan documented
+- [ ] Resource limits configured
+
+**Operations**
+- [ ] Monitoring dashboards created
+- [ ] Alert policies configured and tested
+- [ ] Runbooks documented
+- [ ] CI/CD pipeline working
+- [ ] Rollback procedure tested
+
+**Validation**
+- [ ] Positive tests: 100% pass
+- [ ] Negative tests: Proper error handling confirmed
+- [ ] Load test: Meets SLA requirements
+- [ ] Security scan: No critical issues
+- [ ] Documentation: Complete and accurate
+
+**Sign-off**
+- [ ] Code reviewed by: ____________
+- [ ] Tested by: ____________
+- [ ] Approved by: ____________
+- [ ] Deployed on: ____________
+
+---
+## 📚 Documentation Requirements
+Every Change Must Include:
+- **What:** Clear description of change
+- **Why:** Business/technical justification
+- **How:** Step-by-step procedure followed
+- **When:** Timestamp and duration
+- **Who:** Person responsible
+- **Results:** Actual vs expected outcomes
+- **Issues:** Any problems and resolutions
+- **Next Steps:** Follow-up actions required
+
+**Example Log Entry:**
 ```markdown
-**Success:** All functions show VPC connector and `/redis-health` returns `{"ping":"PONG"}`
-**Next:** Update docs/vpc-verification.log and commit ✔
+## 2025-01-05 Redis VPC Verification
+**What**: Verified Redis connectivity via VPC for patient_sync, tebra_debug
+**Why**: Required for secure database access per security audit
+**How**: See commands in vpc-verification.log
+**Duration**: 45 minutes
+**By**: DevOps Team
+**Results**: 
+- ✅ 8/8 positive tests passed
+- ✅ 2/2 negative tests properly failed
+- ✅ Both functions operational
+**Issues**: Initial module-level logging not visible; switched to print()
+**Next**: Remove test code, implement production Redis client
 ```
 
 ---
-## 📝 Complete Mini-Guide Example
-```markdown
-### Verify Redis Connectivity
-
-**Context:** Local shell with gcloud CLI
-
-```bash
-# 1. List functions in target region
-FUNCTIONS=$(gcloud functions list --filter="location:us-central1" --format="value(name)")
-
-# 2. Loop through each function and verify connector
-for FUNC in $FUNCTIONS; do
-  echo -n "$FUNC → "
-  gcloud functions describe "$FUNC" --gen2 --region=us-central1 \
-    --format="value(serviceConfig.vpcConnector)"
-done
-# Expect each line to print redis-connector path
-
-# 3. Runtime ping via /redis-health (replace URL)
-curl -s https://tebra-debug-XXXXX-uc.a.run.app/redis-health | jq
-# Expect {"status":"success","ping":"PONG"}
+## 🎯 Quick Decision Tree
 ```
-
-Troubleshooting:
-• Empty connector → `make deploy NAME=$FUNC VPC_CONNECTOR=redis-connector`  
-• 404 on `/redis-health` → add temporary route as shown in playbook.
-
-**Success:** VPC verified.
+Is this change critical?
+├─ YES → Do you have rollback plan?
+│   ├─ YES → Proceed with caution
+│   └─ NO → STOP. Create rollback plan first
+└─ NO → Is it tested in dev?
+    ├─ YES → Schedule for maintenance window  
+    └─ NO → Test in dev first
 ```
 
 ---
-Use this v2 playbook when drafting any runbook, guide, or chat response so that instructions are immediately executable and self-healing.
+## 📌 Remember
+"In production, paranoia is professionalism."
+- Test everything twice
+- Document everything once
+- Assume nothing
+- Verify everything
+- Always have a rollback plan
+- When in doubt, don't deploy
 
----
-## 1. Dry-Run Everything
-Paste each command into a sandbox first, copy the _exact_ line that works—no ellipses, no typos.
-
-## 2. Name the Execution Context
-Specify where the command should run.
-```
-Context: local Mac shell with gcloud auth (project = luknerlumina-firebase)
-```
-Or
-```
-Context: Cloud Shell (in-VPC)
-```
-
-## 3. Show Expected Output Snippet
-```bash
-# Verify functions in us-central1
-gcloud functions list --filter="location:us-central1" \
-  --format="table(name,location,state)"
-# Expect
-# NAME           LOCATION      STATE
-# patient_sync   us-central1   ACTIVE
-```
-
-## 4. Provide a Fallback / Alt-Syntax
-If the primary command fails, include a second proven line:
-```bash
-gcloud functions list --format="table(name,location,state)" | awk '$2=="us-central1"'
-```
-
-## 5. Explain the *Why*
-One sentence before each block, e.g.:  _"Verify the VPC connector is attached to every Gen-2 function."_
-
-## 6. Anticipate Top 3 Failure Modes
-| Error | Likely Cause | Quick Fix |
-|-------|--------------|-----------|
-| `unrecognized arguments: --region` | Wrong flag (`location` vs `region`) | Use filter or `awk` fallback |
-| Empty `vpcConnector` | Flag omitted at deploy | `make deploy NAME=x VPC_CONNECTOR=redis-connector` |
-| 401 from endpoint | Function is private | Add `Authorization: Bearer $(gcloud auth print-identity-token)` |
-
-## 7. Progressive Verification
-Start with read-only `list`, then `describe`, then runtime curl. Gate each step: _"If previous passes, continue..."_
-
-## 8. Keep Commands Copy-Pastable
-Variables in CAPS; avoid line wraps.
-
-## 9. Record Success Criteria
-End each section with a ✔ statement, e.g.:
-> ✔ Mark task "VPC verification" complete when every function prints connector path and `/redis-health` returns `PONG`.
-
-## 10. Update Docs & Project Plan
-After executing, add the CLI transcript or summary to the docs (`cloud-functions-playbook-vX.md`) and tick the README project-plan box in the same commit.
-
----
-**Use this playbook for all future guidance (VPC checks, CI setup, HIPAA audits) to keep instructions accurate and unblock the team fast.** 
+**Version:** 3.0
+**Last Updated:** 2025-01-05
+**Status:** Active Production Standard 
