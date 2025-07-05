@@ -59,10 +59,11 @@ const WaitTimeTestComponent: React.FC<{ patient: Patient }> = ({ patient }) => {
 };
 
 describe('PatientContext Wait Time Calculations', () => {
+  // ⚠️ SYNTHETIC TEST DATA ONLY - NO REAL PHI
   const mockPatient: Patient = {
     id: '123',
-    name: 'John Doe',
-    dob: '1990-01-01',
+    name: 'TESTPATIENT ALPHA',
+    dob: '1980-01-01',
     appointmentTime: '2025-06-05T09:00:00',
     status: 'arrived',
     provider: 'Dr. Test',

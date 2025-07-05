@@ -57,9 +57,10 @@ describe('TebraSoapClient', () => {
     };
     mockedSoap.createClientAsync.mockResolvedValue(mockClient);
 
-    const result = await client.searchPatients('Smith');
+    // ⚠️ SYNTHETIC TEST DATA ONLY - NO REAL PHI
+    const result = await client.searchPatients('TESTLASTNAME');
 
-    expect(mockClient.SearchPatientsAsync).toHaveBeenCalledWith({ lastName: 'Smith' });
+    expect(mockClient.SearchPatientsAsync).toHaveBeenCalledWith({ lastName: 'TESTLASTNAME' });
     expect(result).toEqual(patients.patients);
   });
 });   

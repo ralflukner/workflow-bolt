@@ -286,6 +286,31 @@ export class TestOrchestrator {
   }
 
   /**
+   * Validate test configuration
+   */
+  validateTestConfig(config: TestConfig): void {
+    if (!config) {
+      throw new Error('Invalid test configuration: config is required');
+    }
+
+    if (!config.mode || !['megaparse', 'secure', 'legacy'].includes(config.mode)) {
+      throw new Error('Invalid import mode: must be megaparse, secure, or legacy');
+    }
+
+    if (config.timeout !== undefined && config.timeout <= 0) {
+      throw new Error('Timeout must be positive');
+    }
+
+    if (config.expectedPatients !== undefined && config.expectedPatients < 0) {
+      throw new Error('Expected patients must be non-negative');
+    }
+
+    if (config.outputDir && typeof config.outputDir !== 'string') {
+      throw new Error('Output directory must be a string');
+    }
+  }
+
+  /**
    * Validate test result against expectations
    */
   private validateTestResult(result: TestResult, config: TestConfig): boolean {
@@ -323,6 +348,12 @@ export class TestOrchestrator {
   async generateReport(results: TestResult[], outputPath: string): Promise<string> {
     this.logger.info(`Generating test report: ${outputPath}`);
 
+    // Ensure results is an array (defensive programming)
+    if (!Array.isArray(results)) {
+      console.error('generateReport: results is not an array:', typeof results);
+      results = [];
+    }
+
     // Ensure output directory exists
     mkdirSync(dirname(outputPath), { recursive: true });
 
@@ -351,6 +382,12 @@ export class TestOrchestrator {
    * Generate summary statistics for test results
    */
   private generateReportSummary(results: TestResult[]) {
+    // Ensure results is an array
+    if (!Array.isArray(results)) {
+      console.error('generateReportSummary: results is not an array:', typeof results);
+      results = [];
+    }
+    
     const totalTests = results.length;
     const passedTests = results.filter(r => r.success).length;
     const failedTests = totalTests - passedTests;
