@@ -25,6 +25,8 @@ const verifyCredentials = onRequest({
     
     const statusCode = verificationResult.isValid ? 200 : 500;
     
+    setSecurityHeaders(response);
+    
     response.status(statusCode).json({
       valid: verificationResult.isValid,
       summary,
@@ -109,6 +111,8 @@ const healthCheck = onRequest({
     const timestamp = new Date().toISOString();
     const uptime = process.uptime();
     
+    setSecurityHeaders(response);
+    
     response.status(200).json({
       status: 'healthy',
       timestamp,
@@ -163,6 +167,16 @@ const scheduledCredentialCheck = onSchedule({
     console.error('❌ Scheduled credential verification failed:', error);
   }
 });
+
+// Add security headers helper
+function setSecurityHeaders(response) {
+  response.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Strict-Transport-Security': 'max-age=31536000'
+  });
+}
 
 module.exports = {
   verifyCredentials,

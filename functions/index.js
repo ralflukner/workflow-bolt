@@ -1226,3 +1226,29 @@ exports.credentialHealth = functions.https.onRequest(async (req, res) => {
     res.status(500).json({ error: 'internal', message: err.message });
   }
 });
+
+// --- Add requireAuth middleware ---
+const requireAuth = (req, res, next) => {
+  const token = req.headers.authorization?.split('Bearer ')[1];
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  admin.auth().verifyIdToken(token)
+    .then(decoded => {
+      req.user = decoded;
+      next();
+    })
+    .catch(() => res.status(401).json({ error: 'Invalid token' }));
+};
+
+// --- Add security headers middleware ---
+app.use((req, res, next) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Strict-Transport-Security': 'max-age=31536000'
+  });
+  next();
+});
+
+// Apply requireAuth to all /api routes
+app.use('/api', requireAuth);

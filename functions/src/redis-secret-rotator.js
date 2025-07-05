@@ -249,6 +249,8 @@ exports.redisSecretRotatorHttp = async (req, res) => {
       result = await rotateAllDueUsers(projectId);
     }
     
+    setSecurityHeaders(res);
+    
     res.status(200).json({
       success: true,
       result
@@ -262,3 +264,13 @@ exports.redisSecretRotatorHttp = async (req, res) => {
     });
   }
 };
+
+// Add security headers helper
+function setSecurityHeaders(res) {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Strict-Transport-Security': 'max-age=31536000'
+  });
+}
