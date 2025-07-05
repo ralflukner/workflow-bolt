@@ -154,3 +154,10 @@ to browser localStorage when Firebase isn't available.
 ---
 
 **Result**: Patient data persistence now works reliably in both developmen
+
+## 2025-07-05 – Redis Communication Test & Project Management Database Decision
+
+- Verified Redis-based agent-to-developer communication for cursor-gpt-4.1-max using a custom test script.
+- Documented successful test and recommended periodic checks for ongoing reliability.
+- Evaluated project management database options; selected self-hosted Plane.so for real-time, API-driven collaboration.
+- Documented rationale, implementation steps, and migration plan for Plane.so adoption.

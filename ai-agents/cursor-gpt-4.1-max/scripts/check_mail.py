@@ -37,14 +37,24 @@ def check_mail():
             body = None
             if msg.is_multipart():
                 for part in msg.walk():
-                    if part.get_content_type() == 'text/plain':
-                        body = part.get_content()
+                    if part.get_content_type() == 'text/plain' and not part.get_filename():
+                        charset = part.get_content_charset() or 'utf-8'
+                        payload = part.get_payload(decode=True)
+                        if isinstance(payload, bytes):
+                            body = payload.decode(charset, errors='replace')
+                        elif isinstance(payload, str):
+                            body = payload
                         break
             else:
-                body = msg.get_content()
+                payload = msg.get_payload(decode=True)
+                charset = msg.get_content_charset() or 'utf-8'
+                if isinstance(payload, bytes):
+                    body = payload.decode(charset, errors='replace')
+                elif isinstance(payload, str):
+                    body = payload
             print(f"\nBody:\n{body}")
             # Show if there are attachments
-            attachments = [part.get_filename() for part in msg.walk() if part.get_filename()]
+            attachments = [fn for fn in (part.get_filename() for part in msg.walk()) if fn]
             if attachments:
                 print(f"\nAttachments: {', '.join(attachments)}")
         print(f"{'='*60}")
