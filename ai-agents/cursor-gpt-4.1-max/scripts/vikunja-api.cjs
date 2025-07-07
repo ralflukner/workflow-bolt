@@ -91,9 +91,9 @@ class VikunjaAPI {
   // Update a task
   async updateTask(taskId, updates) {
     try {
-      const response = await axios.post(
+      const response = await axios.put(
         `${this.baseUrl}/tasks/${taskId}`,
-        updates,
+        { id: taskId, ...updates },
         { headers: this.headers }
       );
       return response.data;
@@ -109,12 +109,17 @@ class VikunjaAPI {
       // Get the current task first
       const task = await this.getTask(taskId);
       
+      // Get full label objects for the given IDs
+      const allLabels = await this.getLabels();
+      const labelsToAddObjects = labelIds.map(id => allLabels.find(label => label.id === id)).filter(Boolean);
+
       // Update the task with the new labels
+      
       const response = await axios.put(
         `${this.baseUrl}/tasks/${taskId}`,
         {
           ...task,
-          labels: labelIds
+          labels: labelsToAddObjects
         },
         { headers: this.headers }
       );
@@ -126,21 +131,18 @@ class VikunjaAPI {
   }
 
   // Remove labels from a task
-  async removeLabelsFromTask(taskId, labelIds) {
+  async removeLabelsFromTask(task, labelIds) {
     try {
-      // Get the current task first
-      const task = await this.getTask(taskId);
-      
       // Remove the specified labels
       const currentLabels = task.labels || [];
       const updatedLabels = currentLabels.filter(label => !labelIds.includes(label.id));
       
       // Update the task with the filtered labels
       const response = await axios.put(
-        `${this.baseUrl}/tasks/${taskId}`,
+        `${this.baseUrl}/tasks/${task.id}`,
         {
           ...task,
-          labels: updatedLabels.map(l => l.id)
+          labels: updatedLabels
         },
         { headers: this.headers }
       );
@@ -217,10 +219,13 @@ class VikunjaAPI {
       );
       
       // Update task with new labels
+      
+      // Update task with new labels
+      // Update the task with the new labels
       const response = await axios.put(
         `${this.baseUrl}/tasks/${taskId}`,
         {
-          ...task,
+          id: task.id,
           labels: [...currentLabels.map(l => l.id), agentLabel.id, statusLabel.id]
         },
         { headers: this.headers }
@@ -259,18 +264,20 @@ class VikunjaAPI {
         statusLabels[status] || '#6b7280'
       );
       
+      // Get IDs of all labels to keep (current non-status labels + new status label)
+      const labelIdsToKeep = updatedLabels.map(l => l.id);
+      labelIdsToKeep.push(statusLabel.id);
+
       // Update task with new labels
+      
       const response = await axios.put(
         `${this.baseUrl}/tasks/${taskId}`,
         {
           ...task,
-          labels: [...updatedLabels.map(l => l.id), statusLabel.id]
+          labels: [...updatedLabels, { id: statusLabel.id, title: statusLabel.title }]
         },
         { headers: this.headers }
       );
-      
-      console.log(`✅ Task ${taskId} status updated to ${status}`);
-      return response.data;
     } catch (error) {
       console.error('Error updating task status:', error.message);
       throw error;

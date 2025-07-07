@@ -25,9 +25,12 @@ class TebraHttpClient {
     public function __construct() {
         // Read from Google Secret Manager with environment variable fallback
         // WORKING: New account credentials (2025-06-23)
-        $this->username = 'workfl278290@luknerclinic.com';
-        $this->password = 'LS35-O28Bc-71n';
-        $this->customerKey = 'j57wt68dc39q';
+        $this->username = getenv('TEBRA_USERNAME');
+        $this->password = getenv('TEBRA_PASSWORD');
+        if (!$this->username || !$this->password) {
+            throw new \RuntimeException('TEBRA_USERNAME and/or TEBRA_PASSWORD environment variables are not set');
+        }
+        $this->customerKey = getenv('TEBRA_CUSTOMER_KEY') ?: 'j57wt68dc39q';
         // Use the working WSDL URL
         $this->wsdlUrl = 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc?wsdl';
         

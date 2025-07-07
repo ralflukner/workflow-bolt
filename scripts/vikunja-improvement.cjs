@@ -3,11 +3,11 @@
 const VikunjaAPI = require('../ai-agents/cursor-gpt-4.1-max/scripts/vikunja-api.cjs');
 const api = new VikunjaAPI();
 
-const VIKUNJA_IMPROVEMENT_PROJECT_ID = 8;
+const DEFAULT_PROJECT_ID = 8; // Default to Vikunja Improvement Project
 
-async function showImprovementTasks() {
+async function showImprovementTasks(projectId) {
   try {
-    const tasks = await api.getTasks(VIKUNJA_IMPROVEMENT_PROJECT_ID);
+    const tasks = await api.getTasks(projectId);
     const openTasks = tasks.filter(t => !t.done);
     
     console.log('\n=== VIKUNJA IMPROVEMENT PROJECT ===');
@@ -34,7 +34,7 @@ async function showImprovementTasks() {
           lines.forEach(line => {
             if (line.trim()) {
               console.log(`      ${line.trim()}`);
-            }
+            }            
           });
           if (task.description.split('\n').length > 3) {
             console.log(`      ...`);
@@ -62,9 +62,9 @@ async function showImprovementTasks() {
   }
 }
 
-async function showProgress() {
+async function showProgress(projectId) {
   try {
-    const tasks = await api.getTasks(VIKUNJA_IMPROVEMENT_PROJECT_ID);
+    const tasks = await api.getTasks(projectId);
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(t => t.done).length;
     const openTasks = totalTasks - completedTasks;
@@ -90,9 +90,9 @@ async function showProgress() {
   }
 }
 
-async function addImprovementTask(title, description, priority = 2) {
+async function addImprovementTask(projectId, title, description, priority = 2) {
   try {
-    await api.createTask(VIKUNJA_IMPROVEMENT_PROJECT_ID, {
+    await api.createTask(projectId, {
       title,
       description,
       priority
@@ -104,30 +104,43 @@ async function addImprovementTask(title, description, priority = 2) {
 }
 
 async function main() {
-  const [cmd, ...args] = process.argv.slice(2);
+  let rawArgs = process.argv.slice(2);
+  let projectId = DEFAULT_PROJECT_ID;
+  let cmd;
+  let args;
+
+  // Check if the first argument is a project ID (numeric)
+  if (rawArgs.length > 0 && !isNaN(parseInt(rawArgs[0]))) {
+    projectId = parseInt(rawArgs[0]);
+    cmd = rawArgs[1]; // The command is the second argument
+    args = rawArgs.slice(2); // Remaining arguments
+  } else {
+    cmd = rawArgs[0]; // The command is the first argument
+    args = rawArgs.slice(1); // Remaining arguments
+  }
   
   switch (cmd) {
     case 'list':
-      await showImprovementTasks();
+      await showImprovementTasks(projectId);
       break;
     case 'progress':
-      await showProgress();
+      await showProgress(projectId);
       break;
     case 'add':
       if (args.length < 2) {
-        console.log('Usage: ./scripts/vikunja-improvement.cjs add "Title" "Description" [priority]');
+        console.log('Usage: ./scripts/vikunja-improvement.cjs [PROJECT_ID] add "Title" "Description" [priority]');
         return;
       }
       const title = args[0];
       const description = args[1];
       const priority = args[2] ? parseInt(args[2]) : 2;
-      await addImprovementTask(title, description, priority);
+      await addImprovementTask(projectId, title, description, priority);
       break;
     default:
       console.log('Usage:');
-      console.log('  ./scripts/vikunja-improvement.cjs list      # Show all improvement tasks');
-      console.log('  ./scripts/vikunja-improvement.cjs progress  # Show progress summary');
-      console.log('  ./scripts/vikunja-improvement.cjs add "Title" "Description" [priority]  # Add new task');
+      console.log('  ./scripts/vikunja-improvement.cjs [PROJECT_ID] list      # Show all improvement tasks');
+      console.log('  ./scripts/vikunja-improvement.cjs [PROJECT_ID] progress  # Show progress summary');
+      console.log('  ./scripts/vikunja-improvement.cjs [PROJECT_ID] add "Title" "Description" [priority]  # Add new task');
   }
 }
 

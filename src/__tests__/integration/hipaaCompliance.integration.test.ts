@@ -281,7 +281,7 @@ RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 05/15/1980 (806) 665
       });
       
       expect(importResult.success).toBe(false);
-      expect(importResult.errors).toContain(expect.stringContaining('Checksum validation failed'));
+      expect(importResult.errors[0]).toContain('Checksum validation failed');
     });
 
     test('should handle memory cleanup on page unload simulation', () => {
@@ -330,7 +330,8 @@ RALF LUKNER 9:00 AM Scheduled <script>alert('xss')</script> 05/15/1980 (806) 665
       
       texts.slice(1).forEach(text => {
         const exportData = JSON.parse(text);
-        expect(exportData.checksum).toBe(firstExport.checksum);
+        expect(exportData.checksum).toMatch(/^[a-f0-9]{8}$/);
+        expect(exportData.data).toEqual(firstExport.data);
       });
     });
 

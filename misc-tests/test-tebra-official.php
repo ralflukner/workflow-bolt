@@ -4,8 +4,13 @@
  */
 
 // New credentials
-$username = 'pqpyiN-cAGRih@luknerclinic.com';
-$password = 'WQJyt8-ABsW5Y-sgudYx-xV25V5-XJyFyb';
+$usernameEnv = getenv('TEBRA_USERNAME');
+$passwordEnv = getenv('TEBRA_PASSWORD');
+if (!$usernameEnv || !$passwordEnv) {
+    die("❌ Required environment variables TEBRA_USERNAME and/or TEBRA_PASSWORD not set\n");
+}
+$username = $usernameEnv;
+$password = $passwordEnv;
 $customerKey = 'j57wt68dc39q';
 $version = 'v2';
 

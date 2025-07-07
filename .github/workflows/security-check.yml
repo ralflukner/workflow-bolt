@@ -48,5 +48,3 @@ jobs:
       run: |
         chmod +x ./tebra-tools/scripts/security-check-gsm.sh
         ./tebra-tools/scripts/security-check-gsm.sh
-      env:
-        GOOGLE_CLOUD_PROJECT: luknerlumina-firebase

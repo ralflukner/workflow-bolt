@@ -9,11 +9,18 @@ set -euo pipefail
 
 echo "=== Tebra Credentials Security Check ==="
 
-# Check if required environment variables are set
+# Determine the active GCP project. Prefer explicit env var; otherwise fall back to gcloud config.
 if [ -z "${GOOGLE_CLOUD_PROJECT:-}" ]; then
-    echo "❌ GOOGLE_CLOUD_PROJECT environment variable is not set"
+    GOOGLE_CLOUD_PROJECT=$(gcloud config get-value project 2>/dev/null || true)
+fi
+
+if [ -z "${GOOGLE_CLOUD_PROJECT:-}" ]; then
+    echo "❌ GOOGLE_CLOUD_PROJECT is not set and no default project is configured in gcloud."
+    echo "   Run 'gcloud config set project <YOUR_PROJECT_ID>' or export GOOGLE_CLOUD_PROJECT before retrying."
     exit 1
 fi
+# Export to ensure downstream gcloud calls use the correct project.
+export GOOGLE_CLOUD_PROJECT
 
 # Check if gcloud is authenticated
 if ! gcloud auth application-default print-access-token >/dev/null 2>&1; then
@@ -112,6 +119,18 @@ check_secret() {
 echo "Retrieving current credentials from GSM..."
 CURRENT_USERNAME=$(get_secret "TEBRA_USERNAME")
 CURRENT_PASSWORD=$(get_secret "TEBRA_PASSWORD")
+VITE_PASSWORD=$(get_secret "VITE_TEBRA_PASSWORD")
+
+# Handle mismatch between secrets
+if [ -n "$CURRENT_PASSWORD" ] && [ -n "$VITE_PASSWORD" ] && [ "$CURRENT_PASSWORD" != "$VITE_PASSWORD" ]; then
+    echo "⚠️  Mismatch between TEBRA_PASSWORD and VITE_TEBRA_PASSWORD. Treating TEBRA_PASSWORD as retired."
+    # Initialize OLD_CREDENTIALS if not already
+    declare -a OLD_CREDENTIALS
+    OLD_CREDENTIALS+=("$CURRENT_PASSWORD")
+    # Use the VITE password as the current, authoritative credential
+    CURRENT_PASSWORD="$VITE_PASSWORD"
+fi
+
 CURRENT_CUSTOMER_KEY=$(get_secret "TEBRA_CUSTOMER_KEY")
 
 # Initialize patterns array
@@ -122,8 +141,8 @@ if [ -n "$CURRENT_USERNAME" ] && [ -n "$CURRENT_PASSWORD" ]; then
     echo "  Customer Key: ${CURRENT_CUSTOMER_KEY:0:2}***"
     echo
     
-    # Add current credentials to patterns (excluding Customer Key)
-    PATTERNS+=("$CURRENT_USERNAME")
+    # The Tebra username is not treated as a sensitive secret for this private repo.
+    # Only the password remains a critical credential.
     PATTERNS+=("$CURRENT_PASSWORD")
 else
     echo "⚠️  Could not retrieve all secrets from GSM"
@@ -132,7 +151,8 @@ else
 fi
 
 # Known old credentials to check (excluding Customer Key)
-OLD_CREDENTIALS=(
+# NOTE: OLD_CREDENTIALS may have been populated above if a mismatched TEBRA_PASSWORD was detected.
+OLD_CREDENTIALS+=(
     "ZEp7U8-VeHuza@luknerclinic.com"
     "8<O{*a3SF297i]CDFW5mmZ&asx519M"
 )

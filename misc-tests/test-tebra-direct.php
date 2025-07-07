@@ -5,8 +5,13 @@
  */
 
 // Tebra credentials - using the correct ones
-$username = 'pqpyiN-cAGRih-nEdayT-Cc@luknerclinic.com';
-$password = 'kPRu_w-eg8v.)-3=;(v4-6LK.78-5warim';
+$usernameEnv = getenv('TEBRA_USERNAME');
+$passwordEnv = getenv('TEBRA_PASSWORD');
+if (!$usernameEnv || !$passwordEnv) {
+    die("❌ Required environment variables TEBRA_USERNAME and/or TEBRA_PASSWORD not set\n");
+}
+$username = $usernameEnv;
+$password = $passwordEnv;
 $customerKey = 'j57wt68dc39q';
 $wsdlUrl = 'https://webservice.kareo.com/services/soap/2.1/KareoServices.svc';
 

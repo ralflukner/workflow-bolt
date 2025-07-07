@@ -42,14 +42,10 @@ const ALIAS_ENV_VARS = {
   AUTH0_SCOPE: 'VITE_AUTH0_SCOPE',
 
   // Tebra – many server components expect un-prefixed vars
-  TEBRA_CLIENT_ID: 'VITE_TEBRA_USERNAME',
   TEBRA_PASSWORD: 'VITE_TEBRA_PASSWORD',
   TEBRA_CUSTOMER_KEY: 'VITE_TEBRA_CUSTOMER_KEY',
   TEBRA_WSDL_URL: 'VITE_TEBRA_WSDL_URL',
 
-  // Trello – backend components may expect un-prefixed vars
-  TRELLO_API_KEY: 'VITE_TRELLO_API_KEY',
-  TRELLO_TOKEN: 'VITE_TRELLO_TOKEN',
   // Cloud project id (backend code expects GCLOUD_PROJECT or FIREBASE_PROJECT_ID)
   GCLOUD_PROJECT: 'GOOGLE_CLOUD_PROJECT',
   FIREBASE_PROJECT_ID: 'GOOGLE_CLOUD_PROJECT',
@@ -65,7 +61,6 @@ const SECRETS_TO_PULL = [
   { name: 'VITE_AUTH0_AUDIENCE', envVar: 'VITE_AUTH0_AUDIENCE' },
   { name: 'VITE_AUTH0_SCOPE', envVar: 'VITE_AUTH0_SCOPE' },
   // Tebra secrets
-  { name: 'VITE_TEBRA_USERNAME', envVar: 'VITE_TEBRA_USERNAME' },
   { name: 'VITE_TEBRA_PASSWORD', envVar: 'VITE_TEBRA_PASSWORD' },
   { name: 'VITE_TEBRA_CUSTOMER_KEY', envVar: 'VITE_TEBRA_CUSTOMER_KEY' },
   { name: 'VITE_TEBRA_WSDL_URL', envVar: 'VITE_TEBRA_WSDL_URL' },
@@ -86,9 +81,6 @@ const SECRETS_TO_PULL = [
   { name: 'GOOGLE_CLOUD_PROJECT', envVar: 'GOOGLE_CLOUD_PROJECT' },
   // Backend-only secret
   { name: 'TEBRA_CLOUD_RUN_URL', envVar: 'TEBRA_CLOUD_RUN_URL' },
-  // Trello API secrets
-  { name: 'VITE_TRELLO_API_KEY', envVar: 'VITE_TRELLO_API_KEY' },
-  { name: 'VITE_TRELLO_TOKEN', envVar: 'VITE_TRELLO_TOKEN' },
 ];
 
 // We intentionally do NOT add alias names to SECRETS_TO_PULL – they will be
