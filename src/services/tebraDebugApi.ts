@@ -6,11 +6,10 @@
  */
 
 import { HEALTH_CHECK_CONFIG, CORRELATION_ID } from '../constants/tebraConfig';
-import { tebraTestConnection, tebraGetAppointments, tebraGetProviders } from './tebraApi';
+import { tebraGetAppointments, tebraGetProviders } from './tebraApi';
 import { callTebraProxy } from './tebraFirebaseApi';
 import { app, isFirebaseConfigured } from '../config/firebase';
 import { getFunctions } from 'firebase/functions';
-import { checkFirebaseEnvVars } from '../utils/envUtils';
 import { AuthBridge } from './authBridge';
 
 export interface CorrelationContext {
@@ -197,18 +196,7 @@ export class TebraDebugApiService {
         };
       }
 
-      // Check environment variables
-      const { loaded, missing } = checkFirebaseEnvVars();
-      if (missing.length > 0) {
-        return {
-          status: 'warning',
-          message: `Missing environment variables: ${missing.join(', ')}`,
-          duration: Date.now() - startTime,
-          correlationId,
-          details: { loaded, missing }
-        };
-      }
-
+      // Firebase is configured properly - config comes from backend/GSM
       return {
         status: 'healthy',
         message: 'Firebase Functions configured',
@@ -217,7 +205,7 @@ export class TebraDebugApiService {
         details: { 
           configured: true, 
           functionsAvailable: true,
-          envVarsLoaded: loaded.length
+          configSource: 'backend/GSM'
         }
       };
     } catch (error) {

@@ -431,6 +431,12 @@ class MegaParseScheduleClient {
         return PatientStatus.SCHEDULED;
       case 'arrived':
         return PatientStatus.ARRIVED;
+      case 'roomed':
+        return PatientStatus.APPT_PREP; // Roomed patients appear in Waiting category as Appt Prep
+      case 'no show':
+        return PatientStatus.NO_SHOW;
+      case 'rescheduled':
+        return PatientStatus.RESCHEDULED;
       default:
         return PatientStatus.SCHEDULED;
     }

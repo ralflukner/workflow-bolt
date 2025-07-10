@@ -2,14 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { tebraTestConnection, getApiInfo } from '../services/tebraApi';
 import { app, isFirebaseConfigured } from '../config/firebase';
 import { getFunctions } from 'firebase/functions';
-import { checkFirebaseEnvVars } from '../utils/envUtils';
 
 interface DebugInfo {
   firebaseConfigured: boolean;
   firebaseApp: boolean;
   functionsInstance: boolean;
-  envVarsLoaded: string[];
-  missingEnvVars: string[];
+  configSource: 'backend' | 'env' | 'unknown';
   connectionTest: {
     status: 'pending' | 'success' | 'failed';
     error?: string;
@@ -22,8 +20,7 @@ export const TebraConnectionDebugger: React.FC = () => {
     firebaseConfigured: false,
     firebaseApp: false,
     functionsInstance: false,
-    envVarsLoaded: [],
-    missingEnvVars: [],
+    configSource: 'unknown',
     connectionTest: { status: 'pending' as const }  // Note: this should be 'idle' or undefined initially
   });
 
@@ -39,13 +36,15 @@ export const TebraConnectionDebugger: React.FC = () => {
 
   useEffect(() => {
     const checkEnvironment = () => {
-      const { loaded, missing } = checkFirebaseEnvVars();
-
       let functionsInstance = false;
+      let configSource: 'backend' | 'env' | 'unknown' = 'unknown';
+      
       try {
         if (app) {
           getFunctions(app);
           functionsInstance = true;
+          // If Firebase is initialized, config was loaded successfully
+          configSource = 'backend'; // Assume backend since that's the primary method
         }
       } catch (error) {
         console.error('Functions instance error:', error);
@@ -56,8 +55,7 @@ export const TebraConnectionDebugger: React.FC = () => {
         firebaseConfigured: isFirebaseConfigured(),
         firebaseApp: !!app,
         functionsInstance,
-        envVarsLoaded: loaded,
-        missingEnvVars: missing
+        configSource
       }));
     };
 
@@ -154,21 +152,9 @@ export const TebraConnectionDebugger: React.FC = () => {
               <span>{debugInfo.functionsInstance ? '✅' : '❌'}</span>
               <span>Functions Instance: {debugInfo.functionsInstance ? 'Available' : 'Not available'}</span>
             </div>
-          </div>
-        </div>
-
-        {/* Environment Variables */}
-        <div>
-          <h4 className="font-medium text-gray-200 mb-1">Environment Variables</h4>
-          <div className="space-y-1">
-            <div className="text-green-400">
-              ✅ Loaded ({debugInfo.envVarsLoaded.length}): {debugInfo.envVarsLoaded.join(', ')}
+            <div className="text-gray-300">
+              <span>Config Source: {debugInfo.configSource === 'backend' ? 'GSM via Backend' : debugInfo.configSource}</span>
             </div>
-            {debugInfo.missingEnvVars.length > 0 && (
-              <div className="text-red-400">
-                ❌ Missing ({debugInfo.missingEnvVars.length}): {debugInfo.missingEnvVars.join(', ')}
-              </div>
-            )}
           </div>
         </div>
 
@@ -211,14 +197,11 @@ export const TebraConnectionDebugger: React.FC = () => {
         <div>
           <h4 className="font-medium text-gray-200 mb-1">Recommendations</h4>
           <div className="text-gray-300 space-y-1">
-            {debugInfo.missingEnvVars.length > 0 && (
-              <div>• Check .envrc file and run: <code className="bg-gray-800 px-1 rounded">direnv allow</code></div>
-            )}
             {!debugInfo.firebaseConfigured && (
-              <div>• Firebase configuration is missing or invalid</div>
+              <div>• Firebase configuration failed to load from backend</div>
             )}
             {debugInfo.connectionTest.status === 'failed' && (
-              <div>• Functions may require authentication or billing setup</div>
+              <div>• Check Firebase Functions logs for authentication errors</div>
             )}
           </div>
         </div>

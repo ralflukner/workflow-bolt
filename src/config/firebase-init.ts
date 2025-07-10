@@ -13,8 +13,17 @@ interface FirebaseConfigType {
   measurementId?: string;
 }
 
-// Configuration constants
-const FIREBASE_CONFIG_ENDPOINT = import.meta.env.VITE_FIREBASE_CONFIG_ENDPOINT || 
+// Configuration constants - support both Vite and Node.js environments
+const getEnvVar = (key: string): string | undefined => {
+  // In Vite environment
+  if (typeof window !== 'undefined' && typeof import.meta !== 'undefined' && 'env' in import.meta) {
+    return (import.meta as any).env[key];
+  }
+  // In Node.js environment (CLI)
+  return process.env[key];
+};
+
+const FIREBASE_CONFIG_ENDPOINT = getEnvVar('VITE_FIREBASE_CONFIG_ENDPOINT') || 
   'https://us-central1-luknerlumina-firebase.cloudfunctions.net/getFirebaseConfig';
 
 /**
@@ -43,27 +52,27 @@ function validateFirebaseConfig(config: unknown): config is FirebaseConfigType {
  * Get Firebase configuration from environment variables (primary method)
  */
 function getFirebaseConfigFromEnv(): FirebaseConfigType | null {
-  if (!import.meta.env?.VITE_FIREBASE_API_KEY) {
+  if (!getEnvVar('VITE_FIREBASE_API_KEY')) {
     return null;
   }
 
   const envConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    apiKey: getEnvVar('VITE_FIREBASE_API_KEY')!,
     authDomain:
-      import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
+      getEnvVar('VITE_FIREBASE_AUTH_DOMAIN') ||
       'luknerlumina-firebase.firebaseapp.com',
     projectId:
-      import.meta.env.VITE_FIREBASE_PROJECT_ID || 'luknerlumina-firebase',
+      getEnvVar('VITE_FIREBASE_PROJECT_ID') || 'luknerlumina-firebase',
     storageBucket:
-      import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
+      getEnvVar('VITE_FIREBASE_STORAGE_BUCKET') ||
       'luknerlumina-firebase.firebasestorage.app',
     messagingSenderId:
-      import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '623450773640',
+      getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID') || '623450773640',
     appId:
-      import.meta.env.VITE_FIREBASE_APP_ID ||
+      getEnvVar('VITE_FIREBASE_APP_ID') ||
       '1:623450773640:web:9afd63d3ccbb1fcb6fe73d',
     measurementId:
-      import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-W6TX8WRN2Z'
+      getEnvVar('VITE_FIREBASE_MEASUREMENT_ID') || 'G-W6TX8WRN2Z'
   };
 
   if (validateFirebaseConfig(envConfig)) {

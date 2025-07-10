@@ -1,9 +1,8 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PatientProvider } from '../PatientContext';
-import { PatientContext } from '../PatientContextDef';
-import { TimeContext } from '../TimeContext';
+import { PatientContext, PatientProvider } from '../../contexts/PatientContext';
+import { TimeContext } from '../../contexts/TimeContext';
 import { Patient } from '../../types';
 
 // Mock TimeContext implementation

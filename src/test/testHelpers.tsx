@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PatientContext } from '../context/PatientContextDef';
-import { TimeContext } from '../context/TimeContextDef';
+import { PatientContext } from '../contexts/PatientContext';
+import { TimeContext } from '../contexts/TimeContext';
 import { createMockPatientContext, createMockTimeContext } from './contextMocks';
 
 /**

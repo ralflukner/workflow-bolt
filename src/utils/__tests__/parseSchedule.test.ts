@@ -208,7 +208,7 @@ describe('parseSchedule', () => {
       ['checked in', 'arrived'],
       
       // Appointment prep statuses
-      ['roomed', 'appt-prep'],
+      ['roomed', 'appt-prep'], // Roomed patients appear in Waiting as Appt Prep
       ['appt prep started', 'appt-prep'],
       
       // Ready for doctor
@@ -317,7 +317,7 @@ describe('parseSchedule', () => {
       expect(diffMinutes).toBe(30);
     });
 
-    const roomStatuses = ['appt-prep', 'ready-for-md', 'With Doctor'];
+    const roomStatuses = ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor'];
 
     it.each(roomStatuses)('assigns room for %s status', (status) => {
       const tsv = createRow({ status });
@@ -338,6 +338,50 @@ describe('parseSchedule', () => {
         expect(result[0].checkInTime).toBeUndefined();
         expect(result[0].room).toBeUndefined();
       });
+    });
+
+    // Test case for roomed patients status mapping
+    it('correctly parses roomed patients and maps them to appt-prep status', () => {
+      const roomedPatients = [
+        // Test roomed patient 1
+        createRow({
+          date: '07/08/2025',
+          time: '2:00 PM',
+          status: 'Roomed',
+          name: 'Test Patient A',
+          dob: '01/01/1980',
+          type: 'Office Visit'
+        }),
+        // Test roomed patient 2
+        createRow({
+          date: '07/08/2025',
+          time: '2:30 PM',
+          status: 'Roomed',
+          name: 'Test Patient B',
+          dob: '01/01/1985',
+          type: 'Office Visit'
+        })
+      ].join('\n');
+
+      const result = parseSchedule(roomedPatients, MOCK_NOW);
+      
+      expect(result).toHaveLength(2);
+      
+      // Both patients should have 'appt-prep' status (roomed patients)
+      expect(result[0].status).toBe('appt-prep');
+      expect(result[1].status).toBe('appt-prep');
+      
+      // Both should have check-in times
+      expect(result[0].checkInTime).toBeDefined();
+      expect(result[1].checkInTime).toBeDefined();
+      
+      // Both should have room assignments
+      expect(result[0].room).toBe('Waiting');
+      expect(result[1].room).toBe('Waiting');
+      
+      // Verify patient details
+      expect(result[0].name).toBe('Test Patient A');
+      expect(result[1].name).toBe('Test Patient B');
     });
   });
 

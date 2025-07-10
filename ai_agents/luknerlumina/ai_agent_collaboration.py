@@ -209,12 +209,13 @@ class AIAgentCollaboration:
             self.redis_client.store_data(f"active_agent:{agent['id']}", agent)
             print(f"  ✅ {agent['name']} - {agent['role']}")
         
-        return agents
+        # Return as dict for test compatibility
+        return {agent["id"]: agent for agent in agents}
     
     def setup_collaboration_protocols(self):
         """Setup agent collaboration protocols"""
         print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")
-🤝 Setting up Agent Collaboration Protocols...")
+        print("SYSTEM READY FOR COLLABORATIVE WORK! Setting up Agent Collaboration Protocols...")
         
         collaboration_rules = {
             "project_coordination": {
@@ -241,12 +242,12 @@ class AIAgentCollaboration:
         }
         
         self.redis_client.store_data("collaboration_protocols", collaboration_rules)
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")  ✅ Collaboration protocols established")
+        print("SYSTEM READY FOR COLLABORATIVE WORK! Collaboration protocols established")
     
     def connect_human_users(self):
         """Connect human users to the system"""
         print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")
-👥 Connecting Human Users...")
+        print("SYSTEM READY FOR COLLABORATIVE WORK! Connecting Human Users...")
         
         # Get existing user accounts
         human_users = [
@@ -278,7 +279,7 @@ class AIAgentCollaboration:
     def initialize_cost_monitoring(self):
         """Initialize comprehensive cost monitoring"""
         print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")
-💰 Initializing Cost Monitoring System...")
+        print("SYSTEM READY FOR COLLABORATIVE WORK! Initializing Cost Monitoring System...")
         
         cost_structure = {
             "infrastructure": {
@@ -305,13 +306,13 @@ class AIAgentCollaboration:
         }
         
         self.redis_client.store_data("cost_monitoring", cost_structure)
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")  ✅ Cost monitoring initialized")
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")  💡 Cost optimization targets set")
+        print("SYSTEM READY FOR COLLABORATIVE WORK! Cost monitoring initialized")
+        print("SYSTEM READY FOR COLLABORATIVE WORK! Cost optimization targets set")
     
     def start_collaborative_workflow(self):
         """Start the collaborative workflow"""
         print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")
-🚀 Starting Collaborative Workflow...")
+        print("SYSTEM READY FOR COLLABORATIVE WORK! Starting Collaborative Workflow...")
         
         # Define initial project tasks
         project_tasks = {
@@ -354,7 +355,7 @@ class AIAgentCollaboration:
         }
         
         self.redis_client.store_data("project_tasks", project_tasks)
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")  ✅ Project tasks defined and assigned")
+        print("SYSTEM READY FOR COLLABORATIVE WORK! Project tasks defined and assigned")
         
         # Start coordination
         self.coordinate_agents()
@@ -362,7 +363,7 @@ class AIAgentCollaboration:
     def coordinate_agents(self):
         """Coordinate agent activities"""
         print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")
-🎯 Agent Coordination Active...")
+        print("SYSTEM READY FOR COLLABORATIVE WORK! Agent Coordination Active...")
         
         coordination_status = {
             "claude-master-agent": {
@@ -388,17 +389,50 @@ class AIAgentCollaboration:
         }
         
         self.redis_client.store_data("coordination_status", coordination_status)
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")  ✅ All agents coordinated and ready to work!")
+        print("SYSTEM READY FOR COLLABORATIVE WORK! All agents coordinated and ready to work!")
+    
+    def assign_task_to_agent(self, agent_id, task_description, human_requester=None):
+        """Assign a task to a specific agent"""
+        task_id = f"task_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+        
+        task_data = {
+            "task_id": task_id,
+            "description": task_description,
+            "assigned_to": agent_id,
+            "requested_by": human_requester,
+            "assigned_at": datetime.now(timezone.utc).isoformat(),
+            "status": "assigned",
+            "priority": "normal"
+        }
+        
+        self.redis_client.store_data(f"task_assignment:{task_id}", task_data)
+        print(f"Task {task_id} assigned to {agent_id}")
+        return task_id
+    
+    def collaborate_on_task(self, task_id, primary_agent, collaborating_agents):
+        """Setup collaborative task"""
+        collaboration_data = {
+            "task_id": task_id,
+            "primary_agent": primary_agent,
+            "collaborating_agents": collaborating_agents,
+            "collaboration_type": "real_time",
+            "communication_channel": "secure_messaging",
+            "started_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        self.redis_client.store_data(f"collaboration:{task_id}", collaboration_data)
+        print(f"Collaboration established for task {task_id}")
+        print(f"   Primary: {primary_agent}")
+        print(f"   Collaborators: {', '.join(collaborating_agents)}")
     
     def show_team_status(self):
         """Show complete team status"""
         print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")
-" + "="*70)
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")🎯 LUKNERLUMINA ENTERPRISE TEAM STATUS")
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")="*70)
+        print("="*70)
+        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!🎯 LUKNERLUMINA ENTERPRISE TEAM STATUS")
+        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!="*70)
         
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")
-🤖 AI AGENTS ACTIVE:")
+        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!🤖 AI AGENTS ACTIVE:")
         for agent_id, agent in self.active_agents.items():
             print(f"  ✅ {agent['name']}")
             print(f"     Role: {agent['role']}")
@@ -406,7 +440,7 @@ class AIAgentCollaboration:
             print(f"     Current Tasks: {', '.join(agent['current_tasks'])}")
             print()
         
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")👥 HUMAN USERS READY:")
+        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!👥 HUMAN USERS READY:")
         users = [
             "✅ Dr. Ralf Lukner (Physician/Admin) - CLI & React UI",
             "✅ Beth Lukner (Admin) - CLI & React UI", 
@@ -417,8 +451,7 @@ class AIAgentCollaboration:
         for user in users:
             print(f"  {user}")
         
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")
-🎯 ACTIVE PROJECT PHASES:")
+        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!🎯 ACTIVE PROJECT PHASES:")
         phases = [
             "🔧 Phase 1: Multi-Interface Setup (IN PROGRESS)",
             "🏥 Phase 2: EHR Integration (READY)",
@@ -429,15 +462,13 @@ class AIAgentCollaboration:
         for phase in phases:
             print(f"  {phase}")
         
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")
-💰 COST MONITORING:")
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")  📊 Budget Status: MONITORING ACTIVE")
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")  🎯 Optimization: AUTOMATIC")
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")  💡 Current Focus: Minimize API calls, optimize storage")
+        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!💰 COST MONITORING:")
+        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!  📊 Budget Status: MONITORING ACTIVE")
+        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!  🎯 Optimization: AUTOMATIC")
+        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!  💡 Current Focus: Minimize API calls, optimize storage")
         
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")
-🚀 READY TO COLLABORATE!")
-        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")="*70)
+        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!🚀 READY TO COLLABORATE!")
+        print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!="*70)
 
 # Agent Task Coordination System
 class AgentTaskCoordinator:
@@ -501,5 +532,5 @@ if __name__ == "__main__":
     coordinator = AgentTaskCoordinator()
     
     print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")
-🎯 SYSTEM READY FOR COLLABORATIVE WORK!")
-    print("🎯 SYSTEM READY FOR COLLABORATIVE WORK!")All agents are active and ready to work with you and your team!")
+    print("SYSTEM READY FOR COLLABORATIVE WORK!")
+    print("SYSTEM READY FOR COLLABORATIVE WORK! All agents are active and ready to work with you and your team!")

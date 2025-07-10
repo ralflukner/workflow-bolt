@@ -6,6 +6,7 @@ import { debugLogger } from '../services/debugLogger';
 import { parseScheduleAuto } from '../utils/parseScheduleAdvanced';
 import { parseSchedule } from '../utils/parseSchedule'; // Legacy parser for testing
 import { parseScheduleWithMegaParse } from '../utils/megaParseSchedule';
+import { normalizeStatus } from '../context/PatientContext';
 
 interface ImportScheduleProps {
   onClose: () => void;
@@ -97,11 +98,12 @@ class ImportScheduleClass extends Component<ImportScheduleProps & WithContextsPr
         return;
       }
 
-      // Add unique IDs to all patients with advanced parsing tags
-      this.addLog(`🏷️ Adding secure unique IDs to ${patients.length} patients`);
+      // Add unique IDs and normalize status for all patients with advanced parsing tags
+      this.addLog(`🏷️ Adding secure unique IDs and normalizing status for ${patients.length} patients`);
       const patientsWithIds: Patient[] = patients.map((patientData) => ({
         ...patientData,
         id: `mega-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        status: normalizeStatus(patientData.status) as any,
       }));
 
       // Store in memory with MegaParse flags
@@ -163,11 +165,12 @@ class ImportScheduleClass extends Component<ImportScheduleProps & WithContextsPr
         return;
       }
 
-      // Add unique IDs to all patients with PHI protection
-      this.addLog(`🏷️ Adding secure unique IDs to ${patients.length} patients`);
+      // Add unique IDs and normalize status for all patients with PHI protection
+      this.addLog(`🏷️ Adding secure unique IDs and normalizing status for ${patients.length} patients`);
       const patientsWithIds: Patient[] = patients.map((patientData) => ({
         ...patientData,
         id: `sec-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        status: normalizeStatus(patientData.status) as any,
       }));
 
       // Store in memory with encryption flags
@@ -220,11 +223,12 @@ class ImportScheduleClass extends Component<ImportScheduleProps & WithContextsPr
         return;
       }
 
-      // Add IDs without security flags
-      this.addLog(`🏷️ Adding basic IDs to ${patients.length} patients (no security)`);
+      // Add IDs and normalize status without security flags
+      this.addLog(`🏷️ Adding basic IDs and normalizing status for ${patients.length} patients (no security)`);
       const patientsWithIds: Patient[] = patients.map((patientData) => ({
         ...patientData,
         id: `legacy-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        status: normalizeStatus(patientData.status) as any,
       }));
 
       // Store without encryption

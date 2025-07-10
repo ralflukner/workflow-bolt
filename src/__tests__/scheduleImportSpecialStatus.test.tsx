@@ -4,6 +4,7 @@ import { usePatientContext } from '../hooks/usePatientContext';
 import { Patient, PatientApptStatus } from '../types';
 import React from 'react';
 import { TestProviders } from '../test/testHelpers';
+import PatientProvider from '../contexts/PatientProvider';
 
 // Mock Firebase and localStorage services to prevent real persistence calls
 jest.mock('../services/firebase/dailySessionService', () => ({
@@ -22,7 +23,9 @@ jest.mock('../services/localStorage/localSessionService', () => ({
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
   <TestProviders>
-    {children}
+    <PatientProvider>
+      {children}
+    </PatientProvider>
   </TestProviders>
 );
 

@@ -1,0 +1,4 @@
+# LuknerLumina Agent Dependencies
+redis>=4.0.0
+google-cloud-secret-manager>=2.0.0
+typing-extensions>=4.0.0 

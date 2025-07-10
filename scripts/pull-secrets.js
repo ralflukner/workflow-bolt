@@ -64,6 +64,13 @@ const SECRETS_TO_PULL = [
   { name: 'VITE_TEBRA_PASSWORD', envVar: 'VITE_TEBRA_PASSWORD' },
   { name: 'VITE_TEBRA_CUSTOMER_KEY', envVar: 'VITE_TEBRA_CUSTOMER_KEY' },
   { name: 'VITE_TEBRA_WSDL_URL', envVar: 'VITE_TEBRA_WSDL_URL' },
+  // Firebase secrets - individual variables
+  { name: 'VITE_FIREBASE_API_KEY', envVar: 'VITE_FIREBASE_API_KEY' },
+  { name: 'VITE_FIREBASE_AUTH_DOMAIN', envVar: 'VITE_FIREBASE_AUTH_DOMAIN' },
+  { name: 'VITE_FIREBASE_PROJECT_ID', envVar: 'VITE_FIREBASE_PROJECT_ID' },
+  { name: 'VITE_FIREBASE_STORAGE_BUCKET', envVar: 'VITE_FIREBASE_STORAGE_BUCKET' },
+  { name: 'VITE_FIREBASE_MESSAGING_SENDER_ID', envVar: 'VITE_FIREBASE_MESSAGING_SENDER_ID' },
+  { name: 'VITE_FIREBASE_APP_ID', envVar: 'VITE_FIREBASE_APP_ID' },
   // Gmail OAuth2 secrets
   { name: 'GMAIL_CLIENT_ID', envVar: 'GMAIL_CLIENT_ID' },
   { name: 'GMAIL_CLIENT_SECRET', envVar: 'GMAIL_CLIENT_SECRET' },
@@ -218,6 +225,79 @@ async function pullSecrets() {
     envContent.push(`${aliasVar}=${envMap[primaryVar]}`);
     envMap[aliasVar] = envMap[primaryVar];
     console.log(`🔁 ${aliasVar} mapped from ${primaryVar}`);
+  }
+
+  // -------------------------------------------------------------------
+  // Step 2.5: Handle Firebase config - derive individual vars if missing
+  // -------------------------------------------------------------------
+  const firebaseVars = [
+    'VITE_FIREBASE_API_KEY',
+    'VITE_FIREBASE_AUTH_DOMAIN', 
+    'VITE_FIREBASE_PROJECT_ID',
+    'VITE_FIREBASE_STORAGE_BUCKET',
+    'VITE_FIREBASE_MESSAGING_SENDER_ID',
+    'VITE_FIREBASE_APP_ID'
+  ];
+  
+  const missingFirebaseVars = firebaseVars.filter(v => !envMap[v]);
+  
+  if (missingFirebaseVars.length > 0) {
+    console.log(`🔥 ${missingFirebaseVars.length} Firebase variables missing from GSM, attempting to derive...`);
+    
+    // Try to get values from VITE_FIREBASE_CONFIG if it exists
+    if (envMap['VITE_FIREBASE_CONFIG']) {
+      try {
+        const firebaseConfig = JSON.parse(envMap['VITE_FIREBASE_CONFIG'].replace(/"/g, ''));
+        const configMap = {
+          'VITE_FIREBASE_API_KEY': firebaseConfig.apiKey,
+          'VITE_FIREBASE_AUTH_DOMAIN': firebaseConfig.authDomain,
+          'VITE_FIREBASE_PROJECT_ID': firebaseConfig.projectId,
+          'VITE_FIREBASE_STORAGE_BUCKET': firebaseConfig.storageBucket,
+          'VITE_FIREBASE_MESSAGING_SENDER_ID': firebaseConfig.messagingSenderId,
+          'VITE_FIREBASE_APP_ID': firebaseConfig.appId
+        };
+        
+        for (const [varName, value] of Object.entries(configMap)) {
+          if (!envMap[varName] && value && value !== '...' && value !== 'your-value-here') {
+            envContent.push(`${varName}=${value}`);
+            envMap[varName] = value;
+            console.log(`🔥 ${varName} derived from VITE_FIREBASE_CONFIG`);
+          }
+        }
+      } catch (error) {
+        console.warn(`⚠️  Could not parse VITE_FIREBASE_CONFIG: ${error.message}`);
+      }
+    }
+    
+    // Use predictable defaults for missing Firebase config based on project ID
+    const projectId = envMap['GOOGLE_CLOUD_PROJECT'] || 'luknerlumina-firebase';
+    const defaults = {
+      'VITE_FIREBASE_PROJECT_ID': projectId,
+      'VITE_FIREBASE_AUTH_DOMAIN': `${projectId}.firebaseapp.com`,
+      'VITE_FIREBASE_STORAGE_BUCKET': `${projectId}.appspot.com`
+    };
+    
+    for (const [varName, defaultValue] of Object.entries(defaults)) {
+      if (!envMap[varName]) {
+        envContent.push(`${varName}=${defaultValue}`);
+        envMap[varName] = defaultValue;
+        console.log(`🔥 ${varName} set to default: ${defaultValue}`);
+      }
+    }
+    
+    // For API key, messaging sender ID, and app ID - these need to come from Firebase Console
+    const stillMissing = ['VITE_FIREBASE_API_KEY', 'VITE_FIREBASE_MESSAGING_SENDER_ID', 'VITE_FIREBASE_APP_ID']
+      .filter(v => !envMap[v]);
+    
+    if (stillMissing.length > 0) {
+      console.warn(`⚠️  Still missing Firebase secrets (need to be added to GSM):`);
+      for (const missing of stillMissing) {
+        console.warn(`    ${missing} - Get from Firebase Console → Project Settings`);
+        // Add placeholder so the env check doesn't fail
+        envContent.push(`${missing}=PLACEHOLDER-GET-FROM-FIREBASE-CONSOLE`);
+        envMap[missing] = 'PLACEHOLDER-GET-FROM-FIREBASE-CONSOLE';
+      }
+    }
   }
 
   // -------------------------------------------------------------------

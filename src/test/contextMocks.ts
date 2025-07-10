@@ -117,10 +117,14 @@ export const createMockPatientContext = (overrides = {}) => {
  * Creates a consistent mock for TimeContext to use across tests
  */
 export const createMockTimeContext = (overrides = {}) => ({
-  timeMode: { simulated: false, currentTime: new Date().toISOString() },
+  currentTime: new Date('2023-01-01T10:00:00.000Z'),
+  timeMode: { simulated: false, speed: 1, currentTime: new Date('2023-01-01T10:00:00.000Z').toISOString() },
+  getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
+  setCurrentTime: jest.fn(),
+  toggleTimeMode: jest.fn(),
+  setTimeSpeed: jest.fn(),
   toggleSimulation: jest.fn(),
   adjustTime: jest.fn(),
-  getCurrentTime: jest.fn(() => new Date('2023-01-01T10:00:00.000Z')),
   formatTime: jest.fn(date => typeof date === 'string' ? new Date(date).toLocaleTimeString() : date.toLocaleTimeString()),
   formatDateTime: jest.fn(date => typeof date === 'string' ? new Date(date).toLocaleString() : date.toLocaleString()),
   ...overrides

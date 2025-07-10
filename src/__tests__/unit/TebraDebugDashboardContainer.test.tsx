@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import TebraDebugDashboardContainer from '../../components/TebraDebugDashboardContainer';
-import { PatientContext } from '../../context/PatientContextDef';
+import { PatientContext } from '../../contexts/PatientContext';
 import { PatientContextType } from '../../context/PatientContextType';
 import { tebraDebugApi } from '../../services/tebraDebugApi';
 import { tebraApiService } from '../../services/tebraApiService';

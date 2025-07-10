@@ -20,13 +20,13 @@ export interface ImportedPatient {
 // Status constants to prevent string drift
 const STATUS_CONFIRMED = ['confirmed', 'scheduled', 'reminder sent'];
 const STATUS_ARRIVED = ['arrived', 'checked in'];
-const STATUS_APPT_PREP = ['roomed', 'appt prep started'];
+const STATUS_APPT_PREP = ['roomed', 'appt prep started']; // Roomed patients map to appt-prep
 const STATUS_CHECKED_OUT = ['checked out', 'checkedout'];
 const STATUS_CANCELLED = ['cancelled', 'canceled'];
 
 // These are the PatientApptStatus values that indicate check-in
 const HAS_CHECKED_IN = ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor', 'seen-by-md', 'completed'];
-const STATUS_IN_ROOM = ['appt-prep', 'ready-for-md', 'With Doctor'];
+const STATUS_IN_ROOM = ['arrived', 'appt-prep', 'ready-for-md', 'With Doctor']; // Include 'arrived' for roomed patients
 
 export interface ParseScheduleOptions {
   defaultProvider?: string;

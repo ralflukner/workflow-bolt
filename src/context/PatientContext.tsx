@@ -17,12 +17,12 @@ interface PatientProviderProps {
 }
 
 // Helper to normalize various status spellings/capitalizations
-const normalizeStatus = (status: string): string => {
+export const normalizeStatus = (status: string): string => {
   if (!status) {
     return 'scheduled'; // Default status for invalid input
   }
 
-  const s = status.trim().toLowerCase();
+  const s = status.replace(/\s+/g, ' ').trim().toLowerCase();
   switch (s) {
     case 'checkedout':
     case 'checked-out':

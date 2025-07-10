@@ -8,6 +8,24 @@ import { secureLog } from '../utils/redact';
 import { getApps } from 'firebase/app';
 import { initializeFirebase, isFirebaseConfigured } from '../config/firebase';
 
+// Declare process for TypeScript
+declare const process: {
+  env: Record<string, string | undefined>;
+} | undefined;
+
+// Environment variable helper for both Vite and Node.js environments
+const getEnvVar = (key: string): string | undefined => {
+  // In Vite environment
+  if (typeof window !== 'undefined' && typeof import.meta !== 'undefined' && 'env' in import.meta) {
+    return (import.meta as { env: Record<string, string> }).env[key];
+  }
+  // In Node.js environment (CLI)
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env[key];
+  }
+  return undefined;
+};
+
 interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -111,14 +129,21 @@ async function callTebraProxy(action: string, params: Record<string, unknown> = 
     let errorMessage = 'Unknown error';
 
     if (error && typeof error === 'object') {
-      const errorObj = error as { code?: string; message?: string };
+      const errorObj = error as { code?: string; message?: string; details?: { message?: string } };
 
-      if (errorObj.code === 'functions/unauthenticated') {
+      // Check for CORS/preflight errors
+      if (errorObj.message?.includes('Preflight response is not successful') || 
+          errorObj.message?.includes('403') ||
+          errorObj.message?.includes('access control checks')) {
+        errorMessage = 'Authentication required - Firebase Functions are secured for HIPAA compliance';
+      } else if (errorObj.code === 'functions/unauthenticated') {
         errorMessage = 'User authentication required - please log in';
       } else if (errorObj.message?.includes('Unauthorized') || errorObj.message?.includes('401')) {
         errorMessage = 'API authentication failed - Firebase Function API key issue';
       } else if (errorObj.message?.includes('timeout')) {
         errorMessage = 'Request timeout - Tebra API may be slow';
+      } else if (errorObj.details?.message) {
+        errorMessage = errorObj.details.message;
       } else if (errorObj.message) {
         errorMessage = errorObj.message;
       }
@@ -247,7 +272,7 @@ async function sendToRedisEventBus(healthData: {
   };
   error?: string;
 }): Promise<boolean> {
-  const redisEventBusUrl = import.meta.env.VITE_REDIS_SSE_URL;
+  const redisEventBusUrl = getEnvVar('VITE_REDIS_SSE_URL');
 
   // If Redis URL is not configured, skip
   if (!redisEventBusUrl) {
@@ -358,9 +383,9 @@ export async function tebraHealthCheck(): Promise<ApiResponse> {
 export const getApiInfo = () => ({
   usingFirebaseProxy: true,
   apiType: 'Firebase Functions -> PHP Cloud Run -> Tebra SOAP',
-  firebaseFunctionsUrl: import.meta.env.VITE_FIREBASE_FUNCTIONS_URL || 'https://us-central1-luknerlumina-firebase.cloudfunctions.net',
-  phpProxyUrl: import.meta.env.VITE_TEBRA_CLOUD_RUN_URL || 'https://tebra-php-api-623450773640.us-central1.run.app',
-  redisEventBusUrl: import.meta.env.VITE_REDIS_SSE_URL || null,
+  firebaseFunctionsUrl: getEnvVar('VITE_FIREBASE_FUNCTIONS_URL') || 'https://us-central1-luknerlumina-firebase.cloudfunctions.net',
+  phpProxyUrl: getEnvVar('VITE_TEBRA_CLOUD_RUN_URL') || 'https://tebra-php-api-623450773640.us-central1.run.app',
+  redisEventBusUrl: getEnvVar('VITE_REDIS_SSE_URL') || null,
   projectId: 'luknerlumina-firebase',
   unifiedProxy: true,
   message: 'Using single Firebase Function (tebraProxy) as unified proxy to PHP Tebra API',
@@ -471,7 +496,7 @@ interface ProviderData {
   // Test Redis connection
   async testRedisConnection() {
     console.log('📡 Testing Redis Event Bus connection...');
-    const redisEventBusUrl = import.meta.env.VITE_REDIS_SSE_URL;
+    const redisEventBusUrl = getEnvVar('VITE_REDIS_SSE_URL');
 
     if (!redisEventBusUrl) {
       console.warn('❌ Redis Event Bus URL not configured. Set VITE_REDIS_SSE_URL in your environment.');

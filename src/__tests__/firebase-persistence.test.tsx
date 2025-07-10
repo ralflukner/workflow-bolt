@@ -38,8 +38,8 @@ jest.mock('../services/firebase/dailySessionService', () => ({
 import { dailySessionService } from '../services/firebase/dailySessionService';
 import { createMockTimeContext } from '../test/contextMocks';
 import { usePatientContext } from '../hooks/usePatientContext';
-import { PatientContext } from '../context/PatientContextDef';
-import { TimeContext } from '../context/TimeContextDef';
+import { PatientContext } from '../contexts/PatientContext';
+import { TimeContext } from '../contexts/TimeContext';
 import { PatientContextType } from '../context/PatientContextType';
 import { Patient } from '../types';
 const mockDailySessionService = dailySessionService as jest.Mocked<typeof dailySessionService>;

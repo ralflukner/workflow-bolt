@@ -6,8 +6,11 @@ from datetime import datetime
 
 class LuknerTestRunner:
     def __init__(self):
-        self.test_dir = "tests"
-        self.results_dir = "test_results"
+        self.base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.test_dir = os.path.join(self.base_dir)
+        self.results_dir = os.path.join(self.base_dir, "test_results")
+        # Add parent directory to sys.path for import resolution
+        sys.path.insert(0, os.path.dirname(self.base_dir))
         
     def run_all_tests(self):
         """Run all tests"""
@@ -15,11 +18,11 @@ class LuknerTestRunner:
         print("=" * 50)
         
         test_suites = [
-            ("Unit Tests", f"{self.test_dir}/unit"),
-            ("Integration Tests", f"{self.test_dir}/integration"),
-            ("Performance Tests", f"{self.test_dir}/performance"),
-            ("Security Tests", f"{self.test_dir}/security"),
-            ("User Acceptance Tests", f"{self.test_dir}/user_acceptance")
+            ("Unit Tests", os.path.join(self.test_dir, "unit")),
+            ("Integration Tests", os.path.join(self.test_dir, "integration")),
+            ("Performance Tests", os.path.join(self.test_dir, "performance")),
+            ("Security Tests", os.path.join(self.test_dir, "security")),
+            ("User Acceptance Tests", os.path.join(self.test_dir, "user_acceptance"))
         ]
         
         all_results = []
@@ -53,11 +56,11 @@ class LuknerTestRunner:
     def run_specific_test(self, test_type):
         """Run specific test type"""
         test_paths = {
-            "unit": f"{self.test_dir}/unit",
-            "integration": f"{self.test_dir}/integration",
-            "performance": f"{self.test_dir}/performance",
-            "security": f"{self.test_dir}/security",
-            "user": f"{self.test_dir}/user_acceptance"
+            "unit": os.path.join(self.test_dir, "unit"),
+            "integration": os.path.join(self.test_dir, "integration"),
+            "performance": os.path.join(self.test_dir, "performance"),
+            "security": os.path.join(self.test_dir, "security"),
+            "user": os.path.join(self.test_dir, "user_acceptance")
         }
         
         if test_type not in test_paths:
@@ -77,32 +80,32 @@ class LuknerTestRunner:
     def generate_test_report(self, results):
         """Generate comprehensive test report"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        report_file = f"{self.results_dir}/test_report_{timestamp}.txt"
+        report_file = os.path.join(self.results_dir, f"test_report_{timestamp}.txt")
         
         os.makedirs(self.results_dir, exist_ok=True)
         
         with open(report_file, "w") as f:
-            f.write("LUKNERLUMINA TEST REPORT")
-            f.write("=" * 50 + "")
-            f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            f.write("LUKNERLUMINA TEST REPORT\n")
+            f.write("=" * 50 + "\n")
+            f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             
             total_tests = sum(r["tests_run"] for r in results)
             total_failures = sum(r["failures"] for r in results)
             total_errors = sum(r["errors"] for r in results)
             
-            f.write(f"SUMMARY:")
-            f.write(f"Total Tests: {total_tests}")
-            f.write(f"Failures: {total_failures}")
-            f.write(f"Errors: {total_errors}")
-            f.write(f"Success Rate: {((total_tests - total_failures - total_errors) / total_tests * 100):.1f}%")
+            f.write(f"SUMMARY:\n")
+            f.write(f"Total Tests: {total_tests}\n")
+            f.write(f"Failures: {total_failures}\n")
+            f.write(f"Errors: {total_errors}\n")
+            f.write(f"Success Rate: {((total_tests - total_failures - total_errors) / total_tests * 100):.1f}%\n")
             
-            f.write("DETAILED RESULTS:")
+            f.write("DETAILED RESULTS:\n")
             for result in results:
-                f.write(f"{result['suite']}:")
-                f.write(f"  Tests Run: {result['tests_run']}")
-                f.write(f"  Failures: {result['failures']}")
-                f.write(f"  Errors: {result['errors']}")
-                f.write(f"  Success: {'✅' if result['success'] else '❌'}")
+                f.write(f"{result['suite']}:\n")
+                f.write(f"  Tests Run: {result['tests_run']}\n")
+                f.write(f"  Failures: {result['failures']}\n")
+                f.write(f"  Errors: {result['errors']}\n")
+                f.write(f"  Success: {'✅' if result['success'] else '❌'}\n")
         
         print(f"📊 Test report generated: {report_file}")
 

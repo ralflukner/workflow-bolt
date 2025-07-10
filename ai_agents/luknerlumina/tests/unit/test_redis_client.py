@@ -22,7 +22,7 @@ class TestLuknerSecureRedisClient(unittest.TestCase):
     @patch('redis.Redis')
     def test_data_storage(self, mock_redis):
         """Test data storage functionality"""
-        mock_redis.return_value.hset.return_value = True
+        mock_redis.return_value.set.return_value = True
         
         test_data = {"test_key": "test_value"}
         result = self.client.store_data("test_namespace", test_data)
@@ -33,7 +33,7 @@ class TestLuknerSecureRedisClient(unittest.TestCase):
     @patch('redis.Redis')
     def test_data_retrieval(self, mock_redis):
         """Test data retrieval functionality"""
-        mock_redis.return_value.hget.return_value = '{"test_key": "test_value"}'
+        mock_redis.return_value.get.return_value = '{"test_key": "test_value"}'
         
         result = self.client.get_data("test_namespace")
         self.assertIsNotNone(result)

@@ -8,6 +8,11 @@ import React from 'react';
 // Determine if we are running real API tests (Firebase should not be mocked)
 const isRealApiRun = process.env.RUN_REAL_API_TESTS === 'true';
 
+// Set up test environment variables
+if (!process.env.VITE_PATIENT_ENCRYPTION_KEY) {
+  process.env.VITE_PATIENT_ENCRYPTION_KEY = 'ZeLpBQob06yXimyP1IrpV0qQx+oJxDIPsAIBT+7+Xbg=';
+}
+
 // Mock timers globally to prevent hanging
 jest.useFakeTimers();
 

@@ -45,15 +45,15 @@ export const PatientStatusCategories = {
 // Utility functions for type-safe status checking
 export class PatientStatusUtils {
   static isWaiting(status: PatientStatus | string): boolean {
-    return PatientStatusCategories.WAITING.includes(status as PatientStatus);
+    return (PatientStatusCategories.WAITING as readonly PatientStatus[]).includes(status as PatientStatus);
   }
   
   static isCompleted(status: PatientStatus | string): boolean {
-    return PatientStatusCategories.COMPLETED_TODAY.includes(status as PatientStatus);
+    return (PatientStatusCategories.COMPLETED_TODAY as readonly PatientStatus[]).includes(status as PatientStatus);
   }
   
   static isInProgress(status: PatientStatus | string): boolean {
-    return PatientStatusCategories.IN_PROGRESS.includes(status as PatientStatus);
+    return (PatientStatusCategories.IN_PROGRESS as readonly PatientStatus[]).includes(status as PatientStatus);
   }
   
   static getDisplayLabel(status: PatientStatus): string {
