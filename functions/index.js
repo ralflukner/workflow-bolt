@@ -133,27 +133,12 @@ const {
 
 // Initialize Firebase Admin (avoid duplicate app error)
 if (!admin.apps.length) {
-  // In cloud environment, use default service account
-  // In emulator mode, use explicit service account if available
-  const config = {
+  // Initialize with default credentials and explicit project ID
+  admin.initializeApp({
     projectId: 'luknerlumina-firebase'
-  };
-  
-  // Only set credential if running in emulator and file exists
-  if (process.env.FUNCTIONS_EMULATOR && process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    try {
-      const fs = require('fs');
-      if (fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
-        const serviceAccount = require(process.env.GOOGLE_APPLICATION_CREDENTIALS);
-        config.credential = admin.credential.cert(serviceAccount);
-      }
-    } catch (error) {
-      console.warn('Could not load service account credentials, using default:', error.message);
-    }
-  }
-  
-  admin.initializeApp(config);
+  });
 }
+const db = admin.firestore();
 
 // Note: Secrets management moved to environment variables for this deployment
 
