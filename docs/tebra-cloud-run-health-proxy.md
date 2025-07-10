@@ -5,6 +5,7 @@
 ---
 
 ## Overview
+
 Tebra Debug Dashboard needs to poll the `/health` endpoint of the private Cloud-Run service `tebra-php-api`.  Direct public access is forbidden (HIPAA).  The solution is to proxy the request through an **authenticated, callable** Firebase Function named `tebraProxy`.
 
 ```
@@ -15,6 +16,7 @@ Browser (signed-in) ──▶ tebraProxy (Callable) ──▶ Cloud Run (private
 ```
 
 Security guarantees:
+
 * Cloud-Run remains private (`roles/run.invoker` granted only to the function's SA).  
 * Browser must present a Firebase ID-token (same project) to call `tebraProxy`.  
 * `tebraProxy` forwards the **internal** `X-API-KEY` to PHP for an additional layer.
@@ -24,6 +26,7 @@ Security guarantees:
 ## Implementation Steps
 
 ### 1. Add `cloudRunHealth` action in **functions/src/tebraProxy.ts**
+
 ```ts
 import { GoogleAuth } from 'google-auth-library';
 
@@ -45,6 +48,7 @@ if (data.action === 'cloudRunHealth') {
 ```
 
 ### 2. Runtime config (Firebase CLI)
+
 ```bash
 firebase functions:config:set \
   tebra.cloud_run_url="https://tebra-php-api-623450773640.us-central1.run.app" \
@@ -52,11 +56,13 @@ firebase functions:config:set \
 ```
 
 ### 3. Deploy callable (Gen-2)
+
 ```bash
 firebase deploy --only functions:tebraProxy
 ```
 
 ### 4. Grant invoker on Cloud-Run to the function's SA
+
 ```bash
 FUNCTION_SA=$(gcloud functions describe tebraProxy \
   --region us-central1 --format='value(serviceConfig.serviceAccountEmail)')
@@ -68,6 +74,7 @@ gcloud run services add-iam-policy-binding tebra-php-api \
 ```
 
 ### 5. Front-end usage
+
 ```ts
 import { httpsCallable, getFunctions } from 'firebase/functions';
 
@@ -79,6 +86,7 @@ console.log(res.data.status); // 'healthy' | 'unhealthy'
 ---
 
 ## Testing Checklist
+
 1. `firebase functions:log --only tebraProxy` shows `🏥 Cloud Run health check proxy request` with `200` status.  
 2. `curl` with a user ID-token returns `{ success:true, status:'healthy' }`.  
 3. Dashboard "Cloud Run" / "Tebra Proxy" rows display **healthy**.  
@@ -88,7 +96,8 @@ console.log(res.data.status); // 'healthy' | 'unhealthy'
 ---
 
 ## Audit & Compliance Notes
+
 * All PHI remains behind `X-API-KEY` and private Cloud-Run.  
 * Firebase Auth provides user-level auditing.  
 * IAM roles constrain service-account access.  
-* Implementation reviewed 2025-07-04 by o3-max, Gemini, and Claude agents. 
+* Implementation reviewed 2025-07-04 by o3-max, Gemini, and Claude agents.

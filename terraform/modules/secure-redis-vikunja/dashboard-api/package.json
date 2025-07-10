@@ -1,0 +1,13 @@
+{
+  "name": "dashboard-persistence-api",
+  "version": "1.0.0",
+  "description": "Dashboard Persistence API for storing patient data in PostgreSQL",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "pg": "^8.11.3",
+    "@google-cloud/secret-manager": "^5.0.1"
+  }
+} 

@@ -30,26 +30,31 @@ src/cli/commands/
 ## Error Scenarios Covered
 
 ### 1. RedisJSON Module Missing
+
 - **Scenario**: Redis instance doesn't have RedisJSON module installed
 - **Error**: `ERR unknown command 'JSON.SET'`
 - **Expected Behavior**: Raises `RuntimeError` with clear message about missing module
 
 ### 2. Connection Errors
+
 - **Scenario**: Redis server is unreachable or connection is refused
 - **Error**: `Connection refused`
 - **Expected Behavior**: Raises `ConnectionError` with connection details
 
 ### 3. JSON Serialization Errors
+
 - **Scenario**: Data contains non-serializable objects (circular references, etc.)
 - **Error**: `TypeError` during JSON serialization
 - **Expected Behavior**: Raises `ValueError` with data format error message
 
 ### 4. Authentication Errors
+
 - **Scenario**: Redis requires authentication but credentials are invalid
 - **Error**: `NOAUTH Authentication required`
 - **Expected Behavior**: Raises `AuthenticationError` with auth details
 
 ### 5. Memory Errors
+
 - **Scenario**: Redis is out of memory
 - **Error**: `OOM command not allowed when used memory > 'maxmemory'`
 - **Expected Behavior**: Raises appropriate error with memory information
@@ -196,6 +201,7 @@ TEST_WORKFLOW_DATA = {
 4. Use descriptive docstrings explaining the test scenario
 
 Example:
+
 ```python
 def test_store_patient_data_timeout_error(self):
     """Test error handling for Redis operation timeouts"""
@@ -284,6 +290,7 @@ python3 run_tests.py --verbose --debug
 ```
 
 This will show:
+
 - Detailed error messages
 - Mock call verification
 - Test setup and teardown information

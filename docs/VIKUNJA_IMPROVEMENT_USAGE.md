@@ -7,6 +7,7 @@ The **Vikunja Improvement Project** (Project ID: 8) is dedicated to tracking and
 ## 📋 Current Tasks
 
 ### High Priority (Priority 3) - 6 tasks
+
 - **Infrastructure**: Set up multi-project organization
 - **Enhancement**: Implement enhanced task lifecycle management  
 - **Tools**: Create enhanced CLI tools for multi-project support
@@ -15,6 +16,7 @@ The **Vikunja Improvement Project** (Project ID: 8) is dedicated to tracking and
 - **Security**: Audit and improve task security
 
 ### Medium Priority (Priority 2) - 4 tasks
+
 - **AI Agents**: Integrate AI agents with Vikunja
 - **Documentation**: Create comprehensive usage guide
 - **Metrics**: Set up reporting and analytics
@@ -23,6 +25,7 @@ The **Vikunja Improvement Project** (Project ID: 8) is dedicated to tracking and
 ## 🛠 Management Commands
 
 ### View Tasks
+
 ```bash
 # Show all improvement tasks organized by category
 ./scripts/vikunja-improvement.cjs list
@@ -32,6 +35,7 @@ The **Vikunja Improvement Project** (Project ID: 8) is dedicated to tracking and
 ```
 
 ### Add New Tasks
+
 ```bash
 # Add a new improvement task
 ./scripts/vikunja-improvement.cjs add "Title" "Description" [priority]
@@ -41,6 +45,7 @@ The **Vikunja Improvement Project** (Project ID: 8) is dedicated to tracking and
 ```
 
 ### General Vikunja Management
+
 ```bash
 # List all tasks across projects
 ./scripts/manage-tasks.cjs list
@@ -55,30 +60,38 @@ The **Vikunja Improvement Project** (Project ID: 8) is dedicated to tracking and
 ## 📊 Progress Tracking
 
 ### Current Status
+
 - **Total Tasks**: 10
 - **Completed**: 0 (0%)
 - **Remaining**: 10
 - **Next Milestone**: Complete Phase 1 (Foundation) tasks
 
 ### Priority Distribution
+
 - Priority 2: 4 tasks (40%)
 - Priority 3: 6 tasks (60%)
 
 ## 🎯 Implementation Phases
 
 ### Phase 1: Foundation (Current)
+
 Focus on these 3 high-priority tasks:
+
 1. **[INFRASTRUCTURE] Set up multi-project organization**
 2. **[TOOLS] Create enhanced CLI tools for multi-project support**
 3. **[SECURITY] Audit and improve task security**
 
 ### Phase 2: Integration (Next)
+
 Focus on these 2 high-priority tasks:
+
 1. **[INTEGRATION] Add Git integration for task tracking**
 2. **[INTEGRATION] Implement CI/CD integration**
 
 ### Phase 3: Enhancement (Future)
+
 Focus on remaining tasks:
+
 1. **[ENHANCEMENT] Implement enhanced task lifecycle management**
 2. **[AI_AGENTS] Integrate AI agents with Vikunja**
 3. **[DOCUMENTATION] Create comprehensive usage guide**
@@ -88,11 +101,13 @@ Focus on remaining tasks:
 ## 📈 Success Metrics
 
 ### Quantitative Goals
+
 - **Task Completion Rate**: Target 80%+ tasks completed on time
 - **Phase Completion**: Complete Phase 1 within 2 weeks
 - **Tool Adoption**: 100% team adoption of new CLI tools
 
 ### Qualitative Goals
+
 - **Developer Satisfaction**: Improved task management experience
 - **Project Visibility**: Clear status and progress tracking
 - **Process Efficiency**: Reduced time spent on task management
@@ -100,16 +115,19 @@ Focus on remaining tasks:
 ## 🔄 Workflow
 
 ### Daily
+
 - Review open tasks in the improvement project
 - Update task status as work progresses
 - Add new improvement ideas as they arise
 
 ### Weekly
+
 - Review progress on high-priority tasks
 - Plan next week's improvement focus
 - Update task priorities based on changing needs
 
 ### Monthly
+
 - Review overall improvement project progress
 - Assess effectiveness of implemented improvements
 - Plan next month's improvement initiatives
@@ -117,18 +135,21 @@ Focus on remaining tasks:
 ## 📝 Best Practices
 
 ### Task Creation
+
 - Use clear, actionable titles
 - Include detailed descriptions with acceptance criteria
 - Set appropriate priorities (2-3 for most improvements)
 - Use category labels consistently
 
 ### Task Management
+
 - Update task status regularly
 - Add progress notes in task descriptions
 - Link related tasks together
 - Mark tasks as done when completed
 
 ### Collaboration
+
 - Review tasks with team members
 - Share progress updates
 - Gather feedback on implemented improvements
@@ -164,4 +185,4 @@ Focus on remaining tasks:
 
 ---
 
-This project serves as the central hub for all Vikunja-related improvements, ensuring systematic enhancement of our project management capabilities. 
+This project serves as the central hub for all Vikunja-related improvements, ensuring systematic enhancement of our project management capabilities.

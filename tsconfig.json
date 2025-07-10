@@ -20,7 +20,13 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] }
+    "paths": { 
+      "@/*": ["src/*"],
+      "firebase/app": ["src/stubs/firebase-stubs.ts"],
+      "firebase/auth": ["src/stubs/firebase-stubs.ts"],
+      "firebase/firestore": ["src/stubs/firebase-stubs.ts"],
+      "firebase/functions": ["src/stubs/firebase-stubs.ts"]
+    }
   },
   "include": ["src"],
   "exclude": [

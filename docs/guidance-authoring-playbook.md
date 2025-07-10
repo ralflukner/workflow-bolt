@@ -3,15 +3,19 @@
 _The definitive standard for writing production-grade technical instructions, validation protocols, and operational procedures in workflow-bolt._
 
 ---
+
 ## 🚀 Quick Start Templates
 
 **For Redis/VPC Verification:**
+
 ```bash
 make test-redis FUNC=<function_name>                # Positive test
 make test-redis FUNC=<function_name> REDIS_IP=192.168.99.99  # Negative test
 make clean-test-code FUNC=<function_name>           # Cleanup
 ```
+
 **For Function Deployment:**
+
 ```bash
 make deploy NAME=<function> VPC_CONNECTOR=redis-connector
 make validate NAME=<function>
@@ -19,8 +23,11 @@ make rollback NAME=<function>  # If issues
 ```
 
 ---
+
 ## 📋 Universal Pre-Flight Checklist
+
 Before ANY production change:
+
 - Current state documented (`git status`, `gcloud functions list`)
 - Rollback plan ready
 - Change window approved (if applicable)
@@ -28,21 +35,27 @@ Before ANY production change:
 - Test in dev/staging first
 
 ---
+
 ## 🎯 Core Principles (Enhanced)
 
 ### 1. Test Pyramid
+
 ```
 Unit Tests → Integration Tests → E2E Tests → Negative Tests → Load Tests
      ↓              ↓                ↓              ↓            ↓
   Fast/Many    Medium/Some      Slow/Few      Critical      Pre-prod
 ```
+
 ### 2. Context Hierarchy
+
 ```
 WHERE: Project root → Cloud Shell → Container → Production
 WHEN: Dev hours → Maintenance window → Emergency
 WHO: Developer → DevOps → SRE
 ```
+
 ### 3. Success/Failure Matrix
+
 | Test Type | Success Criteria | Failure Criteria | Action on Failure |
 |-----------|-----------------|------------------|------------------|
 | Positive  | Expected output + 200 OK | Any deviation | Debug → Retry → Escalate |
@@ -50,12 +63,15 @@ WHO: Developer → DevOps → SRE
 | Load      | <100ms p99, 0 errors | Timeouts, errors | Scale → Optimize → Defer |
 
 ### 4. The 3R Rule
+
 - **Repeatable:** Same result every time
 - **Reversible:** Can undo/rollback
 - **Recorded:** Logged and auditable
 
 ---
+
 ## 📝 Enhanced Command Template
+
 ```markdown
 ### [SEVERITY: LOW|MEDIUM|HIGH|CRITICAL] Task Name
 
@@ -71,7 +87,9 @@ WHO: Developer → DevOps → SRE
 command-to-check-prerequisites
 # Expected: <output>
 ```
+
 **Main Execution:**
+
 ```bash
 # Step 1: <purpose> [SAFE|MODIFIES|DANGEROUS]
 tested-command-here
@@ -83,18 +101,23 @@ tested-command-here
 validation-command
 # Expected: <success indicator>
 ```
+
 **Rollback Plan:**
+
 ```bash
 # If anything goes wrong:
 rollback-command
 # Verify rollback:
 verification-command
 ```
+
 **Post-Validation:**
+
 - Logs clean
 - Metrics normal
 - No alerts firing
 - Document completed
+
 ```
 
 ---
@@ -109,20 +132,26 @@ GOOD: redis.Redis(password=os.environ.get('REDIS_PASSWORD'))
 # Use Secret Manager
 gcloud secrets versions access latest --secret="redis-password"
 ```
+
 **Access Control**
+
 - Always use least privilege
 - Service accounts > personal accounts
 - Time-bound access when possible
 
 ---
+
 ## 🧪 Comprehensive Testing Guide
 
 ### 1. Positive Test (Happy Path)
+
 ```bash
 curl -X POST $URL -d '{"valid":"data"}'
 # Expect: 200 OK, {"status":"success"}
 ```
+
 ### 2. Negative Tests (REQUIRED)
+
 ```bash
 # Test A: Invalid input
 curl -X POST $URL -d '{"invalid"}'
@@ -136,7 +165,9 @@ REDIS_IP=999.999.999.999 make deploy NAME=func
 gcloud auth revoke && curl $URL
 # Expect: 403 Forbidden
 ```
+
 ### 3. Edge Cases
+
 ```bash
 # Concurrent requests
 for i in {1..10}; do curl $URL & done; wait
@@ -148,9 +179,11 @@ curl -X POST $URL -d @10mb-file.json
 ```
 
 ---
+
 ## 📊 Monitoring & Alerting Setup
 
 **Required Metrics**
+
 ```yaml
 alerts:
   - name: "Function Error Rate"
@@ -168,7 +201,9 @@ alerts:
     duration: 10m
     severity: WARNING
 ```
+
 **Dashboard Elements**
+
 - Request rate
 - Error rate
 - Latency (p50, p95, p99)
@@ -176,7 +211,9 @@ alerts:
 - VPC connector health
 
 ---
+
 ## 🚨 Troubleshooting Matrix
+
 | Symptom         | Likely Cause         | Quick Check                | Fix                        |
 |-----------------|---------------------|----------------------------|----------------------------|
 | 404 Not Found   | Function not deployed| gcloud functions list      | make deploy                |
@@ -186,9 +223,11 @@ alerts:
 | No logs         | Wrong filter         | Remove filters             | Check all log streams      |
 
 ---
+
 ## ✅ Production Readiness Checklist v3
 
 **Code Quality**
+
 - [ ] All tests passing (unit, integration, e2e)
 - [ ] No hardcoded secrets/IPs
 - [ ] Error handling comprehensive
@@ -196,6 +235,7 @@ alerts:
 - [ ] No debug/test code in production
 
 **Infrastructure**
+
 - [ ] VPC connector attached and tested
 - [ ] Proper IAM roles assigned
 - [ ] Secrets in Secret Manager
@@ -203,6 +243,7 @@ alerts:
 - [ ] Resource limits configured
 
 **Operations**
+
 - [ ] Monitoring dashboards created
 - [ ] Alert policies configured and tested
 - [ ] Runbooks documented
@@ -210,6 +251,7 @@ alerts:
 - [ ] Rollback procedure tested
 
 **Validation**
+
 - [ ] Positive tests: 100% pass
 - [ ] Negative tests: Proper error handling confirmed
 - [ ] Load test: Meets SLA requirements
@@ -217,14 +259,18 @@ alerts:
 - [ ] Documentation: Complete and accurate
 
 **Sign-off**
+
 - [ ] Code reviewed by: ____________
 - [ ] Tested by: ____________
 - [ ] Approved by: ____________
 - [ ] Deployed on: ____________
 
 ---
+
 ## 📚 Documentation Requirements
+
 Every Change Must Include:
+
 - **What:** Clear description of change
 - **Why:** Business/technical justification
 - **How:** Step-by-step procedure followed
@@ -235,6 +281,7 @@ Every Change Must Include:
 - **Next Steps:** Follow-up actions required
 
 **Example Log Entry:**
+
 ```markdown
 ## 2025-01-05 Redis VPC Verification
 **What**: Verified Redis connectivity via VPC for patient_sync, tebra_debug
@@ -251,7 +298,9 @@ Every Change Must Include:
 ```
 
 ---
+
 ## 🎯 Quick Decision Tree
+
 ```
 Is this change critical?
 ├─ YES → Do you have rollback plan?
@@ -263,8 +312,11 @@ Is this change critical?
 ```
 
 ---
+
 ## 📌 Remember
+
 "In production, paranoia is professionalism."
+
 - Test everything twice
 - Document everything once
 - Assume nothing
@@ -274,4 +326,4 @@ Is this change critical?
 
 **Version:** 3.0
 **Last Updated:** 2025-01-05
-**Status:** Active Production Standard 
+**Status:** Active Production Standard

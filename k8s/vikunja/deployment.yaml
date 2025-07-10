@@ -1,0 +1,135 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vikunja
+  namespace: vikunja
+  labels:
+    app: vikunja
+    version: stable
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vikunja
+  template:
+    metadata:
+      labels:
+        app: vikunja
+        version: stable
+      annotations:
+        # Force pod restart on config changes
+        checksum/config: "{{ include (print $.Template.BasePath \"/configmap.yaml\") . | sha256sum }}"
+    spec:
+      serviceAccountName: vikunja
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: vikunja
+        image: vikunja/vikunja:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3456
+          name: http
+          protocol: TCP
+        env:
+        - name: VIKUNJA_DATABASE_TYPE
+          value: "postgres"
+        - name: VIKUNJA_DATABASE_HOST
+          valueFrom:
+            secretKeyRef:
+              name: vikunja-secret
+              key: VIKUNJA_DATABASE_HOST
+        - name: VIKUNJA_DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: vikunja-secret
+              key: VIKUNJA_DATABASE_USER
+        - name: VIKUNJA_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vikunja-secret
+              key: VIKUNJA_DATABASE_PASSWORD
+        - name: VIKUNJA_DATABASE_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: vikunja-secret
+              key: VIKUNJA_DATABASE_DATABASE
+        - name: VIKUNJA_REDIS_ENABLED
+          value: "true"
+        - name: VIKUNJA_REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: vikunja-secret
+              key: VIKUNJA_REDIS_HOST
+        - name: VIKUNJA_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vikunja-secret
+              key: VIKUNJA_REDIS_PASSWORD
+        - name: VIKUNJA_REDIS_DB
+          value: "0"
+        - name: VIKUNJA_SERVICE_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: vikunja-secret
+              key: VIKUNJA_SERVICE_JWT_SECRET
+        - name: VIKUNJA_SERVICE_INTERFACE
+          value: ":3456"
+        - name: VIKUNJA_LOG_LEVEL
+          value: "INFO"
+        - name: VIKUNJA_LOG_PATH
+          value: "stdout"
+        volumeMounts:
+        - name: config
+          mountPath: /etc/vikunja
+          readOnly: true
+        - name: files
+          mountPath: /app/vikunja/files
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3456
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3456
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: config
+        configMap:
+          name: vikunja-config
+      - name: files
+        persistentVolumeClaim:
+          claimName: vikunja-files-pvc
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - vikunja
+              topologyKey: kubernetes.io/hostname 

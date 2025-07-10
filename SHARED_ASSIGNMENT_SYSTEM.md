@@ -3,6 +3,7 @@
 ## Universal Tools for Multi-Agent/Human Collaboration
 
 ### Overview
+
 This system provides universal task assignment and completion tools that work for all agents and humans sharing the Vikunja project management system.
 
 ---
@@ -12,11 +13,13 @@ This system provides universal task assignment and completion tools that work fo
 **Script**: `./ai-agents/cursor-gpt-4.1-max/scripts/assign-task.cjs`
 
 ### Usage
+
 ```bash
 ./assign-task.cjs TASK_ID AGENT_NAME [STATUS] [CATEGORY] [PRIORITY]
 ```
 
 ### Examples
+
 ```bash
 # Assign task to cursor-claude-sonnet
 ./assign-task.cjs 3014 cursor-claude-sonnet in-progress
@@ -29,6 +32,7 @@ This system provides universal task assignment and completion tools that work fo
 ```
 
 ### Available Agents/Users
+
 - `cursor-claude-sonnet` - AI agent (code analysis, documentation, architecture)
 - `cursor-gpt-4.1-max` - AI agent (implementation, debugging, testing)
 - `drlukner` - Human user (project oversight, medical domain expertise)
@@ -40,11 +44,13 @@ This system provides universal task assignment and completion tools that work fo
 **Script**: `./ai-agents/cursor-gpt-4.1-max/scripts/complete-task.cjs`
 
 ### Usage
+
 ```bash
 ./complete-task.cjs TASK_ID AGENT_NAME [COMPLETION_NOTES]
 ```
 
 ### Examples
+
 ```bash
 # Complete task with notes
 ./complete-task.cjs 3014 cursor-claude-sonnet "Successfully implemented inter-agent protocols"
@@ -70,12 +76,14 @@ When the full label system has API issues, use this description-based assignment
 ## 🏗️ **Project Structure**
 
 ### Agent/User Projects
+
 - **cursor-claude-sonnet Tasks** (ID: 10) - AI agent personal tasks
 - **cursor-gpt-4.1-max Tasks** (ID: 3) - AI agent personal tasks  
 - **drlukner Tasks** (ID: 11) - Human user tasks
 - **Shared Agent Tasks** (ID: 9) - Cross-cutting coordination tasks
 
 ### Shared Projects
+
 - **Critical Bugs & Fixes** (ID: 5) - Urgent system issues
 - **Auth0 Firebase Debug** (ID: 6) - Authentication system
 - **Tebra Integration Critical** (ID: 7) - Medical records integration
@@ -86,6 +94,7 @@ When the full label system has API issues, use this description-based assignment
 ## 🎯 **Assignment Workflow**
 
 ### 1. For Any Agent/User
+
 ```bash
 # Assign task
 ./assign-task.cjs TASK_ID AGENT_NAME STATUS
@@ -97,11 +106,13 @@ When the full label system has API issues, use this description-based assignment
 ```
 
 ### 2. Cross-Project Coordination
+
 - Tasks can reference related projects in descriptions
 - Use "Related projects: ID1, ID2" format
 - Use "Related agents: agent1, agent2" format
 
 ### 3. Status Tracking
+
 - **todo** - Ready to start
 - **in-progress** - Currently working
 - **review** - Ready for review
@@ -116,11 +127,13 @@ When the full label system has API issues, use this description-based assignment
 When the enhanced Vikunja API is fully working, the system supports:
 
 ### Agent Labels
+
 - `agent:cursor-claude-sonnet` (purple)
 - `agent:cursor-gpt-4.1-max` (blue)
 - `agent:drlukner` (green)
 
 ### Status Labels
+
 - `status:todo` (gray)
 - `status:in-progress` (blue)
 - `status:review` (orange)
@@ -129,6 +142,7 @@ When the enhanced Vikunja API is fully working, the system supports:
 - `status:blocked` (red)
 
 ### Category Labels
+
 - `category:bug` (red)
 - `category:feature` (green)
 - `category:refactor` (blue)
@@ -139,6 +153,7 @@ When the enhanced Vikunja API is fully working, the system supports:
 - `category:performance` (green)
 
 ### Priority Labels
+
 - `priority:critical` (dark red)
 - `priority:high` (orange)
 - `priority:medium` (yellow)
@@ -189,7 +204,7 @@ When the enhanced Vikunja API is fully working, the system supports:
 
 ## 🚀 **Getting Started**
 
-### For Any New Agent/User:
+### For Any New Agent/User
 
 1. **Check available tasks:**
    ```bash
@@ -206,7 +221,7 @@ When the enhanced Vikunja API is fully working, the system supports:
    ./complete-task.cjs TASK_ID YOUR_NAME "What you accomplished"
    ```
 
-### For Project Coordination:
+### For Project Coordination
 
 1. **Create cross-project task:**
    ```bash
@@ -234,17 +249,20 @@ When the enhanced Vikunja API is fully working, the system supports:
 
 ## 🔧 **Troubleshooting**
 
-### If Enhanced API Labels Don't Work:
+### If Enhanced API Labels Don't Work
+
 - Use `simple-assign.cjs` for description-based assignment
 - Assignment info stored in task descriptions
 - Still provides full audit trail and ownership tracking
 
-### If Task Assignment Fails:
+### If Task Assignment Fails
+
 - Check that agent name is valid: `cursor-claude-sonnet`, `cursor-gpt-4.1-max`, `drlukner`
 - Verify task ID exists: `./debug-labels.cjs TASK_ID`
 - Use fallback: `./simple-assign.cjs TASK_ID AGENT_NAME STATUS`
 
-### For New Agents:
+### For New Agents
+
 - Add agent to valid agents list in scripts
 - Create agent-specific project if needed
 - Update documentation with new agent capabilities

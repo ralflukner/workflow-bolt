@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tebra-redis-worker
+  namespace: tebra-worker
+  labels:
+    app: tebra-redis-worker
+    version: stable
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tebra-redis-worker
+  template:
+    metadata:
+      labels:
+        app: tebra-redis-worker
+        version: stable
+      annotations:
+        checksum/config: "{{ include (print $.Template.BasePath \"/configmap.yaml\") . | sha256sum }}"
+    spec:
+      serviceAccountName: tebra-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: worker
+        image: gcr.io/luknerlumina-firebase/tebra-redis-worker:latest
+        imagePullPolicy: Always
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: tebra-worker-secret
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: tebra-worker-secret
+              key: REDIS_PASSWORD
+        - name: TEBRA_PHP_API_URL
+          valueFrom:
+            secretKeyRef:
+              name: tebra-worker-secret
+              key: TEBRA_PHP_API_URL
+        - name: TEBRA_INTERNAL_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: tebra-worker-secret
+              key: TEBRA_INTERNAL_API_KEY
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: "/var/secrets/google/key.json"
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+          readOnly: true
+        - name: google-service-account
+          mountPath: /var/secrets/google
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: config
+        configMap:
+          name: tebra-worker-config
+      - name: google-service-account
+        secret:
+          secretName: tebra-worker-gsa-key
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - tebra-redis-worker
+              topologyKey: kubernetes.io/hostname 

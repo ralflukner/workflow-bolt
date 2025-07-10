@@ -5,6 +5,7 @@
 ### **Available AI Services & Models**
 
 #### **Google AI Platform**
+
 ```bash
 # Google AI API Key Setup
 export GOOGLE_AI_API_KEY="your-google-ai-key"
@@ -17,6 +18,7 @@ export GOOGLE_AI_API_KEY="your-google-ai-key"
 ```
 
 #### **OpenAI Platform**  
+
 ```bash
 # OpenAI API Key Setup
 export OPENAI_API_KEY="your-openai-key"
@@ -29,6 +31,7 @@ export OPENAI_API_KEY="your-openai-key"
 ```
 
 #### **Claude (Anthropic)**
+
 ```bash
 # Claude API Key Setup  
 export CLAUDE_API_KEY="your-claude-key"
@@ -40,6 +43,7 @@ export CLAUDE_API_KEY="your-claude-key"
 ```
 
 #### **Poe Platform**
+
 ```bash
 # Poe API Key Setup
 export POE_API_KEY="your-poe-key"
@@ -52,6 +56,7 @@ export POE_API_KEY="your-poe-key"
 ```
 
 #### **Sider.ai Platform**
+
 ```bash
 # Sider AI API Key Setup
 export SIDER_API_KEY="your-sider-key"

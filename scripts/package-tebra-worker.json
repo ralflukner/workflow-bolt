@@ -1,0 +1,18 @@
+{
+  "name": "tebra-redis-worker",
+  "version": "1.0.0",
+  "description": "Tebra Redis Worker - Processes API requests from Redis streams",
+  "main": "tebra-redis-worker.js",
+  "scripts": {
+    "start": "node tebra-redis-worker.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "redis": "^4.6.10",
+    "axios": "^1.6.2",
+    "uuid": "^9.0.1",
+    "express": "^4.18.2"
+  }
+} 

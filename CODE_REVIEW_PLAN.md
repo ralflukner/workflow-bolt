@@ -4,6 +4,7 @@ This checklist is tuned for the current tech stack
 (Python 3.11 + GCP Cloud Functions Gen 2 + Make + Terraform + pytest).
 
 ────────────────────────────────  
+
 1. Architecture & Design  
 • Diagram end-to-end flow: triggering client → CF handler → Redis → downstream services.  
 • Trace shared helpers (e.g. `templates/secure_http.py`) to ensure single-responsibility and no hidden coupling.  

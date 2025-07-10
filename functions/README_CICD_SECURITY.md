@@ -12,4 +12,4 @@ security-check:
     - if: $CI_MERGE_REQUEST_ID
 ```
 
-Update scripts and endpoints as needed to ensure all security checks pass before deployment. 
+Update scripts and endpoints as needed to ensure all security checks pass before deployment.

@@ -38,6 +38,7 @@ The sync functionality is responsible for synchronizing appointment and patient 
 **Purpose**: Main synchronization logic that orchestrates the entire sync process.
 
 **Key Features**:
+
 - Date range support (single date, date ranges, or default to today)
 - Bounded concurrency using `p-limit` (max 10 concurrent requests)
 - Comprehensive error handling and recovery
@@ -46,6 +47,7 @@ The sync functionality is responsible for synchronizing appointment and patient 
 - Status mapping integration
 
 **Input Parameters**:
+
 ```javascript
 const syncSchedule = async (
   { tebra, repo, logger, now, timezone },  // Dependencies
@@ -55,6 +57,7 @@ const syncSchedule = async (
 ```
 
 **Dependencies**:
+
 - `tebra`: TebraClient interface for API operations
 - `repo`: Repository for Firestore operations
 - `logger`: Structured logging service
@@ -68,6 +71,7 @@ const syncSchedule = async (
 **Purpose**: Maps Tebra appointment statuses to internal dashboard statuses.
 
 **Status Mapping Logic**:
+
 ```javascript
 // Tebra Status → Internal Status
 'scheduled'    → 'scheduled'
@@ -85,6 +89,7 @@ const syncSchedule = async (
 ```
 
 **Check-in Status Detection**:
+
 ```javascript
 function isCheckedIn(status) {
   return [
@@ -101,6 +106,7 @@ function isCheckedIn(status) {
 **Purpose**: Transforms Tebra API data structures to dashboard-compatible format.
 
 **Transformation Pipeline**:
+
 ```typescript
 interface DashboardPatient {
   id: string;                    // Patient identifier
@@ -119,6 +125,7 @@ interface DashboardPatient {
 ## Data Flow
 
 ### 1. Sync Initiation
+
 ```
 CLI Command → tebraFirebaseApi.syncSchedule() → Firebase Function (tebraProxy)
                                                       ↓
@@ -127,6 +134,7 @@ CLI Command → tebraFirebaseApi.syncSchedule() → Firebase Function (tebraProx
 ```
 
 ### 2. Data Retrieval
+
 ```
 Firebase Function → PHP Cloud Run API → Tebra SOAP API
                                              ↓
@@ -136,6 +144,7 @@ Firebase Function → PHP Cloud Run API → Tebra SOAP API
 ```
 
 ### 3. Data Processing
+
 ```
 Raw Tebra Data → Status Mapping → Data Transformation → Dashboard Format
                       ↓                    ↓                    ↓
@@ -143,6 +152,7 @@ Raw Tebra Data → Status Mapping → Data Transformation → Dashboard Format
 ```
 
 ### 4. Data Storage
+
 ```
 Dashboard Patient Data → Firestore Daily Sessions → Real-time Dashboard Updates
                               ↓                            ↓
@@ -152,6 +162,7 @@ Dashboard Patient Data → Firestore Daily Sessions → Real-time Dashboard Upda
 ## Concurrency Control and Rate Limiting
 
 ### p-limit Implementation
+
 ```javascript
 const pLimit = require('p-limit');
 const limit = pLimit(10); // Maximum 10 concurrent patient API calls
@@ -166,6 +177,7 @@ const patientPromises = appointmentsArray.map(appt =>
 ```
 
 **Benefits**:
+
 - Prevents API overwhelming
 - Maintains system stability
 - Reduces timeout errors
@@ -178,6 +190,7 @@ const patientPromises = appointmentsArray.map(appt =>
 **Problem**: Variable scoping bug where `appointmentsArray` was declared in try block but accessed outside.
 
 **Solution**: Moved declaration outside try block:
+
 ```javascript
 // Fixed implementation
 let appointmentsArray;
@@ -200,6 +213,7 @@ if (!Array.isArray(appointmentsArray)) {
 ### Error Recovery Mechanisms
 
 1. **Response Structure Handling**:
+
 ```javascript
 // Handle different API response formats
 if (!Array.isArray(appointments)) {
@@ -215,6 +229,7 @@ if (!Array.isArray(appointments)) {
 ```
 
 2. **Individual Appointment Processing**:
+
 ```javascript
 // Skip failed appointments, continue processing others
 try {
@@ -227,6 +242,7 @@ try {
 ```
 
 3. **Graceful Degradation**:
+
 - Missing patient data → Skip appointment
 - Missing provider → Use "Unknown Provider"
 - Invalid status → Default to "scheduled"
@@ -263,6 +279,7 @@ try {
 ### Mock Data Structures
 
 **Mock Appointments**:
+
 ```javascript
 {
   ID: 'appt-today-1',
@@ -275,6 +292,7 @@ try {
 ```
 
 **Mock Patients**:
+
 ```javascript
 {
   ID: 'patient-1',
@@ -288,6 +306,7 @@ try {
 ```
 
 **Mock Providers**:
+
 ```javascript
 {
   ID: 'provider-1',
@@ -318,6 +337,7 @@ try {
 **Location**: `/src/cli/commands/sync-today-simple.ts`
 
 **Test Flow**:
+
 ```typescript
 // Step 1: Test Tebra connection
 const connectionResult = await tebraApi.testConnection();
@@ -348,7 +368,7 @@ const healthResult = await tebraApi.healthCheck();
    - Impact: Real API calls blocked
    - Workaround: Integration tests use mock data
 
-2. **CLI Command Limitations**: 
+2. **CLI Command Limitations**:
    - Commands can test connection but not complete sync
    - Authentication required for Firebase Functions
    - Debug output shows connection issues

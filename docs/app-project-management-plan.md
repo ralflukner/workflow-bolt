@@ -3,14 +3,18 @@
 Moving from validated infrastructure to production-grade Redis operations
 
 ---
+
 ## 🎯 Current State → Target State
+
 - **Current:** ✅ VPC validated, test code removed, functions clean
 - **Target:** Production Redis operations with monitoring, CI/CD, and shared client
 
 ---
+
 ## Phase 1: Shared Redis Client Module (Days 1-2)
 
 ### 1.1 Create Production Redis Client
+
 ```bash
 mkdir -p functions/shared
 cat > functions/shared/redis_client.py << 'EOF'
@@ -78,6 +82,7 @@ EOF
 ```
 
 ### 1.2 Create Unit and Integration Tests
+
 ```bash
 touch functions/shared/test_redis_client.py
 cat > functions/shared/test_redis_client.py << 'EOF'
@@ -131,14 +136,17 @@ make test NAME=shared
 ```
 
 ---
+
 ## Phase 2: Function Integration (Days 3-4)
 
 ### 2.1 Update Functions to Use Shared Client
+
 - Refactor all functions (e.g., `tebra_debug`, `patient_sync`) to import and use `RedisClient`.
 - Add `/redis-health` endpoint using `RedisClient.health_check()`.
 - Use `with_redis_fallback` for all Redis operations.
 
 ### 2.2 Deploy and Validate
+
 ```bash
 make deploy NAME=tebra_debug VPC_CONNECTOR=redis-connector
 make deploy NAME=patient_sync VPC_CONNECTOR=redis-connector
@@ -149,28 +157,36 @@ curl -s "$FUNCTION_URL/redis-health" | jq
 ```
 
 ---
+
 ## Phase 3: Monitoring & Alerting (Days 5-6)
 
 ### 3.1 Create Alert Policies
+
 - Use Terraform to create alert policies for Redis connection failures and high latency.
 - Add custom metrics logging in `redis_client.py` for operation duration and errors.
 
 ### 3.2 Validate Monitoring
+
 - Trigger both positive and negative Redis operations and confirm alerts fire as expected.
 - Document alert policy IDs and test results in `docs/monitoring-validation.log`.
 
 ---
+
 ## Phase 4: CI/CD Automation (Day 7)
 
 ### 4.1 Implement GitHub Actions Workflow
+
 - Add `.github/workflows/deploy-functions.yml` to automate tests, deploys, and validation.
 - Ensure all deploys use the Makefile and VPC connector.
 
 ### 4.2 Pre-commit Hooks
+
 - Ensure `.pre-commit-config.yaml` enforces linting, formatting, and no debug/test code in production.
 
 ---
+
 ## 📊 Success Metrics & Validation Gates
+
 - Shared Redis client created and tested
 - All functions use shared client
 - Unit/integration tests >90% coverage
@@ -180,7 +196,9 @@ curl -s "$FUNCTION_URL/redis-health" | jq
 - Documentation and runbooks updated
 
 ---
+
 ## 📝 Daily Standup Template
+
 ```markdown
 ## Date: ____
 ### Completed
@@ -198,7 +216,9 @@ curl -s "$FUNCTION_URL/redis-health" | jq
 ```
 
 ---
+
 ## 📋 Summary Table
+
 | Phase         | Task/Goal                        | Status      |
 |--------------|-----------------------------------|-------------|
 | Phase 1      | Shared Redis client, tests        | ⬜           |
@@ -207,8 +227,10 @@ curl -s "$FUNCTION_URL/redis-health" | jq
 | Phase 4      | CI/CD, pre-commit, docs           | ⬜           |
 
 ---
+
 ## 🚦 Next Immediate Action
+
 **Create `functions/shared/redis_client.py`, implement tests, and run `make test NAME=shared`.**
 
 ---
-**This plan is actionable, auditable, and ready for team adoption.** 
+**This plan is actionable, auditable, and ready for team adoption.**

@@ -1,17 +1,20 @@
 # Vikunja Project Management - Quick Guide for AI Agents
 
 ## API Access
+
 **Token**: `tk_556fc1cf49295b3c8637506e57877c21f863ec16`  
 **Base URL**: `http://localhost:3456/api/v1`
 
 ## Quick Commands
 
 ### Get Projects
+
 ```bash
 curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" http://localhost:3456/api/v1/projects
 ```
 
 ### Create Task
+
 ```bash
 curl -X PUT -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
   -H "Content-Type: application/json" \
@@ -20,6 +23,7 @@ curl -X PUT -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec1
 ```
 
 ### Update Task
+
 ```bash
 curl -X POST -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
   -H "Content-Type: application/json" \
@@ -28,6 +32,7 @@ curl -X POST -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec
 ```
 
 ## Node.js Integration
+
 ```javascript
 const VikunjaAPI = require('./scripts/vikunja-api.cjs');
 const api = new VikunjaAPI();
@@ -43,14 +48,16 @@ await api.updateTask(taskId, {done: true});
 ```
 
 ## Project IDs
+
 - **Inbox**: 1
 - **workflow bolt**: 2  
 - **cursor-gpt-4.1-max Tasks**: 3
 
 ## Priority Levels
+
 1=Low, 2=Medium, 3=High, 4=Urgent, 5=Critical
 
-Web UI: http://localhost:3456
+Web UI: <http://localhost:3456>
 
 ## Automated Backups to Google Cloud
 
@@ -61,6 +68,7 @@ This project ships with `scripts/vikunja-backup.sh` which will
 3. Upload both artefacts to `gs://vikunja-backups/<timestamp>/`
 
 ### One-time setup
+
 ```bash
 # Create bucket (adjust location)
  gcloud storage buckets create gs://vikunja-backups --location=us-central1
@@ -78,16 +86,19 @@ This project ships with `scripts/vikunja-backup.sh` which will
 ```
 
 ### Manual run
+
 ```bash
 ./scripts/vikunja-backup.sh
 ```
 
 ### Cron (runs daily 02:30 UTC)
+
 ```cron
 30 2 * * * /path/to/workflow-bolt/scripts/vikunja-backup.sh >> /var/log/vikunja-backup.log 2>&1
 ```
 
 ### Restore
+
 ```bash
 # 1. fetch artefacts
 gsutil cp gs://vikunja-backups/<timestamp>/db.sql.gz .

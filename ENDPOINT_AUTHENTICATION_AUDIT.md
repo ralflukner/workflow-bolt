@@ -42,12 +42,14 @@ These endpoints remain public for monitoring purposes and **do not expose PHI**:
 ### 1. Firebase Functions Security
 
 #### Callable Functions (✅ Secure)
+
 - **Method**: Firebase SDK's `onCall()` wrapper
 - **Protection**: Automatically rejects direct HTTP requests with 400/405 errors
 - **Examples**: `getFirebaseConfig`, `tebraGetPatient`, `tebraGetProviders`
 - **Authentication**: Required via `context.auth` parameter
 
 #### HTTP Functions (✅ Secured with middleware)
+
 - **Method**: Express.js with authentication middleware
 - **Protection**: Custom `requireAuth` middleware verifying Firebase tokens
 - **Examples**: `api/tebra`, `exchangeAuth0Token`
@@ -136,6 +138,7 @@ Total Tests: 33
 ### 📋 Audit Trail
 
 All PHI access attempts are logged:
+
 ```json
 {
   "type": "PHI_ACCESS_ATTEMPT",
@@ -164,6 +167,7 @@ All PHI access attempts are logged:
 ## Next Steps
 
 ### ✅ Completed Actions
+
 - [x] Audit all Firebase Functions authentication
 - [x] Test all Cloud Run services security  
 - [x] Implement standardized auth middleware
@@ -172,12 +176,14 @@ All PHI access attempts are logged:
 - [x] Verify no PHI exposure in public endpoints
 
 ### 📋 Ongoing Monitoring
-- [ ] Weekly security scans 
+
+- [ ] Weekly security scans
 - [ ] Service account permission audits (quarterly)
 - [ ] Firestore security rules review (monthly)
 - [ ] Access pattern anomaly detection
 
 ### 🔄 Future Enhancements
+
 - [ ] Add Web Application Firewall (WAF)
 - [ ] Implement request signing for additional security
 - [ ] Add geo-blocking for international requests

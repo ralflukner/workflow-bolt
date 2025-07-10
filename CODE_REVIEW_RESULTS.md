@@ -6,7 +6,9 @@
 **Branch:** refactor/tebra-debug-dashboard
 
 ---
-##  Critical Issues Summary
+
+## Critical Issues Summary
+
 | Category      | Critical | High | Medium | Low | Resolved |
 |---------------|----------|------|--------|-----|----------|
 | Security      | 3        | 2    | 1      | 0   | 1/6      |
@@ -15,11 +17,13 @@
 | Infrastructure| 1        | 2    | 3      | 1   | 0/7      |
 
 ---
+
 ## Detailed Findings
 
 ### 1. Security Issues
 
 #### 1.1 Unauthenticated Function Endpoints
+
 - **Severity:**  CRITICAL
 - **Status:**  ✅ RESOLVED (2025-01-05)
 - **Impact:** Public access to sensitive healthcare data
@@ -29,6 +33,7 @@
 - **Reference:** See ACTION_PLAN.md 1.1
 
 #### 1.2 Long-lived Service Account Keys
+
 - **Severity:**  CRITICAL  
 - **Status:**  IN PROGRESS
 - **Impact:** Compromised key = full GCP access
@@ -39,13 +44,14 @@
 - **Reference:** See ACTION_PLAN.md 1.2
 
 #### 1.3 PHI in Source Code
+
 - **Severity:**  CRITICAL
 - **Status:** ⬜ PENDING
 - **Impact:** HIPAA violation, $50K-$1.5M fine per incident
 - **Findings:**
   - Line 47 tebra-connection-debug.ts: patientName: "John Doe"
   - Line 82 test-data.json: "ssn": "123-45-6789"
-  - Line 134 debug.log: email: "jane.smith@example.com"
+  - Line 134 debug.log: email: "<jane.smith@example.com>"
 - **Required Actions:**
   1. Remove all PHI from codebase
   2. Implement data masking
@@ -57,6 +63,7 @@
 ### 2. Build & Deployment Issues
 
 #### 2.1 TypeScript Compilation Errors
+
 - **Severity:**  CRITICAL
 - **Status:** ⬜ PENDING
 - **Impact:** Build failures, unreliable deployments
@@ -72,6 +79,7 @@
 ### 3. Infrastructure Issues
 
 #### 3.1 Missing Health Checks
+
 - **Severity:**  HIGH
 - **Status:** ⬜ PENDING
 - **Impact:** No production monitoring capability
@@ -82,20 +90,26 @@
 - **Target Resolution:** 2025-01-10
 
 ---
+
 ## Remediation Progress Tracking
 
 ### Commit Log
+
 - 2025-01-05 10:30 - [abc123] Remove unauthenticated access from all functions
 - [Pending entries...]
 
 ### Pull Requests
+
 - PR #123: Remove --allow-unauthenticated flag (MERGED)
 - PR #124: PHI audit and removal (DRAFT)
 - PR #125: TypeScript error fixes (NOT STARTED)
 
 ---
+
 ## Sign-off Requirements
+
 Before marking review complete:
+
 - [ ] All CRITICAL issues resolved
 - [ ] All HIGH issues have remediation plan
 - [ ] Security scan passing
@@ -107,8 +121,11 @@ Before marking review complete:
 **Next Review:** 2025-01-06
 
 ---
-##  Immediate Next Actions
+
+## Immediate Next Actions
+
 1. Create Tracking Dashboard (30 min)
+
 ```bash
 cat > progress_dashboard.md << 'EOF'
 # Security Remediation Progress
@@ -127,7 +144,9 @@ cat > progress_dashboard.md << 'EOF'
 - Carol (Backend): TypeScript fixes
 EOF
 ```
+
 2. Set Up Automated Tracking (1 hour)
+
 ```yaml
 # .github/workflows/track-progress.yml
 name: Update Progress Dashboard
@@ -147,7 +166,9 @@ jobs:
           SECURITY_ISSUES=$(npm audit --audit-level=high | grep -c "high" || true)
           # Update dashboard...
 ```
+
 3. Daily Standup Checklist
+
 ```markdown
 ## Daily Security Standup - Date: _____
 ### 1. BLOCKERS (Address First)
@@ -171,23 +192,25 @@ jobs:
 ```
 
 ---
+
 ## 9. Test Failures & Repair Plan
 
 ### Summary of Test Failures (npm run test:all)
 
 | Suite/File                                      | Error Type / Key Issue                                      |
 |-------------------------------------------------|-------------------------------------------------------------|
-| src/__tests__/parseScheduleAdvanced.test.ts      | Assertion mismatch, undefined variables, missing mocks      |
-| src/cli/__tests__/integration/import-workflow.integration.test.ts | Module not found (BrowserController)           |
-| src/cli/__tests__/unit/lib/TestOrchestrator.test.ts | Module not found (megaParseSchedule.js), require stack   |
-| src/__tests__/hipaaCompliance.basic.test.ts      | Assertion mismatch, missing audit logs, PHI handling        |
-| src/__tests__/secureStorage.test.ts              | Assertion mismatch, memory management, timeouts             |
-| src/cli/__tests__/unit/commands/verify.test.ts   | Module not found, Jest config, syntax errors                |
-| src/__tests__/scheduleImportDebug.test.ts        | Assertion mismatch, missing logs, error handling            |
+| src/**tests**/parseScheduleAdvanced.test.ts      | Assertion mismatch, undefined variables, missing mocks      |
+| src/cli/**tests**/integration/import-workflow.integration.test.ts | Module not found (BrowserController)           |
+| src/cli/**tests**/unit/lib/TestOrchestrator.test.ts | Module not found (megaParseSchedule.js), require stack   |
+| src/**tests**/hipaaCompliance.basic.test.ts      | Assertion mismatch, missing audit logs, PHI handling        |
+| src/**tests**/secureStorage.test.ts              | Assertion mismatch, memory management, timeouts             |
+| src/cli/**tests**/unit/commands/verify.test.ts   | Module not found, Jest config, syntax errors                |
+| src/**tests**/scheduleImportDebug.test.ts        | Assertion mismatch, missing logs, error handling            |
 | integration/hipaaCompliance.integration.test.ts  | Assertion mismatch, data integrity, timeouts                |
 | General                                         | Heap out of memory, Jest config for large tests             |
 
 ### Key Issues Identified
+
 - **Assertion mismatches:** Expected vs. received values do not match (e.g., invalid patient name not rejected, wrong error messages, missing logs).
 - **Undefined variables:** e.g., `sampleScheduleText` not defined.
 - **Missing mocks/dependencies:** e.g., `BrowserController`, `megaParseSchedule.js`.
@@ -197,6 +220,7 @@ jobs:
 - **PHI handling:** Test data includes PHI; needs redaction or replacement.
 
 ### Repair Plan (see ACTION_PLAN.md Phase 1 & 3)
+
 - [ ] Triage all failing tests and categorize by error type (assertion, missing mock, OOM, etc.)
 - [ ] Assign owners for each suite (Backend, Security, QA)
 - [ ] Clean up test data to remove PHI and use synthetic data
@@ -208,6 +232,7 @@ jobs:
 - [ ] Document all fixes and cross-reference PRs in this section
 
 **Next Steps:**
+
 - [ ] Triage and assign all test failures by 2025-01-07
 - [ ] Begin repairs immediately after triage
 - [ ] Update ACTION_PLAN.md with new tasks, owners, and due dates

@@ -6,4 +6,4 @@
 | 2025-07-05T12:01Z   | /getFirebaseConfig  | ip:1.2.3.4           | access         | denied (401)|
 | ...                 | ...                 | ...                  | ...           | ...         |
 
-Log all access attempts, especially failures, for compliance review. 
+Log all access attempts, especially failures, for compliance review.

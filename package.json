@@ -26,44 +26,16 @@
     "test:tebra-all": "RUN_INTEGRATION_TESTS=true RUN_REAL_API_TESTS=true jest --config jest.config.cjs --testNamePattern='Tebra'",
     "diagnose": "node scripts/tebra-diagnose.mjs",
     "deploy:check": "./scripts/pre-deploy-check.sh",
-    "deploy:functions": "cd functions && npm ci && firebase deploy --only functions",
-    "deploy:verify": "node test-functions-deployment.cjs",
-    "deploy:safe": "npm run deploy:check && npm run deploy:functions && npm run deploy:verify",
-    "workflow-test": "node dist/cli/bin/workflow-test",
-    "dev:build": "SKIP_GSM=1 npm run build",
-    "test:run": "npm run test:all",
-    "test:run10": "node scripts/run-tests-limit.cjs 10",
-    "test:run50": "node scripts/run-tests-limit.cjs 50",
-    "test:run100": "node scripts/run-tests-limit.cjs 100",
-    "test:run150": "node scripts/run-tests-limit.cjs 150",
-    "vikunja:dashboard": "node scripts/project-dashboard.cjs overview",
-    "vikunja:project": "node scripts/project-dashboard.cjs project",
-    "vikunja:overview": "node scripts/cross-project-tasks.cjs overview",
-    "vikunja:workload": "node scripts/cross-project-tasks.cjs workload",
-    "vikunja:assign": "node scripts/assign-tasks.cjs assign",
-    "vikunja:list": "node scripts/assign-tasks.cjs list",
-    "vikunja:agents": "node scripts/assign-tasks.cjs agents",
-    "vikunja:unassigned": "node scripts/assign-tasks.cjs unassigned",
-    "vikunja:bulk": "node scripts/assign-tasks.cjs bulk",
-    "labels:init": "node scripts/label-manager.cjs init",
-    "labels:assign": "node scripts/label-manager.cjs assign",
-    "labels:status": "node scripts/label-manager.cjs status",
-    "labels:list": "node scripts/label-manager.cjs list",
-    "labels:summary": "node scripts/label-manager.cjs summary",
-    "labels:bulk": "node scripts/label-manager.cjs bulk",
-    "labels:dashboard": "node scripts/label-dashboard.cjs overview",
-    "labels:workload": "node scripts/label-dashboard.cjs workload"
+    "deploy:verify": "node test-deployment.cjs",
+    "deploy:safe": "npm run deploy:check && npm run deploy:verify"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
-    "@firebase/app": "^0.13.0",
-    "@firebase/auth": "^1.10.6",
-    "@firebase/firestore": "^4.7.16",
     "@google-cloud/secret-manager": "^6.0.1",
     "@google/generative-ai": "^0.24.1",
     "@oclif/core": "^3.26.0",
     "@oclif/plugin-help": "^5.2.20",
-    "@oclif/plugin-plugins": "^4.1.8",
+    "@oclif/plugin-plugins": "^5.4.44",
     "@tanstack/react-query": "^5.81.2",
     "@types/crypto-js": "^4.2.2",
     "@types/soap": "^0.18.0",
@@ -73,8 +45,6 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-oauth2-jwt-bearer": "^1.6.1",
-    "firebase": "^11.8.1",
-    "firebase-functions": "^6.3.2",
     "fs-extra": "^11.2.0",
     "googleapis": "^150.0.1",
     "inquirer": "^12.3.3",
@@ -82,6 +52,7 @@
     "jimp": "^1.0.4",
     "lucide-react": "^0.344.0",
     "node-fetch": "^3.3.2",
+    "pg": "^8.11.3",
     "puppeteer": "^23.10.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -90,81 +61,38 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.27.4",
-    "@babel/plugin-proposal-class-properties": "^7.18.6",
-    "@babel/plugin-transform-class-properties": "^7.27.1",
-    "@babel/plugin-transform-runtime": "^7.27.4",
-    "@babel/preset-env": "^7.27.2",
-    "@babel/preset-react": "^7.27.1",
-    "@babel/preset-typescript": "^7.27.1",
-    "@eslint/js": "^8.56.0",
-    "@jest/globals": "^30.0.0",
     "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
+    "@testing-library/react": "^14.3.1",
     "@testing-library/user-event": "^14.5.2",
-    "@types/jest": "^29.5.14",
-    "@types/node": "^20.11.19",
-    "@types/react": "^18.3.20",
-    "@types/react-dom": "^18.3.6",
-    "@types/testing-library__jest-dom": "^5.14.9",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.10.7",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
-    "@vitejs/plugin-react": "^4.4.1",
-    "autoprefixer": "^10.4.18",
-    "babel-jest": "^30.0.0",
+    "@vitejs/plugin-react": "^4.6.0",
+    "axios": "^1.7.9",
     "cross-env": "^7.0.3",
-    "eslint": "^8.56.0",
-    "eslint-import-resolver-alias": "^1.1.2",
-    "eslint-import-resolver-typescript": "^4.4.4",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jsdoc": "^50.7.1",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.11",
-    "eslint-plugin-unused-imports": "^4.1.4",
-    "globals": "^15.9.0",
-    "happy-dom": "^17.5.6",
-    "identity-obj-proxy": "^3.0.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.14",
     "jest": "^30.0.0",
     "jest-environment-jsdom": "^30.0.0",
-    "jsdom": "^26.1.0",
+    "jest-junit": "^16.0.0",
     "markdownlint-cli2": "^0.18.1",
-    "node-stdlib-browser": "^1.3.1",
-    "path-browserify": "^1.0.1",
-    "postcss": "^8.4.35",
-    "string_decoder": "^1.3.0",
-    "tailwindcss": "^3.4.1",
     "ts-jest": "^29.4.0",
-    "typescript": "^5.3.3",
-    "typescript-eslint": "^8.34.0",
-    "vite": "^6.3.5",
-    "vite-plugin-node-polyfills": "^0.23.0"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "overrides": {
     "pbkdf2": ">=3.1.3"
   },
-  "oclif": {
-    "bin": "workflow-test",
-    "dirname": "workflow-test",
-    "commands": "./dist/cli/commands",
-    "plugins": [
-      "@oclif/plugin-help",
-      "@oclif/plugin-plugins"
-    ],
-    "topicSeparator": " ",
-    "topics": {
-      "import": {
-        "description": "Schedule import testing commands"
-      },
-      "verify": {
-        "description": "Dashboard verification commands"
-      },
-      "generate": {
-        "description": "Test data generation commands"
-      }
-    }
-  },
-  "bin": {
-    "workflow-test": "./dist/cli/bin/workflow-test"
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "jsdom"
   }
 }

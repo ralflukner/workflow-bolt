@@ -1,6 +1,7 @@
-##  How to Use Vikunja for AI Developers
+## How to Use Vikunja for AI Developers
 
 ### 1. **What is Vikunja?**
+
 Vikunja is an open-source project management tool, similar to Trello or Asana, but self-hosted and script-friendly. In this project, it’s used to track tasks, bugs, features, and project management items for AI development.
 
 ---
@@ -8,6 +9,7 @@ Vikunja is an open-source project management tool, similar to Trello or Asana, b
 ### 2. **Accessing Vikunja Tasks**
 
 #### **Via the CLI**
+
 You can manage tasks directly from your terminal using the provided scripts:
 
 - **List all open tasks:**

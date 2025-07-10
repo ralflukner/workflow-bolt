@@ -11,12 +11,14 @@ This document provides step-by-step instructions for Grok to interact with the V
 ## Vikunja System Configuration
 
 ### **API Details**
+
 - **Base URL**: `http://localhost:3456/api/v1`
 - **Authentication Token**: `tk_556fc1cf49295b3c8637506e57877c21f863ec16`
 - **Project ID**: `3` (cursor-gpt-4.1-max Tasks)
 - **Web Interface**: `http://localhost:3456`
 
 ### **Available Scripts**
+
 - **Main script**: `/scripts/vikunja-authentication-tasks.cjs`
 - **Alternative scripts**: Check `/scripts/` directory for other Vikunja utilities
 
@@ -25,6 +27,7 @@ This document provides step-by-step instructions for Grok to interact with the V
 ### 1. Creating Tasks
 
 **Command Pattern**:
+
 ```bash
 curl -X PUT \
   -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -38,6 +41,7 @@ curl -X PUT \
 ```
 
 **Priority Levels**:
+
 - `5` = Highest (Critical/Urgent)
 - `4` = High (Important)
 - `3` = Medium (Normal)
@@ -45,6 +49,7 @@ curl -X PUT \
 - `1` = Lowest (Future consideration)
 
 **Example Task Creation**:
+
 ```bash
 curl -X PUT \
   -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -60,12 +65,14 @@ curl -X PUT \
 ### 2. Listing Tasks
 
 **Get All Tasks**:
+
 ```bash
 curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
   "http://localhost:3456/api/v1/projects/3/tasks"
 ```
 
 **Get Recent Tasks (with formatting)**:
+
 ```bash
 curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
   "http://localhost:3456/api/v1/projects/3/tasks" | \
@@ -76,6 +83,7 @@ curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
 ### 3. Adding Comments to Tasks
 
 **Add Comment Pattern**:
+
 ```bash
 curl -X PUT \
   -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -87,6 +95,7 @@ curl -X PUT \
 ```
 
 **Example Comment**:
+
 ```bash
 curl -X PUT \
   -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -100,6 +109,7 @@ curl -X PUT \
 ### 4. Updating Tasks
 
 **Mark Task as Complete**:
+
 ```bash
 curl -X POST \
   -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -111,6 +121,7 @@ curl -X POST \
 ```
 
 **Update Task Priority**:
+
 ```bash
 curl -X POST \
   -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -122,6 +133,7 @@ curl -X POST \
 ```
 
 **Update Task Description**:
+
 ```bash
 curl -X POST \
   -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -137,6 +149,7 @@ curl -X POST \
 ### Pattern 1: Starting New Work
 
 1. **Check existing tasks** to avoid duplicates:
+
 ```bash
 curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
   "http://localhost:3456/api/v1/projects/3/tasks" | \
@@ -144,6 +157,7 @@ curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
 ```
 
 2. **Create new task** if none exists:
+
 ```bash
 curl -X PUT \
   -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -159,6 +173,7 @@ curl -X PUT \
 ### Pattern 2: Updating Progress
 
 **Add progress comment**:
+
 ```bash
 curl -X PUT \
   -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -172,6 +187,7 @@ curl -X PUT \
 ### Pattern 3: Completing Work
 
 1. **Add completion comment**:
+
 ```bash
 curl -X PUT \
   -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -183,6 +199,7 @@ curl -X PUT \
 ```
 
 2. **Mark task complete**:
+
 ```bash
 curl -X POST \
   -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -196,6 +213,7 @@ curl -X POST \
 ## Task Categories and Labeling
 
 ### **Task Title Prefixes**
+
 Use these prefixes to categorize your work:
 
 - `[GROK-BUG]` - Bug fixes
@@ -208,6 +226,7 @@ Use these prefixes to categorize your work:
 - `[GROK-ANALYSIS]` - Code analysis or investigation
 
 ### **Example Task Titles**
+
 ```
 ✅ Good Examples:
 - "[GROK-BUG] Fix authentication token refresh issue"
@@ -224,6 +243,7 @@ Use these prefixes to categorize your work:
 ## Working with Existing Tasks
 
 ### **Finding Tasks by Keywords**
+
 ```bash
 # Search for authentication-related tasks
 curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -237,12 +257,14 @@ curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
 ```
 
 ### **Getting Task Details**
+
 ```bash
 curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
   "http://localhost:3456/api/v1/tasks/{TASK_ID}"
 ```
 
 ### **Getting Task Comments**
+
 ```bash
 curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
   "http://localhost:3456/api/v1/tasks/{TASK_ID}/comments"
@@ -265,6 +287,7 @@ curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
    - Check that required fields are included
 
 ### **Testing API Connection**
+
 ```bash
 # Simple connectivity test
 curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -274,18 +297,21 @@ curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
 ## Integration with Development Workflow
 
 ### **When to Create Tasks**
+
 - Starting work on a new feature or bug fix
 - When user reports an issue that needs tracking
 - For complex work that spans multiple steps
 - When collaborating or handoff is needed
 
 ### **When to Update Tasks**
+
 - Before starting work (add progress comment)
 - At significant milestones (25%, 50%, 75% complete)
 - When encountering blockers or issues
 - Upon completion (final summary comment)
 
 ### **Best Practices**
+
 1. **Be specific** in task titles and descriptions
 2. **Include context** - what, why, and how
 3. **Update regularly** - keep stakeholders informed
@@ -297,21 +323,25 @@ curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
 ## Quick Reference Commands
 
 ### **Create Task**
+
 ```bash
 curl -X PUT -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" -H "Content-Type: application/json" -d '{"title":"[GROK] Task Title","description":"Task description","priority":3}' "http://localhost:3456/api/v1/projects/3/tasks"
 ```
 
 ### **Add Comment**
+
 ```bash
 curl -X PUT -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" -H "Content-Type: application/json" -d '{"comment":"Your comment here"}' "http://localhost:3456/api/v1/tasks/{TASK_ID}/comments"
 ```
 
 ### **Complete Task**
+
 ```bash
 curl -X POST -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" -H "Content-Type: application/json" -d '{"done":true}' "http://localhost:3456/api/v1/tasks/{TASK_ID}"
 ```
 
 ### **List Open Tasks**
+
 ```bash
 curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" "http://localhost:3456/api/v1/projects/3/tasks" | jq '.[] | select(.done == false) | {id: .id, title: .title, priority: .priority}'
 ```
@@ -379,6 +409,7 @@ curl -X POST \
 ## Support
 
 If you encounter issues with the Vikunja API:
+
 1. Check that the Vikunja service is running on localhost:3456
 2. Verify the authentication token is still valid
 3. Ensure the project ID (3) exists and is accessible

@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vikunja-ingress
+  namespace: vikunja
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "vikunja-ip-prod"
+    networking.gke.io/managed-certificates: "vikunja-cert"
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.allow-http: "false"
+    # Cloud Armor security policy
+    cloud.google.com/armor-config: '{"webapp-security-prod": "all"}'
+spec:
+  rules:
+  - host: vikunja.luknerlumina.com
+    http:
+      paths:
+      - path: /*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: vikunja
+            port:
+              number: 3456
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: vikunja-cert
+  namespace: vikunja
+spec:
+  domains:
+  - vikunja.luknerlumina.com 

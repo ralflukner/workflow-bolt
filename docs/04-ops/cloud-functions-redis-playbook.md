@@ -26,12 +26,13 @@ This playbook captures the real-world steps, setbacks, and fixes we went through
 | 2 | Container health-check failed | Deploy name `test-redis-connection` (hyphens) vs Python handler `test_redis_connection` (underscores) | Add `--entry-point test_redis_connection` flag |
 | 3 | Endless directory gymnastics (`pwd`, `cd ..`) | Engineer lost track of current working dir | Fix once; stay in `redis-test-function/`; avoid repeated checks |
 | 4 | Local `pip install` blocked (`externally-managed-environment`) | macOS system Python protected | Skip local pip, rely on Cloud Build container install |
-| 5 | Over-tweaking flags after each failure | No log inspection step | Institute rule: *one deploy → read logs → decide* |
+| 5 | Over-tweaking flags after each failure | No log inspection step | Institute rule: _one deploy → read logs → decide_ |
 | 6 | Cloud Run service 503 | VPC connector not attached / SA perms wrong | Ensure `--vpc-connector`, grant `roles/compute.networkUser` on connector |
 
 ---
 
 ## 3. Final Minimal Function
+
 ```python
 # redis-test-function/main.py
 import os, redis, json
@@ -47,7 +48,9 @@ def test_redis_connection(request):
     except Exception as e:
         return ({"status": "error", "message": str(e)}, 500)
 ```
+
 `requirements.txt`
+
 ```
 redis==5.0.1
 ```
@@ -55,6 +58,7 @@ redis==5.0.1
 ---
 
 ## 4. Golden Deployment Command
+
 ```bash
 cd redis-test-function
 python3 -m py_compile main.py   # quick sanity check
@@ -76,6 +80,7 @@ gcloud functions deploy test-redis-connection \
 ---
 
 ## 5. Verification Steps
+
 1. **Wait** for build → state **ACTIVE**.
 2. Get URL & curl:
    ```bash
@@ -92,6 +97,7 @@ gcloud functions deploy test-redis-connection \
 ---
 
 ## 6. Roll-out to Production Services
+
 1. **Cloud Run service**
    ```bash
    gcloud run services update api \
@@ -111,6 +117,7 @@ gcloud functions deploy test-redis-connection \
 ---
 
 ## 7. Best Practices Learned
+
 - **Single-threaded troubleshooting**: one change → one deploy → inspect logs.
 - **Entry-point flag**: always set when handler differs from deploy name.
 - **Env vars over hard-coding**: switch between staging/prod Redis without code edits.
@@ -120,6 +127,7 @@ gcloud functions deploy test-redis-connection \
 ---
 
 ## 8. Next Actions
+
 - [ ] Trim test function after production services verified.
 - [ ] Add CI check ensuring `--vpc-connector` present in every `gcloud functions deploy` within scripts.
-- [ ] Monitor Redis latency from Cloud Function (`redis.info()['latency']`). 
+- [ ] Monitor Redis latency from Cloud Function (`redis.info()['latency']`).

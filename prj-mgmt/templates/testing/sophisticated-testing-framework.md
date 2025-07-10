@@ -60,6 +60,7 @@ src/tests/
 ## 🧪 Test Categories & Frameworks
 
 ### **Unit Testing Framework**
+
 ```python
 # test_user_management.py
 import unittest
@@ -128,6 +129,7 @@ class TestUserManagement(unittest.TestCase):
 ```
 
 ### **Integration Testing Framework**
+
 ```python
 # test_auth_flow.py
 import pytest
@@ -195,6 +197,7 @@ class TestAuthenticationFlow(IntegrationTester):
 ```
 
 ### **Performance Testing Framework**
+
 ```python
 # test_concurrent_auth.py
 import pytest
@@ -280,6 +283,7 @@ class TestConcurrentAuthentication(PerformanceTester):
 ## 📊 Statistical Analysis & Reporting
 
 ### **Test Statistics Aggregator**
+
 ```python
 # tests/tools/results_aggregator.py
 import json
@@ -420,6 +424,7 @@ class TestResultsAggregator:
 ```
 
 ### **Automated Report Generation**
+
 ```python
 # tests/tools/report_generator.py
 class TestReportGenerator:
@@ -508,6 +513,7 @@ class TestReportGenerator:
 ## 🔄 Automated Testing Workflows
 
 ### **Continuous Testing Pipeline**
+
 ```yaml
 # .github/workflows/comprehensive-testing.yml
 name: Comprehensive Testing Pipeline

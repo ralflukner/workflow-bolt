@@ -4,13 +4,13 @@ This guide will help you migrate all scattered project plans from various files 
 
 ## 📋 What Will Be Migrated
 
-### **9 Major Projects** with **25+ Tasks**:
+### **9 Major Projects** with **25+ Tasks**
 
 1. **Code Review Action Plan - Phase 1.5** [HIGH]
    - Fix 12 failing test suites
    - Reduce TypeScript errors to <5
 
-2. **Tebra Debug Dashboard Refactor** [HIGH] 
+2. **Tebra Debug Dashboard Refactor** [HIGH]
    - Fix "Sync Today" functionality (CRITICAL)
    - Break down 780-line monolith
    - Achieve >85% test coverage
@@ -38,7 +38,8 @@ This guide will help you migrate all scattered project plans from various files 
 9. **CLI Testing Framework** [MEDIUM]
    - Comprehensive CLI testing suite
 
-### **Sprint Planning**:
+### **Sprint Planning**
+
 - **Sprint 1**: Critical fixes (Jan 6-19, 2025)
 - **Sprint 2**: Architecture & testing (Jan 20 - Feb 2, 2025)
 
@@ -56,7 +57,7 @@ $HOME/.workflow-bolt/vikunja-admin.sh start
 
 ### Step 2: Set Up Vikunja Account
 
-1. **Visit**: http://localhost:3456
+1. **Visit**: <http://localhost:3456>
 2. **Create account** (first user becomes admin)
 3. **Go to Settings** → **API Tokens**
 4. **Create new token** and copy it

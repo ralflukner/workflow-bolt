@@ -3,6 +3,7 @@
 ## 🤖 Registry Architecture
 
 ### **Core AI Agents**
+
 | Agent | API Key Required | Strengths | Cost Level | Specialization |
 |-------|------------------|-----------|------------|----------------|
 | **o3 MAX** | Yes | Complex reasoning, architecture, security | High | Deep analysis, algorithmic design |
@@ -14,6 +15,7 @@
 | **Sider.ai Claude Sonnet 4** | Sider API | Very skilled, needs all source files | Medium | Analysis without file editing capability |
 
 ### **Extended Model Access**
+
 | Service | Available Models | API Key Type | Strengths | Platform Differences |
 |---------|------------------|--------------|-----------|---------------------|
 | **Google AI Studio** | Gemini 2.5 PRO (various dates) | Google AI API | Multimodal, real-time, code analysis | Very different behavior vs Vertex AI |
@@ -25,6 +27,7 @@
 | **Sider.ai** | Claude Sonnet 4, GPT-4, Gemini | Sider API | Analysis-focused, read-only access | Specialized for analysis workflows |
 
 ### **Platform Behavioral Differences**
+
 ```yaml
 Important Discovery: Same models behave very differently across platforms
 
@@ -49,6 +52,7 @@ Implications for AI Agent Selection:
 ### **Specialized AI Domains**
 
 #### **Cloud & Infrastructure**
+
 ```yaml
 Google Cloud Run Specialist:
   capabilities: [troubleshooting, optimization, scaling, monitoring]
@@ -70,6 +74,7 @@ Kubernetes Expert:
 ```
 
 #### **Security & Compliance**
+
 ```yaml
 Security Vulnerability Analyst:
   capabilities: [threat modeling, penetration testing, code analysis]
@@ -91,6 +96,7 @@ Cryptography Expert:
 ```
 
 #### **Documentation & Knowledge**
+
 ```yaml
 Technical Writer:
   capabilities: [documentation, API docs, user guides]
@@ -112,6 +118,7 @@ API Documentation Specialist:
 ```
 
 #### **Performance & Optimization**
+
 ```yaml
 Database Optimization Expert:
   capabilities: [query optimization, indexing, schema design]
@@ -133,6 +140,7 @@ Cost Optimization Agent:
 ```
 
 #### **Development & Testing**
+
 ```yaml
 Test Automation Specialist:
   capabilities: [unit tests, integration tests, e2e tests]
@@ -156,6 +164,7 @@ API Design Expert:
 ## 🔍 Discovery & Routing System
 
 ### **Agent Selection Algorithm**
+
 ```python
 class SpecializedAIRegistry:
     def __init__(self):
@@ -231,6 +240,7 @@ class SpecializedAIRegistry:
 ```
 
 ### **Dynamic Agent Discovery**
+
 ```python
 class AIAgentDiscovery:
     def __init__(self):
@@ -308,6 +318,7 @@ class AIAgentDiscovery:
 ## 💰 Cost Management System
 
 ### **Budget Optimization Engine**
+
 ```python
 class CostManagementAgent:
     def __init__(self):
@@ -368,6 +379,7 @@ class CostManagementAgent:
 ```
 
 ### **Resource Allocation Strategy**
+
 ```yaml
 Budget Allocation Rules:
   critical_tasks: 40%  # High-priority, complex tasks
@@ -387,6 +399,7 @@ Cost Optimization Strategies:
 ## 🔄 Integration Workflows
 
 ### **Auto-Discovery and Assignment**
+
 ```python
 class TaskOrchestrator:
     def __init__(self):
@@ -459,6 +472,7 @@ class TaskOrchestrator:
 ## 📊 Performance Tracking & Learning
 
 ### **Agent Performance Analytics**
+
 ```sql
 -- Agent performance tracking schema
 CREATE TABLE agent_performance (
@@ -496,6 +510,7 @@ CREATE TABLE agent_learning (
 ```
 
 ### **Continuous Improvement Loop**
+
 ```python
 class AgentLearningSystem:
     def analyze_performance_trends(self):
@@ -534,24 +549,28 @@ class AgentLearningSystem:
 ## 🚀 Implementation Roadmap
 
 ### **Phase 1: Foundation (Week 1-2)**
+
 - [ ] Set up basic specialized AI registry
 - [ ] Implement cost tracking system
 - [ ] Create agent discovery mechanisms
 - [ ] Build performance monitoring
 
 ### **Phase 2: Integration (Week 3-4)**
+
 - [ ] Integrate with existing Redis messaging system
 - [ ] Connect to GitHub Issues workflow
 - [ ] Implement dynamic agent spawning
 - [ ] Add cost optimization engine
 
 ### **Phase 3: Intelligence (Week 5-6)**
+
 - [ ] Deploy machine learning for agent selection
 - [ ] Implement continuous learning system
 - [ ] Add predictive cost modeling
 - [ ] Create performance analytics dashboard
 
 ### **Phase 4: Scale (Week 7-8)**
+
 - [ ] Connect to external AI marketplaces
 - [ ] Implement swarm intelligence coordination
 - [ ] Add multi-tenant support

@@ -7,4 +7,4 @@
 | /verifyCredentials | Bearer Token (if required) | [pending] |
 | ...              | ...         | ...          |
 
-Update this table after running the security scanner and manual tests. 
+Update this table after running the security scanner and manual tests.

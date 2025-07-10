@@ -25,6 +25,7 @@
 ## 🎯 Specialized Agent Assignments
 
 ### **Claude - Integration & Coordination Specialist**
+
 ```yaml
 Primary Strengths:
   - System integration and file management
@@ -49,6 +50,7 @@ Handoff Scenarios:
 ```
 
 ### **o3 MAX - Deep Analysis & Complex Problem Solving**
+
 ```yaml
 Primary Strengths:
   - Complex mathematical analysis
@@ -72,6 +74,7 @@ Handoff Scenarios:
 ```
 
 ### **Gemini - Code Excellence & Multimodal Analysis**
+
 ```yaml
 Primary Strengths:
   - Code review and optimization
@@ -95,6 +98,7 @@ Handoff Scenarios:
 ```
 
 ### **Firebase AI - Rapid App Development**
+
 ```yaml
 Primary Strengths:
   - Rapid application scaffolding
@@ -118,6 +122,7 @@ Handoff Scenarios:
 ```
 
 ### **Supabase AI - Database & Open Source Backend**
+
 ```yaml
 Primary Strengths:
   - SQL query generation and optimization
@@ -170,6 +175,7 @@ graph TD
 ### **Collaboration Patterns**
 
 #### **1. Sequential Handoff Pattern**
+
 ```yaml
 Pattern: A → B → C → Done
 Example: Security Analysis
@@ -179,6 +185,7 @@ Example: Security Analysis
 ```
 
 #### **2. Parallel Collaboration Pattern**
+
 ```yaml
 Pattern: A + B + C → Synthesis → Done
 Example: Full-Stack Development
@@ -190,6 +197,7 @@ Example: Full-Stack Development
 ```
 
 #### **3. Specialist Consultation Pattern**
+
 ```yaml
 Pattern: Primary Agent ↔ Specialist → Continue
 Example: Claude developing with o3 MAX consultation
@@ -201,6 +209,7 @@ Example: Claude developing with o3 MAX consultation
 ### **Agent Communication Protocols**
 
 #### **GitHub Issue Agent Mentions**
+
 ```markdown
 ## Standard Agent Mention Format
 
@@ -360,6 +369,7 @@ def select_optimal_agents(task_description, requirements, complexity):
 
 ### Workflow:
 ```
+
 Phase 1 (Parallel):
 ├── o3 MAX: Design security model
 ├── Gemini: Create UI mockups
@@ -373,6 +383,7 @@ Phase 3 (Validation):
 ├── Gemini: Performance review
 ├── o3 MAX: Security validation
 └── Claude: Final deployment
+
 ```
 ```
 

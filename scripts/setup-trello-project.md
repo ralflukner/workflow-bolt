@@ -3,6 +3,7 @@
 ## 🚀 Quick Setup Guide
 
 ### 1. Create Trello Board
+
 1. Go to [trello.com](https://trello.com)
 2. Sign up/Login
 3. Create new board: **"Redis 2FA Authentication System - Multi-AI Team"**
@@ -10,11 +11,13 @@
 ### 2. Recommended Board Structure
 
 #### **Lists (Columns):**
+
 ```
 📋 Backlog → 🎯 Sprint Planning → 🤖 AI Analysis → 🏗️ In Progress → 🔍 Review → ✅ Done → 📚 Documentation
 ```
 
 #### **Labels (Color-coded):**
+
 - 🔴 **High Priority** - Critical issues
 - 🟡 **Medium Priority** - Important features  
 - 🟢 **Low Priority** - Nice to have
@@ -29,6 +32,7 @@
 ### 3. Pre-built Cards for Current Project
 
 #### **🎯 Sprint Planning**
+
 - [ ] **Deploy Redis 2FA System**
   - Description: Deploy complete authentication system to Google Cloud
   - Checklist: API setup, Cloud Functions, Secret Manager, Testing
@@ -40,13 +44,15 @@
   - Checklist: Agent user, Human user, TOTP test, Custom 2FA test
   - Labels: High Priority, Claude
 
-#### **🏗️ In Progress** 
+#### **🏗️ In Progress**
+
 - [ ] **Redis Message Reply System**
   - Description: Enhanced Redis messaging with correlation IDs and direct messaging
   - Status: 90% complete - testing needed
   - Labels: Medium Priority, Enhancement
 
 #### **✅ Done**
+
 - [x] **Enhanced Redis Messaging** - Correlation IDs, direct messaging
 - [x] **Redis Password in GSM** - Stored securely with auto-loading
 - [x] **GSM Secret Cleanup** - Removed newlines from all secrets
@@ -56,6 +62,7 @@
 ### 4. Template Cards for Future Use
 
 #### **🔴 Bug Card Template**
+
 ```
 **Title:** [Bug] Brief description
 **Description:** 
@@ -74,6 +81,7 @@
 ```
 
 #### **🟢 Feature Card Template**
+
 ```
 **Title:** [Feature] Brief description
 **Description:**
@@ -94,6 +102,7 @@
 #### **🟣 AI Collaboration Card Templates**
 
 ##### **o3 MAX Task Template**
+
 ```
 **Title:** [o3 MAX] Task description
 **Description:**
@@ -111,6 +120,7 @@
 ```
 
 ##### **Gemini Task Template**
+
 ```
 **Title:** [Gemini] Task description
 **Description:**
@@ -128,6 +138,7 @@
 ```
 
 ##### **Multi-AI Collaboration Template**
+
 ```
 **Title:** [Multi-AI] Complex task requiring multiple AI perspectives
 **Description:**
@@ -150,12 +161,14 @@
 ### 5. Power-Ups to Enable (Free)
 
 #### **Essential Power-Ups:**
+
 - **Calendar** - View due dates
 - **Butler** - Automation rules
 - **GitHub** - Link to code repos
 - **Google Drive** - Attach documents
 
 #### **Useful Butler Automations:**
+
 ```
 # Auto-move completed items
 When a card is completed, move it to "Done"
@@ -176,10 +189,12 @@ Every week, archive cards in "Done" older than 14 days
 ### 6. Team Setup
 
 #### **Members to Invite:**
+
 - Your email (Admin)
 - Create dedicated email for o3 MAX interactions if needed
 
 #### **Board Permissions:**
+
 - **Team Visible** - Anyone on team can see
 - **Team Editable** - Anyone on team can edit
 - **Comment Permissions** - Team members
@@ -187,11 +202,13 @@ Every week, archive cards in "Done" older than 14 days
 ### 7. Integration with Current Workflow
 
 #### **Link to GitHub:**
+
 - Add GitHub Power-Up
 - Link cards to specific commits/PRs
 - Auto-create cards from GitHub issues
 
 #### **Redis 2FA Project Cards:**
+
 ```
 Card: "Deploy Redis 2FA System"
 ├── Attachment: scripts/deploy-redis-2fa.sh
@@ -207,12 +224,14 @@ Card: "Deploy Redis 2FA System"
 ### 8. Workflow Process
 
 #### **Daily Workflow:**
-1. **Morning:** Check "In Progress" and "Review" 
+
+1. **Morning:** Check "In Progress" and "Review"
 2. **Work:** Move cards through pipeline
 3. **Updates:** Add comments with progress
 4. **Evening:** Update card statuses
 
 #### **Weekly Workflow:**
+
 1. **Monday:** Sprint planning - move from Backlog
 2. **Friday:** Review completed work
 3. **Archive:** Move old "Done" items
@@ -220,6 +239,7 @@ Card: "Deploy Redis 2FA System"
 #### **Multi-AI Collaboration Workflows:**
 
 ##### **Single AI Assignment:**
+
 1. Create card with [AI Name] prefix (e.g., [o3 MAX], [Gemini])
 2. Add detailed context in description
 3. Move to "🤖 AI Analysis"
@@ -229,6 +249,7 @@ Card: "Deploy Redis 2FA System"
 7. Move to "Done" when complete
 
 ##### **Multi-AI Complex Tasks:**
+
 1. Create card with [Multi-AI] prefix
 2. Break down AI assignments in description
 3. Move to "🤖 AI Analysis"
@@ -241,7 +262,8 @@ Card: "Deploy Redis 2FA System"
 7. Move through pipeline to completion
 
 ##### **AI Strengths Guide:**
-- **o3 MAX:** 
+
+- **o3 MAX:**
   - Complex mathematical problems
   - Deep logical reasoning
   - Strategic planning
@@ -262,6 +284,7 @@ Card: "Deploy Redis 2FA System"
 ### 9. Quick Start Commands
 
 #### **Create Board Structure:**
+
 ```bash
 # Use Trello's quick setup:
 1. Create board "Redis 2FA Authentication System"
@@ -273,12 +296,14 @@ Card: "Deploy Redis 2FA System"
 ### 10. Success Metrics
 
 #### **Track These KPIs:**
+
 - Cards completed per week
 - Average time in "In Progress"
 - Number of bugs vs features
 - o3 MAX collaboration efficiency
 
 #### **Weekly Review Questions:**
+
 - What blocked progress this week?
 - Which cards took longer than expected?
 - How effective was o3 MAX collaboration?

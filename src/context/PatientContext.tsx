@@ -1,14 +1,11 @@
-import React, { useState, ReactNode, useContext } from 'react';
+import React, { useState, ReactNode } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Patient, PatientApptStatus, Metrics } from '../types';
 import { useTimeContext } from '../hooks/useTimeContext';
 import { PatientContext } from './PatientContextDef';
-import { FirebaseContext } from '../contexts/firebase';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useFirebaseAuth } from '../services/authBridge';
 import { usePatientData } from '../hooks/usePatientData';
 import { mockPatients } from '../data/mockData';
-import { dailySessionService } from '../services/firebase/dailySessionService';
 import { localSessionService } from '../services/localStorage/localSessionService';
 import { debugLogger } from '../services/debugLogger';
 
@@ -65,57 +62,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
   const [tickCounter, setTickCounter] = useState(0);
   const [persistenceEnabled, setPersistenceEnabled] = useState(true);
   const { getCurrentTime, timeMode } = useTimeContext();
-  const { isInitialized: firebaseReady } = useContext(FirebaseContext);
   const { isAuthenticated, isLoading: auth0Loading } = useAuth0();
-  const { ensureFirebaseAuth } = useFirebaseAuth();
-
-  // Use React Query for Firebase authentication
-  const {
-    data: firebaseAuthReady = false,
-    isLoading: firebaseAuthLoading,
-    error: firebaseAuthError
-  } = useQuery({
-    queryKey: ['firebaseAuth', isAuthenticated, auth0Loading, firebaseReady],
-    queryFn: async () => {
-      if (!isAuthenticated || auth0Loading || !firebaseReady) {
-        return false;
-      }
-      
-      try {
-        console.log('🔐 Setting up Firebase authentication...');
-        const success = await ensureFirebaseAuth();
-        if (success) {
-          console.log('✅ Firebase authentication successful');
-        } else {
-          console.warn('❌ Firebase authentication failed');
-        }
-        return success;
-      } catch (error) {
-        console.error('🚨 Firebase authentication error:', error);
-        return false;
-      }
-    },
-    enabled: isAuthenticated && !auth0Loading && firebaseReady,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 1,
-    retryDelay: 2000
-  });
-
-  // Determine if we can use Firebase
-  const canUseFirebase = firebaseReady && isAuthenticated && !auth0Loading && firebaseAuthReady;
-  const useFirebase = canUseFirebase;
-
-  // Debug logging for Firebase state
-  console.log('🔍 Firebase state debug:', {
-    firebaseReady,
-    isAuthenticated,
-    auth0Loading,
-    firebaseAuthReady,
-    firebaseAuthLoading,
-    firebaseAuthError,
-    canUseFirebase,
-    useFirebase
-  });
 
   // Use React Query for patient data management
   const {
@@ -129,11 +76,9 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     removePatient: removePatientFromQuery
   } = usePatientData({
     persistenceEnabled,
-    useFirebase,
-    firebaseReady,
+    usePostgres: isAuthenticated && !auth0Loading,
     isAuthenticated,
-    auth0Loading,
-    firebaseAuthReady
+    auth0Loading
   });
 
   // Use React Query's refetch interval for periodic updates instead of useEffect
@@ -294,9 +239,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     }
 
     try {
-      // Use the storage service from usePatientData
-      const storageService = useFirebase ? dailySessionService : localSessionService;
-      await storageService.saveTodaysSession(patients);
+      // For now, use local storage until PostgreSQL service is implemented
+      await localSessionService.saveTodaysSession(patients);
       console.log(`Session saved to ${storageType}`);
     } catch (error) {
       console.error(`Failed to save to ${storageType}:`, error);
@@ -308,52 +252,31 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     setPersistenceEnabled(prev => !prev);
   };
 
-  // Use React Query mutation for refreshing from Firebase
-  const refreshFromFirebaseMutation = useMutation({
+  // Use React Query mutation for refreshing from database
+  const refreshFromDatabaseMutation = useMutation({
     mutationFn: async () => {
-      if (!useFirebase || !firebaseReady) {
-        throw new Error('Cannot refresh: Firebase not configured');
+      if (!isAuthenticated) {
+        throw new Error('Cannot refresh: Not authenticated');
       }
 
-      console.log('Manually refreshing patient data from Firebase');
+      console.log('Manually refreshing patient data from database');
 
-      // Load today's patients
-      const todayPatients = await dailySessionService.loadTodaysSession();
-      console.log(`Found ${todayPatients.length} patients for today`);
-
-      // Also check tomorrow's date to handle "Sync Tomorrow" functionality
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowId = tomorrow.toISOString().split('T')[0];
-
-      try {
-        const tomorrowPatients = await dailySessionService.loadSessionForDate(tomorrowId);
-        console.log(`Found ${tomorrowPatients.length} patients for tomorrow (${tomorrowId})`);
-
-        // If tomorrow has data but today doesn't, use tomorrow's data
-        if (tomorrowPatients.length > 0 && todayPatients.length === 0) {
-          console.log('Using tomorrow\'s data as no data exists for today');
-          return tomorrowPatients;
-        }
-      } catch {
-        console.log('No data for tomorrow, using today\'s data');
-      }
-
-      // Default to today's data
-      return todayPatients;
+      // TODO: Implement PostgreSQL service to load patient data
+      // For now, return empty array
+      return [];
     },
     onSuccess: (newPatients) => {
       updatePatients(newPatients);
-      console.log('✅ Firebase refresh successful');
+      console.log('✅ Database refresh successful');
     },
     onError: (error) => {
-      console.error('Failed to refresh from Firebase:', error);
+      console.error('Failed to refresh from database:', error);
     }
   });
 
-  const refreshFromFirebase = async (): Promise<void> => {
+  const refreshFromDatabase = async (): Promise<void> => {
     return new Promise((resolve, reject) => {
-      refreshFromFirebaseMutation.mutate(undefined, {
+      refreshFromDatabaseMutation.mutate(undefined, {
         onSuccess: () => resolve(),
         onError: (error) => reject(error)
       });
@@ -362,7 +285,7 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
 
   const value = {
     patients,
-    isLoading: isLoading || firebaseAuthLoading,
+    isLoading,
     persistenceEnabled,
     hasRealData,
     tickCounter,
@@ -381,8 +304,8 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
     importPatientsFromJSON,
     saveCurrentSession,
     togglePersistence,
-    refreshFromFirebase,
-    firebaseAuthError,
+    refreshFromFirebase: refreshFromDatabase, // Keep the same interface for now
+    firebaseAuthError: null, // No longer using Firebase
   };
 
   return (

@@ -24,6 +24,7 @@
 ### Prerequisites
 
 **Required Software:**
+
 - Node.js 20.x (matches Firebase Functions runtime)
 - npm 10.x or later
 - Firebase CLI (`npm install -g firebase-tools`)
@@ -31,6 +32,7 @@
 - Git with proper SSH key setup
 
 **Required Accounts:**
+
 - Google Cloud Platform account with billing enabled
 - Firebase project access
 - Auth0 account for authentication
@@ -644,6 +646,7 @@ firebase deploy --only functions:functionName
 ### Environment-Specific Deployment
 
 #### Development
+
 ```bash
 # Use emulators for development
 firebase emulators:start
@@ -654,6 +657,7 @@ firebase deploy
 ```
 
 #### Staging
+
 ```bash
 # Deploy to staging
 firebase use staging
@@ -664,6 +668,7 @@ npm run test:staging
 ```
 
 #### Production
+
 ```bash
 # Deploy to production (requires additional approval)
 firebase use production
@@ -959,11 +964,13 @@ export const usePerformanceMonitoring = () => {
 **Problem**: Auth0 token exchange failing with 401 errors
 
 **Symptoms**:
+
 ```
 JWT verification failed: jwt audience invalid
 ```
 
 **Solution**:
+
 ```bash
 # Check environment configuration
 cat .env | grep AUTH0
@@ -985,11 +992,13 @@ firebase deploy --only functions:exchangeAuth0Token
 **Problem**: CORS 403 errors when calling Firebase Functions
 
 **Symptoms**:
+
 ```
 Access to fetch at 'https://...' from origin 'http://localhost:5173' has been blocked by CORS policy
 ```
 
 **Solution**:
+
 ```typescript
 // Use Firebase SDK callable functions, not HTTP fetch
 import { httpsCallable } from 'firebase/functions';
@@ -1010,11 +1019,13 @@ fetch('https://us-central1-project.cloudfunctions.net/tebraProxy', {
 **Problem**: Redis client connection failures
 
 **Symptoms**:
+
 ```
 redis.exceptions.ConnectionError: Error connecting to Redis
 ```
 
 **Solution**:
+
 ```bash
 # Check Redis configuration
 ./scripts/check-redis-config.sh
@@ -1031,11 +1042,13 @@ python ai-agents/luknerlumina/run_tests.py --unit --verbose
 **Problem**: TypeScript compilation errors during build
 
 **Symptoms**:
+
 ```
 error TS2307: Cannot find module '@/components/Dashboard'
 ```
 
 **Solution**:
+
 ```bash
 # Check TypeScript path mapping
 cat tsconfig.json | grep -A 5 "paths"

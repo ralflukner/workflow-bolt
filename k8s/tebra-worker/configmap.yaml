@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tebra-worker-config
+  namespace: tebra-worker
+data:
+  config.json: |
+    {
+      "redis": {
+        "streams": {
+          "requests": "tebra:requests",
+          "responses": "tebra:responses",
+          "status": "tebra:status"
+        },
+        "blockTimeout": 5000,
+        "retryAttempts": 3,
+        "retryDelay": 1000
+      },
+      "worker": {
+        "name": "tebra-redis-worker",
+        "concurrency": 5,
+        "requestTimeout": 30000,
+        "healthCheckInterval": 30000
+      },
+      "logging": {
+        "level": "info",
+        "format": "json"
+      }
+    } 

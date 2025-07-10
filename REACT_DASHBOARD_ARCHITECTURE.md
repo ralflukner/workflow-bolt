@@ -81,6 +81,7 @@ App
 ### Core Component Responsibilities
 
 #### Dashboard (Main Container)
+
 **File**: `src/components/Dashboard.tsx`
 **Pattern**: Class Component with Higher-Order Component (HOC)
 
@@ -107,12 +108,14 @@ export default withContexts<{}>(DashboardClass);
 ```
 
 **Key Responsibilities:**
+
 - **UI State Management**: Controls modal visibility, section expansion, debug panels
 - **Report Generation**: CSV and text export with HIPAA-compliant formatting
 - **Navigation Flow**: Manages transitions between different dashboard views
 - **Context Integration**: Consumes PatientContext and TimeContext via HOC
 
 #### TebraDebugDashboardContainer
+
 **File**: `src/components/TebraDebugDashboardContainer.tsx`
 **Pattern**: Class Component with Global Registration
 
@@ -133,12 +136,14 @@ export default class TebraDebugDashboardContainer extends Component<{}, State> {
 ```
 
 **Key Features:**
+
 - **Global Registration**: `(window as any).globalTebraDebugDashboard = this`
 - **Dynamic Polling**: Adjusts check frequency based on Redis event activity
 - **Health Monitoring**: Tests 7 integration points in the Tebra pipeline
 - **Redis Integration**: Processes real-time updates from event bus
 
 #### TebraDebugDashboardWrapper
+
 **File**: `src/components/TebraDebugDashboardWrapper.tsx`
 **Pattern**: Functional Component with Redis Event Bus
 
@@ -163,6 +168,7 @@ export default function TebraDebugDashboardWrapper() {
 ### Component Composition Patterns
 
 #### Higher-Order Component (HOC) Pattern
+
 **File**: `src/components/withContexts.tsx`
 
 ```typescript
@@ -192,6 +198,7 @@ export function withContexts<P extends object>(
 ```
 
 **Usage Pattern:**
+
 ```typescript
 // Eliminates React hooks from production code
 // Provides type-safe context access to class components
@@ -199,6 +206,7 @@ export default withContexts<{}>(DashboardClass);
 ```
 
 #### Error Boundary Pattern
+
 **File**: `src/components/DashboardErrorBoundary.tsx`
 
 ```typescript
@@ -219,6 +227,7 @@ class DashboardErrorBoundary extends Component<Props, State> {
 ### Context Architecture
 
 #### PatientContext
+
 **File**: `src/context/PatientContext.tsx`
 **Pattern**: React Query + Context API
 
@@ -265,12 +274,14 @@ export const PatientProvider: React.FC<PatientProviderProps> = ({ children }) =>
 ```
 
 **Key Features:**
+
 - **Dual Persistence**: Firebase Firestore + localStorage fallback
 - **Authentication Integration**: Auth0 → Firebase Auth bridge
 - **React Query Integration**: Caching, background updates, error handling
 - **Status Normalization**: Handles various EHR status formats
 
 #### TimeContext
+
 **File**: `src/context/TimeProvider.tsx`
 **Pattern**: Context + Custom Hook
 
@@ -307,6 +318,7 @@ graph TB
 ### State Update Patterns
 
 #### Patient Status Updates
+
 ```typescript
 const updatePatientStatus = (id: string, status: PatientApptStatus) => {
   const now = getCurrentTime().toISOString();
@@ -334,6 +346,7 @@ const updatePatientStatus = (id: string, status: PatientApptStatus) => {
 ```
 
 #### Real-time Updates via Redis
+
 ```typescript
 const handleRealtimeUpdate = (update: TebraRealtimeUpdate) => {
   setState(prevState => {
@@ -362,6 +375,7 @@ const handleRealtimeUpdate = (update: TebraRealtimeUpdate) => {
 ## Integration Points
 
 ### Firebase Functions Integration
+
 **File**: `src/services/tebraFirebaseApi.ts`
 **Pattern**: Unified Proxy with Error Handling
 
@@ -402,6 +416,7 @@ async function callTebraProxy(action: string, params: Record<string, unknown> = 
 ```
 
 **Available API Functions:**
+
 ```typescript
 // Connection & Health
 tebraTestConnection(): Promise<ApiResponse>
@@ -425,6 +440,7 @@ tebraSyncSchedule(params: {date: string}): Promise<ApiResponse>
 ```
 
 ### Redis Event Bus Integration
+
 **File**: `src/hooks/useRedisEventBus.ts`
 **Pattern**: SSE + Event Processing
 
@@ -461,6 +477,7 @@ export function useRedisEventBus(onUpdate?: (u: AgentUpdate) => void) {
 ```
 
 ### Authentication Flow
+
 **Architecture**: Auth0 → Firebase Auth → Backend Services
 
 ```typescript
@@ -477,6 +494,7 @@ const result = await tebraProxy(payload); // Automatically includes Firebase Aut
 ```
 
 ### Data Persistence Strategy
+
 **Pattern**: Firebase-first with localStorage fallback
 
 ```typescript
@@ -512,6 +530,7 @@ const usePatientData = ({
 ### Tailwind CSS Design System
 
 #### Color Palette
+
 ```css
 /* Primary Dashboard Colors */
 .bg-gray-900    /* Main background */
@@ -532,6 +551,7 @@ const usePatientData = ({
 #### Component Styling Patterns
 
 **Card Component Pattern:**
+
 ```tsx
 <div className="bg-gray-800 rounded-lg border border-gray-600 p-6">
   <div className="flex items-center justify-between mb-6">
@@ -543,6 +563,7 @@ const usePatientData = ({
 ```
 
 **Button Component Pattern:**
+
 ```tsx
 <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
   Action Button
@@ -552,6 +573,7 @@ const usePatientData = ({
 ### Responsive Design Strategy
 
 #### Breakpoint Usage
+
 ```css
 /* Mobile-first approach */
 .grid-cols-1           /* Mobile: Single column */
@@ -564,6 +586,7 @@ const usePatientData = ({
 ```
 
 #### Patient Section Responsive Pattern
+
 ```tsx
 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
   {PATIENT_SECTIONS.map(section => (
@@ -579,6 +602,7 @@ const usePatientData = ({
 ### Loading States and Transitions
 
 #### Loading State Pattern
+
 ```tsx
 {isLoading ? (
   <div className="flex items-center space-x-2">
@@ -591,6 +615,7 @@ const usePatientData = ({
 ```
 
 #### Animation Classes
+
 ```css
 .animate-spin       /* Loading spinners */
 .animate-pulse      /* Status indicators */
@@ -601,6 +626,7 @@ const usePatientData = ({
 ### Accessibility Considerations
 
 #### ARIA Labels and Roles
+
 ```tsx
 <button
   aria-label={`Toggle ${section.title} section`}
@@ -612,6 +638,7 @@ const usePatientData = ({
 ```
 
 #### Keyboard Navigation
+
 ```tsx
 <div
   tabIndex={0}
@@ -626,6 +653,7 @@ const usePatientData = ({
 ```
 
 #### Color Contrast
+
 - **Text on Background**: Minimum WCAG AA compliance (4.5:1 ratio)
 - **Status Colors**: High contrast variants for accessibility
 - **Focus States**: Clear visual indicators for keyboard navigation
@@ -633,10 +661,12 @@ const usePatientData = ({
 ## Testing Strategy
 
 ### Component Testing Architecture
+
 **Framework**: Jest + React Testing Library
 **File**: `src/components/__tests__/Dashboard.test.tsx`
 
 #### Mock Strategy
+
 ```typescript
 // Comprehensive mocking for complex dependencies
 jest.mock('../../hooks/usePatientContext', () => ({
@@ -665,6 +695,7 @@ jest.mock('../MetricsPanel', () => {
 #### Test Categories
 
 **1. Rendering Tests**
+
 ```typescript
 it('renders dashboard with all main components', async () => {
   render(
@@ -682,6 +713,7 @@ it('renders dashboard with all main components', async () => {
 ```
 
 **2. User Interaction Tests**
+
 ```typescript
 it('opens and closes new patient form', async () => {
   render(<TestWrapper><Dashboard /></TestWrapper>);
@@ -699,6 +731,7 @@ it('opens and closes new patient form', async () => {
 ```
 
 **3. Export Functionality Tests**
+
 ```typescript
 it('handles export schedule functionality', async () => {
   // Mock DOM APIs
@@ -718,6 +751,7 @@ it('handles export schedule functionality', async () => {
 ### Integration Testing Patterns
 
 #### API Integration Tests
+
 ```typescript
 // Test Tebra API integration without mocking
 describe('Tebra Integration', () => {
@@ -730,6 +764,7 @@ describe('Tebra Integration', () => {
 ```
 
 #### Context Integration Tests
+
 ```typescript
 // Test PatientContext with real React Query
 describe('PatientContext Integration', () => {
@@ -750,6 +785,7 @@ describe('PatientContext Integration', () => {
 ```
 
 ### Test Utilities and Helpers
+
 **File**: `src/test/testHelpers.tsx`
 
 ```typescript
@@ -774,6 +810,7 @@ export const TestProviders: React.FC<{ children: React.ReactNode }> = ({ childre
 ```
 
 ### Mock Factories
+
 **File**: `src/test/mockFactories.ts`
 
 ```typescript
@@ -806,6 +843,7 @@ export const createMockMetrics = (overrides: Partial<Metrics> = {}): Metrics => 
 ### React Query Optimization
 
 #### Cache Configuration
+
 ```typescript
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -821,6 +859,7 @@ const queryClient = new QueryClient({
 ```
 
 #### Strategic Query Keys
+
 ```typescript
 // Hierarchical query keys for selective invalidation
 const queryKeys = {
@@ -835,6 +874,7 @@ const queryKeys = {
 ### Component Optimization
 
 #### Memoization Strategy
+
 ```typescript
 // Expensive calculations memoized
 const getWaitTime = useCallback((patient: Patient): number => {
@@ -851,6 +891,7 @@ const PatientCard = React.memo(({ patient, onStatusUpdate }) => {
 ```
 
 #### Dynamic Polling Optimization
+
 ```typescript
 // Adaptive polling based on Redis activity
 const startInterval = () => {
@@ -867,6 +908,7 @@ const startInterval = () => {
 ### Bundle Size Optimization
 
 #### Dynamic Imports
+
 ```typescript
 // Lazy load heavy components
 const TebraDebugDashboard = React.lazy(() => 
@@ -882,6 +924,7 @@ const TebraDebugDashboard = React.lazy(() =>
 ```
 
 #### Tree Shaking Configuration
+
 ```typescript
 // Vite configuration for optimal bundling
 export default defineConfig({
@@ -902,6 +945,7 @@ export default defineConfig({
 ## Error Handling
 
 ### Error Boundary Implementation
+
 **File**: `src/components/DashboardErrorBoundary.tsx`
 
 ```typescript
@@ -943,6 +987,7 @@ class DashboardErrorBoundary extends Component<Props, State> {
 ```
 
 ### API Error Handling
+
 **Pattern**: Centralized error processing with user-friendly messages
 
 ```typescript
@@ -966,6 +1011,7 @@ const extractErrorMessage = (error: unknown): string => {
 ```
 
 ### React Query Error Handling
+
 ```typescript
 const { data, error, isError } = useQuery({
   queryKey: ['patients'],
@@ -988,6 +1034,7 @@ const { data, error, isError } = useQuery({
 ```
 
 ### Global Error Reporting
+
 ```typescript
 // Unhandled promise rejection handling
 window.addEventListener('unhandledrejection', (event) => {
@@ -1011,6 +1058,7 @@ window.addEventListener('error', (event) => {
 ### Code Organization Principles
 
 #### File Structure Convention
+
 ```
 src/components/
 ├── Dashboard.tsx                 # Main container components
@@ -1025,6 +1073,7 @@ src/components/
 ```
 
 #### Component Naming Convention
+
 ```typescript
 // PascalCase for components
 export default function PatientCard() {}
@@ -1042,6 +1091,7 @@ export const STEP_IDS = {};
 ### TypeScript Best Practices
 
 #### Interface Design
+
 ```typescript
 // Descriptive interface names
 interface PatientContextType {
@@ -1066,6 +1116,7 @@ export type PatientApptStatus =
 ```
 
 #### Type Guards
+
 ```typescript
 function isNestedApiResponse(response: ApiResponse): response is NestedApiResponse {
   return (
@@ -1082,12 +1133,14 @@ function isNestedApiResponse(response: ApiResponse): response is NestedApiRespon
 ### State Management Guidelines
 
 #### Context Usage Rules
+
 1. **Single Responsibility**: Each context manages one domain (Patient, Time, Auth)
 2. **Provider Composition**: Nest providers at appropriate levels
 3. **Performance**: Use multiple contexts to prevent unnecessary re-renders
 4. **Type Safety**: Always provide TypeScript interfaces for context values
 
 #### React Query Patterns
+
 ```typescript
 // Query naming convention
 const usePatients = () => useQuery(['patients'], loadPatients);
@@ -1119,6 +1172,7 @@ const updatePatientMutation = useMutation({
 ### Component Design Patterns
 
 #### Container vs Presentational Components
+
 ```typescript
 // Container Component (Logic + State)
 export default function PatientSectionContainer({ status }: Props) {
@@ -1152,6 +1206,7 @@ export function PatientSectionPresentation({ patients, onStatusUpdate, title }: 
 ```
 
 #### Custom Hook Patterns
+
 ```typescript
 // Data management hooks
 export const usePatientData = (options: UsePatientDataOptions) => {
@@ -1178,6 +1233,7 @@ export const useRedisEventBus = (onUpdate?: (update: AgentUpdate) => void) => {
 ### Performance Guidelines
 
 #### Re-render Optimization
+
 ```typescript
 // Memoize expensive calculations
 const patientMetrics = useMemo(() => {
@@ -1203,6 +1259,7 @@ const PatientCard = React.memo(({ patient, onStatusUpdate }) => {
 ```
 
 #### Lazy Loading Strategy
+
 ```typescript
 // Route-level code splitting
 const Dashboard = React.lazy(() => import('./components/Dashboard'));
@@ -1226,10 +1283,12 @@ const AdvancedDiagnostics = React.lazy(() =>
 ### Common Issues and Solutions
 
 #### Issue: useReportGeneration Hook Problems
+
 **Symptoms**: Dashboard component errors, report generation failures
 **Root Cause**: Hook dependencies or context unavailability
 
 **Solution**:
+
 ```typescript
 // Check if the hook is properly imported and dependencies are available
 const { generateReport } = useReportGeneration(
@@ -1246,6 +1305,7 @@ const memoizedGetWaitTime = useCallback((patient: Patient) => {
 ```
 
 #### Issue: Firebase Authentication Failures
+
 **Symptoms**: Persistence not working, API calls failing
 **Diagnostic Steps**:
 
@@ -1269,12 +1329,14 @@ console.log('Auth0 token:', token);
 ```
 
 **Solutions**:
+
 1. **Clear browser cache** and localStorage
 2. **Verify Auth0 configuration** in environment variables
 3. **Check Firebase project permissions** and billing status
 4. **Restart development server** to pick up new environment variables
 
 #### Issue: Redis Event Bus Not Connecting
+
 **Symptoms**: No real-time updates, Redis Events counter at 0
 **Diagnostic Commands**:
 
@@ -1286,12 +1348,14 @@ tebraRedisDebug.triggerTestUpdate();
 ```
 
 **Solutions**:
+
 1. **Check environment variable**: `VITE_REDIS_SSE_URL`
 2. **Verify Redis server** is running and accessible
 3. **Test SSE endpoint** manually in browser
 4. **Check CORS configuration** on Redis proxy server
 
 #### Issue: Tebra API Integration Failures
+
 **Symptoms**: Connection tests failing, no provider data
 **Debug Tools**:
 
@@ -1303,12 +1367,14 @@ await tebraDebug.getProviders();
 ```
 
 **Common Fixes**:
+
 1. **Check Firebase Functions deployment** status
 2. **Verify PHP Cloud Run service** is running
 3. **Test API credentials** in Secret Manager
 4. **Check network connectivity** to Tebra SOAP endpoints
 
 #### Issue: Component Rendering Loops
+
 **Symptoms**: Excessive re-renders, browser performance issues
 **Debug Approach**:
 
@@ -1327,6 +1393,7 @@ useEffect(() => {
 ```
 
 **Solutions**:
+
 1. **Memoize callback functions** with `useCallback`
 2. **Stabilize object dependencies** with `useMemo`
 3. **Check context value changes** for unnecessary updates
@@ -1335,6 +1402,7 @@ useEffect(() => {
 ### Debug Tools and Utilities
 
 #### Browser Console Helpers
+
 ```javascript
 // Available in browser console for debugging
 tebraDebug.config()                    // Get configuration info
@@ -1350,6 +1418,7 @@ tebraRedisDebug.triggerTestUpdate()    // Send test event
 ```
 
 #### Component Debug Information
+
 ```typescript
 // Debug context state
 const PatientContextDebug = () => {
@@ -1373,6 +1442,7 @@ const useRenderTracker = (componentName: string) => {
 ### Performance Monitoring
 
 #### Key Metrics to Monitor
+
 ```typescript
 // Performance tracking
 const trackPerformance = (operationName: string, operation: () => Promise<void>) => {
@@ -1396,6 +1466,7 @@ trackPerformance('Patient Status Update', () =>
 ```
 
 #### Memory Leak Detection
+
 ```typescript
 // Monitor component cleanup
 useEffect(() => {
@@ -1421,6 +1492,7 @@ useEffect(() => {
 ### Health Check Procedures
 
 #### Complete System Health Check
+
 ```bash
 # 1. Check development environment
 npm run dev
@@ -1439,6 +1511,7 @@ curl https://your-redis-sse-endpoint.com/sse
 ```
 
 #### Component-specific Health Checks
+
 ```typescript
 // Dashboard health check
 const runDashboardHealthCheck = async () => {

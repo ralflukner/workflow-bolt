@@ -166,4 +166,4 @@ from diagrams.gcp.database import Memorystore
 from diagrams.gcp.security import KMS, SecurityCommandCenter
 from diagrams.gcp.storage import Storage
 from diagrams.gcp.analytics import BigQuery, PubSub
-from diagrams.gcp.devtools 
+from diagrams.gcp.devtools

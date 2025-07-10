@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vikunja-config
+  namespace: vikunja
+data:
+  config.yml: |
+    service:
+      # The public URL where Vikunja is reachable
+      publicurl: "https://vikunja.luknerlumina.com"
+      
+      # Enable registration
+      enableregistration: false
+      
+      # Enable task attachments
+      enabletaskattachments: true
+      
+      # Maximum file size for attachments in bytes
+      maxavatarsize: 1024000
+      maxattachmentsize: 20971520
+      
+      # Security settings
+      enabletaskcomments: true
+      enabletotp: true
+      
+      # Session settings
+      motd: "LuknerLumina Project Management"
+      
+    database:
+      # Type of database to use
+      type: "postgres"
+      
+      # Database connection will be set via environment variables
+      
+    cache:
+      # Enable caching
+      enabled: true
+      
+      # Cache type
+      type: "redis"
+      
+    redis:
+      # Redis connection will be set via environment variables
+      
+    log:
+      # Log level
+      level: "INFO"
+      
+      # Log to stdout for Kubernetes
+      path: "stdout"
+      
+    # CORS settings for API access
+    cors:
+      enable: true
+      origins:
+        - "https://app.luknerlumina.com"
+        - "http://localhost:3000"
+      maxage: 0
+      
+    # Rate limiting
+    ratelimit:
+      # Enable rate limiting
+      enabled: true
+      
+      # Rate limit per IP
+      limit: 100
+      
+      # Rate limit period in seconds
+      period: 60
+      
+    # Files settings
+    files:
+      # Base path for file storage
+      basepath: "/app/vikunja/files"
+      
+    # Avatar settings
+    avatar:
+      # Gravatar integration
+      gravatarexpiration: 3600
+      
+    # Background job settings
+    backgroundjobs:
+      enabled: true
+      
+    # Metrics for monitoring
+    metrics:
+      enabled: true
+      
+    # Authentication settings
+    auth:
+      local:
+        enabled: true
+      openid:
+        enabled: false 

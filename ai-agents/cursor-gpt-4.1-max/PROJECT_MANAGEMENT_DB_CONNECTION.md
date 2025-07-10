@@ -7,7 +7,7 @@ This document provides instructions for cursor-gpt-4.1-max to connect to and int
 ## Database Details
 
 - **System**: Vikunja (self-hosted project management)
-- **Database**: PostgreSQL 
+- **Database**: PostgreSQL
 - **Access Method**: Docker containers + REST API
 - **Location**: Local Docker setup in workflow-bolt project
 

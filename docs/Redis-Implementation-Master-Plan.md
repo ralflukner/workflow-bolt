@@ -446,12 +446,14 @@ This document outlines the comprehensive plan for migrating workflow-bolt from a
 | setup-kanban | Shared Kanban board | Project Mgr | Pending |
 
 ### Immediate Next Steps (next 24 h)
+
 1. Finish deploying `test-redis-connection` Cloud Function; confirm `PING`/set/get success.
 2. Update infra README with env-var matrix & local-dev tunnelling instructions.
 3. Mark `fix-redis-2fa` complete after successful function test; then start `vpc-verification`.
 4. User to confirm Gemini's design-doc scope so task can move from Pending to Assigned.
 
 ### Risk Register Additions
+
 - **Local Dev Access**: Memorystore private IP inaccessible from dev laptops ⇒ mitigated via Cloud Shell/IAP tunnel docs.
 - **Env Drift**: Hard-coded hosts risk reappearing ⇒ mitigated via env-vars & CI linter rule.
 

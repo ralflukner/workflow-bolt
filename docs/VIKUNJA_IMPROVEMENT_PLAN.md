@@ -3,12 +3,14 @@
 ## Current State Analysis
 
 ### What's Working
+
 - ✅ CLI integration for task management
 - ✅ Basic categorization system
 - ✅ Priority-based organization
 - ✅ Clean task list (after removing junk TODOs)
 
 ### What Needs Improvement
+
 - 🔄 Better project structure and organization
 - 🔄 Enhanced task lifecycle management
 - 🔄 Improved collaboration workflows
@@ -35,6 +37,7 @@ Instead of a single project, create specialized projects for different aspects:
 ### 2. **Enhanced Task Categories & Labels**
 
 #### **Priority System (1-5)**
+
 - **5 (Critical/Blocker)**: System down, security vulnerabilities, data loss
 - **4 (High)**: Major bugs, critical features, production issues
 - **3 (Medium)**: Normal development, improvements, technical debt
@@ -42,6 +45,7 @@ Instead of a single project, create specialized projects for different aspects:
 - **1 (Backlog)**: Future ideas, research, exploration
 
 #### **Category Labels**
+
 - `[CRITICAL_BUGS]` - System-breaking issues
 - `[SECURITY]` - Security-related tasks
 - `[INFRASTRUCTURE]` - DevOps, CI/CD, deployment
@@ -54,6 +58,7 @@ Instead of a single project, create specialized projects for different aspects:
 - `[PERFORMANCE]` - Performance optimizations
 
 #### **Status Labels**
+
 - `[BLOCKED]` - Waiting for dependencies
 - `[IN_PROGRESS]` - Currently being worked on
 - `[REVIEW]` - Ready for review/testing
@@ -63,11 +68,13 @@ Instead of a single project, create specialized projects for different aspects:
 ### 3. **Task Lifecycle Management**
 
 #### **Development Workflow**
+
 ```
 Backlog → In Progress → Review → Testing → Deployed → Archived
 ```
 
 #### **Bug Workflow**
+
 ```
 Reported → Triaged → In Progress → Testing → Fixed → Verified
 ```
@@ -75,12 +82,14 @@ Reported → Triaged → In Progress → Testing → Fixed → Verified
 ### 4. **Enhanced CLI Tools**
 
 #### **New Scripts to Create**
+
 - `scripts/vikunja-projects.cjs` - Multi-project management
 - `scripts/vikunja-sprints.cjs` - Sprint planning and tracking
 - `scripts/vikunja-reports.cjs` - Generate progress reports
 - `scripts/vikunja-metrics.cjs` - Track velocity and metrics
 
 #### **Improved Existing Scripts**
+
 - Better task templates
 - Automated status updates
 - Integration with git commits
@@ -89,16 +98,19 @@ Reported → Triaged → In Progress → Testing → Fixed → Verified
 ### 5. **Integration Opportunities**
 
 #### **Git Integration**
+
 - Link tasks to commits/PRs
 - Auto-update task status on merge
 - Generate changelog from completed tasks
 
 #### **CI/CD Integration**
+
 - Auto-create tasks for failed builds
 - Update task status based on deployment
 - Link tasks to monitoring alerts
 
 #### **AI Agent Integration**
+
 - Agents can create/update tasks
 - Automated task categorization
 - Progress reporting from agents
@@ -108,6 +120,7 @@ Reported → Triaged → In Progress → Testing → Fixed → Verified
 ## 🛠 Implementation Plan
 
 ### Phase 1: Foundation (Week 1)
+
 1. **Create Project Structure**
    - Set up multiple Vikunja projects
    - Migrate existing tasks to appropriate projects
@@ -119,6 +132,7 @@ Reported → Triaged → In Progress → Testing → Fixed → Verified
    - Improve task templates
 
 ### Phase 2: Workflow Integration (Week 2)
+
 1. **Development Workflow**
    - Implement task lifecycle management
    - Add status tracking
@@ -130,6 +144,7 @@ Reported → Triaged → In Progress → Testing → Fixed → Verified
    - Generate release notes
 
 ### Phase 3: Advanced Features (Week 3-4)
+
 1. **Reporting & Metrics**
    - Velocity tracking
    - Burndown charts
@@ -145,12 +160,14 @@ Reported → Triaged → In Progress → Testing → Fixed → Verified
 ## 📊 Success Metrics
 
 ### Quantitative
+
 - **Task Completion Rate**: Target 80%+ tasks completed on time
 - **Cycle Time**: Average time from creation to completion
 - **Velocity**: Tasks completed per sprint
 - **Bug Resolution Time**: Time from report to fix
 
 ### Qualitative
+
 - **Developer Satisfaction**: Easier task management
 - **Project Visibility**: Clear status and progress
 - **Collaboration**: Better team coordination
@@ -161,18 +178,21 @@ Reported → Triaged → In Progress → Testing → Fixed → Verified
 ## 🎯 Next Steps
 
 ### Immediate Actions (This Week)
+
 1. **Clean up remaining tasks** ✅ (Done)
 2. **Create project structure** in Vikunja
 3. **Update CLI scripts** for multi-project support
 4. **Establish naming conventions**
 
 ### Short Term (Next 2 Weeks)
+
 1. **Implement enhanced workflows**
 2. **Add git integration**
 3. **Create reporting tools**
 4. **Train team on new processes**
 
 ### Long Term (Next Month)
+
 1. **AI agent integration**
 2. **Advanced metrics and analytics**
 3. **Automated task management**
@@ -183,6 +203,7 @@ Reported → Triaged → In Progress → Testing → Fixed → Verified
 ## 📋 Task Templates
 
 ### Bug Report Template
+
 ```
 Title: [BUG] Brief description of the issue
 Priority: 4
@@ -197,6 +218,7 @@ Description:
 ```
 
 ### Feature Request Template
+
 ```
 Title: [FEATURE] Brief description of the feature
 Priority: 3
@@ -210,6 +232,7 @@ Description:
 ```
 
 ### Infrastructure Task Template
+
 ```
 Title: [INFRA] Brief description of infrastructure change
 Priority: 3
@@ -227,12 +250,14 @@ Description:
 ## 🔄 Continuous Improvement
 
 ### Monthly Reviews
+
 - Analyze task completion rates
 - Review workflow effectiveness
 - Gather team feedback
 - Update processes based on learnings
 
 ### Quarterly Planning
+
 - Assess tool effectiveness
 - Plan new features and improvements
 - Review team performance metrics
@@ -240,4 +265,4 @@ Description:
 
 ---
 
-This plan provides a comprehensive framework for maximizing Vikunja's potential in your AI development environment. The key is to start with the foundation and gradually build up the advanced features. 
+This plan provides a comprehensive framework for maximizing Vikunja's potential in your AI development environment. The key is to start with the foundation and gradually build up the advanced features.

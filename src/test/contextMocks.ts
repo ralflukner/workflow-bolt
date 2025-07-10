@@ -12,11 +12,20 @@ export const createMockPatientContext = (overrides = {}) => {
       patientState.push(patient);
       return patient;
     }),
+    updatePatient: jest.fn((updatedPatient) => {
+      const index = patientState.findIndex(p => p.id === updatedPatient.id);
+      if (index !== -1) {
+        patientState[index] = updatedPatient;
+      }
+    }),
     updatePatients: jest.fn((patients) => {
       patientState = [...patients];
     }),
     deletePatient: jest.fn((id) => {
       patientState = patientState.filter(p => p.id !== id);
+    }),
+    getPatientById: jest.fn((id) => {
+      return patientState.find(p => p.id === id);
     }),
     updatePatientStatus: jest.fn(),
     assignRoom: jest.fn(),
@@ -46,10 +55,18 @@ export const createMockPatientContext = (overrides = {}) => {
       if (patient?.completedTime) return 55;
       return 0;
     }),
+    calculateAverageWaitTime: jest.fn(() => 25),
+    calculateMaxWaitTime: jest.fn(() => 55),
     clearPatients: jest.fn(() => {
       patientState = [];
     }),
+    clearAllPatients: jest.fn(() => {
+      patientState = [];
+    }),
     exportPatientsToJSON: jest.fn(() => patientState),
+    importPatients: jest.fn((newPatients) => {
+      patientState = [...newPatients];
+    }),
     importPatientsFromJSON: jest.fn((patients) => {
       const requiredFields = ['id', 'name', 'dob', 'appointmentTime'];
       
@@ -98,6 +115,54 @@ export const createMockPatientContext = (overrides = {}) => {
         
         return normalizedPatient;
       });
+    }),
+    setPatientStatus: jest.fn((patientId, newStatus) => {
+      const patient = patientState.find(p => p.id === patientId);
+      if (patient) {
+        patient.status = newStatus;
+      }
+    }),
+    setPatientRoom: jest.fn((patientId, newRoom) => {
+      const patient = patientState.find(p => p.id === patientId);
+      if (patient) {
+        patient.room = newRoom;
+      }
+    }),
+    setPatientCheckInTime: jest.fn((patientId, checkInTime) => {
+      const patient = patientState.find(p => p.id === patientId);
+      if (patient) {
+        patient.checkInTime = checkInTime.toISOString();
+      }
+    }),
+    setPatientAppointmentTime: jest.fn((patientId, appointmentTime) => {
+      const patient = patientState.find(p => p.id === patientId);
+      if (patient) {
+        patient.appointmentTime = appointmentTime.toISOString();
+      }
+    }),
+    setPatientChiefComplaint: jest.fn((patientId, chiefComplaint) => {
+      const patient = patientState.find(p => p.id === patientId);
+      if (patient) {
+        patient.chiefComplaint = chiefComplaint;
+      }
+    }),
+    setPatientAppointmentType: jest.fn((patientId, appointmentType) => {
+      const patient = patientState.find(p => p.id === patientId);
+      if (patient) {
+        patient.appointmentType = appointmentType;
+      }
+    }),
+    setPatientDOB: jest.fn((patientId, dob) => {
+      const patient = patientState.find(p => p.id === patientId);
+      if (patient) {
+        patient.dob = dob.toISOString();
+      }
+    }),
+    setPatientName: jest.fn((patientId, name) => {
+      const patient = patientState.find(p => p.id === patientId);
+      if (patient) {
+        patient.name = name;
+      }
     }),
     tickCounter: 0,
     isLoading: false,

@@ -15,9 +15,11 @@ We need the Tebra Debug Dashboard to call its `/health` endpoint securely, witho
 Pick the fastest secure approach or suggest better:
 
 **A) Proxy the health-check through the existing tebraProxy Firebase Function**
+
 - Function invokes Cloud-Run with IAM token and internal API key
 
 **B) Put API Gateway (ESPv2/OpenAPI) in front of Cloud Run and require an API key**
+
 - Dashboard calls Gateway
 
 **C) Alternative secure idea** - please specify

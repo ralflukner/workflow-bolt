@@ -3,20 +3,23 @@
 ## 🚀 Quick Setup Guide
 
 ### 1. Enable GitHub Projects
+
 1. Go to your repository: `https://github.com/your-username/workflow-bolt`
 2. Click **Projects** tab
-3. Click **New Project** 
+3. Click **New Project**
 4. Choose **Board** template
 5. Name: **"Redis 2FA & Multi-AI Development"**
 
 ### 2. Project Board Structure
 
 #### **Columns:**
+
 ```
 📋 Backlog → 🎯 Ready → 🤖 AI Analysis → 🏗️ In Progress → 👀 Review → ✅ Done
 ```
 
 #### **Labels to Create:**
+
 Go to Issues → Labels → New Label:
 
 | Label | Color | Description |
@@ -41,6 +44,7 @@ Go to Issues → Labels → New Label:
 Create `.github/ISSUE_TEMPLATE/` directory with these templates:
 
 #### **Bug Report Template**
+
 ```yaml
 name: Bug Report
 about: Create a report to help us improve
@@ -91,6 +95,7 @@ body:
 ```
 
 #### **Feature Request Template**
+
 ```yaml
 name: Feature Request
 about: Suggest an idea for this project
@@ -137,6 +142,7 @@ body:
 ```
 
 #### **AI Collaboration Template**
+
 ```yaml
 name: AI Collaboration Task
 about: Task requiring AI assistance
@@ -244,6 +250,7 @@ jobs:
 ### 5. Pre-built Issues for Current Project
 
 #### **Redis 2FA Deployment**
+
 ```markdown
 Title: [Feature] Deploy Redis 2FA Authentication System
 Labels: type/feature, priority/high, area/infrastructure, area/security, ai/claude
@@ -274,6 +281,7 @@ Complete Redis 2FA system has been developed with:
 ```
 
 #### **Multi-AI Code Review**
+
 ```markdown
 Title: [Multi-AI] Review Redis 2FA Architecture & Implementation
 Labels: ai/multi-ai, type/enhancement, area/security, priority/medium
@@ -307,12 +315,14 @@ Comprehensive review of the authentication system focusing on:
 ### 6. Project Workflows
 
 #### **Daily Workflow:**
+
 1. Check **In Progress** column for active work
-2. Move completed items to **Review** 
+2. Move completed items to **Review**
 3. Add comments with progress updates
 4. Move reviewed items to **Done**
 
 #### **AI Collaboration Workflow:**
+
 1. Create issue with appropriate AI labels
 2. Move to **AI Analysis** column
 3. AI contributors add comments with solutions
@@ -321,6 +331,7 @@ Comprehensive review of the authentication system focusing on:
 6. Move to **Review** then **Done**
 
 #### **Weekly Planning:**
+
 1. **Monday**: Triage **Backlog**, move items to **Ready**
 2. **Wednesday**: Review **AI Analysis** and **In Progress**
 3. **Friday**: Close completed items, plan next week
@@ -328,11 +339,13 @@ Comprehensive review of the authentication system focusing on:
 ### 7. Advanced GitHub Features
 
 #### **Milestones for Major Releases:**
+
 - `v1.0 - Redis 2FA MVP`
 - `v1.1 - Multi-AI Integration`
 - `v2.0 - Production Deployment`
 
 #### **Saved Searches:**
+
 ```
 # AI-assigned issues
 is:issue is:open label:ai/o3-max
@@ -348,6 +361,7 @@ is:issue is:open label:area/security
 ```
 
 #### **Notifications Setup:**
+
 - Watch repository for all activity
 - Custom notifications for specific labels
 - Email digest for weekly summaries
@@ -355,12 +369,14 @@ is:issue is:open label:area/security
 ### 8. Integration with Existing Workflow
 
 #### **Link Issues to Commits:**
+
 ```bash
 git commit -m "Implement TOTP verification - fixes #123"
 git commit -m "Add secret rotation - closes #124, #125"
 ```
 
 #### **Reference Issues in PRs:**
+
 ```markdown
 ## Description
 Implements Redis user management CLI as requested in #123
@@ -399,6 +415,7 @@ gh project create --title "Redis 2FA & Multi-AI Development" --public
 ### 10. Success Metrics
 
 #### **Track These KPIs:**
+
 - Issues closed per week
 - Average time from **Ready** to **Done**
 - AI collaboration efficiency
@@ -406,6 +423,7 @@ gh project create --title "Redis 2FA & Multi-AI Development" --public
 - Security issue resolution time
 
 #### **GitHub Insights:**
+
 - Use repository **Insights** tab
 - **Pulse** for weekly activity
 - **Contributors** for team activity
