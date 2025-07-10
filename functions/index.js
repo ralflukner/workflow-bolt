@@ -1,11 +1,30 @@
-// Load environment variables in development/emulator
-if (process.env.FUNCTIONS_EMULATOR) {
-  require('dotenv').config();
-}
-
 const functions = require('firebase-functions');
 const functionsV1 = require('firebase-functions/v1');
 const { onCall } = require('firebase-functions/v2/https');
+
+// Load environment variables in development/emulator
+if (process.env.FUNCTIONS_EMULATOR) {
+  require('dotenv').config();
+  
+  // Force use of service account in emulator
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS && !process.env.GOOGLE_APPLICATION_CREDENTIALS.startsWith('/')) {
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = require('path').resolve(__dirname, process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  }
+} else {
+  // In production, load from Firebase Functions config
+  const functionsConfig = functions.config();
+  
+  // Map Firebase config to environment variables
+  if (functionsConfig.tebra) {
+    process.env.TEBRA_CLOUD_RUN_URL = functionsConfig.tebra.cloud_run_url;
+    process.env.TEBRA_INTERNAL_API_KEY = functionsConfig.tebra.internal_api_key;
+  }
+  
+  if (functionsConfig.auth0) {
+    process.env.AUTH0_DOMAIN = functionsConfig.auth0.domain;
+    process.env.AUTH0_AUDIENCE = functionsConfig.auth0.audience;
+  }
+}
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');

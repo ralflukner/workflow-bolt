@@ -112,6 +112,9 @@ Thumbs.db
 desktop.ini
 
 # ===== Project Specific =====
+# Firebase config (generated from template)
+.firebaserc
+
 # Local config overrides
 config.local.php
 config.local.json

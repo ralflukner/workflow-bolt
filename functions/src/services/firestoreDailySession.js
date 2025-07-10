@@ -3,6 +3,15 @@ const admin = require('firebase-admin');
 const firestoreDailySessionRepo = {
   async save(date, patients, uid) {
     const db = admin.firestore();
+    
+    // Connect to emulator if running locally
+    if (process.env.FIRESTORE_EMULATOR_HOST) {
+      db.settings({
+        host: process.env.FIRESTORE_EMULATOR_HOST,
+        ssl: false
+      });
+    }
+    
     let batch = db.batch();
     const root = db.collection('daily_sessions').doc(date);
     
