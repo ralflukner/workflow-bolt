@@ -429,11 +429,11 @@ resource "google_container_cluster" "secure_cluster" {
     }
   }
 
-  # Maintenance window
+  # Maintenance window - using current year with proper duration
   maintenance_policy {
     recurring_window {
-      start_time = "2023-01-01T03:00:00Z"
-      end_time   = "2023-01-01T07:00:00Z"
+      start_time = "2025-01-01T03:00:00Z"
+      end_time   = "2025-01-01T07:00:00Z"
       recurrence = "FREQ=WEEKLY;BYDAY=SU"
     }
   }
