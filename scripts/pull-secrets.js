@@ -88,6 +88,8 @@ const SECRETS_TO_PULL = [
   { name: 'GOOGLE_CLOUD_PROJECT', envVar: 'GOOGLE_CLOUD_PROJECT' },
   // Backend-only secret
   { name: 'TEBRA_CLOUD_RUN_URL', envVar: 'TEBRA_CLOUD_RUN_URL' },
+  // Vikunja Database Password
+  { name: 'vikunja-db-secret', envVar: 'VIKUNJA_DATABASE_PASSWORD' },
 ];
 
 // We intentionally do NOT add alias names to SECRETS_TO_PULL – they will be
