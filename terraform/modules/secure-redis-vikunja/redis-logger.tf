@@ -237,6 +237,13 @@ resource "google_kms_crypto_key" "redis_logger_key" {
   }
 }
 
+# Grant KMS key access to the default compute service account for storage bucket encryption
+resource "google_kms_crypto_key_iam_member" "compute_kms_binding" {
+  crypto_key_id = google_kms_crypto_key.redis_logger_key.id
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member        = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
+
 # Cloud Function for Dashboard Persistence API
 resource "google_storage_bucket" "dashboard_api_source" {
   name     = "${var.project_id}-dashboard-api-source-${var.environment}"
