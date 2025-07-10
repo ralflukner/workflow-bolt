@@ -1,3 +1,0 @@
-redis==5.0.1
-Flask==3.0.0
-EOF < /dev/null

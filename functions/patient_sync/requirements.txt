@@ -1,2 +1,0 @@
-functions-framework==3.*
-# Add your production dependencies here

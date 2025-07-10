@@ -1,1 +1,0 @@
-# Functions package for workflow-bolt project
