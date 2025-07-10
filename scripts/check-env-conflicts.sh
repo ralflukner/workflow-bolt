@@ -36,7 +36,6 @@ echo ""
 # Run the consistency checker with only .env values (no shell env vars)
 env -i PATH="$PATH" NODE_PATH="$NODE_PATH" HOME="$HOME" \
     GOOGLE_CLOUD_PROJECT="luknerlumina-firebase" \
-    GOOGLE_APPLICATION_CREDENTIALS="$GOOGLE_APPLICATION_CREDENTIALS" \
     node scripts/check-env-gsm-consistency.js | tail -25
 
 echo ""
