@@ -1,0 +1,57 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: vikunja
+  annotations:
+    run.googleapis.com/launch-stage: BETA
+spec:
+  template:
+    metadata:
+      annotations:
+        # Limit the maximum number of instances
+        autoscaling.knative.dev/maxScale: "4"
+        # Connect to the VPC to access Redis and Cloud SQL
+        run.googleapis.com/vpc-access-connector: "redis-connector"
+        # Route all egress traffic through the VPC connector
+        run.googleapis.com/vpc-access-egress: "private-ranges-only"
+    spec:
+      containers:
+        - image: vikunja/vikunja:latest
+          ports:
+            - name: http1
+              containerPort: 3456
+          env:
+            - name: VIKUNJA_SERVICE_PUBLICURL
+              value: "https://vikunja-your-service-url.a.run.app" # <-- IMPORTANT: Update this with your actual Cloud Run URL after deployment
+            
+            # --- Database Configuration (Cloud SQL) ---
+            - name: VIKUNJA_DATABASE_TYPE
+              value: "postgres"
+            - name: VIKUNJA_DATABASE_HOST
+              value: "10.227.0.3" # Private IP of your Cloud SQL instance
+            - name: VIKUNJA_DATABASE_USER
+              value: "vikunja" # <-- IMPORTANT: Use the correct username for your database
+            - name: VIKUNJA_DATABASE_DATABASE
+              value: "vikunja" # <-- IMPORTANT: Use the correct database name
+            - name: VIKUNJA_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vikunja-db-secret # <-- IMPORTANT: The name of your secret in Secret Manager
+                  key: "latest" # Or the specific version of your secret
+                  
+            # --- Cache Configuration (Memorystore) ---
+            - name: VIKUNJA_CACHE_ENABLED
+              value: "true"
+            - name: VIKUNJA_CACHE_TYPE
+              value: "redis"
+            - name: VIKUNJA_CACHE_HOST
+              value: "10.161.35.147:6379" # Private IP and port of your Redis instance
+              
+            # --- Other Settings ---
+            - name: VIKUNJA_SERVICE_MAXFILESIZE
+              value: "20MB"
+
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
