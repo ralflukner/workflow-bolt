@@ -400,7 +400,6 @@ exports.tebraTestConnection = onCall(
   console.log('Testing Tebra connection...');
   console.log('Authenticated user:', request.auth.uid);
   console.log('Environment - TEBRA_CLOUD_RUN_URL:', process.env.TEBRA_CLOUD_RUN_URL);
-  console.log('Environment - GOOGLE_APPLICATION_CREDENTIALS:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
   
   try {
     // Test actual Tebra API connection
