@@ -237,6 +237,11 @@ resource "google_kms_crypto_key" "redis_logger_key" {
   }
 }
 
+# Get project number for service account
+data "google_project" "current" {
+  project_id = var.project_id
+}
+
 # Grant KMS key access to the default compute service account for storage bucket encryption
 resource "google_kms_crypto_key_iam_member" "compute_kms_binding" {
   crypto_key_id = google_kms_crypto_key.redis_logger_key.id
