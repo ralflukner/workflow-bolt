@@ -81,7 +81,9 @@ class RedisClient:
         # Attempt Redis first
         if self._client is not None:
             try:
-                self._client.xadd(self.stream_name, payload)
+                # Convert payload to proper format for xadd
+                fields: dict = {k: str(v) for k, v in payload.items()}
+                self._client.xadd(self.stream_name, fields)  # type: ignore
                 return
             except Exception as exc:  # pragma: no cover – runtime failure
                 self._log.error("Redis publish failed – falling back (%s)", exc)

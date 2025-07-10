@@ -43,7 +43,8 @@ class LuknerSecureRedisClient:
             self.connect()
         if self.client is None:
             raise ConnectionError("Failed to establish Redis connection")
-        return self.client.ping()
+        result = self.client.ping()
+        return bool(result)
     
     def store_patient_data(self, patient_id: str, data: Dict[str, Any]) -> bool:
         """Store patient data with HIPAA compliance"""
@@ -66,9 +67,14 @@ class LuknerSecureRedisClient:
         key = f"lukner:patient:{patient_id}"
         try:
             # Attempt Redis JSON operation
-            result = self.client.json().set(key, "$", secure_data)
+            result = self.client.json().set(key, "$", secure_data)  # type: ignore
             self.logger.info(f"Successfully stored patient data for ID: {patient_id}")
             return bool(result)
+        except (TypeError, ValueError) as e:
+            # Handle JSON serialization errors
+            error_msg = f"Data serialization failed for patient {patient_id}: {str(e)}"
+            self.logger.error(error_msg)
+            raise ValueError(f"Invalid data format for patient storage: {str(e)}") from e
         except Exception as e:
             # Handle RedisJSON module not loaded or command errors
             error_msg = f"Redis JSON operation failed for patient {patient_id}: {str(e)}"
@@ -77,21 +83,6 @@ class LuknerSecureRedisClient:
                 raise RuntimeError("RedisJSON module is not available on this Redis instance. Please install RedisJSON module.") from e
             else:
                 raise RuntimeError(f"Redis JSON command error: {str(e)}") from e
-        except (TypeError, ValueError) as e:
-            # Handle JSON serialization errors
-            error_msg = f"Data serialization failed for patient {patient_id}: {str(e)}"
-            self.logger.error(error_msg)
-            raise ValueError(f"Invalid data format for patient storage: {str(e)}") from e
-        except redis.exceptions.ConnectionError as e:
-            # Handle connection issues
-            error_msg = f"Redis connection error while storing patient {patient_id}: {str(e)}"
-            self.logger.error(error_msg)
-            raise ConnectionError(f"Failed to connect to Redis: {str(e)}") from e
-        except Exception as e:
-            # Handle any other unexpected errors
-            error_msg = f"Unexpected error storing patient {patient_id}: {str(e)}"
-            self.logger.error(error_msg)
-            raise RuntimeError(f"Unexpected Redis operation error: {str(e)}") from e
     
     def get_patient_data(self, patient_id):
         """Retrieve patient data securely"""

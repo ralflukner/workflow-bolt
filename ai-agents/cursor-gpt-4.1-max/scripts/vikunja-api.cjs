@@ -1,3 +1,6 @@
+/* eslint-env node */
+/* eslint-disable no-console, max-lines-per-function, complexity */
+
 // Vikunja API Integration for cursor-gpt-4.1-max
 const axios = require('axios');
 
@@ -278,6 +281,8 @@ class VikunjaAPI {
         },
         { headers: this.headers }
       );
+      
+      return response.data;
     } catch (error) {
       console.error('Error updating task status:', error.message);
       throw error;

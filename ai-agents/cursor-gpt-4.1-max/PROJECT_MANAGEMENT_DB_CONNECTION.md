@@ -1,9 +1,11 @@
 # Project Management Database Connection Instructions for cursor-gpt-4.1-max
 
 ## Overview
+
 This document provides instructions for cursor-gpt-4.1-max to connect to and interact with the centralized Vikunja project management database.
 
 ## Database Details
+
 - **System**: Vikunja (self-hosted project management)
 - **Database**: PostgreSQL 
 - **Access Method**: Docker containers + REST API
@@ -12,17 +14,20 @@ This document provides instructions for cursor-gpt-4.1-max to connect to and int
 ## Connection Setup
 
 ### 1. Start the Vikunja System
+
 ```bash
 cd /Users/ralfb.luknermdphd/PycharmProjects/workflow-bolt
 ./scripts/vikunja-docker.sh start
 ```
 
 ### 2. Access URLs
-- **Vikunja Web Interface**: http://localhost:3456
-- **API Endpoint**: http://localhost:3456/api/v1
+
+- **Vikunja Web Interface**: <http://localhost:3456>
+- **API Endpoint**: <http://localhost:3456/api/v1>
 - **Database**: PostgreSQL on localhost:5432
 
 ### 3. API Authentication
+
 **API Token**: `tk_556fc1cf49295b3c8637506e57877c21f863ec16`
 **Permissions**: Full access to all Vikunja features
 **Expires**: October 3, 2025
@@ -30,12 +35,14 @@ cd /Users/ralfb.luknermdphd/PycharmProjects/workflow-bolt
 ### 4. API Usage Examples
 
 #### Get All Projects
+
 ```bash
 curl -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
      http://localhost:3456/api/v1/projects
 ```
 
 #### Create New Task in Inbox Project
+
 ```bash
 curl -X POST \
      -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -45,6 +52,7 @@ curl -X POST \
 ```
 
 #### Update Task Status
+
 ```bash
 curl -X PUT \
      -H "Authorization: Bearer tk_556fc1cf49295b3c8637506e57877c21f863ec16" \
@@ -113,6 +121,7 @@ module.exports = VikunjaAPI;
 ## Status Management
 
 ### Task Statuses
+
 - `new` - Just created
 - `in_progress` - Currently being worked on  
 - `completed` - Finished successfully
@@ -120,6 +129,7 @@ module.exports = VikunjaAPI;
 - `cancelled` - No longer needed
 
 ### Priority Levels
+
 - `1` - Low priority
 - `2` - Medium priority  
 - `3` - High priority
@@ -140,6 +150,7 @@ module.exports = VikunjaAPI;
 ## Error Handling
 
 If connection fails:
+
 1. Check if Docker containers are running: `docker ps`
 2. Restart Vikunja: `./scripts/vikunja-docker.sh restart`
 3. Verify database is healthy: `./scripts/vikunja-docker.sh status`

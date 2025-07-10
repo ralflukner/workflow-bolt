@@ -88,5 +88,17 @@
         }
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["*.cjs"],
+      "env": {
+        "node": true,
+        "commonjs": true
+      },
+      "parserOptions": {
+        "sourceType": "script"
+      }
+    }
+  ]
 } 

@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+/* global console, process */
+/* eslint-env node, commonjs */
+/* eslint-disable no-console, max-lines-per-function, complexity */
 
 const VikunjaAPI = require('../ai-agents/cursor-gpt-4.1-max/scripts/vikunja-api.cjs');
 const api = new VikunjaAPI();
@@ -85,7 +88,7 @@ async function showAgentWorkload(agentName) {
   const myTasks = [];
   
   // Check all projects for tasks assigned to this agent
-  for (const [key, project] of Object.entries(PROJECTS)) {
+  for (const [_key, project] of Object.entries(PROJECTS)) {
     try {
       const tasks = await api.getTasks(project.id);
       const assignedTasks = tasks.filter(t => 
