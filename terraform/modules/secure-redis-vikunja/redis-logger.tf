@@ -25,7 +25,7 @@ resource "google_sql_database_instance" "redis_logger_db" {
 
     database_flags {
       name  = "shared_buffers"
-      value = "2048MB"
+      value = "2048"
     }
 
     database_flags {
@@ -247,6 +247,13 @@ resource "google_kms_crypto_key_iam_member" "compute_kms_binding" {
   crypto_key_id = google_kms_crypto_key.redis_logger_key.id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
+
+# Grant KMS key access to the Cloud Storage service account for bucket encryption
+resource "google_kms_crypto_key_iam_member" "storage_kms_binding" {
+  crypto_key_id = google_kms_crypto_key.redis_logger_key.id
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member        = "serviceAccount:${data.google_project.current.number}@storage-transfer-service.iam.gserviceaccount.com"
 }
 
 # Cloud Function for Dashboard Persistence API
