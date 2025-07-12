@@ -113,6 +113,28 @@ export interface Patient {
   checkInTime?: string;
   withDoctorTime?: string;
   completedTime?: string;
+  // Additional fields for PostgreSQL compatibility
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface DailySession {
+  id: string;
+  date: string; // ISO date string YYYY-MM-DD
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SessionData {
+  id?: string;
+  sessionId: string;
+  patientId: string;
+  timestamp: string;
+  action: string;
+  data: Record<string, any>;
 }
 
 export interface TimeMode {
