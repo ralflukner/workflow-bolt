@@ -384,10 +384,14 @@ resource "google_container_cluster" "secure_cluster" {
   # Shielded nodes
   enable_shielded_nodes = true
 
-  # Node configuration
+  # Node configuration for Redis stream workers only
   node_config {
     preemptible  = false
-    machine_type = "e2-standard-4"
+    machine_type = "e2-medium"  # 2 vCPUs, 4GB RAM - sufficient for Redis workers
+
+    # Disk configuration - minimal for OS and logs
+    disk_size_gb = 20  # 20GB per node - just for OS and logs
+    disk_type    = "pd-standard"
 
     # Security settings
     shielded_instance_config {
@@ -407,25 +411,26 @@ resource "google_container_cluster" "secure_cluster" {
     labels = {
       environment = var.environment
       compliance  = "hipaa"
+      purpose     = "redis-workers"
     }
 
     tags = ["allow-iap-ssh"]
   }
 
-  initial_node_count = 3
+  initial_node_count = 2  # Start with 2 nodes for basic HA
 
-  # Auto-scaling
+  # Auto-scaling for Redis workers - minimal footprint
   cluster_autoscaling {
     enabled = true
     resource_limits {
       resource_type = "cpu"
-      minimum       = 3
-      maximum       = 10
+      minimum       = 1  # 1 node minimum
+      maximum       = 3  # 3 nodes maximum (6 CPUs total)
     }
     resource_limits {
       resource_type = "memory"
-      minimum       = 12
-      maximum       = 40
+      minimum       = 4   # 4GB minimum
+      maximum       = 12  # 12GB maximum
     }
   }
 
