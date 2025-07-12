@@ -25,7 +25,7 @@ resource "google_sql_database_instance" "redis_logger_db" {
 
     database_flags {
       name  = "shared_buffers"
-      value = "2048"
+      value = "524288"
     }
 
     database_flags {
