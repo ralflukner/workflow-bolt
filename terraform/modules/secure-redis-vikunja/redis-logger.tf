@@ -253,7 +253,7 @@ resource "google_kms_crypto_key_iam_member" "compute_kms_binding" {
 resource "google_kms_crypto_key_iam_member" "storage_kms_binding" {
   crypto_key_id = google_kms_crypto_key.redis_logger_key.id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
-  member        = "serviceAccount:${data.google_project.current.number}@storage-transfer-service.iam.gserviceaccount.com"
+  member        = "serviceAccount:${data.google_project.current.number}@gs-project-accounts.iam.gserviceaccount.com"
 }
 
 # Cloud Function for Dashboard Persistence API
