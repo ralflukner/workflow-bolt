@@ -30,7 +30,7 @@ resource "google_sql_database_instance" "redis_logger_db" {
 
     database_flags {
       name  = "work_mem"
-      value = "16MB"
+      value = "16384"
     }
 
     database_flags {
