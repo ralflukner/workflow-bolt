@@ -429,11 +429,11 @@ resource "google_container_cluster" "secure_cluster" {
     }
   }
 
-  # Maintenance window - more flexible schedule
+  # Maintenance window - more flexible schedule with longer window
   maintenance_policy {
     recurring_window {
-      start_time = "2025-01-01T02:00:00Z"
-      end_time   = "2025-01-01T06:00:00Z"
+      start_time = "2025-01-01T01:00:00Z"
+      end_time   = "2025-01-01T09:00:00Z"
       recurrence = "FREQ=WEEKLY;BYDAY=SU"
     }
   }
