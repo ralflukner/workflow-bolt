@@ -35,7 +35,7 @@ resource "google_sql_database_instance" "redis_logger_db" {
 
     database_flags {
       name  = "maintenance_work_mem"
-      value = "512"
+      value = "1024"
     }
 
     database_flags {

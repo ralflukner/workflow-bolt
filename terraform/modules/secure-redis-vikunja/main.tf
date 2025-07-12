@@ -432,8 +432,8 @@ resource "google_container_cluster" "secure_cluster" {
   # Maintenance window - GKE-compliant, 4 hours every Sunday
   maintenance_policy {
     recurring_window {
-      start_time = "2024-07-14T01:00:00Z"
-      end_time   = "2024-07-14T05:00:00Z"
+      start_time = "01:00Z"
+      end_time   = "05:00Z"
       recurrence = "FREQ=WEEKLY;BYDAY=SU"
     }
   }
