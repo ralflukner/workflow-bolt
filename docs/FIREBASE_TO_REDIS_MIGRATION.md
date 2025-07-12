@@ -2,240 +2,215 @@
 
 ## Overview
 
-This guide documents the complete migration from Firebase to a Redis Memorystore and PostgreSQL architecture on Google Cloud Platform.
+This document tracks the complete migration from Firebase to Redis Memorystore and PostgreSQL on Google Cloud Platform.
 
-## Architecture Changes
+## Migration Status
 
-### Before (Firebase-based)
+### ✅ Completed
 
+1. **Firebase Functions Removal**
+   - All 23 Firebase functions successfully deleted from the cloud
+   - Removed GOOGLE_APPLICATION_CREDENTIALS references from codebase
+   - Updated environment configuration to use Application Default Credentials
+
+2. **Infrastructure Setup** 
+   - Terraform configuration created for Redis, PostgreSQL, GKE, and VPC
+   - 63 resources defined including security policies and monitoring
+   - Infrastructure partially deployed (some fixes needed)
+
+3. **Service Replacements Created**
+   - **Redis Publish Endpoint** (`functions/src/redis-publish-endpoint.js`)
+     - Replaces Firebase Functions for handling API requests
+     - Uses Auth0 for authentication (no Firebase Auth)
+     - Publishes to Redis streams for async processing
+   - **PostgreSQL Service** (`src/services/persistence/postgresService.ts`)
+     - Direct database access replacing Firestore
+     - Patient and session data management
+     - HIPAA-compliant data retention
+
+4. **Migration Tools**
+   - Data migration script (`scripts/migrate-firestore-to-postgres.js`)
+   - Deployment script (`scripts/deploy-redis-postgres-services.sh`)
+   - Docker configuration for Cloud Run deployment
+
+## Architecture Comparison
+
+### Before (Firebase)
 ```
-Frontend → Firebase Auth → Firebase Functions → Tebra PHP API
-    ↓
-Firestore (Patient Data)
+Frontend → Firebase Auth → Firebase Functions → Firestore
+                ↓
+            Firebase SDK
 ```
 
-### After (Redis/PostgreSQL-based)
-
+### After (Redis/PostgreSQL)
 ```
-Frontend → Auth0 → Redis Streams → Worker Service → Tebra PHP API
-    ↓                    ↓
-PostgreSQL          Redis Cache
-(Patient Data)     (Session Data)
+Frontend → Auth0 → Redis Publish Endpoint → Redis Streams
+                          ↓                      ↓
+                   PostgreSQL              Tebra Worker
 ```
 
-## Key Benefits
+## Migration Functions Mapping
 
-1. **No CORS Issues**: All API communication happens server-side via Redis
-2. **Better Scalability**: Redis streams handle high throughput
-3. **Cost Optimization**: Reduced Firebase usage costs
-4. **HIPAA Compliance**: Better control over data storage and encryption
-5. **Real-time Updates**: SSE provides live status updates
-6. **Async Processing**: Long-running operations don't timeout
+| Firebase Function | Replacement | Location |
+|-------------------|-------------|----------|
+| `tebraProxy` | Redis Publish Endpoint | `/api/tebra/:action` |
+| `tebraGetPatient` | Redis Publish Endpoint | `/api/tebra/getPatient` |
+| `tebraGetAppointments` | Redis Publish Endpoint | `/api/tebra/getAppointments` |
+| `tebraCreateAppointment` | Redis Publish Endpoint | `/api/tebra/createAppointment` |
+| `exchangeAuth0Token` | Direct Auth0 integration | Frontend |
+| `scheduledCredentialCheck` | Cloud Scheduler → Redis | `/api/scheduled/credential-check` |
+| `dailyPurge` | PostgreSQL service | `dailySessionService.purgeOldSessions()` |
+| `patientSync` | Tebra Redis Worker | Kubernetes deployment |
+| `getFirebaseConfig` | Environment variables | Removed |
 
-## Migration Steps
+## Data Migration
 
-### Phase 1: Infrastructure Setup
+### Patients Table (PostgreSQL)
+```sql
+CREATE TABLE patients (
+  id VARCHAR(255) PRIMARY KEY,
+  first_name VARCHAR(255) NOT NULL,
+  last_name VARCHAR(255) NOT NULL,
+  date_of_birth DATE,
+  phone VARCHAR(50),
+  email VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted_at TIMESTAMP
+);
+```
 
-1. **Deploy GCP Infrastructure**
-   ```bash
-   cd /Users/ralfb.luknermdphd/PycharmProjects/workflow-bolt
-   ./scripts/deploy-gcp-infrastructure.sh
-   ```
+### Daily Sessions Table (PostgreSQL)
+```sql
+CREATE TABLE daily_sessions (
+  id VARCHAR(255) PRIMARY KEY,
+  date DATE NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 
-   This creates:
-   - VPC with private subnets
-   - Redis Memorystore instance
-   - Cloud SQL PostgreSQL for Vikunja
-   - GKE cluster for services
-   - VPC connector for serverless access
+### Session Data Table (PostgreSQL)
+```sql
+CREATE TABLE session_data (
+  id VARCHAR(255) PRIMARY KEY,
+  session_id VARCHAR(255) REFERENCES daily_sessions(id),
+  patient_id VARCHAR(255),
+  timestamp TIMESTAMP NOT NULL,
+  data JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 
-2. **Verify Infrastructure**
-   ```bash
-   # Check GKE cluster
-   kubectl get nodes
-   
-   # Check Vikunja deployment
-   kubectl get pods -n vikunja
-   
-   # Get Redis connection info
-   cd terraform/environments/prod
-   terraform output -json redis_connection
-   ```
+## Deployment Steps
 
-### Phase 2: Deploy Services
+### 1. Deploy Infrastructure
+```bash
+cd terraform/environments/prod
+terraform apply
+```
 
-1. **Deploy Tebra Redis Worker**
-   ```bash
-   kubectl apply -f k8s/tebra-worker/
-   ```
+### 2. Deploy Redis Publish Endpoint
+```bash
+./scripts/deploy-redis-postgres-services.sh
+```
 
-2. **Deploy Redis Logger Service**
-   ```bash
-   kubectl apply -f k8s/redis-logger/
-   ```
+### 3. Migrate Data
+```bash
+node scripts/migrate-firestore-to-postgres.js
+```
 
-3. **Deploy SSE Proxy**
-   ```bash
-   kubectl apply -f k8s/sse-proxy/
-   ```
+### 4. Update Frontend Configuration
+```bash
+cp .env.redis-postgres .env
+npm run build
+```
 
-### Phase 3: Update Frontend
+### 5. Deploy Tebra Worker
+```bash
+./scripts/deploy-k8s-applications.sh
+```
 
-1. **Remove Firebase Dependencies**
-   ```bash
-   ./scripts/remove-firebase-functions.sh
-   ```
+## Environment Variables
 
-2. **Update Environment Variables**
-   ```env
-   # Remove Firebase variables
-   # VITE_FIREBASE_API_KEY=...
-   # VITE_FIREBASE_AUTH_DOMAIN=...
-   
-   # Add Redis/PostgreSQL variables
-   VITE_REDIS_API_URL=https://api.luknerlumina.com/redis
-   VITE_REDIS_SSE_URL=https://api.luknerlumina.com/events
-   VITE_POSTGRES_API_URL=https://api.luknerlumina.com/patients
-   ```
+### Required for Redis/PostgreSQL
+```env
+# Redis Configuration
+VITE_REDIS_API_URL=https://redis-publish-endpoint-xxx.run.app/api
+REDIS_HOST=10.x.x.x
+REDIS_PASSWORD=xxx
 
-3. **Update Service Imports**
-   ```typescript
-   // Before
-   import { tebraFirebaseApi } from './services/tebraFirebaseApi';
-   
-   // After
-   import { tebraRedisApi } from './services/tebraRedisApi';
-   import { useTebraRedisApi } from './hooks/useTebraRedisApi';
-   ```
+# PostgreSQL Configuration  
+POSTGRES_HOST=10.x.x.x
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=xxx
+POSTGRES_DATABASE=luknerlumina
 
-### Phase 4: Data Migration
+# Auth0 Configuration
+AUTH0_DOMAIN=luknerlumina.auth0.com
+AUTH0_AUDIENCE=https://api.luknerlumina.com
 
-1. **Export Firestore Data**
-   ```bash
-   gcloud firestore export gs://luknerlumina-backups/firestore-final
-   ```
+# Feature Flags
+VITE_ENABLE_REDIS=true
+VITE_ENABLE_POSTGRES=true
+VITE_ENABLE_FIREBASE=false
+```
 
-2. **Transform and Import to PostgreSQL**
-   ```bash
-   # Run migration script
-   python scripts/migrate-firestore-to-postgres.py
-   ```
+## Security Improvements
 
-### Phase 5: Testing
+1. **No Service Account Keys**: Using Application Default Credentials
+2. **VPC-native networking**: All services communicate over private IPs
+3. **Cloud Armor**: WAF protection for public endpoints
+4. **Workload Identity**: GKE pods use Google service accounts
+5. **Encryption at rest**: KMS keys for all data
 
-1. **Test Redis Connection**
-   ```bash
-   node scripts/test-redis-connection.js
-   ```
+## Monitoring
 
-2. **Test Tebra API via Redis**
-   ```bash
-   curl -X POST https://api.luknerlumina.com/redis/publish \
-     -H "Authorization: Bearer $TOKEN" \
-     -d '{"stream":"tebra:requests","message":{"action":"testConnection"}}'
-   ```
-
-3. **Test Vikunja Access**
-   ```bash
-   curl https://vikunja.luknerlumina.com/api/v1/info
-   ```
-
-### Phase 6: Cutover
-
-1. **Update DNS Records**
-   - Point `vikunja.luknerlumina.com` to the GKE Ingress IP
-   - Update API endpoints in frontend config
-
-2. **Monitor Services**
-   ```bash
-   # Watch logs
-   kubectl logs -f deployment/tebra-worker -n default
-   kubectl logs -f deployment/vikunja -n vikunja
-   
-   # Check metrics
-   gcloud monitoring dashboards list
-   ```
-
-3. **Disable Firebase Functions**
-   ```bash
-   firebase functions:delete --all --force
-   ```
+- Cloud Logging for all services
+- Cloud Monitoring dashboards
+- Error reporting integration
+- Uptime checks for critical endpoints
 
 ## Rollback Plan
 
 If issues arise:
+1. Firebase project remains active for 30 days
+2. Firestore data is preserved as backup
+3. Can redeploy Firebase functions from git history
+4. Frontend can switch back via feature flags
 
-1. **Keep Firebase Active**: Don't delete Firebase project for 30 days
-2. **Feature Flags**: Use environment variables to switch between APIs
-3. **Data Backup**: Keep Firestore export for emergency restore
-4. **Quick Switch**: Update environment variables to revert
+## Outstanding Tasks
 
-## Security Considerations
+- [ ] Complete Terraform infrastructure deployment
+- [ ] Build and push Tebra Worker Docker image  
+- [ ] Run data migration script
+- [ ] Update DNS records for vikunja.luknerlumina.com
+- [ ] Test all endpoints thoroughly
+- [ ] Update frontend to use new services
+- [ ] Monitor for 24-48 hours
+- [ ] Document any issues found
+- [ ] Schedule Firebase cleanup (after 30 days)
 
-1. **VPC Security**
-   - All services in private subnets
-   - No public IPs except load balancers
-   - Cloud Armor for DDoS protection
+## Testing Checklist
 
-2. **Authentication**
-   - Auth0 for user authentication
-   - Service accounts with minimal permissions
-   - API keys in Secret Manager
-
-3. **Data Protection**
-   - Encryption at rest (Redis, PostgreSQL)
-   - TLS for all connections
-   - HIPAA-compliant configuration
-
-## Cost Comparison
-
-### Firebase (Monthly)
-
-- Firestore: ~$200
-- Functions: ~$150
-- Auth: ~$50
-- **Total: ~$400**
-
-### Redis/PostgreSQL (Monthly)
-
-- Redis Memorystore: ~$150
-- Cloud SQL: ~$100
-- GKE: ~$100
-- **Total: ~$350**
-
-**Savings: ~$50/month (12.5%)**
-
-## Monitoring and Alerts
-
-1. **Set up Alerts**
-    ```bash
-    gcloud alpha monitoring policies create \
-      --notification-channels=$CHANNEL_ID \
-      --display-name="Redis Connection Failures" \
-      --condition-display-name="High error rate" \
-      --condition-threshold-value=5
-    ```
-
-2. **Dashboard Access**
-    - GCP Console → Monitoring → Dashboards
-    - Custom dashboard: "Redis-PostgreSQL-Monitoring"
+- [ ] Redis publish endpoint health check
+- [ ] Auth0 authentication flow
+- [ ] Patient CRUD operations
+- [ ] Appointment management
+- [ ] Daily session tracking
+- [ ] Scheduled tasks execution
+- [ ] Data persistence verification
+- [ ] Performance benchmarks
 
 ## Support Contacts
 
-- **Infrastructure**: DevOps team
-- **Redis Issues**: Check worker logs first
-- **Vikunja Issues**: Check PostgreSQL connection
-- **Emergency**: Keep Firebase as backup for 30 days
+- Infrastructure: DevOps team
+- Database: DBA team  
+- Security: Security team
+- Application: Development team
 
-## Verification Checklist
+---
 
-- [ ] GCP infrastructure deployed successfully
-- [ ] Vikunja accessible at [https://vikunja.luknerlumina.com](https://vikunja.luknerlumina.com)
-- [ ] Redis worker processing requests
-- [ ] SSE delivering real-time updates
-- [ ] Frontend using Redis API
-- [ ] All tests passing
-- [ ] Monitoring configured
-- [ ] Team trained on new architecture
-- [ ] Documentation updated
-- [ ] Firebase functions deleted (after 30 days)
+**Last Updated**: $(date)
+**Status**: Migration in progress
